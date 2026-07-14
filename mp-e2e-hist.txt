@@ -1,0 +1,222 @@
+=== SCENARIO A: client onboarding (real mode) ===
+signup mp_e2e_client_mrjud446: {"ok":true,"status":200,"error":null,"hasUser":true}
+A role card user clicked: true
+[server:err] [email-events] Lead Nurture Channel Enrolled:profile Klaviyo API request failed (401)
+[server:err] [email-events] Account Created:profile Klaviyo API request failed (401)
+[server:err] [email-events] Account Created:event Klaviyo API request failed (401)
+[A] ctx heading="Create your account" hit=DIV.preloader
+[A] step 0: click "CONTINUE"
+[server:err] [email-events] Lead Nurture Channel Enrolled:event Klaviyo API request failed (401)
+[A] step 1: click "CONTINUE"
+[A] step 2: click "Male"
+[A] step 3: click "18 – 29"
+[A] step 4: click "Instagram"
+[A] ctx heading="Create your account" hit=SPAN.bm-option-label
+[A] step 5: click "The Arena rankings"
+[A] step 6: click "CONTINUE"
+[A] step 7: click "Significantly overweight"
+[A] step 8: click "A few sizes smaller"
+[A] step 9: selected multi/grid options
+[A] ctx heading="Create your account" hit=BUTTON.bm-cta
+[A] step 10: click "NEXT STEP"
+[A] step 11: click "I struggle to gain weight or muscle"
+[A] step 12: selected multi/grid options
+[A] step 13: click "NEXT STEP"
+[A] step 14: click "CONTINUE"
+[A] ctx heading="Create your account" hit=BUTTON.bm-cta
+[A] step 15: click "CONTINUE"
+[A] step 16: click "I'm pretty strong"
+[A] step 17: click "I have great endurance"
+[A] step 18: click "I keep falling off"
+[A] step 19: click "I try but slip"
+[A] ctx heading="Create your account" hit=SPAN.bm-option-label
+[A] step 20: click "Usually solid"
+[A] step 21: click "I'm already in great shape"
+[A] step 22: selected multi/grid options
+[A] step 23: click "NEXT STEP"
+[A] step 24: click "I spend most of the day sitting"
+[A] ctx heading="Create your account" hit=SPAN.bm-option-label
+[A] step 25: click "Post lunch slump"
+[A] step 26: click "1-2 times a week"
+[A] step 27: click "Never"
+[A] step 28: click "10-20 min"
+[A] step 29: click "CONTINUE"
+[A] ctx heading="Create your account" hit=SPAN.bm-option-label
+[A] step 30: click "4 - 5 times a week"
+[A] step 31: selected multi/grid options
+[A] step 32: click "NEXT STEP"
+[A] step 33: selected multi/grid options
+[A] step 34: click "NEXT STEP"
+[A] step 35: selected multi/grid options
+[A] step 36: click "NEXT STEP"
+[A] step 37: click "CONTINUE"
+[A] step 38: click "Occasionally"
+[A] step 39: click "Yes"
+[A] step 40: selected multi/grid options
+[A] step 41: click "NEXT STEP"
+[A] step 42: click "CONTINUE"
+[A] step 43: click "I know how I should eat but old habits get in the way"
+[A] step 44: selected multi/grid options
+[A] ctx heading="Create your account" hit=BUTTON.bm-cta
+[A] step 45: click "NEXT STEP"
+[A] step 46: selected multi/grid options
+[A] step 47: click "NEXT STEP"
+[A] step 48: click "I eat without any planning"
+[A] step 49: click "CONTINUE"
+[A] step 50: selected multi/grid options
+[A] step 51: click "NEXT STEP"
+[A] step 52: selected multi/grid options
+[A] step 53: click "NEXT STEP"
+[A] step 54: click "NEXT STEP"
+[A] step 55: selected multi/grid options
+[A] step 56: click "NEXT STEP"
+[A] step 57: click "NEXT STEP"
+[A] step 58: click "Around $300"
+[A] step 59: click "NEXT STEP"
+[A] ctx heading="Create your account" hit=SPAN.bm-option-label
+[A] step 60: click "Vegan"
+[A] step 61: selected multi/grid options
+[A] step 62: click "NEXT STEP"
+[A] step 63: click "I eat premade meals"
+[A] step 64: click "Yes"
+[A] ctx heading="Create your account" hit=SPAN.bm-option-label
+[A] step 65: click "Extremely difficult"
+[A] step 66: click "CONTINUE"
+[A] step 67: click "3 meals"
+[A] step 68: click "8-10 AM"
+[A] step 69: click "After 10 PM"
+[A] ctx heading="Create your account" hit=SPAN.bm-option-label
+[A] step 70: click "I only have coffee or tea"
+[A] step 71: click "I don't notice any changes"
+[A] step 72: click "1"
+[A] step 73: click "2"
+[A] step 74: click "3"
+[A] ctx heading="Create your account" hit=BUTTON.bm-scale-btn 
+[A] step 75: click "4"
+[A] step 76: click "CONTINUE"
+[A] step 77: selected multi/grid options
+[A] step 78: click "NEXT STEP"
+[A] step 79: click "Night shifts"
+[A] ctx heading="Create your account" hit=SPAN.bm-option-label
+[A] step 80: click "More than 8 hours"
+[A] step 81: selected multi/grid options
+[A] step 82: click "NEXT STEP"
+[A] step 83: click "Energetic and ready to tackle the day"
+[A] step 84: click "CONTINUE"
+[A] ctx heading="Create your account" hit=BUTTON.bm-cta
+[A] step 85: click "CONTINUE"
+[A] step 86: click "Yes — track my steps"
+[A] step 87: click "Yes — sync my sleep"
+[A] step 88: click "NEXT STEP"
+[A] step 89: click "NEXT STEP"
+[A] ctx heading="Create your account" hit=BUTTON.bm-cta
+[A] step 90: click "NEXT STEP"
+[A] step 91: click "kg"
+[A] step 92: click "NEXT STEP"
+[A] step 93: click "NEXT STEP"
+[A] step 94: click "CONTINUE"
+[A] ctx heading="Create your account" hit=SPAN.bm-option-label
+[A] step 95: click "Other"
+[A] step 96: click "SKIP THIS STEP"
+[A] step 97: click "CONTINUE"
+[A] step 98: click "I believe I can do it!"
+[A] step 99: click "Become more confident in my body"
+[A] step 100: selected multi/grid options
+[A] step 101: click "NEXT STEP"
+[A] step 107: STALLING — candidates: []
+[A] step 114: click "Continue"
+[A] ctx heading="Create your account" hit=DIV.rank-finale-stage rank-finale-pyramid-stage is-active
+[A] step 115: click "Continue"
+[A] step 116: click "Continue"
+[A] step 117: click "Continue"
+[A] step 118: click "GET MY FREE PLAN"
+[A] step 119: click "GET MY FREE PLAN"
+[A] WALK DONE at step 120 url=http://localhost:3217/overview.html#control-panel
+A localStorage: {"ode_meal_program_plan_v1":26327,"ode_meal_plan_snapshot_v1":674,"ode_meal_picks_v1":55,"ode_training_intake_v2":901,"ode_training_autobuild_v1":1,"ode_identity_profile_v1":3145,"ovIdentityStats":86}
+A /api/groceries/latest: {"ok":true,"hasList":true,"notes":"meal_program_onboarding"}
+[server:err] rear_delt_frequency_check {
+  week: 1,
+  rearDeltDays: 0,
+  rearDeltSets: 0,
+  allowedDayCap: 2,
+  hardSetCap: 12,
+  shouldersPriority: false,
+  backPriority: false
+}
+[server:err] rear_delt_validation_result {
+  week: 1,
+  rearDeltDays: 0,
+  rearDeltSets: 0,
+  allowedDayCap: 2,
+  hardSetCap: 12,
+  valid: true
+}
+rear_delt_cleanup_exit {
+  week: 1,
+  rearDeltDays: 0,
+  rearDeltSe
+[server:err] rear_delt_frequency_check {
+  week: 2,
+  rearDeltDays: 0,
+  rearDeltSets: 0,
+  allowedDayCap: 2,
+  hardSetCap: 12,
+  shouldersPriority: false,
+  backPriority: false
+}
+rear_delt_validation_result {
+  w
+A training keys: ["ode_training_quick_tour_pending_v1:8442f110-e855-4d30-aa45-bd85d0f3dffc","ode_training_quick_tour_first_plan_v1:8442f110-e855-4d30-aa45-bd85d0f3dffc","ode_training_intake_v2","ode_training_draft_v1:8442f110-e855-4d30-aa45-bd85d0f3dffc:ea5e6d73-c77a-4633-9360-7c9fd405ef4c","ode_training_guest_payload_v1"]
+A training text: R i s e F o r I t + MP E2E client × Your training plan BODYBUILDING • 5 days/week • Start workout Share Workout Make New Workout Simple PDF Complex PDF Modify Current Workout v Change workout days Skipping Undo Workouts Pick a day to view details › M 7/13 Tu 7/7 W 7/8 Th 7/9 F 7/10 Sa 7/11 Su 7/12 L
+A overview: {"stats":true,"mealGridChildren":1,"groceryCount":"31 items","hasRadar":true}
+=== SCENARIO B: trainer onboarding (real mode) ===
+signup mp_e2e_trainer_mrjud446: {"ok":true,"status":200,"error":null,"hasUser":true}
+[server:err] [email-events] Lead Nurture Channel Enrolled:profile Klaviyo API request failed (401)
+[server:err] [email-events] Lead Nurture Channel Enrolled:event Klaviyo API request failed (401)
+[server:err] [email-events] Account Created:profile Klaviyo API request failed (401)
+[server:err] [email-events] Account Created:event Klaviyo API request failed (401)
+B role card trainer clicked: true
+[B] ctx heading="Create your account" hit=DIV.preloader
+[B] step 0: click "CONTINUE"
+[B] step 1: click "CONTINUE"
+[B] step 2: click "CONTINUE"
+[B] step 3: click "CONTINUE"
+[B] step 4: click "CONTINUE"
+[B] ctx heading="Create your account" hit=BUTTON.bm-cta
+[B] step 5: click "CONTINUE"
+[B] step 6: click "CONTINUE"
+[B] step 7: click "CONTINUE"
+[B] step 8: click "CONTINUE"
+[B] step 9: STALLING — candidates: ["CONTINUE"]
+[B] step 9: click "CONTINUE"
+[B] ctx heading="Create your account" hit=BUTTON.bm-cta
+[B] step 10: click "CONTINUE"
+[B] step 11: click "CONTINUE"
+[B] step 12: click "CONTINUE"
+[B] step 13: click "CONTINUE"
+[B] step 14: click "CONTINUE"
+[B] ctx heading="Create your account" hit=BUTTON.bm-cta
+[B] step 15: click "CONTINUE"
+[B] step 16: click "Go to Trainer Dashboard"
+[B] WALK DONE at step 17 url=http://localhost:3217/index.html
+B localStorage: {"ode_meal_program_plan_v1":24245,"ode_meal_plan_snapshot_v1":919}
+=== CREATED QA ACCOUNTS (for cleanup) === ["mp_e2e_client_mrjud446","mp_e2e_trainer_mrjud446"]
+=== RESULTS ===
+{
+  "clientSignup": true,
+  "clientWalkFinished": true,
+  "clientMealPlan": true,
+  "clientMealSnapshot": true,
+  "clientIntake": true,
+  "clientAutobuild": true,
+  "clientIdentity": true,
+  "clientGroceryOnAccount": true,
+  "clientWorkouts": true,
+  "clientGraph": true,
+  "clientOverviewMeals": true,
+  "trainerSignup": true,
+  "trainerWalkFinished": true,
+  "trainerMealPlan": true
+}
+E2E PASSED all required checks
+EXIT=0

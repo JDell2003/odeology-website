@@ -1,0 +1,1453 @@
+<!doctype html>
+<html><head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta http-equiv="Content-Security-Policy" content="default-src 'none'; base-uri 'none'; connect-src 'none'; form-action https: mailto:; img-src data: https:; media-src data: https:; style-src 'unsafe-inline' https:; script-src 'unsafe-inline' https:; frame-src data: https:; font-src data: https:;">
+        <style>#standalone-runtime-error{display:none;position:sticky;top:0;z-index:9999;padding:12px 16px;background:#fff1f1;border-bottom:1px solid rgba(155,47,47,.18);color:#9b2f2f;font:700 14px/1.5 system-ui,sans-serif;white-space:pre-wrap}#standalone-runtime-error.show{display:block}</style>
+        <style id="standalone-root-layout-style">html,body{margin:0 !important;padding:0 !important;width:100%;min-height:100%;overflow-x:hidden;scrollbar-width:none;-ms-overflow-style:none;}html::-webkit-scrollbar,body::-webkit-scrollbar,#standalone-page-root::-webkit-scrollbar{width:0;height:0}body{display:flow-root;background:#fff;color:#111827;}#standalone-page-root{width:100%;min-height:100vh;display:flow-root;overflow-x:hidden;scrollbar-width:none;-ms-overflow-style:none;margin-left:auto !important;margin-right:auto !important;}#standalone-page-root::before{content:'';display:table;}#standalone-page-root::after{content:'';display:table;clear:both;}#standalone-page-root>:first-child{margin-top:0 !important;margin-left:auto !important;margin-right:auto !important;}</style>
+        
+        <style>#coachOExperience,
+  #coachOExperience * { box-sizing: border-box; }
+
+  #coachOExperience {
+    --ink: #0a101b;
+    --ink-2: #111b2d;
+    --paper: #f5f2ec;
+    --white: #ffffff;
+    --blue: #4f7cff;
+    --blue-soft: #a9bbff;
+    --line: rgba(11, 21, 37, .13);
+    --muted: #627089;
+    width: 100%;
+    min-height: 100vh;
+    overflow: hidden;
+    position: relative;
+    color: var(--ink);
+    background: var(--paper);
+    font-family: Arial, Helvetica, sans-serif;
+  }
+
+  .ambient {
+    pointer-events: none;
+    position: absolute;
+    border-radius: 999px;
+    filter: blur(100px);
+    opacity: .22;
+  }
+
+  .ambient-one {
+    width: 480px;
+    height: 480px;
+    top: 120px;
+    right: -180px;
+    background: var(--blue);
+  }
+
+  .ambient-two {
+    width: 360px;
+    height: 360px;
+    top: 680px;
+    left: -190px;
+    background: #f4a0d6;
+  }
+
+  .co-nav {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    width: 100%;
+    min-height: 86px;
+    padding: 16px 5.5vw;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: rgba(245, 242, 236, .82);
+    backdrop-filter: blur(16px);
+    border-bottom: 1px solid var(--line);
+  }
+
+  .co-brand {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    text-align: left;
+    color: var(--ink);
+    cursor: pointer;
+  }
+
+  .co-brand-mark {
+    width: 42px;
+    height: 42px;
+    display: grid;
+    place-items: center;
+    border-radius: 13px;
+    color: var(--white);
+    background: var(--ink);
+    font-size: 20px;
+    font-weight: 900;
+    box-shadow: 7px 7px 0 var(--blue);
+  }
+
+  .co-brand b {
+    display: block;
+    font-size: 15px;
+    letter-spacing: .15em;
+  }
+
+  .co-brand small {
+    display: block;
+    margin-top: 3px;
+    color: var(--muted);
+    font-size: 8px;
+    letter-spacing: .18em;
+    font-weight: 800;
+  }
+
+  .co-links {
+    display: flex;
+    gap: 5px;
+    align-items: center;
+  }
+
+  .co-links button {
+    padding: 11px 14px;
+    border: 0;
+    background: transparent;
+    color: var(--ink);
+    font-size: 12px;
+    font-weight: 800;
+    cursor: pointer;
+  }
+
+  .co-links button:hover { color: var(--blue); }
+
+  .co-links .co-nav-cta {
+    margin-left: 8px;
+    padding: 12px 17px;
+    border-radius: 999px;
+    color: var(--white);
+    background: var(--ink);
+  }
+
+  .co-links .co-nav-cta span { color: var(--blue-soft); }
+
+  .co-menu {
+    display: none;
+    width: 46px;
+    height: 42px;
+    padding: 11px;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    background: var(--white);
+    cursor: pointer;
+  }
+
+  .co-menu span {
+    display: block;
+    height: 2px;
+    margin: 5px 0;
+    background: var(--ink);
+  }
+
+  .co-page {
+    display: none;
+    min-height: calc(100vh - 86px);
+    animation: coFade .35s ease;
+  }
+
+  .co-page.active { display: block; }
+
+  @keyframes coFade {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .co-hero {
+    position: relative;
+    min-height: 760px;
+    padding: 80px 5.5vw 70px;
+    display: grid;
+    grid-template-columns: 1.05fr .95fr;
+    gap: 6vw;
+    align-items: center;
+    overflow: hidden;
+    background: var(--ink);
+    color: var(--white);
+  }
+
+  .co-hero-grid {
+    position: absolute;
+    inset: 0;
+    opacity: .19;
+    background-image: linear-gradient(rgba(255,255,255,.13) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.13) 1px, transparent 1px);
+    background-size: 70px 70px;
+    mask-image: linear-gradient(to bottom, black, transparent 90%);
+  }
+
+  .co-hero-copy,
+  .co-hero-panel { position: relative; z-index: 1; }
+
+  .co-kicker {
+    margin: 0 0 20px;
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    color: var(--blue-soft);
+    font-size: 10px;
+    letter-spacing: .2em;
+    font-weight: 900;
+  }
+
+  .co-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 100%;
+    background: var(--blue);
+    box-shadow: 0 0 0 6px rgba(79,124,255,.16);
+  }
+
+  .co-hero h1 {
+    max-width: 820px;
+    margin: 0;
+    color: var(--white);
+    font-size: clamp(54px, 7vw, 108px);
+    line-height: .88;
+    letter-spacing: -.07em;
+  }
+
+  .co-hero h1 em,
+  .co-intro h2 em,
+  .co-quote-section em { color: var(--blue-soft); font-style: normal; }
+
+  .co-hero-lead {
+    max-width: 650px;
+    margin: 28px 0 0;
+    color: #cbd5e6;
+    font-size: 20px;
+    line-height: 1.6;
+  }
+
+  .co-hero-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
+    margin-top: 33px;
+  }
+
+  .co-btn {
+    border: 0;
+    border-radius: 999px;
+    padding: 15px 21px;
+    font-size: 13px;
+    font-weight: 900;
+    cursor: pointer;
+  }
+
+  .co-btn-primary {
+    color: var(--white);
+    background: var(--blue);
+    box-shadow: 0 15px 35px rgba(79,124,255,.35);
+  }
+
+  .co-btn-primary span { margin-left: 8px; font-size: 18px; }
+
+  .co-btn-text {
+    color: var(--white);
+    background: transparent;
+    border: 1px solid rgba(255,255,255,.22);
+  }
+
+  .co-trust-row {
+    display: flex;
+    gap: 14px;
+    align-items: center;
+    margin-top: 55px;
+  }
+
+  .co-avatar-stack { display: flex; }
+
+  .co-avatar-stack span {
+    width: 32px;
+    height: 32px;
+    margin-right: -8px;
+    display: grid;
+    place-items: center;
+    border: 2px solid var(--ink);
+    border-radius: 50%;
+    color: var(--white);
+    background: #234;
+    font-size: 10px;
+    font-weight: 900;
+  }
+
+  .co-avatar-stack span:nth-child(2) { background: #954b3f; }
+  .co-avatar-stack span:nth-child(3) { background: #386d6a; }
+  .co-avatar-stack span:nth-child(4) { background: var(--blue); }
+
+  .co-trust-row p {
+    margin: 0;
+    color: #aebbd0;
+    font-size: 11px;
+    line-height: 1.45;
+  }
+
+  .co-trust-row strong { color: var(--white); }
+
+  .co-hero-panel {
+    width: min(100%, 450px);
+    justify-self: end;
+    padding: 23px;
+    border: 1px solid rgba(255,255,255,.15);
+    border-radius: 28px;
+    background: linear-gradient(140deg, rgba(255,255,255,.16), rgba(255,255,255,.04));
+    box-shadow: 0 40px 100px rgba(0,0,0,.35);
+    backdrop-filter: blur(20px);
+  }
+
+  .co-panel-top,
+  .co-session-label,
+  .co-mini-stats span {
+    display: flex;
+    justify-content: space-between;
+    color: #b9c5d8;
+    font-size: 9px;
+    font-weight: 900;
+    letter-spacing: .13em;
+  }
+
+  .co-live { color: #b7ffc9; }
+  .co-live i {
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    margin-right: 5px;
+    border-radius: 50%;
+    background: #51e986;
+  }
+
+  .co-score-card {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 19px 0;
+    padding: 23px;
+    border-radius: 20px;
+    background: rgba(255,255,255,.09);
+  }
+
+  .co-score-card p {
+    margin: 0 0 4px;
+    color: #b9c5d8;
+    font-size: 9px;
+    font-weight: 900;
+    letter-spacing: .15em;
+  }
+
+  .co-score-card strong {
+    display: block;
+    font-size: 53px;
+    line-height: 1;
+    letter-spacing: -.06em;
+  }
+
+  .co-score-card strong span { color: #8da5c8; font-size: 22px; }
+  .co-score-card small { color: #aebbd0; }
+
+  .co-ring {
+    position: relative;
+    width: 100px;
+    height: 100px;
+    display: grid;
+    place-items: center;
+  }
+
+  .co-ring svg {
+    position: absolute;
+    inset: 0;
+    transform: rotate(-90deg);
+  }
+
+  .co-ring circle {
+    fill: none;
+    stroke: rgba(255,255,255,.14);
+    stroke-width: 9;
+  }
+
+  .co-ring .co-ring-progress {
+    stroke: var(--blue);
+    stroke-linecap: round;
+    stroke-dasharray: 289;
+    stroke-dashoffset: 62;
+  }
+
+  .co-ring b { font-size: 19px; }
+
+  .co-session-card {
+    padding: 21px;
+    border-radius: 20px;
+    color: var(--ink);
+    background: var(--paper);
+  }
+
+  .co-session-label span { color: var(--muted); }
+  .co-session-label b { color: var(--blue); }
+
+  .co-session-card h3 {
+    margin: 15px 0 12px;
+    font-size: 27px;
+    line-height: .96;
+    letter-spacing: -.055em;
+  }
+
+  .co-session-meta {
+    display: flex;
+    gap: 8px;
+    color: var(--muted);
+    font-size: 11px;
+  }
+
+  .co-session-card button {
+    width: 100%;
+    margin-top: 19px;
+    padding: 12px;
+    border: 0;
+    border-radius: 12px;
+    color: var(--white);
+    background: var(--ink);
+    font-size: 11px;
+    font-weight: 900;
+    cursor: pointer;
+  }
+
+  .co-session-card button span { margin-left: 5px; color: var(--blue-soft); }
+
+  .co-mini-stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 11px;
+    margin-top: 12px;
+  }
+
+  .co-mini-stats div {
+    padding: 14px;
+    border: 1px solid rgba(255,255,255,.1);
+    border-radius: 16px;
+  }
+
+  .co-mini-stats b {
+    display: block;
+    margin: 6px 0 2px;
+    color: var(--white);
+    font-size: 21px;
+  }
+
+  .co-mini-stats small { color: #98a7c0; font-size: 9px; }
+
+  .co-marquee-wrap {
+    overflow: hidden;
+    color: var(--white);
+    background: var(--blue);
+  }
+
+  .co-marquee {
+    width: max-content;
+    display: flex;
+    align-items: center;
+    gap: 25px;
+    padding: 18px 0;
+    font-size: 13px;
+    letter-spacing: .2em;
+    font-weight: 900;
+    white-space: nowrap;
+    animation: coScroll 19s linear infinite;
+  }
+
+  .co-marquee i { color: var(--ink); font-style: normal; }
+
+  @keyframes coScroll {
+    to { transform: translateX(-33%); }
+  }
+
+  .co-intro {
+    padding: 130px 5.5vw;
+    display: grid;
+    grid-template-columns: .33fr .67fr;
+    gap: 6vw;
+    background: var(--paper);
+  }
+
+  .co-section-label {
+    color: var(--muted);
+    font-size: 10px;
+    letter-spacing: .18em;
+    font-weight: 900;
+  }
+
+  .co-intro h2,
+  .co-page-hero h2,
+  .co-apply-copy h2 {
+    margin: 0;
+    font-size: clamp(42px, 5vw, 76px);
+    line-height: .95;
+    letter-spacing: -.065em;
+  }
+
+  .co-intro-copy > p {
+    max-width: 630px;
+    margin: 27px 0;
+    color: var(--muted);
+    font-size: 19px;
+    line-height: 1.65;
+  }
+
+  .co-arrow-link,
+  .co-offer button,
+  .co-result-wide button {
+    padding: 0;
+    border: 0;
+    color: var(--ink);
+    background: transparent;
+    font-weight: 900;
+    cursor: pointer;
+  }
+
+  .co-arrow-link span,
+  .co-offer button span,
+  .co-result-wide button span { margin-left: 7px; color: var(--blue); font-size: 17px; }
+
+  .co-signature-grid {
+    display: grid;
+    grid-template-columns: repeat(3,1fr);
+    padding: 0 5.5vw 100px;
+    gap: 1px;
+    background: var(--line);
+  }
+
+  .co-signature-grid article {
+    position: relative;
+    min-height: 350px;
+    padding: 35px;
+    background: var(--paper);
+  }
+
+  .co-number {
+    color: var(--muted);
+    font-size: 11px;
+    font-weight: 900;
+  }
+
+  .co-icon {
+    width: 54px;
+    height: 54px;
+    margin: 72px 0 24px;
+    display: grid;
+    place-items: center;
+    border-radius: 16px;
+    color: var(--white);
+    background: var(--ink);
+    font-size: 26px;
+    box-shadow: 7px 7px 0 var(--blue);
+  }
+
+  .co-signature-grid h3 {
+    margin: 0 0 10px;
+    font-size: 25px;
+    letter-spacing: -.04em;
+  }
+
+  .co-signature-grid p {
+    max-width: 290px;
+    margin: 0;
+    color: var(--muted);
+    font-size: 14px;
+    line-height: 1.65;
+  }
+
+  .co-page-hero {
+    min-height: 390px;
+    padding: 100px 5.5vw 68px;
+    display: grid;
+    grid-template-columns: 1.1fr .55fr;
+    gap: 5vw;
+    align-items: end;
+    color: var(--white);
+    background: var(--ink);
+  }
+
+  .co-page-hero p:last-child {
+    max-width: 420px;
+    margin: 0;
+    color: #b8c3d5;
+    line-height: 1.65;
+  }
+
+  .co-method-flow {
+    padding: 45px 5.5vw 100px;
+    background: var(--paper);
+  }
+
+  .co-method-flow article {
+    display: grid;
+    grid-template-columns: 150px 1fr;
+    gap: 32px;
+    padding: 34px 0;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .co-method-flow article > span {
+    color: var(--blue);
+    font-size: 42px;
+    font-weight: 900;
+    letter-spacing: -.06em;
+  }
+
+  .co-method-flow p {
+    margin: 0 0 7px;
+    color: var(--muted);
+    font-size: 10px;
+    font-weight: 900;
+    letter-spacing: .18em;
+  }
+
+  .co-method-flow h3 {
+    margin: 0 0 11px;
+    font-size: clamp(27px, 3vw, 43px);
+    line-height: 1;
+    letter-spacing: -.055em;
+  }
+
+  .co-method-flow small {
+    max-width: 560px;
+    display: block;
+    color: var(--muted);
+    font-size: 14px;
+    line-height: 1.65;
+  }
+
+  .co-quote-section {
+    padding: 110px 5.5vw;
+    color: var(--white);
+    background: var(--blue);
+    text-align: center;
+  }
+
+  .co-quote-section p {
+    margin: 0;
+    font-size: clamp(32px, 5vw, 69px);
+    font-weight: 900;
+    line-height: .98;
+    letter-spacing: -.06em;
+  }
+
+  .co-quote-section em { color: var(--ink); }
+  .co-quote-section span {
+    display: block;
+    margin-top: 25px;
+    color: var(--ink);
+    font-size: 10px;
+    letter-spacing: .18em;
+    font-weight: 900;
+  }
+
+  .co-offers {
+    padding: 75px 5.5vw 110px;
+    display: grid;
+    grid-template-columns: repeat(3,1fr);
+    gap: 18px;
+    background: var(--paper);
+  }
+
+  .co-offer {
+    position: relative;
+    min-height: 510px;
+    padding: 29px;
+    display: flex;
+    flex-direction: column;
+    border: 1px solid var(--line);
+    border-radius: 20px;
+    background: var(--white);
+  }
+
+  .co-offer-top {
+    display: flex;
+    justify-content: space-between;
+    color: var(--muted);
+    font-size: 10px;
+    letter-spacing: .16em;
+    font-weight: 900;
+  }
+
+  .co-offer-top p { margin: 0; }
+
+  .co-offer h3 {
+    margin: 58px 0 15px;
+    font-size: 33px;
+    line-height: .95;
+    letter-spacing: -.06em;
+  }
+
+  .co-offer > p {
+    margin: 0;
+    color: var(--muted);
+    line-height: 1.6;
+  }
+
+  .co-offer ul {
+    margin: 28px 0;
+    padding: 0;
+    list-style: none;
+    color: var(--ink);
+    font-size: 13px;
+    line-height: 2.2;
+  }
+
+  .co-offer li:before {
+    content: "✓";
+    margin-right: 8px;
+    color: var(--blue);
+    font-weight: 900;
+  }
+
+  .co-offer button { margin-top: auto; text-align: left; }
+
+  .co-offer-featured {
+    color: var(--white);
+    background: var(--ink);
+    border-color: var(--ink);
+    box-shadow: 12px 12px 0 var(--blue);
+  }
+
+  .co-offer-featured .co-offer-top,
+  .co-offer-featured > p,
+  .co-offer-featured ul { color: #b9c7da; }
+
+  .co-offer-featured button { color: var(--white); }
+
+  .co-offer-tag {
+    position: absolute;
+    top: 0;
+    right: 25px;
+    padding: 7px 11px;
+    color: var(--ink);
+    background: var(--blue-soft);
+    font-size: 8px;
+    letter-spacing: .12em;
+    font-weight: 900;
+  }
+
+  .co-results-grid {
+    padding: 70px 5.5vw 110px;
+    display: grid;
+    grid-template-columns: 1.1fr .9fr;
+    gap: 16px;
+    background: var(--paper);
+  }
+
+  .co-results-grid > article {
+    min-height: 240px;
+    padding: 31px;
+    border-radius: 20px;
+    border: 1px solid var(--line);
+    background: var(--white);
+  }
+
+  .co-result-large {
+    min-height: 470px !important;
+    display: flex;
+    flex-direction: column;
+    color: var(--white);
+    background: linear-gradient(145deg, var(--ink), #1b315e) !important;
+    border-color: var(--ink) !important;
+  }
+
+  .co-results-grid span {
+    color: var(--blue);
+    font-size: 10px;
+    letter-spacing: .17em;
+    font-weight: 900;
+  }
+
+  .co-result-large h3 {
+    max-width: 630px;
+    margin: auto 0 14px;
+    font-size: clamp(32px, 4vw, 58px);
+    line-height: .95;
+    letter-spacing: -.06em;
+  }
+
+  .co-result-large p { max-width: 520px; margin: 0; color: #b9c7da; }
+
+  .co-result-line {
+    height: 1px;
+    margin: 31px 0 16px;
+    background: rgba(255,255,255,.2);
+  }
+
+  .co-result-bottom {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: #b9c7da;
+    font-size: 11px;
+  }
+
+  .co-result-bottom b { color: var(--blue-soft); letter-spacing: .1em; }
+
+  .co-result-stat strong {
+    display: block;
+    margin: 28px 0 10px;
+    font-size: clamp(46px, 5vw, 72px);
+    line-height: .88;
+    letter-spacing: -.08em;
+  }
+
+  .co-result-stat p { margin: 0; color: var(--muted); line-height: 1.55; }
+
+  .co-result-dark {
+    color: var(--white);
+    background: var(--blue) !important;
+    border-color: var(--blue) !important;
+  }
+
+  .co-result-dark span { color: var(--ink); }
+  .co-result-dark p { color: var(--ink); }
+
+  .co-result-wide {
+    grid-column: span 2;
+    min-height: 180px !important;
+    display: flex;
+    justify-content: space-between;
+    align-items: end;
+    color: var(--white);
+    background: var(--ink) !important;
+    border-color: var(--ink) !important;
+  }
+
+  .co-result-wide h3 {
+    max-width: 640px;
+    margin: 12px 0 0;
+    font-size: clamp(28px, 3.5vw, 49px);
+    line-height: .96;
+    letter-spacing: -.06em;
+  }
+
+  .co-result-wide button { color: var(--white); white-space: nowrap; }
+
+  .co-apply-wrap {
+    min-height: calc(100vh - 86px);
+    padding: 90px 5.5vw;
+    display: grid;
+    grid-template-columns: .85fr 1.15fr;
+    gap: 7vw;
+    color: var(--white);
+    background: var(--ink);
+  }
+
+  .co-apply-copy > p:not(.co-kicker) {
+    max-width: 420px;
+    margin-top: 27px;
+    color: #b9c7da;
+    font-size: 17px;
+    line-height: 1.7;
+  }
+
+  .co-apply-note {
+    display: flex;
+    gap: 13px;
+    max-width: 410px;
+    margin-top: 55px;
+    padding: 18px;
+    border-left: 2px solid var(--blue);
+    background: rgba(255,255,255,.05);
+  }
+
+  .co-apply-note span { color: var(--blue-soft); }
+  .co-apply-note p { margin: 0; color: #b9c7da; font-size: 12px; line-height: 1.55; }
+  .co-apply-note b { color: var(--white); }
+
+  .co-form {
+    padding: 28px;
+    border: 1px solid rgba(255,255,255,.16);
+    border-radius: 22px;
+    background: rgba(255,255,255,.06);
+  }
+
+  .co-field-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+  }
+
+  .co-form label {
+    display: block;
+    margin-bottom: 15px;
+    color: #b9c7da;
+    font-size: 9px;
+    letter-spacing: .16em;
+    font-weight: 900;
+  }
+
+  .co-form input,
+  .co-form select,
+  .co-form textarea {
+    width: 100%;
+    margin-top: 8px;
+    padding: 14px 0 12px;
+    border: 0;
+    border-bottom: 1px solid rgba(255,255,255,.2);
+    outline: 0;
+    color: var(--white);
+    background: transparent;
+    font-family: inherit;
+    font-size: 14px;
+  }
+
+  .co-form select option { color: var(--ink); }
+  .co-form textarea { min-height: 90px; resize: vertical; }
+  .co-form input::placeholder,
+  .co-form textarea::placeholder { color: #8090a9; }
+
+  .co-form input:focus,
+  .co-form select:focus,
+  .co-form textarea:focus { border-bottom-color: var(--blue); }
+
+  .co-submit {
+    width: 100%;
+    margin-top: 13px;
+    padding: 16px;
+    border: 0;
+    border-radius: 13px;
+    color: var(--white);
+    background: var(--blue);
+    font-size: 13px;
+    font-weight: 900;
+    cursor: pointer;
+  }
+
+  .co-submit span { margin-left: 8px; font-size: 17px; }
+
+  .co-form-footnote {
+    margin: 14px 0 0;
+    color: #8090a9;
+    font-size: 10px;
+    text-align: center;
+  }
+
+  .co-footer {
+    padding: 28px 5.5vw;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: var(--white);
+    background: #050a12;
+  }
+
+  .co-footer div b {
+    display: block;
+    font-size: 13px;
+    letter-spacing: .14em;
+  }
+
+  .co-footer div span,
+  .co-footer p,
+  .co-footer > span {
+    color: #77869e;
+    font-size: 8px;
+    font-weight: 800;
+    letter-spacing: .14em;
+  }
+
+  .co-footer p { margin: 0; }
+
+  @media (max-width: 900px) {
+    .co-nav { padding: 15px 5vw; }
+
+    .co-menu {
+      display: block;
+    }
+
+    .co-links {
+      position: absolute;
+      top: 70px;
+      right: 5vw;
+      left: 5vw;
+      display: none;
+      padding: 12px;
+      flex-direction: column;
+      align-items: stretch;
+      border-radius: 17px;
+      background: var(--white);
+      box-shadow: 0 25px 65px rgba(0,0,0,.18);
+    }
+
+    .co-links.open { display: flex; }
+    .co-links .co-nav-cta { margin: 4px 0 0; }
+
+    .co-hero,
+    .co-intro,
+    .co-page-hero,
+    .co-apply-wrap {
+      grid-template-columns: 1fr;
+    }
+
+    .co-hero {
+      min-height: auto;
+      padding: 75px 5vw;
+    }
+
+    .co-hero-panel {
+      width: min(100%, 480px);
+      justify-self: start;
+      margin-top: 25px;
+    }
+
+    .co-intro { padding: 85px 5vw; }
+    .co-signature-grid,
+    .co-offers { grid-template-columns: 1fr; padding-left: 5vw; padding-right: 5vw; }
+
+    .co-signature-grid article { min-height: auto; }
+    .co-icon { margin-top: 35px; }
+
+    .co-page-hero { padding: 80px 5vw 55px; }
+    .co-method-flow { padding-left: 5vw; padding-right: 5vw; }
+
+    .co-method-flow article {
+      grid-template-columns: 70px 1fr;
+      gap: 15px;
+    }
+
+    .co-results-grid {
+      grid-template-columns: 1fr;
+      padding-left: 5vw;
+      padding-right: 5vw;
+    }
+
+    .co-result-wide { grid-column: span 1; align-items: start; flex-direction: column; gap: 23px; }
+    .co-apply-wrap { padding: 75px 5vw; }
+    .co-footer { padding: 25px 5vw; gap: 18px; flex-wrap: wrap; }
+  }
+
+  @media (max-width: 560px) {
+    .co-hero h1 { font-size: 56px; }
+    .co-page-hero h2,
+    .co-apply-copy h2 { font-size: 47px; }
+    .co-hero-lead { font-size: 17px; }
+    .co-score-card strong { font-size: 44px; }
+    .co-field-row { grid-template-columns: 1fr; gap: 0; }
+    .co-trust-row { margin-top: 38px; }
+  }</style>
+        
+      <style id="standalone-root-layout-style">html,body{margin:0 !important;padding:0 !important;width:100%;min-height:100%;overflow-x:hidden;scrollbar-width:none;-ms-overflow-style:none;}html::-webkit-scrollbar,body::-webkit-scrollbar,#standalone-page-root::-webkit-scrollbar{width:0;height:0}body{display:flow-root;background:#fff;color:#111827;}#standalone-page-root{width:100%;min-height:100vh;display:flow-root;overflow-x:hidden;scrollbar-width:none;-ms-overflow-style:none;margin-left:auto !important;margin-right:auto !important;}#standalone-page-root::before{content:'';display:table;}#standalone-page-root::after{content:'';display:table;clear:both;}#standalone-page-root>:first-child{margin-top:0 !important;margin-left:auto !important;margin-right:auto !important;}</style><style id="standalone-root-layout-style">html,body{margin:0 !important;padding:0 !important;width:100%;min-height:100%;overflow-x:hidden;scrollbar-width:none;-ms-overflow-style:none;}html::-webkit-scrollbar,body::-webkit-scrollbar,#standalone-page-root::-webkit-scrollbar{width:0;height:0}body{display:flow-root;background:#fff;color:#111827;}#standalone-page-root{width:100%;min-height:100vh;display:flow-root;overflow-x:hidden;scrollbar-width:none;-ms-overflow-style:none;margin-left:auto !important;margin-right:auto !important;}#standalone-page-root::before{content:'';display:table;}#standalone-page-root::after{content:'';display:table;clear:both;}#standalone-page-root>:first-child{margin-top:0 !important;margin-left:auto !important;margin-right:auto !important;}</style><style id="standalone-root-layout-style">html,body{margin:0 !important;padding:0 !important;width:100%;min-height:100%;overflow-x:hidden;scrollbar-width:none;-ms-overflow-style:none;}html::-webkit-scrollbar,body::-webkit-scrollbar,#standalone-page-root::-webkit-scrollbar{width:0;height:0}body{display:flow-root;background:#fff;color:#111827;}#standalone-page-root{width:100%;min-height:100vh;display:flow-root;overflow-x:hidden;scrollbar-width:none;-ms-overflow-style:none;margin-left:auto !important;margin-right:auto !important;}#standalone-page-root::before{content:'';display:table;}#standalone-page-root::after{content:'';display:table;clear:both;}#standalone-page-root>:first-child{margin-top:0 !important;margin-left:auto !important;margin-right:auto !important;}</style><style id="standalone-root-layout-style">html,body{margin:0 !important;padding:0 !important;width:100%;min-height:100%;overflow-x:hidden;scrollbar-width:none;-ms-overflow-style:none;}html::-webkit-scrollbar,body::-webkit-scrollbar,#standalone-page-root::-webkit-scrollbar{width:0;height:0}body{display:flow-root;background:#fff;color:#111827;}#standalone-page-root{width:100%;min-height:100vh;display:flow-root;overflow-x:hidden;scrollbar-width:none;-ms-overflow-style:none;margin-left:auto !important;margin-right:auto !important;}#standalone-page-root::before{content:'';display:table;}#standalone-page-root::after{content:'';display:table;clear:both;}#standalone-page-root>:first-child{margin-top:0 !important;margin-left:auto !important;margin-right:auto !important;}</style><style id="standalone-root-layout-style">html,body{margin:0 !important;padding:0 !important;width:100%;min-height:100%;overflow-x:hidden;scrollbar-width:none;-ms-overflow-style:none;}html::-webkit-scrollbar,body::-webkit-scrollbar,#standalone-page-root::-webkit-scrollbar{width:0;height:0}body{display:flow-root;background:#fff;color:#111827;}#standalone-page-root{width:100%;min-height:100vh;display:flow-root;overflow-x:hidden;scrollbar-width:none;-ms-overflow-style:none;margin-left:auto !important;margin-right:auto !important;}#standalone-page-root::before{content:'';display:table;}#standalone-page-root::after{content:'';display:table;clear:both;}#standalone-page-root>:first-child{margin-top:0 !important;margin-left:auto !important;margin-right:auto !important;}</style></head>
+      <body>
+        
+        <div id="standalone-page-root"><div id="coachOExperience">
+  <div class="ambient ambient-one"></div>
+  <div class="ambient ambient-two"></div>
+
+  <header class="co-nav">
+    <button class="co-brand" onclick="coGo('home')" aria-label="Go to home">
+      <span class="co-brand-mark">O</span>
+      <span>
+        <b>COACH O</b>
+        <small>PERFORMANCE COACHING</small>
+      </span>
+    </button>
+
+```
+<nav class="co-links" id="coLinks">
+  <button onclick="coGo('home')">Home</button>
+  <button onclick="coGo('method')">The Method</button>
+  <button onclick="coGo('coaching')">Coaching</button>
+  <button onclick="coGo('results')">Results</button>
+  <button class="co-nav-cta" onclick="coGo('apply')">Apply Now <span>↗</span></button>
+</nav>
+
+<button class="co-menu" onclick="coMenu()" aria-label="Open navigation">
+  <span></span><span></span>
+</button>
+```
+
+  </header>
+
+  <main>
+    <section class="co-page" id="home">
+      <div class="co-hero">
+        <div class="co-hero-grid"></div>
+
+```
+    <div class="co-hero-copy">
+      <div class="co-kicker">
+        <span class="co-dot"></span>
+        NOW ACCEPTING NEW CLIENTS
+      </div>
+
+      <h1>Train with a <em>plan.</em><br>Live with <em>confidence.</em></h1>
+
+      <p class="co-hero-lead">
+        Personal training and physique coaching for people who want strength, structure,
+        and results that actually last.
+      </p>
+
+      <div class="co-hero-actions">
+        <button class="co-btn co-btn-primary" onclick="coGo('apply')">
+          Apply For Coaching <span>↗</span>
+        </button>
+        <button class="co-btn co-btn-text" onclick="coGo('method')">
+          Explore the method <span>↓</span>
+        </button>
+      </div>
+
+      <div class="co-trust-row">
+        <div class="co-avatar-stack">
+          <span>J</span><span>M</span><span>A</span><span>+</span>
+        </div>
+        <p><strong>Built for real people</strong><br>who are done with random workouts.</p>
+      </div>
+    </div>
+
+    <div class="co-hero-panel">
+      <div class="co-panel-top">
+        <span>COACHING DASHBOARD</span>
+        <span class="co-live"><i></i> ACTIVE PLAN</span>
+      </div>
+
+      <div class="co-score-card">
+        <div>
+          <p>YOUR WEEK</p>
+          <strong>04<span>/05</span></strong>
+          <small>sessions complete</small>
+        </div>
+        <div class="co-ring">
+          <svg viewBox="0 0 110 110">
+            <circle cx="55" cy="55" r="46"></circle>
+            <circle class="co-ring-progress" cx="55" cy="55" r="46"></circle>
+          </svg>
+          <b>80%</b>
+        </div>
+      </div>
+
+      <div class="co-session-card">
+        <div class="co-session-label">
+          <span>UP NEXT</span>
+          <b>DAY 05</b>
+        </div>
+        <h3>Lower Body<br>Performance</h3>
+        <div class="co-session-meta">
+          <span>52 min</span><span>•</span><span>Strength + Core</span>
+        </div>
+        <button onclick="coGo('apply')">View Program <span>→</span></button>
+      </div>
+
+      <div class="co-mini-stats">
+        <div><span>TRAINING</span><b>+18%</b><small>strength trend</small></div>
+        <div><span>CONSISTENCY</span><b>92%</b><small>last 30 days</small></div>
+      </div>
+    </div>
+  </div>
+
+  <section class="co-marquee-wrap">
+    <div class="co-marquee">
+      <span>STRENGTH</span><i>✦</i>
+      <span>PHYSIQUE</span><i>✦</i>
+      <span>ACCOUNTABILITY</span><i>✦</i>
+      <span>PERFORMANCE</span><i>✦</i>
+      <span>STRENGTH</span><i>✦</i>
+      <span>PHYSIQUE</span><i>✦</i>
+      <span>ACCOUNTABILITY</span><i>✦</i>
+    </div>
+  </section>
+
+  <section class="co-intro">
+    <div class="co-section-label">01 / THE DIFFERENCE</div>
+    <div class="co-intro-copy">
+      <h2>You do not need more motivation.<br>You need a system that <em>fits your life.</em></h2>
+      <p>
+        The goal is not to destroy yourself for three weeks. The goal is to build a body,
+        routine, and level of confidence that you can maintain long after the first result.
+      </p>
+      <button class="co-arrow-link" onclick="coGo('method')">See how coaching works <span>↗</span></button>
+    </div>
+  </section>
+
+  <section class="co-signature-grid">
+    <article>
+      <span class="co-number">01</span>
+      <div class="co-icon">↗</div>
+      <h3>Progressive Training</h3>
+      <p>Every session has a purpose. Your plan adjusts as you get stronger, busier, and more capable.</p>
+    </article>
+    <article>
+      <span class="co-number">02</span>
+      <div class="co-icon">◌</div>
+      <h3>Nutrition That Works</h3>
+      <p>Simple targets, realistic meals, and strategies that work without turning your life into a diet.</p>
+    </article>
+    <article>
+      <span class="co-number">03</span>
+      <div class="co-icon">✦</div>
+      <h3>Real Accountability</h3>
+      <p>Weekly feedback, clear adjustments, and a coach who keeps you focused when motivation drops.</p>
+    </article>
+  </section>
+</section>
+
+<section class="co-page" id="method">
+  <div class="co-page-hero">
+    <div>
+      <p class="co-kicker"><span class="co-dot"></span> THE COACH O METHOD</p>
+      <h2>Build a better body<br>without burning out.</h2>
+    </div>
+    <p>
+      A high-accountability system built around training quality, realistic nutrition,
+      and a plan you can execute under real-life pressure.
+    </p>
+  </div>
+
+  <section class="co-method-flow">
+    <article>
+      <span>01</span>
+      <div>
+        <p>ASSESS</p>
+        <h3>Start with the real picture.</h3>
+        <small>Goals, experience, schedule, recovery, food habits, and where you are actually starting.</small>
+      </div>
+    </article>
+    <article>
+      <span>02</span>
+      <div>
+        <p>BUILD</p>
+        <h3>Create your exact plan.</h3>
+        <small>Training, nutrition, habits, and targets built around the outcome you want and the time you have.</small>
+      </div>
+    </article>
+    <article>
+      <span>03</span>
+      <div>
+        <p>EXECUTE</p>
+        <h3>Win the week in front of you.</h3>
+        <small>Clear workouts, clear priorities, and direct accountability to keep your actions aligned.</small>
+      </div>
+    </article>
+    <article>
+      <span>04</span>
+      <div>
+        <p>ADAPT</p>
+        <h3>Adjust without starting over.</h3>
+        <small>Your plan evolves as your body, schedule, performance, and goals change.</small>
+      </div>
+    </article>
+  </section>
+
+  <section class="co-quote-section">
+    <p>“The best plan is not the hardest plan.<br>It is the one you can <em>repeat.</em>”</p>
+    <span>— COACH O</span>
+  </section>
+</section>
+
+<section class="co-page active" id="coaching">
+  <div class="co-page-hero" style="position: relative;">
+    <div>
+      <p class="co-kicker"><span class="co-dot"></span> COACHING OPTIONS</p>
+      <h2 style="position: relative; width: 737px; height: 125px; flex: 0 0 auto; box-sizing: border-box;">Find the level<br>that matches your goal.</h2>
+    </div>
+    <p>
+      Every path begins with an application so your coaching starts with the right level of detail and support.
+    </p>
+  <a href="#coLinks" style="align-items: center; justify-content: center; min-height: 48px; padding: 0px 18px; border-radius: 999px; background: rgb(37, 99, 235); color: rgb(255, 255, 255); text-decoration: none; font: 800 15px / 1 system-ui, sans-serif; text-align: center;">O COACH O PERFORMANCE COACHING</a></div>
+
+  <section class="co-offers">
+    <article class="co-offer">
+      <div class="co-offer-top">
+        <p>FOUNDATION</p>
+        <span>01</span>
+      </div>
+      <h3>Fat Loss Reset</h3>
+      <p>For people who need structure, consistency, and a realistic route to losing fat for good.</p>
+      <ul>
+        <li>Custom training plan</li>
+        <li>Simple nutrition targets</li>
+        <li>Weekly progress review</li>
+      </ul>
+      <button onclick="coGo('apply')">Apply for Foundation <span>↗</span></button>
+    </article>
+
+    <article class="co-offer co-offer-featured">
+      <div class="co-offer-tag">MOST POPULAR</div>
+      <div class="co-offer-top">
+        <p>SIGNATURE</p>
+        <span>02</span>
+      </div>
+      <h3>Strength &amp; Physique</h3>
+      <p>For clients who want to build muscle, get stronger, and look like they train with purpose.</p>
+      <ul>
+        <li>Progressive training system</li>
+        <li>Nutrition + habit coaching</li>
+        <li>Detailed accountability</li>
+      </ul>
+      <button onclick="coGo('apply')">Apply for Signature <span>↗</span></button>
+    </article>
+
+    <article class="co-offer">
+      <div class="co-offer-top">
+        <p>PERFORMANCE</p>
+        <span>03</span>
+      </div>
+      <h3>Hybrid Performance</h3>
+      <p>For people who want strength, conditioning, athletic movement, and a body that performs.</p>
+      <ul>
+        <li>Strength + conditioning plan</li>
+        <li>Performance-based progression</li>
+        <li>Recovery management</li>
+      </ul>
+      <button onclick="coGo('apply')">Apply for Performance <span>↗</span></button>
+    </article>
+  </section>
+<a href="#method" style="position: relative; display: inline-flex; align-items: center; justify-content: center; min-height: 48px; padding: 0px 18px; margin: 16px 0px; border-radius: 999px; background: rgb(37, 99, 235); color: rgb(255, 255, 255); text-decoration: none; font: 800 15px / 1 system-ui, sans-serif;">Build a better bodywithout burning out.</a></section>
+
+<section class="co-page" id="results">
+  <div class="co-page-hero">
+    <div>
+      <p class="co-kicker"><span class="co-dot"></span> WHAT CHANGES</p>
+      <h2>Results that look<br>good on paper and in real life.</h2>
+    </div>
+    <p>
+      Real progress is more than a scale number. It is strength, confidence, energy,
+      consistency, and knowing how to take care of your body.
+    </p>
+  </div>
+
+  <section class="co-results-grid">
+    <article class="co-result-large">
+      <span>CLIENT WIN</span>
+      <h3>“I stopped restarting every Monday.”</h3>
+      <p>Training became part of the week instead of something I had to force myself to do.</p>
+      <div class="co-result-line"></div>
+      <div class="co-result-bottom"><b>12 WEEKS</b><span>of consistent execution</span></div>
+    </article>
+    <article class="co-result-stat">
+      <span>TRAINING QUALITY</span>
+      <strong>↑ 3.4x</strong>
+      <p>more consistent sessions than before structured coaching</p>
+    </article>
+    <article class="co-result-stat co-result-dark">
+      <span>THE REAL GOAL</span>
+      <strong>0<br>guessing</strong>
+      <p>every workout and nutrition target has a purpose</p>
+    </article>
+    <article class="co-result-wide">
+      <div>
+        <span>YOUR PROGRESS</span>
+        <h3>More strength. Better habits. A body you trust.</h3>
+      </div>
+      <button onclick="coGo('apply')">Start Your Plan <span>↗</span></button>
+    </article>
+  </section>
+</section>
+
+<section class="co-page" id="apply">
+  <div class="co-apply-wrap">
+    <div class="co-apply-copy">
+      <p class="co-kicker"><span class="co-dot"></span> APPLICATION</p>
+      <h2>Let’s see if<br>we are a fit.</h2>
+      <p>
+        This is the first step. Tell me where you are, what you want, and what has been getting in the way.
+      </p>
+      <div class="co-apply-note">
+        <span>✦</span>
+        <p><b>This is a test form.</b><br>Submitting confirms the page JavaScript is working.</p>
+      </div>
+    </div>
+
+    <form class="co-form" onsubmit="coSubmit(event)">
+      <div class="co-field-row">
+        <label>NAME<input required="" placeholder="Your full name"></label>
+        <label>EMAIL<input required="" type="email" placeholder="you@email.com"></label>
+      </div>
+      <div class="co-field-row">
+        <label>PHONE<input required="" placeholder="Phone number"></label>
+        <label>PRIMARY GOAL
+          <select required="">
+            <option value="">Select one</option>
+            <option>Lose fat</option>
+            <option>Build muscle</option>
+            <option>Get stronger</option>
+            <option>Improve conditioning</option>
+            <option>Build better habits</option>
+          </select>
+        </label>
+      </div>
+      <label>WHAT DO YOU NEED HELP WITH?
+        <textarea placeholder="Tell me what you have tried, what has not worked, and what you want to achieve."></textarea>
+      </label>
+      <button type="submit" class="co-submit">Submit Application <span>↗</span></button>
+      <p class="co-form-footnote">Your information stays private. No spam. No pressure.</p>
+    </form>
+  </div>
+</section>
+```
+
+  </main>
+
+  <footer class="co-footer">
+    <div><b>COACH O</b><span>PERFORMANCE COACHING</span></div>
+    <p>TRAIN WITH PURPOSE. LIVE WITH CONFIDENCE.</p>
+    <span>© 2026</span>
+  </footer>
+</div></div>
+        <script>function coGo(id) {
+    var pages = document.querySelectorAll('#coachOExperience .co-page');
+    pages.forEach(function(page) {
+      page.classList.remove('active');
+    });
+
+    var next = document.getElementById(id);
+    if (next) next.classList.add('active');
+
+    var menu = document.getElementById('coLinks');
+    if (menu) menu.classList.remove('open');
+
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function coMenu() {
+    var menu = document.getElementById('coLinks');
+    if (menu) menu.classList.toggle('open');
+  }
+
+  function coSubmit(event) {
+    event.preventDefault();
+
+    var form = event.target;
+    var button = form.querySelector('.co-submit');
+    var original = button.innerHTML;
+
+    button.innerHTML = 'Application Sent <span>✓</span>';
+    button.disabled = true;
+    button.style.background = '#2fbe72';
+
+    setTimeout(function() {
+      alert('Test complete — the form and JavaScript are working.');
+      form.reset();
+      button.innerHTML = original;
+      button.disabled = false;
+      button.style.background = '';
+    }, 700);
+  }</script>
+        
+      
+    
+      
+      
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    </body></html>

@@ -1,0 +1,556 @@
+=== SCENARIO A: client onboarding (real mode) ===
+signup mp_e2e_client_mrjqp35l: {"ok":true,"status":200,"error":null,"hasUser":true}
+A role card user clicked: true
+[server:err] [email-events] Account Created:profile Klaviyo API request failed (401)
+[server:err] [email-events] Lead Nurture Channel Enrolled:profile Klaviyo API request failed (401)
+[server:err] [email-events] Lead Nurture Channel Enrolled:event Klaviyo API request failed (401)
+[server:err] [email-events] Account Created:event Klaviyo API request failed (401)
+[A] ctx heading="Create your account" hit=ellipse.[object SVGAnimatedString]
+[A] step 0: click "[path:user] I'm a Client Join a trainer, gym, or build your workout on your own."
+[A] step 1: click ""
+[A] step 2: click "[path:trainer] I'm a Trainer Manage clients and generate plans."
+[A] step 3: click "CONTINUE"
+[A] step 4: click "CONTINUE"
+[A dialog] Choose or enter the gym/company workspace you want to join.
+[A] ctx heading="Create your account" hit=BUTTON.entry-filter-chip 
+[A] step 5: click "Private training studio"
+[A] step 6: click "CONTINUE"
+[A dialog] Choose or enter the gym/company workspace you want to join.
+[A] step 7: click "Request a Gym"
+[A] step 8: click "CONTINUE"
+[A] step 9: click "×"
+[A] ctx heading="Create your account" hit=BUTTON.bm-cta
+[A] step 10: click "CONTINUE"
+[A dialog] Choose or enter the gym/company workspace you want to join.
+[A] step 11: click "All"
+[A] step 12: click "CONTINUE"
+[A dialog] Choose or enter the gym/company workspace you want to join.
+[A] step 13: click "Online coaching company"
+[A] step 14: click "CONTINUE"
+[A dialog] Choose or enter the gym/company workspace you want to join.
+[A] ctx heading="Create your account" hit=BUTTON.entry-filter-chip 
+[A] step 15: click "Private training studio"
+[A] step 16: click "CONTINUE"
+[A dialog] Choose or enter the gym/company workspace you want to join.
+[A] step 17: click "Request a Gym"
+[A] step 18: click "CONTINUE"
+[A] step 19: click "Commercial gym"
+[A] ctx heading="Create your account" hit=DIV.entry-field full
+[A] step 20: click "CONTINUE"
+[A] step 21: click "Online coaching company"
+[A] step 22: click "CONTINUE"
+[A] step 23: STALLING — candidates: ["","All","Commercial gym","Online coaching company","* Private training studio","Request a Gym","×","Cancel","Submit for Review","CONTINUE"]
+[A] step 23: click "Request a Gym"
+[A] step 24: click "CONTINUE"
+[A] ctx heading="Create your account" hit=BUTTON.entry-request-close
+[A] step 25: click "×"
+[A] step 26: click "CONTINUE"
+[A dialog] Choose or enter the gym/company workspace you want to join.
+[A] step 27: click "Request a Gym"
+[A] step 28: click "CONTINUE"
+[A] step 29: click "Submit for Review"
+[A] ctx heading="Create your account" hit=INPUT.
+[A] step 30: click "CONTINUE"
+[A] step 31: click ""
+[A] step 32: click "CONTINUE"
+[A] step 33: STALLING — candidates: ["","All","Commercial gym","Online coaching company","* Private training studio","Request a Gym","×","Cancel","Submit for Review","CONTINUE"]
+[A] step 33: click "All"
+[A] step 34: click "CONTINUE"
+[A] ctx heading="Create your account" hit=INPUT.
+[A] step 35: click "Commercial gym"
+[A] step 36: click "CONTINUE"
+[A] step 37: click "Online coaching company"
+[A] step 38: click "CONTINUE"
+[A] step 39: click "Request a Gym"
+[A] ctx heading="Create your account" hit=INPUT.
+[A] step 40: click "CONTINUE"
+[A] step 41: click "×"
+[A] step 42: click "CONTINUE"
+[A dialog] Choose or enter the gym/company workspace you want to join.
+[A] step 43: click "Commercial gym"
+[A] step 44: click "CONTINUE"
+[A dialog] Choose or enter the gym/company workspace you want to join.
+[A] ctx heading="Create your account" hit=BUTTON.entry-filter-chip 
+[A] step 45: click "Private training studio"
+[A] step 46: click "CONTINUE"
+[A dialog] Choose or enter the gym/company workspace you want to join.
+[A] step 47: click "Request a Gym"
+[A] step 48: click "CONTINUE"
+[A] step 49: click "All"
+[A] ctx heading="Create your account" hit=DIV.entry-field full
+[A] step 50: click "CONTINUE"
+[A] step 51: click "Commercial gym"
+[A] step 52: click "CONTINUE"
+[A] step 53: STALLING — candidates: ["","All","Commercial gym","Online coaching company","* Private training studio","Request a Gym","×","Cancel","Submit for Review","CONTINUE"]
+[A] step 53: click "Online coaching company"
+[A] step 54: click "CONTINUE"
+[A] ctx heading="Create your account" hit=INPUT.
+[A] step 55: click "Request a Gym"
+[A] step 56: click "CONTINUE"
+[A] step 57: click "×"
+[A] step 58: click "CONTINUE"
+[A dialog] Choose or enter the gym/company workspace you want to join.
+[A] step 59: click ""
+[A] ctx heading="Create your account" hit=BUTTON.bm-cta
+[A] step 60: click "CONTINUE"
+[A] step 61: click "CONTINUE"
+[A dialog] Choose or enter the gym/company workspace you want to join.
+[A] step 62: click "All"
+[A] step 63: click "CONTINUE"
+[A dialog] Choose or enter the gym/company workspace you want to join.
+[A] step 64: click "Online coaching company"
+[A] ctx heading="Create your account" hit=BUTTON.bm-cta
+[A] step 65: click "CONTINUE"
+[A dialog] Choose or enter the gym/company workspace you want to join.
+[A] step 66: click "Private training studio"
+[A] step 67: click "CONTINUE"
+[A dialog] Choose or enter the gym/company workspace you want to join.
+[A] step 68: click "Request a Gym"
+[A] step 69: click "CONTINUE"
+[A] ctx heading="Create your account" hit=INPUT.
+[A] step 70: click "Online coaching company"
+[A] step 71: click "CONTINUE"
+[A] step 72: click "Request a Gym"
+[A] step 73: click "CONTINUE"
+[A] step 74: STALLING — candidates: ["","All","Commercial gym","Online coaching company","* Private training studio","Request a Gym","×","Cancel","Submit for Review","CONTINUE"]
+[A] step 74: click "×"
+[A] ctx heading="Create your account" hit=BUTTON.bm-cta
+[A] step 75: click "CONTINUE"
+[A dialog] Choose or enter the gym/company workspace you want to join.
+[A] step 76: click "Online coaching company"
+[A] step 77: click "CONTINUE"
+[A dialog] Choose or enter the gym/company workspace you want to join.
+[A] step 78: click "Request a Gym"
+[A] step 79: click "CONTINUE"
+[A] ctx heading="Create your account" hit=DIV.entry-request-head
+[A] step 80: click ""
+[A] step 81: click "CONTINUE"
+[A] step 82: click "All"
+[A] step 83: click "CONTINUE"
+[A] step 84: STALLING — candidates: ["","All","Commercial gym","* Online coaching company","Private training studio","Request a Gym","×","Cancel","Submit for Review","CONTINUE"]
+[A] step 84: click "Commercial gym"
+[A] ctx heading="Create your account" hit=DIV.entry-field full
+[A] step 85: click "CONTINUE"
+[A] step 86: click "Private training studio"
+[A] step 87: click "CONTINUE"
+[A] step 88: click "Request a Gym"
+[A] step 89: click "CONTINUE"
+[A] ctx heading="Create your account" hit=BUTTON.entry-request-close
+[A] step 90: click "×"
+[A] step 91: click "CONTINUE"
+[A dialog] Choose or enter the gym/company workspace you want to join.
+[A] step 92: click "All"
+[A] step 93: click "CONTINUE"
+[A dialog] Choose or enter the gym/company workspace you want to join.
+[A] step 94: click "Online coaching company"
+[A] ctx heading="Create your account" hit=BUTTON.bm-cta
+[A] step 95: click "CONTINUE"
+[A dialog] Choose or enter the gym/company workspace you want to join.
+[A] step 96: click "Private training studio"
+[A] step 97: click "CONTINUE"
+[A dialog] Choose or enter the gym/company workspace you want to join.
+[A] step 98: click "Request a Gym"
+[A] step 99: click "CONTINUE"
+[A] ctx heading="Create your account" hit=LABEL.
+[A] step 100: click "Commercial gym"
+[A] step 101: click "CONTINUE"
+[A] step 102: click "Online coaching company"
+[A] step 103: click "CONTINUE"
+[A] step 104: STALLING — candidates: ["","All","Commercial gym","Online coaching company","* Private training studio","Request a Gym","×","Cancel","Submit for Review","CONTINUE"]
+[A] step 104: click "Request a Gym"
+[A] ctx heading="Create your account" hit=DIV.entry-field full
+[A] step 105: click "CONTINUE"
+[A] step 106: click "×"
+[A] step 107: click "CONTINUE"
+[A dialog] Choose or enter the gym/company workspace you want to join.
+[A] step 108: click "Request a Gym"
+[A] step 109: click "CONTINUE"
+[A] ctx heading="Create your account" hit=LABEL.
+[A] step 110: click "Submit for Review"
+[A] step 111: click "CONTINUE"
+[A] step 112: click ""
+[A] step 113: click "CONTINUE"
+[A] step 114: STALLING — candidates: ["","All","Commercial gym","Online coaching company","* Private training studio","Request a Gym","×","Cancel","Submit for Review","CONTINUE"]
+[A] step 114: click "All"
+[A] ctx heading="Create your account" hit=INPUT.
+[A] step 115: click "CONTINUE"
+[A] step 116: click "Commercial gym"
+[A] step 117: click "CONTINUE"
+[A] step 118: click "Online coaching company"
+[A] step 119: click "CONTINUE"
+[A] ctx heading="Create your account" hit=DIV.entry-field full
+[A] step 120: click "Request a Gym"
+[A] step 121: click "CONTINUE"
+[A] step 122: click "×"
+[A] step 123: click "CONTINUE"
+[A dialog] Choose or enter the gym/company workspace you want to join.
+[A] step 124: click "Commercial gym"
+[A] ctx heading="Create your account" hit=BUTTON.bm-cta
+[A] step 125: click "CONTINUE"
+[A dialog] Choose or enter the gym/company workspace you want to join.
+[A] step 126: click "Private training studio"
+[A] step 127: click "CONTINUE"
+[A dialog] Choose or enter the gym/company workspace you want to join.
+[A] step 128: click "Request a Gym"
+[A] step 129: click "CONTINUE"
+[A] ctx heading="Create your account" hit=DIV.entry-request-body
+[A] step 130: click "All"
+[A] step 131: click "CONTINUE"
+[A] step 132: click "Commercial gym"
+[A] step 133: click "CONTINUE"
+[A] step 134: STALLING — candidates: ["","All","Commercial gym","Online coaching company","* Private training studio","Request a Gym","×","Cancel","Submit for Review","CONTINUE"]
+[A] step 134: click "Online coaching company"
+[A] ctx heading="Create your account" hit=DIV.entry-field full
+[A] step 135: click "CONTINUE"
+[A] step 136: click "Request a Gym"
+[A] step 137: click "CONTINUE"
+[A] step 138: click "×"
+[A] step 139: click "CONTINUE"
+[A dialog] Choose or enter the gym/company workspace you want to join.
+[A] ctx heading="Create your account" hit=svg.[object SVGAnimatedString]
+[A] step 140: click ""
+[A] step 141: click "CONTINUE"
+[A] step 142: click "CONTINUE"
+[A dialog] Choose or enter the gym/company workspace you want to join.
+[A] step 143: click "All"
+[A] step 144: click "CONTINUE"
+[A dialog] Choose or enter the gym/company workspace you want to join.
+[A] ctx heading="Create your account" hit=BUTTON.entry-filter-chip 
+[A] step 145: click "Online coaching company"
+[A] step 146: click "CONTINUE"
+[A dialog] Choose or enter the gym/company workspace you want to join.
+[A] step 147: click "Private training studio"
+[A] step 148: click "CONTINUE"
+[A dialog] Choose or enter the gym/company workspace you want to join.
+[A] step 149: click "Request a Gym"
+[A] ctx heading="Create your account" hit=DIV.entry-field full
+[A] step 150: click "CONTINUE"
+[A] step 151: click "Online coaching company"
+[A] step 152: click "CONTINUE"
+[A] step 153: click "Request a Gym"
+[A] step 154: click "CONTINUE"
+[A] step 155: STALLING — candidates: ["","All","Commercial gym","Online coaching company","* Private training studio","Request a Gym","×","Cancel","Submit for Review","CONTINUE"]
+[A] ctx heading="Create your account" hit=BUTTON.entry-request-close
+[A] step 155: click "×"
+[A] step 156: click "CONTINUE"
+[A dialog] Choose or enter the gym/company workspace you want to join.
+[A] step 157: click "Online coaching company"
+[A] step 158: click "CONTINUE"
+[A dialog] Choose or enter the gym/company workspace you want to join.
+[A] step 159: click "Request a Gym"
+[A] ctx heading="Create your account" hit=DIV.entry-field full
+[A] step 160: click "CONTINUE"
+[A] step 161: click ""
+[A] step 162: click "CONTINUE"
+[A] step 163: click "All"
+[A] step 164: click "CONTINUE"
+[A] step 165: STALLING — candidates: ["","All","Commercial gym","* Online coaching company","Private training studio","Request a Gym","×","Cancel","Submit for Review","CONTINUE"]
+[A] ctx heading="Create your account" hit=LABEL.
+[A] step 165: click "Commercial gym"
+[A] step 166: click "CONTINUE"
+[A] step 167: click "Private training studio"
+[A] step 168: click "CONTINUE"
+[A] step 169: click "Request a Gym"
+[A] ctx heading="Create your account" hit=DIV.entry-field full
+[A] step 170: click "CONTINUE"
+[A] step 171: click "×"
+[A] step 172: click "CONTINUE"
+[A dialog] Choose or enter the gym/company workspace you want to join.
+[A] step 173: click "All"
+[A] step 174: click "CONTINUE"
+[A dialog] Choose or enter the gym/company workspace you want to join.
+[A] ctx heading="Create your account" hit=BUTTON.entry-filter-chip 
+[A] step 175: click "Online coaching company"
+[A] step 176: click "CONTINUE"
+[A dialog] Choose or enter the gym/company workspace you want to join.
+[A] step 177: click "Private training studio"
+[A] step 178: click "CONTINUE"
+[A dialog] Choose or enter the gym/company workspace you want to join.
+[A] step 179: click "Request a Gym"
+[A] ctx heading="Create your account" hit=DIV.entry-field full
+[A] step 180: click "CONTINUE"
+[A] step 181: click "Commercial gym"
+[A] step 182: click "CONTINUE"
+[A] step 183: click "Online coaching company"
+[A] step 184: click "CONTINUE"
+[A] step 185: STALLING — candidates: ["","All","Commercial gym","Online coaching company","* Private training studio","Request a Gym","×","Cancel","Submit for Review","CONTINUE"]
+[A] ctx heading="Create your account" hit=INPUT.
+[A] step 185: click "Request a Gym"
+[A] step 186: click "CONTINUE"
+[A] step 187: click "×"
+[A] step 188: click "CONTINUE"
+[A dialog] Choose or enter the gym/company workspace you want to join.
+[A] step 189: click "Request a Gym"
+[A] ctx heading="Create your account" hit=DIV.entry-field full
+[A] step 190: click "CONTINUE"
+[A] step 191: click "Submit for Review"
+[A] step 192: click "CONTINUE"
+[A] step 193: click ""
+[A] step 194: click "CONTINUE"
+[A] step 195: STALLING — candidates: ["","All","Commercial gym","Online coaching company","* Private training studio","Request a Gym","×","Cancel","Submit for Review","CONTINUE"]
+[A] ctx heading="Create your account" hit=DIV.entry-request-body
+[A] step 195: click "All"
+[A] step 196: click "CONTINUE"
+[A] step 197: click "Commercial gym"
+[A] step 198: click "CONTINUE"
+[A] step 199: click "Online coaching company"
+[A] WALK exhausted maxSteps
+A localStorage: {"ode_meal_program_plan_v1":null,"ode_meal_plan_snapshot_v1":null,"ode_meal_picks_v1":null,"ode_training_intake_v2":null,"ode_training_autobuild_v1":null,"ode_identity_profile_v1":null,"ovIdentityStats":86}
+A /api/groceries/latest: {"ok":true,"hasList":false,"notes":null}
+=== SCENARIO B: trainer onboarding (real mode) ===
+signup mp_e2e_trainer_mrjqp35l: {"ok":true,"status":200,"error":null,"hasUser":true}
+[server:err] [email-events] Account Created:profile Klaviyo API request failed (401)
+[server:err] [email-events] Lead Nurture Channel Enrolled:profile Klaviyo API request failed (401)
+[server:err] [email-events] Account Created:event Klaviyo API request failed (401)
+[server:err] [email-events] Lead Nurture Channel Enrolled:event Klaviyo API request failed (401)
+B role card trainer clicked: true
+[B] ctx heading="Create your account" hit=DIV.preloader
+[B] step 0: click "CONTINUE"
+[B] step 1: click ""
+[B] step 2: click "CONTINUE"
+[B] step 3: click "All"
+[B] step 4: click "CONTINUE"
+[B] step 5: STALLING — candidates: ["","All","Commercial gym","Online coaching company","* Private training studio","Request a Gym","×","Cancel","Submit for Review","CONTINUE"]
+[B] ctx heading="Create your account" hit=LABEL.
+[B] step 5: click "Commercial gym"
+[B] step 6: click "CONTINUE"
+[B] step 7: click "Online coaching company"
+[B] step 8: click "CONTINUE"
+[B] step 9: click "Request a Gym"
+[B] ctx heading="Create your account" hit=DIV.entry-field full
+[B] step 10: click "CONTINUE"
+[B] step 11: click "×"
+[B] step 12: click "CONTINUE"
+[B dialog] Choose or enter the gym/company workspace you want to join.
+[B] step 13: click "All"
+[B] step 14: click "CONTINUE"
+[B dialog] Choose or enter the gym/company workspace you want to join.
+[B] ctx heading="Create your account" hit=BUTTON.entry-filter-chip 
+[B] step 15: click "Online coaching company"
+[B] step 16: click "CONTINUE"
+[B dialog] Choose or enter the gym/company workspace you want to join.
+[B] step 17: click "Private training studio"
+[B] step 18: click "CONTINUE"
+[B dialog] Choose or enter the gym/company workspace you want to join.
+[B] step 19: click "Request a Gym"
+[B] ctx heading="Create your account" hit=DIV.entry-field full
+[B] step 20: click "CONTINUE"
+[B] step 21: click "Commercial gym"
+[B] step 22: click "CONTINUE"
+[B] step 23: click "Online coaching company"
+[B] step 24: click "CONTINUE"
+[B] step 25: STALLING — candidates: ["","All","Commercial gym","Online coaching company","* Private training studio","Request a Gym","×","Cancel","Submit for Review","CONTINUE"]
+[B] ctx heading="Create your account" hit=INPUT.
+[B] step 25: click "Request a Gym"
+[B] step 26: click "CONTINUE"
+[B] step 27: click "×"
+[B] step 28: click "CONTINUE"
+[B dialog] Choose or enter the gym/company workspace you want to join.
+[B] step 29: click "Request a Gym"
+[B] ctx heading="Create your account" hit=DIV.entry-field full
+[B] step 30: click "CONTINUE"
+[B] step 31: click "Submit for Review"
+[B] step 32: click "CONTINUE"
+[B] step 33: click ""
+[B] step 34: click "CONTINUE"
+[B] step 35: STALLING — candidates: ["","All","Commercial gym","Online coaching company","* Private training studio","Request a Gym","×","Cancel","Submit for Review","CONTINUE"]
+[B] ctx heading="Create your account" hit=DIV.entry-request-body
+[B] step 35: click "All"
+[B] step 36: click "CONTINUE"
+[B] step 37: click "Commercial gym"
+[B] step 38: click "CONTINUE"
+[B] step 39: click "Online coaching company"
+[B] ctx heading="Create your account" hit=INPUT.
+[B] step 40: click "CONTINUE"
+[B] step 41: click "Request a Gym"
+[B] step 42: click "CONTINUE"
+[B] step 43: click "×"
+[B] step 44: click "CONTINUE"
+[B dialog] Choose or enter the gym/company workspace you want to join.
+[B] ctx heading="Create your account" hit=BUTTON.entry-filter-chip 
+[B] step 45: click "Commercial gym"
+[B] step 46: click "CONTINUE"
+[B dialog] Choose or enter the gym/company workspace you want to join.
+[B] step 47: click "Private training studio"
+[B] step 48: click "CONTINUE"
+[B dialog] Choose or enter the gym/company workspace you want to join.
+[B] step 49: click "Request a Gym"
+[B] ctx heading="Create your account" hit=DIV.entry-field full
+[B] step 50: click "CONTINUE"
+[B] step 51: click "All"
+[B] step 52: click "CONTINUE"
+[B] step 53: click "Commercial gym"
+[B] step 54: click "CONTINUE"
+[B] step 55: STALLING — candidates: ["","All","Commercial gym","Online coaching company","* Private training studio","Request a Gym","×","Cancel","Submit for Review","CONTINUE"]
+[B] ctx heading="Create your account" hit=INPUT.
+[B] step 55: click "Online coaching company"
+[B] step 56: click "CONTINUE"
+[B] step 57: click "Request a Gym"
+[B] step 58: click "CONTINUE"
+[B] step 59: click "×"
+[B] ctx heading="Create your account" hit=BUTTON.bm-cta
+[B] step 60: click "CONTINUE"
+[B dialog] Choose or enter the gym/company workspace you want to join.
+[B] step 61: click ""
+[B] step 62: click "CONTINUE"
+[B] step 63: click "CONTINUE"
+[B dialog] Choose or enter the gym/company workspace you want to join.
+[B] step 64: click "All"
+[B] ctx heading="Create your account" hit=BUTTON.bm-cta
+[B] step 65: click "CONTINUE"
+[B dialog] Choose or enter the gym/company workspace you want to join.
+[B] step 66: click "Online coaching company"
+[B] step 67: click "CONTINUE"
+[B dialog] Choose or enter the gym/company workspace you want to join.
+[B] step 68: click "Private training studio"
+[B] step 69: click "CONTINUE"
+[B dialog] Choose or enter the gym/company workspace you want to join.
+[B] ctx heading="Create your account" hit=BUTTON.entry-request-link
+[B] step 70: click "Request a Gym"
+[B] step 71: click "CONTINUE"
+[B] step 72: click "Online coaching company"
+[B] step 73: click "CONTINUE"
+[B] step 74: click "Request a Gym"
+[B] ctx heading="Create your account" hit=DIV.entry-field full
+[B] step 75: click "CONTINUE"
+[B] step 76: STALLING — candidates: ["","All","Commercial gym","Online coaching company","* Private training studio","Request a Gym","×","Cancel","Submit for Review","CONTINUE"]
+[B] step 76: click "×"
+[B] step 77: click "CONTINUE"
+[B dialog] Choose or enter the gym/company workspace you want to join.
+[B] step 78: click "Online coaching company"
+[B] step 79: click "CONTINUE"
+[B dialog] Choose or enter the gym/company workspace you want to join.
+[B] ctx heading="Create your account" hit=BUTTON.entry-request-link
+[B] step 80: click "Request a Gym"
+[B] step 81: click "CONTINUE"
+[B] step 82: click ""
+[B] step 83: click "CONTINUE"
+[B] step 84: click "All"
+[B] ctx heading="Create your account" hit=DIV.entry-field full
+[B] step 85: click "CONTINUE"
+[B] step 86: STALLING — candidates: ["","All","Commercial gym","* Online coaching company","Private training studio","Request a Gym","×","Cancel","Submit for Review","CONTINUE"]
+[B] step 86: click "Commercial gym"
+[B] step 87: click "CONTINUE"
+[B] step 88: click "Private training studio"
+[B] step 89: click "CONTINUE"
+[B] ctx heading="Create your account" hit=INPUT.
+[B] step 90: click "Request a Gym"
+[B] step 91: click "CONTINUE"
+[B] step 92: click "×"
+[B] step 93: click "CONTINUE"
+[B dialog] Choose or enter the gym/company workspace you want to join.
+[B] step 94: click "All"
+[B] ctx heading="Create your account" hit=BUTTON.bm-cta
+[B] step 95: click "CONTINUE"
+[B dialog] Choose or enter the gym/company workspace you want to join.
+[B] step 96: click "Online coaching company"
+[B] step 97: click "CONTINUE"
+[B dialog] Choose or enter the gym/company workspace you want to join.
+[B] step 98: click "Private training studio"
+[B] step 99: click "CONTINUE"
+[B dialog] Choose or enter the gym/company workspace you want to join.
+[B] ctx heading="Create your account" hit=BUTTON.entry-request-link
+[B] step 100: click "Request a Gym"
+[B] step 101: click "CONTINUE"
+[B] step 102: click "Commercial gym"
+[B] step 103: click "CONTINUE"
+[B] step 104: click "Online coaching company"
+[B] ctx heading="Create your account" hit=DIV.entry-field full
+[B] step 105: click "CONTINUE"
+[B] step 106: STALLING — candidates: ["","All","Commercial gym","Online coaching company","* Private training studio","Request a Gym","×","Cancel","Submit for Review","CONTINUE"]
+[B] step 106: click "Request a Gym"
+[B] step 107: click "CONTINUE"
+[B] step 108: click "×"
+[B] step 109: click "CONTINUE"
+[B dialog] Choose or enter the gym/company workspace you want to join.
+[B] ctx heading="Create your account" hit=BUTTON.entry-request-link
+[B] step 110: click "Request a Gym"
+[B] step 111: click "CONTINUE"
+[B] step 112: click "Submit for Review"
+[B] step 113: click "CONTINUE"
+[B] step 114: click ""
+[B] ctx heading="Create your account" hit=INPUT.
+[B] step 115: click "CONTINUE"
+[B] step 116: STALLING — candidates: ["","All","Commercial gym","Online coaching company","* Private training studio","Request a Gym","×","Cancel","Submit for Review","CONTINUE"]
+[B] step 116: click "All"
+[B] step 117: click "CONTINUE"
+[B] step 118: click "Commercial gym"
+[B] step 119: click "CONTINUE"
+[B] ctx heading="Create your account" hit=LABEL.
+[B] step 120: click "Online coaching company"
+[B] step 121: click "CONTINUE"
+[B] step 122: click "Request a Gym"
+[B] step 123: click "CONTINUE"
+[B] step 124: click "×"
+[B] ctx heading="Create your account" hit=BUTTON.bm-cta
+[B] step 125: click "CONTINUE"
+[B dialog] Choose or enter the gym/company workspace you want to join.
+[B] step 126: click "Commercial gym"
+[B] step 127: click "CONTINUE"
+[B dialog] Choose or enter the gym/company workspace you want to join.
+[B] step 128: click "Private training studio"
+[B] step 129: click "CONTINUE"
+[B dialog] Choose or enter the gym/company workspace you want to join.
+[B] ctx heading="Create your account" hit=BUTTON.entry-request-link
+[B] step 130: click "Request a Gym"
+[B] step 131: click "CONTINUE"
+[B] step 132: click "All"
+[B] step 133: click "CONTINUE"
+[B] step 134: click "Commercial gym"
+[B] ctx heading="Create your account" hit=DIV.entry-field full
+[B] step 135: click "CONTINUE"
+[B] step 136: STALLING — candidates: ["","All","Commercial gym","Online coaching company","* Private training studio","Request a Gym","×","Cancel","Submit for Review","CONTINUE"]
+[B] step 136: click "Online coaching company"
+[B] step 137: click "CONTINUE"
+[B] step 138: click "Request a Gym"
+[B] step 139: click "CONTINUE"
+[B] ctx heading="Create your account" hit=BUTTON.entry-request-close
+[B] step 140: click "×"
+[B] step 141: click "CONTINUE"
+[B dialog] Choose or enter the gym/company workspace you want to join.
+[B] step 142: click ""
+[B] step 143: click "CONTINUE"
+[B] step 144: click "CONTINUE"
+[B dialog] Choose or enter the gym/company workspace you want to join.
+[B] ctx heading="Create your account" hit=BUTTON.entry-filter-chip 
+[B] step 145: click "All"
+[B] step 146: click "CONTINUE"
+[B dialog] Choose or enter the gym/company workspace you want to join.
+[B] step 147: click "Online coaching company"
+[B] step 148: click "CONTINUE"
+[B dialog] Choose or enter the gym/company workspace you want to join.
+[B] step 149: click "Private training studio"
+[B] ctx heading="Create your account" hit=BUTTON.bm-cta
+[B] step 150: click "CONTINUE"
+[B dialog] Choose or enter the gym/company workspace you want to join.
+[B] step 151: click "Request a Gym"
+[B] step 152: click "CONTINUE"
+[B] step 153: click "Online coaching company"
+[B] step 154: click "CONTINUE"
+[B] ctx heading="Create your account" hit=INPUT.
+[B] step 155: click "Request a Gym"
+[B] step 156: click "CONTINUE"
+[B] step 157: STALLING — candidates: ["","All","Commercial gym","Online coaching company","* Private training studio","Request a Gym","×","Cancel","Submit for Review","CONTINUE"]
+[B] step 157: click "×"
+[B] step 158: click "CONTINUE"
+[B dialog] Choose or enter the gym/company workspace you want to join.
+[B] step 159: click "Online coaching company"
+[B] WALK exhausted maxSteps
+B localStorage: {"ode_meal_program_plan_v1":null,"ode_meal_plan_snapshot_v1":null}
+=== CREATED QA ACCOUNTS (for cleanup) === ["mp_e2e_client_mrjqp35l","mp_e2e_trainer_mrjqp35l"]
+=== RESULTS ===
+{
+  "clientSignup": true,
+  "clientWalkFinished": false,
+  "clientMealPlan": false,
+  "clientMealSnapshot": false,
+  "clientIntake": false,
+  "clientAutobuild": false,
+  "clientIdentity": true,
+  "clientGroceryOnAccount": false,
+  "trainerSignup": true,
+  "trainerWalkFinished": false,
+  "trainerMealPlan": false
+}
+E2E FAILED checks: ["clientWalkFinished","clientMealPlan","clientMealSnapshot","clientIntake","clientAutobuild","clientGroceryOnAccount","trainerMealPlan"]
+EXIT=1

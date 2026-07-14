@@ -1,0 +1,74 @@
+=== Phase 0: assemble dataset from parts === 
+part_00.txt: 2000 lines
+part_01.txt: 1000 lines
+part_01b.txt: 1000 lines
+part_02.txt: 1000 lines
+part_02b.txt: 1000 lines
+part_03.txt: 1000 lines
+part_03b.txt: 1000 lines
+part_04.txt: 2000 lines
+part_05.txt: 1000 lines
+part_05b.txt: 1000 lines
+part_06.txt: 1000 lines
+part_06b.txt: 1000 lines
+part_07.txt: 1000 lines
+part_07b.txt: 1000 lines
+part_08.txt: 1000 lines
+part_08b.txt: 1000 lines
+part_09.txt: 1000 lines
+part_09b.txt: 1000 lines
+part_10.txt: 1000 lines
+part_10b.txt: 1000 lines
+part_11.txt: 1000 lines
+part_11b.txt: 1000 lines
+part_12.txt: 1000 lines
+part_12b.txt: 1000 lines
+part_13.txt: 1000 lines
+part_13b.txt: 1000 lines
+part_14.txt: 1000 lines
+part_14b.txt: 1000 lines
+part_15.txt: 1241 lines
+TOTAL LINES: 31241 (expected 31241)
+WROTE D:\Jasons Web\data\riseforit_meal_data.json (978999 bytes, 978977 chars)
+PARSED OK: meals=75 ingredient_prices=216 states=51 metros=31 missingFields=0
+categories: {"Breakfast":15,"Chicken & Turkey":15,"Beef & Pork":15,"Fish & Seafood":15,"Vegetarian":10,"Snacks & Shakes":5}
+goals: {"bulk":36,"cut":39}
+=== Module load === 
+modules load OK, constants v1.0
+=== Phase 5: node --test === 
+✔ dataset integrity: 75 meals, 216 priced ingredients, 51 states (0.9374ms)
+✔ dataset integrity: every meal has the fields the program relies on (1.537ms)
+✔ MIRRORED constants still equal core/scoringConstants (drift guard) (0.6441ms)
+✔ BEST cut tier equals the scoring engine protein ceiling (single source of truth) (0.1121ms)
+✔ Mifflin known-answer: 30y male, 180 lb, 70 in (0.3212ms)
+✔ Mifflin sex constant: female = male - 166 at identical stats (0.1521ms)
+✔ cut calories respect the BMR floor and clamp band (0.1691ms)
+✔ protein tier table honored: BEST cut 2.2 g/kg, MINIMUM 1.6 g/kg, clamped 100-260 (0.1718ms)
+✔ bulk calories sit above maintenance, maintain equals maintenance (0.1791ms)
+✔ vegetarian excludes every beef/pork/poultry/fish meal (2.9015ms)
+✔ pescatarian allows fish but not poultry; no-red-meat blocks beef/pork only (7.5917ms)
+✔ allergies: fish allergy empties fish meals; "none" clears (4.6907ms)
+✔ slot pools match the discovery Q17 mapping sizes (2.2025ms)
+✔ plan shape: 7 days, ≥3 slots/day, portion multipliers in 0.5 steps within 0.5–2.0 (2.3022ms)
+✔ batching: each pick repeats no more than ceil(7 / picks-in-slot) times (0.8997ms)
+✔ dietary conflict after picking: meat picks get filtered and backfilled (Q22 rule) (1.0622ms)
+✔ generous budget: plan under budget, tier stays BEST, no reduction messages (0.7907ms)
+✔ impossible budget: plan still returned with an explicit gap (2.6227ms)
+✔ budget ladder order: variety reduction / swaps come before any tier drop (2.7186ms)
+✔ tier derivation: mid-tight budget never returns a HIGHER cost than the generous plan (1.8479ms)
+✔ tier override is respected and skips automatic tier drops (2.1904ms)
+✔ store comparison: three store totals, cheapest selected by plan total (0.4598ms)
+✔ store preference wins over cheapest (0.2949ms)
+✔ BEA location multiplier: CA plan costs more than AR for identical input (0.4545ms)
+✔ free pantry items are excluded from cost and listed separately (0.2861ms)
+✔ determinism: identical input produces a deep-equal plan (no randomness, no clock) (0.8824ms)
+✔ surprise picks are deterministic and within picker bounds (0.1741ms)
+ℹ tests 27
+ℹ suites 0
+ℹ pass 27
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 133.496
+EXITCODE=0 

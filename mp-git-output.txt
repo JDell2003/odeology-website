@@ -1,0 +1,35 @@
+=== fix commit === 
+warning: in the working copy of 'MEALPROGRAM_CHANGELOG.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'data/riseforit_meal_data.json', LF will be replaced by CRLF the next time Git touches it
+[main 678d2d3] fix(mealprogram): restore dataset byte-exact from source upload
+ 2 files changed, 13 insertions(+), 13 deletions(-)
+To https://github.com/JDell2003/odeology-website.git
+   fb40cd1..678d2d3  main -> main
+PUSH_EXITCODE=0 
+678d2d3 fix(mealprogram): restore dataset byte-exact from source upload
+fb40cd1 test(mealprogram): engine coverage
+3116336 feat(mealprogram): phase 4 output
+=== railway deploy status === 
+AUTH ok (PROJECT token) scoped to project perfect-smile env production
+TARGET  project= perfect-smile  env= production  service= RiseForIt
+  projectId= c8e0ce7d-8301-48f5-8059-97983b790e71
+  environmentId= d3ea5914-7744-4125-b7ec-04b8ffabf755
+  serviceId= 9db82e66-bcdc-4450-9826-eaa4cc68f96f
+  environments: production:d3ea5914
+  services: RiseForIt:9db82e66
+VARIABLE KEYS ( 28 ): ADMIN_EMAIL, ADMIN_PASSCODE, ADMIN_PASSWORD, ADMIN_USERNAME, APP_BASE_URL, DATABASE_URL, DEFAULT_TZ, FITBIT_SCOPES, MAILERLITE_API_TOKEN, RAILWAY_ENVIRONMENT, RAILWAY_ENVIRONMENT_ID, RAILWAY_ENVIRONMENT_NAME, RAILWAY_PRIVATE_DOMAIN, RAILWAY_PROJECT_ID, RAILWAY_PROJECT_NAME, RAILWAY_PUBLIC_DOMAIN, RAILWAY_SERVICE_ID, RAILWAY_SERVICE_NAME, RAILWAY_SERVICE_RISEFORIT_URL, RAILWAY_STATIC_URL, SCORING_ENGINE_V2, SERPAPI_KEY, STRIPE_PUBLISHABLE_KEY, STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET, USDA_API_KEY, YOUTUBE_API_KEY, YOUTUBE_CHANNEL_ID
+--- confirm-present ---
+   DATABASE_URL PRESENT
+   PUBLIC_BASE_URL *** MISSING ***
+   STRAVA_CLIENT_ID *** MISSING ***
+   STRAVA_CLIENT_SECRET *** MISSING ***
+   FITBIT_CLIENT_ID *** MISSING ***
+   FITBIT_CLIENT_SECRET *** MISSING ***
+--- to-set ---
+   SCORING_ENGINE_V2 = true -> want true (already)
+   DEFAULT_TZ (already correct)
+   FITBIT_SCOPES (already correct)
+DEPLOYMENTS: INITIALIZING@20:20:50(cda6e408) | SUCCESS@20:17:35(dc643824) | REMOVED@19:14:02(b0e66a83)
+--- filtered log lines ( INITIALIZING ) ---
+(no scoring/boot lines yet — may still be building)
+DONE 

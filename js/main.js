@@ -21905,11 +21905,23 @@ function injectNutritionLink(panel) {
 }
 
 /* ---- Launch gating -------------------------------------------------
-   Soft launch: trainers/clients only get the Website tab; every other
-   control-panel tab is hidden. The owner still sees everything, with a
+   Soft launch: clients get only the Website tab; every other control-panel
+   tab is hidden. Trainers additionally get their live business tools —
+   Clients, Consult Form Hits, Payments, and Calendar (see
+   LAUNCH_LIVE_TRAINER_IDS). The owner still sees everything, with a
    "Hidden" badge on each tab that's hidden from other users, so they can
    keep building. The client onboarding path is hidden the same way. */
 var LAUNCH_LIVE_HREFS = ['trainer-website.html'];
+// Trainer tabs that go live in the soft launch. These links only ever
+// render inside the trainer section (hidden from non-trainers), so
+// whitelisting them here exposes them to trainers only.
+var LAUNCH_LIVE_TRAINER_IDS = [
+    'control-trainer-website-hub-link',
+    'control-trainer-clients-link',
+    'control-trainer-consult-hits-link',
+    'control-trainer-payments-link',
+    'control-trainer-calendar-link'
+];
 function isLaunchOwner(user, meta) {
     // An owner impersonating a trainer should see the gated trainer view.
     if (meta && meta.impersonation && meta.impersonation.active) return false;
@@ -21960,8 +21972,9 @@ function applyLaunchGating(user, meta) {
         var href = String(link.getAttribute('href') || '').trim();
         var inAccount = !!link.closest('[data-auth-section]');
         var inOwnerSection = !!link.closest('#control-owner-section');
-        var isWebsite = link.id === 'control-trainer-website-hub-link' || LAUNCH_LIVE_HREFS.indexOf(href) >= 0;
-        // Account controls (sign in/out) and the live Website tab are never gated.
+        var isWebsite = LAUNCH_LIVE_TRAINER_IDS.indexOf(link.id) >= 0 || LAUNCH_LIVE_HREFS.indexOf(href) >= 0;
+        // Account controls (sign in/out) and the live trainer tabs (Website,
+        // Clients, Consult Form Hits, Payments, Calendar) are never gated.
         if (inAccount || isWebsite) {
             link.classList.remove('launch-hidden');
             setLaunchHiddenBadge(link, false);

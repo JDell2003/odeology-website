@@ -1,0 +1,6 @@
+auth.session_resolution_failed {
+  routeName: 'social.authenticated',
+  error: 'Database temporarily unavailable',
+  code: null,
+  fallback: 'service_unavailable'
+}

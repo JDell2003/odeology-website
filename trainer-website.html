@@ -11,73 +11,160 @@
     body.trainer-website-page {
       min-height: 100vh;
       background:
-        radial-gradient(circle at top left, rgba(207, 156, 72, 0.16), transparent 34%),
-        linear-gradient(180deg, #f6f2eb 0%, #f4f0ea 45%, #efe8dd 100%);
+        radial-gradient(120% 60% at 50% -10%, rgba(207, 156, 72, 0.18), transparent 60%),
+        linear-gradient(180deg, #f7f3ec 0%, #f2ece1 100%);
+      color: #241b0e;
     }
     .tw-wrap {
-      max-width: 1240px;
-      margin: calc(var(--navbar-height, 72px) + 24px) auto 48px;
+      max-width: 940px;
+      margin: calc(var(--navbar-height, 72px) + 26px) auto 56px;
       padding: 0 20px;
       display: grid;
-      gap: 16px;
+      gap: 18px;
     }
     .tw-wrap section { padding: 0; }
-    .tw-head .eyebrow { color: #a1751f; letter-spacing: .24em; font-weight: 900; font-size: 11px; text-transform: uppercase; margin: 0 0 4px; }
-    .tw-head h1 { margin: 0; color: #241b0e; font-size: clamp(1.7rem, 3.4vw, 2.4rem); letter-spacing: -0.04em; }
-    .tw-head p { margin: 4px 0 0; color: rgba(60, 48, 28, .6); font-weight: 700; font-size: .85rem; }
-    .tw-card { background: #fffdf7; border: 1px solid rgba(150, 110, 35, .22); border-radius: 18px; padding: 18px; box-shadow: 0 12px 28px rgba(120, 90, 20, .07); }
-    .tw-card h3 { margin: 0 0 4px; font-size: 13px; letter-spacing: .14em; text-transform: uppercase; color: #7a5312; }
-    .tw-card .tw-hint { margin: 0 0 14px; color: rgba(60, 48, 28, .55); font-weight: 600; font-size: 12.5px; }
-    /* share link */
-    .tw-share { font: 700 12px/1.5 "Space Grotesk", system-ui, sans-serif; color: rgba(60, 48, 28, .6); }
-    .tw-share a { color: #7a5312; font-weight: 800; text-decoration: underline; word-break: break-all; }
-    .tw-share button { margin-left: 8px; border: 1px solid rgba(185, 138, 43, .4); background: rgba(255, 253, 247, .9); border-radius: 999px; padding: 4px 12px; font: 800 10.5px/1 "Space Grotesk", system-ui, sans-serif; color: #7a5312; cursor: pointer; }
-    /* site url row */
-    .tw-url-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
-    .tw-url-row input { flex: 1 1 320px; padding: 12px 14px; font: 600 14px/1.4 "Space Grotesk", system-ui, sans-serif; color: #241b0e; background: #fdf8ec; border: 1.5px solid rgba(150, 110, 35, .3); border-radius: 12px; outline: none; }
-    .tw-url-row input:focus { border-color: #b98a2b; }
-    .tw-btn { border: 0; border-radius: 12px; padding: 12px 20px; font: 800 13px/1 "Space Grotesk", system-ui, sans-serif; cursor: pointer; background: #b98a2b; color: #fff; }
-    .tw-btn.is-ghost { background: transparent; border: 1.5px solid rgba(185, 138, 43, .45); color: #7a5312; }
-    .tw-btn:disabled { opacity: .5; cursor: default; }
-    /* preview */
-    .tw-preview-bar { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
-    .tw-toggle { display: inline-flex; border: 1.5px solid rgba(185, 138, 43, .4); border-radius: 999px; overflow: hidden; background: rgba(255, 253, 247, .9); }
-    .tw-toggle button { border: 0; background: transparent; padding: 9px 18px; font: 800 12px/1 "Space Grotesk", system-ui, sans-serif; color: #7a5312; cursor: pointer; }
-    .tw-toggle button.is-active { background: #b98a2b; color: #fff; }
-    .tw-frame-holder { display: grid; place-items: center; background: #efe6d4; border: 1px solid rgba(150, 110, 35, .2); border-radius: 14px; padding: 16px; min-height: 320px; }
-    .tw-frame { background: #fff; border-radius: 10px; box-shadow: 0 18px 44px rgba(40, 28, 8, .22); overflow: hidden; transition: width .3s ease, height .3s ease; }
+
+    /* ---------- header ---------- */
+    .tw-head {
+      display: flex; align-items: flex-end; justify-content: space-between;
+      gap: 16px; flex-wrap: wrap;
+    }
+    .tw-head .eyebrow { color: #b07f1e; letter-spacing: .26em; font-weight: 900; font-size: 10.5px; text-transform: uppercase; margin: 0 0 6px; }
+    .tw-head h1 { margin: 0; color: #241b0e; font: 900 clamp(1.9rem, 4vw, 2.6rem)/1.05 "Playfair Display", Georgia, serif; letter-spacing: -0.02em; }
+    .tw-head p { margin: 8px 0 0; color: rgba(60, 48, 28, .62); font-weight: 600; font-size: .9rem; max-width: 460px; line-height: 1.5; }
+    .tw-open-page {
+      flex: 0 0 auto; display: inline-flex; align-items: center; gap: 8px;
+      border: 0; border-radius: 999px; padding: 12px 22px; cursor: pointer;
+      background: linear-gradient(180deg, #d9a441, #b9782d);
+      color: #22160a; font: 900 13px/1 "Space Grotesk", system-ui, sans-serif;
+      letter-spacing: .02em; box-shadow: 0 12px 26px rgba(150, 100, 20, .28);
+      transition: transform .15s ease, box-shadow .15s ease, filter .15s ease;
+      text-decoration: none;
+    }
+    .tw-open-page:hover { transform: translateY(-2px); filter: brightness(1.06); box-shadow: 0 16px 32px rgba(150, 100, 20, .34); }
+    .tw-open-page svg { width: 16px; height: 16px; }
+
+    /* ---------- cards ---------- */
+    .tw-card {
+      background: #fffdf8;
+      border: 1px solid rgba(150, 110, 35, .16);
+      border-radius: 20px;
+      padding: 22px;
+      box-shadow: 0 1px 0 rgba(255,255,255,.7) inset, 0 16px 40px rgba(120, 90, 20, .08);
+    }
+    .tw-card-head { display: flex; align-items: center; gap: 10px; margin: 0 0 3px; }
+    .tw-card-head .tw-ic {
+      width: 32px; height: 32px; flex: 0 0 auto; border-radius: 9px;
+      display: grid; place-items: center;
+      background: linear-gradient(180deg, rgba(217,164,65,.22), rgba(185,120,45,.14));
+      color: #a5701a;
+    }
+    .tw-card-head .tw-ic svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
+    .tw-card h3 { margin: 0; font: 900 12px/1.2 "Space Grotesk", system-ui, sans-serif; letter-spacing: .16em; text-transform: uppercase; color: #6f4d12; }
+    .tw-card .tw-hint { margin: 8px 0 16px; color: rgba(60, 48, 28, .58); font-weight: 500; font-size: 13px; line-height: 1.5; }
+
+    /* ---------- share link ---------- */
+    .tw-share { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; font: 700 13px/1.5 "Space Grotesk", system-ui, sans-serif; color: rgba(60, 48, 28, .7); }
+    .tw-share a { color: #a5701a; font-weight: 800; text-decoration: none; word-break: break-all; padding: 6px 12px; background: rgba(217,164,65,.1); border-radius: 8px; }
+    .tw-share a:hover { text-decoration: underline; }
+    .tw-share button { border: 1px solid rgba(185, 138, 43, .38); background: #fffdf8; border-radius: 999px; padding: 6px 14px; font: 800 11px/1 "Space Grotesk", system-ui, sans-serif; color: #7a5312; cursor: pointer; }
+    .tw-share button:hover { background: rgba(217,164,65,.12); }
+
+    /* ---------- inputs & buttons ---------- */
+    .tw-url-row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+    .tw-url-row input {
+      flex: 1 1 320px; padding: 13px 15px; font: 600 14px/1.4 "Space Grotesk", system-ui, sans-serif;
+      color: #241b0e; background: #fbf5e8; border: 1.5px solid rgba(150, 110, 35, .24); border-radius: 12px; outline: none;
+      transition: border-color .15s ease, box-shadow .15s ease;
+    }
+    .tw-url-row input:focus { border-color: #b98a2b; box-shadow: 0 0 0 3px rgba(185,138,43,.14); }
+    .tw-btn {
+      border: 0; border-radius: 12px; padding: 13px 22px; font: 800 13px/1 "Space Grotesk", system-ui, sans-serif; cursor: pointer;
+      background: linear-gradient(180deg, #d9a441, #b9782d); color: #22160a;
+      box-shadow: 0 8px 18px rgba(150, 100, 20, .2); transition: transform .15s ease, filter .15s ease;
+    }
+    .tw-btn:hover { transform: translateY(-1px); filter: brightness(1.05); }
+    .tw-btn.is-ghost { background: #fffdf8; border: 1.5px solid rgba(185, 138, 43, .4); color: #7a5312; box-shadow: none; }
+    .tw-btn.is-ghost:hover { background: rgba(217,164,65,.1); }
+    .tw-btn:disabled { opacity: .5; cursor: default; transform: none; filter: none; }
+
+    /* ---------- preview ---------- */
+    .tw-preview-bar { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+    .tw-toggle { display: inline-flex; border: 1.5px solid rgba(185, 138, 43, .34); border-radius: 999px; overflow: hidden; background: #fbf5e8; }
+    .tw-toggle button { border: 0; background: transparent; padding: 9px 20px; font: 800 12px/1 "Space Grotesk", system-ui, sans-serif; color: #7a5312; cursor: pointer; }
+    .tw-toggle button.is-active { background: linear-gradient(180deg, #d9a441, #b9782d); color: #22160a; }
+    .tw-frame-holder {
+      display: grid; place-items: center;
+      background: repeating-linear-gradient(45deg, #efe6d4, #efe6d4 12px, #ece2ce 12px, #ece2ce 24px);
+      border: 1px solid rgba(150, 110, 35, .16); border-radius: 16px; padding: 18px; min-height: 340px;
+    }
+    .tw-frame { background: #fff; border-radius: 12px; box-shadow: 0 22px 50px rgba(40, 28, 8, .24); overflow: hidden; transition: width .3s ease, height .3s ease; }
     .tw-frame.is-desktop { width: 100%; height: 620px; }
-    .tw-frame.is-phone { width: 390px; max-width: 92vw; height: 700px; border-radius: 28px; border: 8px solid #241b0e; }
+    .tw-frame.is-phone { width: 380px; max-width: 92vw; height: 700px; border-radius: 30px; border: 9px solid #241b0e; }
     .tw-frame iframe { width: 100%; height: 100%; border: 0; display: block; }
-    .tw-frame-empty { display: grid; place-items: center; height: 100%; color: rgba(60, 48, 28, .5); font-weight: 700; font-size: 13.5px; padding: 20px; text-align: center; }
-    /* variants */
-    .tw-variant { border: 1px solid rgba(150, 110, 35, .25); border-radius: 14px; background: #fdf8ec; padding: 14px 16px; margin-bottom: 12px; }
-    .tw-variant-head { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 10px; }
-    .tw-variant-head input.tw-vlabel { flex: 1 1 180px; padding: 9px 12px; font: 800 13.5px/1.3 "Space Grotesk", system-ui, sans-serif; color: #241b0e; background: #fffdf7; border: 1.5px solid rgba(150, 110, 35, .3); border-radius: 10px; outline: none; }
+    .tw-frame-empty { display: grid; place-items: center; height: 100%; min-height: 300px; color: rgba(60, 48, 28, .5); font-weight: 700; font-size: 13.5px; padding: 20px; text-align: center; }
+
+    /* ---------- variants ---------- */
+    .tw-variant { border: 1px solid rgba(150, 110, 35, .2); border-radius: 16px; background: #fbf5e8; padding: 16px 18px; margin-bottom: 14px; }
+    .tw-variant-head { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 12px; }
+    .tw-variant-head input.tw-vlabel { flex: 1 1 180px; padding: 10px 13px; font: 800 13.5px/1.3 "Space Grotesk", system-ui, sans-serif; color: #241b0e; background: #fffdf8; border: 1.5px solid rgba(150, 110, 35, .24); border-radius: 10px; outline: none; }
     .tw-weight { display: inline-flex; align-items: center; gap: 6px; font: 800 12px/1 "Space Grotesk", system-ui, sans-serif; color: #7a5312; }
-    .tw-weight input { width: 64px; padding: 9px 8px; text-align: center; font: 800 13.5px/1 "Space Grotesk", system-ui, sans-serif; color: #241b0e; background: #fffdf7; border: 1.5px solid rgba(150, 110, 35, .3); border-radius: 10px; outline: none; }
-    .tw-vdel { margin-left: auto; border: 0; background: transparent; color: #a33; font: 800 12px/1 "Space Grotesk", system-ui, sans-serif; cursor: pointer; }
+    .tw-weight input { width: 66px; padding: 10px 8px; text-align: center; font: 800 13.5px/1 "Space Grotesk", system-ui, sans-serif; color: #241b0e; background: #fffdf8; border: 1.5px solid rgba(150, 110, 35, .24); border-radius: 10px; outline: none; }
+    .tw-vdel { margin-left: auto; border: 0; background: transparent; color: #b4453a; font: 800 12px/1 "Space Grotesk", system-ui, sans-serif; cursor: pointer; }
     .tw-q-row { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; }
-    .tw-q-row .tw-q-n { font: 800 11px/1 ui-monospace, monospace; color: #a1751f; width: 20px; text-align: right; }
-    .tw-q-row input { flex: 1; padding: 10px 12px; font: 600 13.5px/1.4 "Space Grotesk", system-ui, sans-serif; color: #241b0e; background: #fffdf7; border: 1.5px solid rgba(150, 110, 35, .3); border-radius: 10px; outline: none; }
-    .tw-q-row input:focus { border-color: #b98a2b; }
-    .tw-q-del { border: 0; background: transparent; color: #a33; font-size: 16px; cursor: pointer; line-height: 1; }
-    .tw-add-q { border: 1.5px dashed rgba(185, 138, 43, .5); background: transparent; border-radius: 10px; padding: 9px 14px; font: 800 12px/1 "Space Grotesk", system-ui, sans-serif; color: #7a5312; cursor: pointer; }
+    .tw-q-row .tw-q-n { font: 800 11px/1 ui-monospace, monospace; color: #b07f1e; width: 20px; text-align: right; }
+    .tw-q-row input { flex: 1; padding: 11px 13px; font: 600 13.5px/1.4 "Space Grotesk", system-ui, sans-serif; color: #241b0e; background: #fffdf8; border: 1.5px solid rgba(150, 110, 35, .24); border-radius: 10px; outline: none; }
+    .tw-q-row input:focus { border-color: #b98a2b; box-shadow: 0 0 0 3px rgba(185,138,43,.12); }
+    .tw-q-del { border: 0; background: transparent; color: #b4453a; font-size: 18px; cursor: pointer; line-height: 1; }
+    .tw-add-q { border: 1.5px dashed rgba(185, 138, 43, .5); background: transparent; border-radius: 10px; padding: 10px 15px; font: 800 12px/1 "Space Grotesk", system-ui, sans-serif; color: #7a5312; cursor: pointer; }
+    .tw-add-q:hover { background: rgba(217,164,65,.1); }
     .tw-split-bar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-top: 6px; }
     .tw-split-note { font: 700 12px/1.4 "Space Grotesk", system-ui, sans-serif; color: rgba(60, 48, 28, .6); }
-    .tw-split-note.is-bad { color: #a33; }
+    .tw-split-note.is-bad { color: #b4453a; }
     .tw-save-row { display: flex; gap: 10px; align-items: center; }
     .tw-saved-flash { font: 800 12px/1 "Space Grotesk", system-ui, sans-serif; color: #2f7a3d; opacity: 0; transition: opacity .3s ease; }
     .tw-saved-flash.is-on { opacity: 1; }
     .tw-gate { max-width: 520px; margin: 18vh auto; text-align: center; color: #241b0e; font-weight: 800; }
     @media (max-width: 700px) {
-      .tw-frame.is-desktop { height: 420px; }
+      .tw-head { align-items: flex-start; }
+      .tw-open-page { width: 100%; justify-content: center; }
+      .tw-frame.is-desktop { height: 440px; }
       .tw-frame.is-phone { height: 560px; }
     }
   </style>
 </head>
 <body class="trainer-website-page" data-require-auth="1">
   <div class="grain"></div>
+
+  <svg aria-hidden="true" class="icon-sprite">
+    <symbol id="icon-account" viewBox="0 0 24 24">
+      <path d="M4.75 5.75a1 1 0 0 1 1-1h6.5a1 1 0 0 1 1 1v2.5"></path>
+      <path d="M13.25 15.75v3a1 1 0 0 1-1 1h-6.5a1 1 0 0 1-1-1v-13"></path>
+      <path d="M15.5 12H7.5"></path>
+      <path d="m12 9.5 3.5 2.5-3.5 2.5"></path>
+    </symbol>
+    <symbol id="icon-calendar-check" viewBox="0 0 24 24">
+      <rect x="4.5" y="6.5" width="15" height="12" rx="2"></rect>
+      <path d="M9 4.5v3M15 4.5v3M8.75 12.5l2.25 2 4-4"></path>
+    </symbol>
+    <symbol id="icon-users" viewBox="0 0 24 24">
+      <circle cx="10" cy="9" r="2.5"></circle>
+      <path d="M5.5 16.5a4.5 4.5 0 0 1 9 0"></path>
+      <circle cx="16.5" cy="10.5" r="2"></circle>
+      <path d="M14.5 15a3.5 3.5 0 0 1 5 1.5"></path>
+    </symbol>
+    <symbol id="icon-book" viewBox="0 0 24 24">
+      <path d="M8 6.5h7.5a1 1 0 0 1 1 1v11l-3-2-3 2v-12a1 1 0 0 0-1-1H8a2.5 2.5 0 0 0-2.5 2.5v10.5"></path>
+    </symbol>
+    <symbol id="icon-folder" viewBox="0 0 24 24">
+      <path d="M4.5 7.5a2 2 0 0 1 2-2h4l2 2H17.5a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-11a2 2 0 0 1-2-2v-11Z"></path>
+    </symbol>
+    <symbol id="icon-chef" viewBox="0 0 24 24">
+      <path d="M8.5 10.5h7a3.5 3.5 0 0 0 0-7 4 4 0 0 0-3.5 2 3 3 0 0 0-5.5 2 3 3 0 0 0 2 3Z"></path>
+      <path d="M8 10.5h8v3.5a2 2 0 0 1-2 2H10a2 2 0 0 1-2-2v-3.5Z"></path>
+      <path d="M10 16v3.5M14 16v3.5"></path>
+    </symbol>
+  </svg>
 
   <nav class="navbar">
     <div class="navbar-container">
@@ -121,21 +208,30 @@
 
   <main id="tw-main" class="tw-wrap" hidden>
     <header class="tw-head">
-      <p class="eyebrow">Trainer &middot; Website</p>
-      <h1>Your website</h1>
-      <p>Peer into your site, share your link, and choose what visitors answer before they get in.</p>
+      <div>
+        <p class="eyebrow">Trainer &middot; Website</p>
+        <h1>Your website</h1>
+        <p>Peer into your site, share your link, and choose what visitors answer before they get in.</p>
+      </div>
+      <button class="tw-open-page" type="button" id="tw-open-mine" title="Open your live RiseForIt page in a new tab">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6"></path><path d="M10 14 21 3"></path><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path></svg>
+        Open my page
+      </button>
     </header>
 
     <section class="tw-card">
       <div class="tw-share" id="tw-share">
-        Link you attach to your videos:
+        <strong style="color:#6f4d12;">Link you attach to your videos:</strong>
         <a id="tw-share-link" href="#" target="_blank" rel="noopener"></a>
         <button type="button" id="tw-copy">Copy</button>
       </div>
     </section>
 
     <section class="tw-card">
-      <h3>Your site</h3>
+      <div class="tw-card-head">
+        <span class="tw-ic"><svg viewBox="0 0 24 24"><use href="#icon-folder"></use></svg></span>
+        <h3>Your site</h3>
+      </div>
       <p class="tw-hint">Paste your website address. Open jumps straight to it; the preview below peers into it.</p>
       <div class="tw-url-row">
         <input type="text" id="tw-site-url" placeholder="https://your-website.com" autocomplete="off">
@@ -146,7 +242,10 @@
 
     <section class="tw-card">
       <div class="tw-preview-bar">
-        <h3 style="margin:0;">Peer in</h3>
+        <div class="tw-card-head" style="margin:0;">
+          <span class="tw-ic"><svg viewBox="0 0 24 24"><use href="#icon-book"></use></svg></span>
+          <h3>Peer in</h3>
+        </div>
         <div class="tw-toggle" id="tw-view-toggle" style="margin-left:auto;">
           <button type="button" data-view="desktop" class="is-active">Desktop</button>
           <button type="button" data-view="phone">Phone</button>
@@ -160,7 +259,10 @@
     </section>
 
     <section class="tw-card">
-      <h3>Pre-visit questions</h3>
+      <div class="tw-card-head">
+        <span class="tw-ic"><svg viewBox="0 0 24 24"><use href="#icon-users"></use></svg></span>
+        <h3>Pre-visit questions</h3>
+      </div>
       <p class="tw-hint">When someone opens your link, these fade in one at a time before they reach your site. Every answer lands in your Analytics as a consult hit. Add versions to split test &mdash; you pick what percentage of visitors sees each one.</p>
       <div id="tw-variants"></div>
       <div class="tw-split-bar">
@@ -176,7 +278,7 @@
 
   <div class="tw-gate" id="tw-gate" hidden>Trainer access required.</div>
 
-  <script src="js/main.js?v=2026-07-14-launchgate-1"></script>
+  <script src="js/main.js?v=2026-07-14-launchgate-2"></script>
   <script>
     (function () {
       'use strict';
@@ -312,6 +414,24 @@
         const url = $('#tw-site-url').value.trim();
         if (url) window.open(/^https?:\/\//i.test(url) ? url : `https://${url}`, '_blank', 'noopener');
       });
+      // Open the trainer's own live RiseForIt page directly, so they don't
+      // have to hunt for it through the Coaches page. Uses their published
+      // coach page; falls back to the page builder if none is live yet.
+      $('#tw-open-mine').addEventListener('click', async () => {
+        const btn = $('#tw-open-mine');
+        btn.disabled = true;
+        try {
+          const resp = await fetch('/api/auth/trainer/pages', { credentials: 'include' });
+          const json = await resp.json().catch(() => null);
+          const pages = (json && json.pages) || [];
+          const home = pages.filter((p) => p && p.isHome)[0] || pages[0];
+          window.open((home && home.publicPath) ? home.publicPath : 'trainer-profile.html', '_blank', 'noopener');
+        } catch {
+          window.open('trainer-profile.html', '_blank', 'noopener');
+        } finally {
+          btn.disabled = false;
+        }
+      });
       $('#tw-copy').addEventListener('click', async () => {
         try { await navigator.clipboard.writeText(shareUrl()); $('#tw-copy').textContent = 'Copied'; }
         catch { /* clipboard blocked */ }
@@ -327,9 +447,10 @@
       });
 
       (async () => {
+        const showGate = (msg) => { $('#tw-main').hidden = true; $('#tw-gate').hidden = false; if (msg) $('#tw-gate').textContent = msg; };
         try {
           const resp = await fetch('/api/training/website-config', { credentials: 'include' });
-          if (resp.status === 401 || resp.status === 403) { $('#tw-gate').hidden = false; return; }
+          if (resp.status === 401 || resp.status === 403) { showGate(); return; }
           const json = await resp.json();
           handle = String(json?.handle || '');
           config = json?.config || { siteUrl: '', variants: [] };
@@ -337,13 +458,13 @@
           if (!config.variants.length) config.variants = [Object.assign(defaultVariant(0), { weight: 100 })];
           config.variants.forEach((v) => { if (!v.questions || !v.questions.length) v.questions = ['']; });
           $('#tw-site-url').value = config.siteUrl || '';
+          $('#tw-gate').hidden = true;
           $('#tw-main').hidden = false;
           renderShare();
           renderPreview();
           renderVariants();
         } catch (err) {
-          $('#tw-gate').hidden = false;
-          $('#tw-gate').textContent = 'Could not load your website hub.';
+          showGate('Could not load your website hub.');
         }
       })();
     })();

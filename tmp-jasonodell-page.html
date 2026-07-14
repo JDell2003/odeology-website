@@ -1,0 +1,1853 @@
+<!doctype html>
+<html><head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta http-equiv="Content-Security-Policy" content="default-src 'none'; base-uri 'none'; connect-src 'none'; form-action https: mailto:; img-src data: https:; media-src data: https:; style-src 'unsafe-inline' https:; script-src 'unsafe-inline' https:; frame-src data: https:; font-src data: https:;">
+        <style>html,body{margin:0;width:100%;min-height:100%;overflow-x:hidden}body{background:#fff;color:#111827}#standalone-runtime-error{display:none;position:sticky;top:0;z-index:9999;padding:12px 16px;background:#fff1f1;border-bottom:1px solid rgba(155,47,47,.18);color:#9b2f2f;font:700 14px/1.5 system-ui,sans-serif;white-space:pre-wrap}#standalone-runtime-error.show{display:block}#standalone-page-root{width:100%;min-height:100vh}</style>
+        
+        <style>#coachVSLWebsite,
+  #coachVSLWebsite * {
+    box-sizing: border-box;
+  }
+
+  #coachVSLWebsite {
+    --black: #101010;
+    --offblack: #1a1a1a;
+    --cream: #f7f6f1;
+    --softgray: #e9e9e2;
+    --gray: #72726d;
+    --lime: #d9ff42;
+    --line: rgba(16,16,16,.16);
+
+    width: 100%;
+    min-height: 100vh;
+    overflow-x: hidden;
+    color: var(--black);
+    background: var(--cream);
+    font-family: Arial, Helvetica, sans-serif;
+  }
+
+  #coachVSLWebsite button,
+  #coachVSLWebsite input,
+  #coachVSLWebsite select,
+  #coachVSLWebsite textarea {
+    font-family: inherit;
+  }
+
+  .cv-nav {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    min-height: 76px;
+    padding: 13px clamp(18px, 5vw, 78px);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: rgba(247,246,241,.94);
+    backdrop-filter: blur(16px);
+    border-bottom: 1px solid var(--line);
+  }
+
+  .cv-logo {
+    padding: 0;
+    border: 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--black);
+    background: transparent;
+    text-align: left;
+    cursor: pointer;
+  }
+
+  .cv-logo-mark {
+    width: 40px;
+    height: 40px;
+    display: grid;
+    place-items: center;
+    color: var(--black);
+    background: var(--lime);
+    border-radius: 8px;
+    font-size: 11px;
+    font-weight: 950;
+    letter-spacing: -.04em;
+  }
+
+  .cv-logo b {
+    display: block;
+    font-size: 13px;
+    letter-spacing: .12em;
+  }
+
+  .cv-logo small {
+    display: block;
+    margin-top: 3px;
+    color: var(--gray);
+    font-size: 7px;
+    letter-spacing: .13em;
+    font-weight: 800;
+  }
+
+  .cv-desktop-nav {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .cv-desktop-nav button {
+    padding: 10px 13px;
+    border: 0;
+    color: var(--black);
+    background: transparent;
+    font-size: 12px;
+    font-weight: 800;
+    cursor: pointer;
+  }
+
+  .cv-desktop-nav button:hover {
+    color: #5a7800;
+  }
+
+  .cv-desktop-nav .cv-nav-cta {
+    margin-left: 8px;
+    padding: 11px 16px;
+    border-radius: 999px;
+    background: var(--black);
+    color: var(--cream);
+  }
+
+  .cv-nav-cta span {
+    color: var(--lime);
+  }
+
+  .cv-mobile-menu {
+    display: none;
+    width: 42px;
+    height: 39px;
+    padding: 9px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--cream);
+    cursor: pointer;
+  }
+
+  .cv-mobile-menu span {
+    display: block;
+    height: 2px;
+    margin: 5px 0;
+    background: var(--black);
+  }
+
+  .cv-mobile-nav {
+    display: none;
+  }
+
+  .cv-page {
+    display: none;
+    min-height: calc(100vh - 76px);
+    animation: cvFade .25s ease;
+  }
+
+  .cv-page.active {
+    display: block;
+  }
+
+  @keyframes cvFade {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .cv-eyebrow,
+  .cv-section-tag {
+    margin: 0 0 17px;
+    color: #637d00;
+    font-size: 10px;
+    letter-spacing: .15em;
+    font-weight: 900;
+  }
+
+  .cv-eyebrow {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .cv-eyebrow span {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--lime);
+  }
+
+  /* HERO */
+  .cv-hero {
+    min-height: 700px;
+    display: grid;
+    grid-template-columns: 1.05fr .95fr;
+    background: var(--black);
+    color: var(--cream);
+  }
+
+  .cv-hero-left {
+    padding: clamp(70px, 8vw, 125px) clamp(18px, 6vw, 100px);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+
+  .cv-hero h1 {
+    margin: 0;
+    font-size: clamp(50px, 6.7vw, 100px);
+    font-weight: 900;
+    line-height: .88;
+    letter-spacing: -.075em;
+  }
+
+  .cv-hero h1 em {
+    color: var(--lime);
+    font-style: normal;
+  }
+
+  .cv-hero-copy {
+    max-width: 590px;
+    margin: 26px 0 0;
+    color: #c7c7c0;
+    font-size: 17px;
+    line-height: 1.7;
+  }
+
+  .cv-hero-buttons {
+    margin-top: 30px;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 17px;
+  }
+
+  .cv-main-btn {
+    min-height: 50px;
+    padding: 14px 20px;
+    border: 0;
+    border-radius: 8px;
+    color: var(--black);
+    background: var(--lime);
+    font-size: 12px;
+    font-weight: 900;
+    cursor: pointer;
+  }
+
+  .cv-main-btn span {
+    margin-left: 7px;
+    font-size: 17px;
+  }
+
+  .cv-link-btn {
+    padding: 0;
+    border: 0;
+    color: var(--cream);
+    background: transparent;
+    font-size: 12px;
+    font-weight: 800;
+    cursor: pointer;
+  }
+
+  .cv-link-btn span {
+    margin-left: 7px;
+    color: var(--lime);
+    font-size: 16px;
+  }
+
+  .cv-mini-proof {
+    max-width: 570px;
+    margin-top: 48px;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+  }
+
+  .cv-mini-proof div {
+    padding: 13px;
+    border: 1px solid rgba(255,255,255,.16);
+  }
+
+  .cv-mini-proof strong {
+    display: block;
+    font-size: 21px;
+  }
+
+  .cv-mini-proof span {
+    display: block;
+    margin-top: 4px;
+    color: #9d9d96;
+    font-size: 9px;
+    font-weight: 700;
+  }
+
+  .cv-hero-right {
+    position: relative;
+    min-height: 500px;
+    padding: clamp(30px, 4vw, 60px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    background: var(--lime);
+  }
+
+  .cv-hero-badge {
+    position: absolute;
+    top: 25px;
+    left: 25px;
+    padding: 8px 10px;
+    color: var(--cream);
+    background: var(--black);
+    font-size: 8px;
+    letter-spacing: .14em;
+    font-weight: 900;
+  }
+
+  .cv-hero-image-placeholder {
+    position: relative;
+    z-index: 1;
+    width: min(100%, 460px);
+    min-height: 480px;
+    padding: 18px;
+    display: flex;
+    justify-content: space-between;
+    flex-direction: column;
+    color: var(--cream);
+    background:
+      repeating-linear-gradient(
+        45deg,
+        rgba(255,255,255,.07),
+        rgba(255,255,255,.07) 10px,
+        rgba(255,255,255,.02) 10px,
+        rgba(255,255,255,.02) 20px
+      ),
+      var(--offblack);
+    box-shadow: 17px 17px 0 rgba(16,16,16,.24);
+  }
+
+  .cv-placeholder-top,
+  .cv-placeholder-bottom {
+    display: flex;
+    justify-content: space-between;
+    gap: 14px;
+    font-size: 8px;
+    letter-spacing: .14em;
+    font-weight: 800;
+  }
+
+  .cv-placeholder-top {
+    color: #b4b4ad;
+  }
+
+  .cv-placeholder-center {
+    max-width: 300px;
+    margin: auto;
+    text-align: center;
+  }
+
+  .cv-placeholder-center span {
+    display: block;
+    color: var(--lime);
+    font-size: 21px;
+    font-weight: 900;
+    letter-spacing: -.04em;
+  }
+
+  .cv-placeholder-center small {
+    display: block;
+    margin-top: 12px;
+    color: #b6b6ae;
+    font-size: 11px;
+    line-height: 1.55;
+  }
+
+  .cv-placeholder-bottom {
+    padding-top: 15px;
+    border-top: 1px solid rgba(255,255,255,.17);
+  }
+
+  .cv-placeholder-bottom small {
+    display: block;
+    color: #92928b;
+    font-size: 8px;
+  }
+
+  .cv-placeholder-bottom b {
+    display: block;
+    margin-top: 5px;
+    color: var(--cream);
+    font-size: 10px;
+  }
+
+  .cv-floating-stat {
+    position: absolute;
+    right: 28px;
+    bottom: 28px;
+    z-index: 2;
+    max-width: 220px;
+    padding: 15px;
+    color: var(--black);
+    background: var(--cream);
+  }
+
+  .cv-floating-stat span {
+    color: #6d6d66;
+    font-size: 8px;
+    letter-spacing: .14em;
+    font-weight: 900;
+  }
+
+  .cv-floating-stat strong {
+    display: block;
+    margin-top: 8px;
+    font-size: 21px;
+    line-height: .92;
+    letter-spacing: -.05em;
+  }
+
+  /* VSL */
+  .cv-vsl-section {
+    padding: clamp(70px, 9vw, 120px) clamp(18px, 5vw, 78px);
+  }
+
+  .cv-vsl-header {
+    max-width: 1200px;
+    margin: 0 auto 30px;
+    display: grid;
+    grid-template-columns: 1.05fr .65fr;
+    gap: 70px;
+    align-items: end;
+  }
+
+  .cv-vsl-header h2,
+  .cv-page-heading h2,
+  .cv-benefits h2,
+  .cv-apply-left h2 {
+    margin: 0;
+    font-size: clamp(39px, 5vw, 72px);
+    font-weight: 900;
+    line-height: .92;
+    letter-spacing: -.065em;
+  }
+
+  .cv-vsl-header > p {
+    max-width: 400px;
+    margin: 0;
+    color: var(--gray);
+    font-size: 14px;
+    line-height: 1.7;
+  }
+
+  .cv-vsl-grid {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 1.2fr .8fr;
+    gap: 14px;
+  }
+
+  .cv-video-placeholder {
+    min-height: 440px;
+    padding: 18px;
+    display: flex;
+    justify-content: space-between;
+    flex-direction: column;
+    color: var(--cream);
+    cursor: pointer;
+    background:
+      radial-gradient(circle at center, rgba(217,255,66,.17), transparent 30%),
+      repeating-linear-gradient(
+        0deg,
+        rgba(255,255,255,.04),
+        rgba(255,255,255,.04) 1px,
+        transparent 1px,
+        transparent 26px
+      ),
+      var(--black);
+  }
+
+  .cv-video-topline,
+  .cv-video-bottomline {
+    display: flex;
+    justify-content: space-between;
+    color: #a7a79f;
+    font-size: 8px;
+    letter-spacing: .14em;
+    font-weight: 800;
+  }
+
+  .cv-video-play {
+    display: grid;
+    place-items: center;
+    gap: 14px;
+    text-align: center;
+  }
+
+  .cv-video-play div {
+    width: 84px;
+    height: 84px;
+    display: grid;
+    place-items: center;
+    padding-left: 4px;
+    border-radius: 50%;
+    color: var(--black);
+    background: var(--lime);
+    font-size: 25px;
+  }
+
+  .cv-video-play span {
+    color: var(--cream);
+    font-size: 10px;
+    letter-spacing: .15em;
+    font-weight: 900;
+  }
+
+  .cv-vsl-side {
+    padding: 28px;
+    display: flex;
+    justify-content: space-between;
+    flex-direction: column;
+    background: var(--softgray);
+  }
+
+  .cv-vsl-side span {
+    display: block;
+    margin-bottom: 18px;
+    color: #667000;
+    font-size: 9px;
+    letter-spacing: .14em;
+    font-weight: 900;
+  }
+
+  .cv-vsl-side ul {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    font-size: 15px;
+    font-weight: 800;
+    line-height: 1.4;
+  }
+
+  .cv-vsl-side li {
+    padding: 14px 0;
+    border-bottom: 1px solid rgba(16,16,16,.14);
+  }
+
+  .cv-vsl-side li::before {
+    content: "→";
+    margin-right: 10px;
+    color: #657d00;
+  }
+
+  .cv-vsl-side button {
+    width: 100%;
+    margin-top: 26px;
+    padding: 15px;
+    border: 0;
+    border-radius: 8px;
+    color: var(--cream);
+    background: var(--black);
+    font-size: 12px;
+    font-weight: 900;
+    cursor: pointer;
+  }
+
+  .cv-vsl-side button span {
+    display: inline;
+    margin: 0 0 0 7px;
+    color: var(--lime);
+    font-size: 15px;
+  }
+
+  .cv-dark-strip {
+    padding: 18px;
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 23px;
+    color: var(--cream);
+    background: var(--black);
+    font-size: 10px;
+    letter-spacing: .14em;
+    font-weight: 900;
+  }
+
+  .cv-dark-strip span {
+    color: var(--lime);
+  }
+
+  /* BENEFITS */
+  .cv-benefits {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: clamp(75px, 9vw, 125px) clamp(18px, 5vw, 78px);
+    display: grid;
+    grid-template-columns: .8fr 1.2fr;
+    gap: clamp(40px, 8vw, 120px);
+  }
+
+  .cv-benefits-intro p:last-child {
+    max-width: 410px;
+    margin: 23px 0 0;
+    color: var(--gray);
+    font-size: 15px;
+    line-height: 1.7;
+  }
+
+  .cv-benefit-list article {
+    padding: 27px 0;
+    display: grid;
+    grid-template-columns: 60px 1fr;
+    gap: 18px;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .cv-benefit-list article:first-child {
+    border-top: 1px solid var(--line);
+  }
+
+  .cv-benefit-list > article > span {
+    color: #657d00;
+    font-size: 13px;
+    font-weight: 900;
+  }
+
+  .cv-benefit-list h3 {
+    margin: 0 0 9px;
+    font-size: clamp(22px, 2.4vw, 33px);
+    line-height: 1;
+    letter-spacing: -.05em;
+  }
+
+  .cv-benefit-list p {
+    max-width: 530px;
+    margin: 0;
+    color: var(--gray);
+    font-size: 14px;
+    line-height: 1.65;
+  }
+
+  .cv-visual-grid {
+    padding: 0 clamp(18px, 5vw, 78px) clamp(80px, 9vw, 120px);
+    display: grid;
+    grid-template-columns: 1.2fr .8fr;
+    gap: 12px;
+  }
+
+  .cv-visual-large {
+    min-height: 430px;
+    padding: 30px;
+    display: flex;
+    justify-content: flex-end;
+    flex-direction: column;
+    color: var(--cream);
+    background:
+      repeating-linear-gradient(
+        45deg,
+        rgba(255,255,255,.05),
+        rgba(255,255,255,.05) 10px,
+        rgba(255,255,255,.015) 10px,
+        rgba(255,255,255,.015) 20px
+      ),
+      var(--offblack);
+  }
+
+  .cv-visual-large > span,
+  .cv-visual-small > span {
+    color: var(--lime);
+    font-size: 9px;
+    letter-spacing: .14em;
+    font-weight: 900;
+  }
+
+  .cv-visual-large h3 {
+    max-width: 600px;
+    margin: 16px 0 9px;
+    font-size: clamp(30px, 4vw, 56px);
+    line-height: .95;
+    letter-spacing: -.06em;
+  }
+
+  .cv-visual-large small {
+    color: #aaa9a1;
+    font-size: 11px;
+  }
+
+  .cv-visual-small {
+    min-height: 209px;
+    padding: 26px;
+    display: flex;
+    justify-content: space-between;
+    flex-direction: column;
+  }
+
+  .cv-lime-card {
+    color: var(--black);
+    background: var(--lime);
+  }
+
+  .cv-lime-card > span {
+    color: #5b7200;
+  }
+
+  .cv-lime-card strong {
+    max-width: 300px;
+    font-size: clamp(25px, 3vw, 42px);
+    line-height: .92;
+    letter-spacing: -.06em;
+  }
+
+  .cv-image-placeholder {
+    color: var(--cream);
+    background: #4b4b47;
+  }
+
+  .cv-image-placeholder small {
+    max-width: 250px;
+    color: #d0d0c7;
+    font-size: 12px;
+    line-height: 1.55;
+  }
+
+  /* RESULTS */
+  .cv-page-heading {
+    min-height: 340px;
+    padding: clamp(75px, 9vw, 120px) clamp(18px, 5vw, 78px) 65px;
+    display: grid;
+    grid-template-columns: 1.1fr .6fr;
+    gap: 55px;
+    align-items: end;
+    background: var(--softgray);
+  }
+
+  .cv-page-heading > p {
+    max-width: 400px;
+    margin: 0;
+    color: var(--gray);
+    font-size: 14px;
+    line-height: 1.7;
+  }
+
+  .cv-results-grid {
+    padding: clamp(55px, 8vw, 100px) clamp(18px, 5vw, 78px);
+    display: grid;
+    grid-template-columns: 1.1fr .9fr;
+    gap: 12px;
+  }
+
+  .cv-result-feature {
+    min-height: 440px;
+    display: grid;
+    grid-template-columns: .9fr 1.1fr;
+    color: var(--cream);
+    background: var(--black);
+  }
+
+  .cv-result-photo-placeholder {
+    min-height: 100%;
+    padding: 20px;
+    display: flex;
+    align-items: end;
+    color: var(--black);
+    background: var(--lime);
+    font-size: 9px;
+    letter-spacing: .12em;
+    font-weight: 900;
+  }
+
+  .cv-result-feature-copy {
+    padding: 30px;
+    display: flex;
+    justify-content: center;
+    flex-direction: column;
+  }
+
+  .cv-result-feature-copy > span,
+  .cv-testimonial > span {
+    color: var(--lime);
+    font-size: 9px;
+    letter-spacing: .14em;
+    font-weight: 900;
+  }
+
+  .cv-result-feature h3 {
+    margin: 19px 0 14px;
+    font-size: clamp(27px, 3vw, 45px);
+    line-height: .96;
+    letter-spacing: -.06em;
+  }
+
+  .cv-result-feature p {
+    margin: 0;
+    color: #c3c3bb;
+    font-size: 13px;
+    line-height: 1.7;
+  }
+
+  .cv-result-feature small {
+    margin-top: 24px;
+    color: #8e8e86;
+    font-size: 8px;
+    letter-spacing: .13em;
+    font-weight: 800;
+  }
+
+  .cv-result-number {
+    min-height: 210px;
+    padding: 27px;
+    background: var(--softgray);
+  }
+
+  .cv-result-number span {
+    color: #657d00;
+    font-size: 9px;
+    letter-spacing: .14em;
+    font-weight: 900;
+  }
+
+  .cv-result-number strong {
+    display: block;
+    margin: 24px 0 8px;
+    font-size: clamp(46px, 5vw, 70px);
+    line-height: .85;
+    letter-spacing: -.08em;
+  }
+
+  .cv-result-number p {
+    max-width: 220px;
+    margin: 0;
+    color: var(--gray);
+    font-size: 13px;
+    line-height: 1.55;
+  }
+
+  .cv-result-lime {
+    color: var(--black);
+    background: var(--lime);
+  }
+
+  .cv-result-lime span,
+  .cv-result-lime p {
+    color: #516800;
+  }
+
+  .cv-testimonial {
+    min-height: 250px;
+    padding: 28px;
+    display: flex;
+    justify-content: space-between;
+    flex-direction: column;
+    background: var(--cream);
+    border: 1px solid var(--line);
+  }
+
+  .cv-testimonial > span {
+    color: #657d00;
+  }
+
+  .cv-testimonial blockquote {
+    max-width: 540px;
+    margin: 20px 0;
+    font-size: clamp(25px, 3vw, 40px);
+    font-weight: 900;
+    line-height: .98;
+    letter-spacing: -.055em;
+  }
+
+  .cv-testimonial small {
+    color: var(--gray);
+    font-size: 8px;
+    letter-spacing: .13em;
+    font-weight: 800;
+  }
+
+  .cv-testimonial-dark {
+    color: var(--cream);
+    background: var(--offblack);
+    border-color: var(--offblack);
+  }
+
+  .cv-testimonial-dark > span {
+    color: var(--lime);
+  }
+
+  .cv-testimonial-play {
+    width: 60px;
+    height: 60px;
+    display: grid;
+    place-items: center;
+    padding-left: 3px;
+    border-radius: 50%;
+    color: var(--black);
+    background: var(--lime);
+  }
+
+  .cv-testimonial-dark p {
+    margin: 20px 0 0;
+    color: #b4b4ac;
+    font-size: 13px;
+    line-height: 1.6;
+  }
+
+  /* OFFERS */
+  .cv-heading-dark {
+    color: var(--cream);
+    background: var(--black);
+  }
+
+  .cv-heading-dark .cv-section-tag {
+    color: var(--lime);
+  }
+
+  .cv-heading-dark > p {
+    color: #c3c3bb;
+  }
+
+  .cv-offers {
+    padding: clamp(55px, 8vw, 100px) clamp(18px, 5vw, 78px);
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    background: var(--black);
+  }
+
+  .cv-offer {
+    position: relative;
+    min-height: 440px;
+    padding: 28px;
+    display: flex;
+    flex-direction: column;
+    color: var(--black);
+    background: var(--cream);
+  }
+
+  .cv-offer-top {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .cv-offer-top span {
+    color: #657d00;
+    font-size: 18px;
+    font-weight: 900;
+  }
+
+  .cv-offer-top small {
+    color: var(--gray);
+    font-size: 9px;
+    letter-spacing: .14em;
+    font-weight: 900;
+  }
+
+  .cv-offer h3 {
+    margin: 44px 0 13px;
+    font-size: 34px;
+    line-height: .94;
+    letter-spacing: -.06em;
+  }
+
+  .cv-offer p {
+    margin: 0;
+    color: var(--gray);
+    font-size: 13px;
+    line-height: 1.65;
+  }
+
+  .cv-offer ul {
+    margin: 26px 0;
+    padding: 0;
+    list-style: none;
+    font-size: 12px;
+    line-height: 2.2;
+    font-weight: 700;
+  }
+
+  .cv-offer li::before {
+    content: "✓";
+    margin-right: 8px;
+    color: #6f8900;
+  }
+
+  .cv-offer button {
+    width: fit-content;
+    margin-top: auto;
+    padding: 0;
+    border: 0;
+    color: var(--black);
+    background: transparent;
+    font-size: 12px;
+    font-weight: 900;
+    cursor: pointer;
+  }
+
+  .cv-offer button span {
+    margin-left: 7px;
+    color: #6f8900;
+    font-size: 16px;
+  }
+
+  .cv-offer-main {
+    background: var(--lime);
+    box-shadow: 9px 9px 0 rgba(217,255,66,.28);
+  }
+
+  .cv-offer-main label {
+    position: absolute;
+    top: 0;
+    right: 18px;
+    padding: 7px 9px;
+    color: var(--lime);
+    background: var(--black);
+    font-size: 8px;
+    letter-spacing: .11em;
+    font-weight: 900;
+  }
+
+  /* APPLY */
+  .cv-apply-section {
+    min-height: calc(100vh - 76px);
+    padding: clamp(70px, 9vw, 120px) clamp(18px, 5vw, 78px);
+    display: grid;
+    grid-template-columns: .85fr 1.15fr;
+    gap: clamp(38px, 8vw, 110px);
+    color: var(--cream);
+    background: var(--offblack);
+  }
+
+  .cv-apply-left h2 {
+    color: var(--cream);
+  }
+
+  .cv-apply-left > p:not(.cv-section-tag) {
+    max-width: 420px;
+    margin-top: 24px;
+    color: #c3c3bb;
+    font-size: 16px;
+    line-height: 1.7;
+  }
+
+  .cv-apply-image-placeholder {
+    min-height: 200px;
+    max-width: 430px;
+    margin-top: 40px;
+    padding: 20px;
+    display: flex;
+    justify-content: space-between;
+    flex-direction: column;
+    color: var(--black);
+    background: var(--lime);
+  }
+
+  .cv-apply-image-placeholder span {
+    font-size: 9px;
+    letter-spacing: .13em;
+    font-weight: 900;
+  }
+
+  .cv-apply-image-placeholder small {
+    max-width: 260px;
+    font-size: 12px;
+    line-height: 1.55;
+  }
+
+  .cv-form {
+    align-self: start;
+    padding: 26px;
+    border: 1px solid rgba(255,255,255,.16);
+    background: rgba(255,255,255,.04);
+  }
+
+  .cv-form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+  }
+
+  .cv-form label {
+    display: block;
+    margin-bottom: 16px;
+    color: #c3c3bb;
+    font-size: 8px;
+    letter-spacing: .14em;
+    font-weight: 900;
+  }
+
+  .cv-form input,
+  .cv-form select,
+  .cv-form textarea {
+    width: 100%;
+    margin-top: 9px;
+    padding: 12px 0;
+    border: 0;
+    border-bottom: 1px solid rgba(255,255,255,.23);
+    outline: 0;
+    color: var(--cream);
+    background: transparent;
+    font-size: 13px;
+  }
+
+  .cv-form select option {
+    color: var(--black);
+  }
+
+  .cv-form textarea {
+    min-height: 94px;
+    resize: vertical;
+  }
+
+  .cv-form input::placeholder,
+  .cv-form textarea::placeholder {
+    color: #85857f;
+  }
+
+  .cv-form input:focus,
+  .cv-form select:focus,
+  .cv-form textarea:focus {
+    border-bottom-color: var(--lime);
+  }
+
+  .cv-form button {
+    width: 100%;
+    margin-top: 10px;
+    padding: 15px;
+    border: 0;
+    border-radius: 8px;
+    color: var(--black);
+    background: var(--lime);
+    font-size: 13px;
+    font-weight: 900;
+    cursor: pointer;
+  }
+
+  .cv-form button span {
+    margin-left: 7px;
+    font-size: 17px;
+  }
+
+  .cv-form-note {
+    margin: 13px 0 0;
+    color: #85857f;
+    font-size: 9px;
+    text-align: center;
+  }
+
+  .cv-footer {
+    padding: 25px clamp(18px, 5vw, 78px);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    color: var(--cream);
+    background: #080808;
+  }
+
+  .cv-footer b {
+    display: block;
+    color: var(--lime);
+    font-size: 10px;
+    letter-spacing: .15em;
+  }
+
+  .cv-footer div span,
+  .cv-footer p,
+  .cv-footer small {
+    color: #8d8d87;
+    font-size: 7px;
+    letter-spacing: .13em;
+    font-weight: 800;
+  }
+
+  .cv-footer p {
+    margin: 0;
+  }
+
+  /* RESPONSIVE */
+  @media (max-width: 850px) {
+    .cv-desktop-nav {
+      display: none;
+    }
+
+    .cv-mobile-menu {
+      display: block;
+    }
+
+    .cv-mobile-nav {
+      position: absolute;
+      top: 67px;
+      right: 14px;
+      left: 14px;
+      z-index: 200;
+      padding: 10px;
+      flex-direction: column;
+      background: var(--cream);
+      border: 1px solid var(--line);
+      box-shadow: 0 20px 50px rgba(0,0,0,.2);
+    }
+
+    .cv-mobile-nav.open {
+      display: flex;
+    }
+
+    .cv-mobile-nav button {
+      padding: 12px;
+      border: 0;
+      color: var(--black);
+      background: transparent;
+      text-align: left;
+      font-size: 12px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    .cv-mobile-nav .cv-mobile-cta {
+      margin-top: 4px;
+      border-radius: 7px;
+      color: var(--cream);
+      background: var(--black);
+      text-align: center;
+    }
+
+    .cv-mobile-cta span {
+      color: var(--lime);
+    }
+
+    .cv-hero,
+    .cv-vsl-header,
+    .cv-vsl-grid,
+    .cv-benefits,
+    .cv-page-heading,
+    .cv-apply-section {
+      grid-template-columns: 1fr;
+    }
+
+    .cv-hero-right {
+      min-height: 580px;
+    }
+
+    .cv-vsl-side {
+      min-height: 330px;
+    }
+
+    .cv-visual-grid,
+    .cv-results-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .cv-visual-large {
+      min-height: 350px;
+    }
+
+    .cv-offers {
+      grid-template-columns: 1fr;
+    }
+
+    .cv-result-feature {
+      grid-template-columns: 1fr;
+    }
+
+    .cv-result-photo-placeholder {
+      min-height: 190px;
+    }
+  }
+
+  @media (max-width: 540px) {
+    .cv-logo small {
+      display: none;
+    }
+
+    .cv-hero h1 {
+      font-size: 52px;
+    }
+
+    .cv-mini-proof {
+      gap: 6px;
+    }
+
+    .cv-mini-proof div {
+      padding: 10px 7px;
+    }
+
+    .cv-mini-proof strong {
+      font-size: 18px;
+    }
+
+    .cv-mini-proof span {
+      font-size: 8px;
+    }
+
+    .cv-hero-right {
+      min-height: 510px;
+      padding: 20px;
+    }
+
+    .cv-hero-image-placeholder {
+      min-height: 420px;
+    }
+
+    .cv-floating-stat {
+      right: 14px;
+      bottom: 14px;
+      max-width: 185px;
+    }
+
+    .cv-video-placeholder {
+      min-height: 330px;
+    }
+
+    .cv-benefit-list article {
+      grid-template-columns: 40px 1fr;
+      gap: 12px;
+    }
+
+    .cv-form-row {
+      grid-template-columns: 1fr;
+      gap: 0;
+    }
+
+    .cv-footer {
+      flex-wrap: wrap;
+    }
+
+    .cv-footer p {
+      width: 100%;
+      order: 3;
+    }
+  }</style>
+        
+      </head>
+      <body>
+        
+        <div id="standalone-page-root"><div id="coachVSLWebsite">
+  <header class="cv-nav">
+    <button class="cv-logo" onclick="cvGo('home')" aria-label="Go to homepage">
+      <span class="cv-logo-mark">CO</span>
+      <span>
+        <b>COACH O</b>
+        <small>HIGH PERFORMANCE COACHING</small>
+      </span>
+    </button>
+
+```
+<div class="cv-desktop-nav">
+  <button onclick="cvGo('home')">Home</button>
+  <button onclick="cvGo('results')">Results</button>
+  <button onclick="cvGo('coaching')">Coaching</button>
+  <button onclick="cvGo('apply')" class="cv-nav-cta">Apply Now <span>↗</span></button>
+</div>
+
+<button class="cv-mobile-menu" onclick="cvToggleMenu()" aria-label="Open navigation">
+  <span></span>
+  <span></span>
+</button>
+
+<div class="cv-mobile-nav" id="cvMobileNav">
+  <button onclick="cvGo('home')">Home</button>
+  <button onclick="cvGo('results')">Results</button>
+  <button onclick="cvGo('coaching')">Coaching</button>
+  <button onclick="cvGo('apply')" class="cv-mobile-cta">Apply Now <span>↗</span></button>
+</div>
+```
+
+  </header>
+
+  <main>
+    <!-- HOME -->
+    <section id="home" class="cv-page active" data-standalone-layout="block" style="position: relative; display: block; margin: 16px 0px; align-self: stretch; width: 398px; height: 4343px; flex: 0 0 auto; box-sizing: border-box;">
+      <section class="cv-hero">
+        <div class="cv-hero-left">
+          <div class="cv-eyebrow">
+            <span></span>
+            ONLINE COACHING FOR PEOPLE READY TO EXECUTE
+          </div>
+
+```
+      <h1>
+        You do not need<br>
+        another workout.<br>
+        You need a <em>system.</em>
+      </h1>
+
+      <p class="cv-hero-copy">
+        Training, nutrition, accountability, and a real plan built around your body,
+        schedule, and the standard you want to live at.
+      </p>
+
+      <div class="cv-hero-buttons">
+        <button class="cv-main-btn" onclick="cvGo('apply')">
+          Apply For Coaching <span>↗</span>
+        </button>
+        <button class="cv-link-btn" onclick="cvScrollToVideo()">
+          Watch The Breakdown <span>↓</span>
+        </button>
+      </div>
+
+      <div class="cv-mini-proof">
+        <div>
+          <strong>1:1</strong>
+          <span>Private Coaching</span>
+        </div>
+        <div>
+          <strong>12+</strong>
+          <span>Week Systems</span>
+        </div>
+        <div>
+          <strong>24/7</strong>
+          <span>Clear Direction</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="cv-hero-right">
+      <div class="cv-hero-badge">COACHING / NOT CONTENT</div>
+
+      <div class="cv-hero-image-placeholder">
+        <div class="cv-placeholder-top">
+          <span>IMAGE PLACEHOLDER</span>
+          <span>01 / HERO PHOTO</span>
+        </div>
+
+        <div class="cv-placeholder-center">
+          <span>YOUR HERO IMAGE</span>
+          <small>Use a professional gym photo, transformation image, or Coach O portrait here.</small>
+        </div>
+
+        <div class="cv-placeholder-bottom">
+          <div>
+            <small>FOCUS</small>
+            <b>Strength + Physique</b>
+          </div>
+          <div>
+            <small>FORMAT</small>
+            <b>1:1 Coaching</b>
+          </div>
+        </div>
+      </div>
+
+      <div class="cv-floating-stat">
+        <span>CLIENT STANDARD</span>
+        <strong>SHOW UP.<br>FOLLOW THROUGH.</strong>
+      </div>
+    </div>
+  </section>
+
+  <!-- VSL -->
+  <section class="cv-vsl-section" id="cvVsl">
+    <div class="cv-vsl-header">
+      <div>
+        <p class="cv-section-tag">START HERE</p>
+        <h2>Watch this before you apply.</h2>
+      </div>
+
+      <p>
+        This is where your VSL goes. Explain who coaching is for, what makes your
+        approach different, and what clients should expect.
+      </p>
+    </div>
+
+    <div class="cv-vsl-grid">
+      <div class="cv-video-placeholder" onclick="cvPlayDemo()">
+        <div class="cv-video-topline">
+          <span>VIDEO SALES LETTER</span>
+          <span>08:42</span>
+        </div>
+
+        <div class="cv-video-play">
+          <div>▶</div>
+          <span>PLAY VIDEO</span>
+        </div>
+
+        <div class="cv-video-bottomline">
+          <span>PLACEHOLDER FOR VSL / YOUTUBE / VIMEO / LOOM</span>
+        </div>
+      </div>
+
+      <aside class="cv-vsl-side">
+        <div>
+          <span>IN THIS VIDEO</span>
+          <ul>
+            <li>Who this coaching is built for</li>
+            <li>Why random workouts keep failing</li>
+            <li>How your training and nutrition get structured</li>
+            <li>What accountability looks like week to week</li>
+          </ul>
+        </div>
+
+        <button onclick="cvGo('apply')">
+          I’m Ready To Apply <span>↗</span>
+        </button>
+      </aside>
+    </div>
+  </section>
+
+  <!-- BENEFITS -->
+  <section class="cv-dark-strip">
+    <div>TRAIN WITH INTENTION</div>
+    <span>✦</span>
+    <div>EAT WITH A PLAN</div>
+    <span>✦</span>
+    <div>FOLLOW THROUGH</div>
+  </section>
+
+  <section class="cv-benefits">
+    <div class="cv-benefits-intro">
+      <p class="cv-section-tag">THE DIFFERENCE</p>
+      <h2>Built for real life.<br>Not perfect weeks.</h2>
+      <p>
+        Your program should still work when work gets busy, motivation drops,
+        and life does what life does.
+      </p>
+    </div>
+
+    <div class="cv-benefit-list">
+      <article>
+        <span>01</span>
+        <div>
+          <h3>Training that progresses</h3>
+          <p>
+            Every phase has a purpose. You know what you are building,
+            why it matters, and how to improve it.
+          </p>
+        </div>
+      </article>
+
+      <article>
+        <span>02</span>
+        <div>
+          <h3>Nutrition you can repeat</h3>
+          <p>
+            No fake meal plans. No extreme rules. Just targets and habits
+            that actually fit your lifestyle.
+          </p>
+        </div>
+      </article>
+
+      <article>
+        <span>03</span>
+        <div>
+          <h3>Accountability that keeps you moving</h3>
+          <p>
+            You get check-ins, adjustments, and direct feedback when you
+            need to stop overthinking and execute.
+          </p>
+        </div>
+      </article>
+    </div>
+  </section>
+
+  <!-- IMAGE PLACEHOLDER GRID -->
+  <section class="cv-visual-grid">
+    <div class="cv-visual-large">
+      <span>IMAGE PLACEHOLDER</span>
+      <h3>Transformation photo,<br>gym lifestyle photo,<br>or training image.</h3>
+      <small>Replace with client transformation / coaching lifestyle visual.</small>
+    </div>
+
+    <div class="cv-visual-small cv-lime-card">
+      <span>THE GOAL</span>
+      <strong>LOOK BETTER.<br>PERFORM BETTER.<br>LIVE BETTER.</strong>
+    </div>
+
+    <div class="cv-visual-small cv-image-placeholder">
+      <span>IMAGE PLACEHOLDER</span>
+      <small>Before/after, gym image, client check-in, or nutrition photo.</small>
+    </div>
+  </section>
+</section>
+
+<!-- RESULTS -->
+<section id="results" class="cv-page">
+  <section class="cv-page-heading">
+    <div>
+      <p class="cv-section-tag">CLIENT RESULTS</p>
+      <h2>Proof beats motivation.</h2>
+    </div>
+
+    <p>
+      These blocks are ready for transformation photos, testimonial screenshots,
+      video testimonials, or measurable client wins.
+    </p>
+  </section>
+
+  <section class="cv-results-grid">
+    <article class="cv-result-feature">
+      <div class="cv-result-photo-placeholder">
+        <span>BEFORE / AFTER IMAGE PLACEHOLDER</span>
+      </div>
+
+      <div class="cv-result-feature-copy">
+        <span>CLIENT TRANSFORMATION</span>
+        <h3>“I stopped winging it and my body finally started changing.”</h3>
+        <p>
+          Add a real client quote here. This can be a physique result,
+          strength result, confidence story, or consistency win.
+        </p>
+        <small>CLIENT NAME / PROGRAM / TIMEFRAME</small>
+      </div>
+    </article>
+
+    <article class="cv-result-number">
+      <span>CONSISTENCY</span>
+      <strong>92%</strong>
+      <p>average weekly execution when the plan is clear</p>
+    </article>
+
+    <article class="cv-result-number cv-result-lime">
+      <span>THE REAL WIN</span>
+      <strong>0<br>GUESSING</strong>
+      <p>every workout and decision has a purpose</p>
+    </article>
+
+    <article class="cv-testimonial">
+      <span>TEXT TESTIMONIAL</span>
+      <blockquote>
+        “The biggest difference was knowing exactly what to do every week.
+        I stopped starting over.”
+      </blockquote>
+      <small>CLIENT NAME / OPTIONAL RESULT</small>
+    </article>
+
+    <article class="cv-testimonial cv-testimonial-dark">
+      <span>VIDEO TESTIMONIAL PLACEHOLDER</span>
+      <div class="cv-testimonial-play">▶</div>
+      <p>Add a client video thumbnail or embedded testimonial here.</p>
+    </article>
+  </section>
+</section>
+
+<!-- COACHING -->
+<section id="coaching" class="cv-page">
+  <section class="cv-page-heading cv-heading-dark">
+    <div>
+      <p class="cv-section-tag">COACHING OPTIONS</p>
+      <h2>Choose your lane.<br>Then execute.</h2>
+    </div>
+
+    <p>
+      Every option starts with an application so the coaching is matched to
+      your actual goal and experience.
+    </p>
+  </section>
+
+  <section class="cv-offers">
+    <article class="cv-offer">
+      <div class="cv-offer-top">
+        <span>01</span>
+        <small>FOUNDATION</small>
+      </div>
+
+      <h3>Fat Loss Reset</h3>
+      <p>
+        For people who need structure, sustainable nutrition,
+        and a clear route toward fat loss.
+      </p>
+
+      <ul>
+        <li>Custom training plan</li>
+        <li>Simple nutrition targets</li>
+        <li>Weekly accountability</li>
+      </ul>
+
+      <button onclick="cvGo('apply')">Apply For Foundation <span>↗</span></button>
+    </article>
+
+    <article class="cv-offer cv-offer-main">
+      <label>BEST FOR MOST PEOPLE</label>
+
+      <div class="cv-offer-top">
+        <span>02</span>
+        <small>SIGNATURE</small>
+      </div>
+
+      <h3>Strength &amp; Physique</h3>
+      <p>
+        For clients who want more muscle, more strength,
+        and a physique that shows their work.
+      </p>
+
+      <ul>
+        <li>Progressive lifting program</li>
+        <li>Nutrition coaching</li>
+        <li>Detailed check-ins</li>
+      </ul>
+
+      <button onclick="cvGo('apply')">Apply For Signature <span>↗</span></button>
+    </article>
+
+    <article class="cv-offer">
+      <div class="cv-offer-top">
+        <span>03</span>
+        <small>PERFORMANCE</small>
+      </div>
+
+      <h3>Hybrid Performance</h3>
+      <p>
+        For people who want strength, conditioning,
+        athletic performance, and better capacity.
+      </p>
+
+      <ul>
+        <li>Strength + conditioning</li>
+        <li>Performance structure</li>
+        <li>Recovery management</li>
+      </ul>
+
+      <button onclick="cvGo('apply')">Apply For Performance <span>↗</span></button>
+    </article>
+  </section>
+</section>
+
+<!-- APPLY -->
+<section id="apply" class="cv-page">
+  <section class="cv-apply-section">
+    <div class="cv-apply-left">
+      <p class="cv-section-tag">APPLICATION</p>
+      <h2>Ready to stop<br>starting over?</h2>
+
+      <p>
+        Tell me where you are now, what you want to accomplish,
+        and what has been getting in your way.
+      </p>
+
+      <div class="cv-apply-image-placeholder">
+        <span>OPTIONAL IMAGE PLACEHOLDER</span>
+        <small>Coach portrait, gym image, team image, or client collage.</small>
+      </div>
+    </div>
+
+    <form class="cv-form" onsubmit="cvSubmit(event)">
+      <div class="cv-form-row">
+        <label>
+          NAME
+          <input required="" placeholder="Your full name">
+        </label>
+
+        <label>
+          EMAIL
+          <input required="" type="email" placeholder="you@email.com">
+        </label>
+      </div>
+
+      <div class="cv-form-row">
+        <label>
+          PHONE
+          <input required="" placeholder="Phone number">
+        </label>
+
+        <label>
+          MAIN GOAL
+          <select required="">
+            <option value="">Choose one</option>
+            <option>Lose fat</option>
+            <option>Build muscle</option>
+            <option>Get stronger</option>
+            <option>Improve conditioning</option>
+            <option>Build better habits</option>
+          </select>
+        </label>
+      </div>
+
+      <label>
+        WHAT HAVE YOU BEEN STRUGGLING WITH?
+        <textarea placeholder="Tell me what you have tried and what you want to achieve."></textarea>
+      </label>
+
+      <button type="submit">
+        Submit Application <span>↗</span>
+      </button>
+
+      <p class="cv-form-note">
+        Demo form for testing. Connect this to your actual lead form later.
+      </p>
+    </form>
+  </section>
+</section>
+```
+
+  </main>
+
+  <footer class="cv-footer">
+    <div>
+      <b>COACH O</b>
+      <span>HIGH PERFORMANCE COACHING</span>
+    </div>
+
+```
+<p>BUILT FOR PEOPLE READY TO EXECUTE.</p>
+<small>© 2026</small>
+```
+
+  </footer>
+</div></div>
+        <script>function cvGo(id) {
+    document.querySelectorAll('#coachVSLWebsite .cv-page').forEach(function(page) {
+      page.classList.remove('active');
+    });
+
+    var target = document.getElementById(id);
+    if (target) target.classList.add('active');
+
+    var mobileNav = document.getElementById('cvMobileNav');
+    if (mobileNav) mobileNav.classList.remove('open');
+
+    window.scrollTo({
+      top: 0,
+      behavior: 'smooth'
+    });
+  }
+
+  function cvToggleMenu() {
+    var mobileNav = document.getElementById('cvMobileNav');
+    if (mobileNav) mobileNav.classList.toggle('open');
+  }
+
+  function cvScrollToVideo() {
+    var video = document.getElementById('cvVsl');
+    if (video) {
+      video.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start'
+      });
+    }
+  }
+
+  function cvPlayDemo() {
+    alert('This is the VSL placeholder. Replace this block with your YouTube, Vimeo, Loom, or embedded video when ready.');
+  }
+
+  function cvSubmit(event) {
+    event.preventDefault();
+
+    var form = event.target;
+    var button = form.querySelector('button');
+    var originalText = button.innerHTML;
+
+    button.innerHTML = 'Application Sent <span>✓</span>';
+    button.style.background = '#9bc400';
+    button.disabled = true;
+
+    setTimeout(function() {
+      alert('Test complete — your application form and JavaScript are working.');
+      form.reset();
+      button.innerHTML = originalText;
+      button.style.background = '';
+      button.disabled = false;
+    }, 700);
+  }</script>
+        
+      
+    
+      
+      
+      
+    </body></html>
