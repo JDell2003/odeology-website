@@ -435,6 +435,56 @@
     return `/api/auth/trainer/impersonate/${encodeURIComponent(id)}?returnTo=${encodeURIComponent(safeDest)}`;
   }
 
+  // Small confirm dialog used before a destructive "rebuild plan" action.
+  function openPlanEraseConfirm({ title, body, confirmLabel = 'Confirm', onConfirm } = {}) {
+    document.getElementById('plan-erase-modal')?.remove();
+    if (!document.getElementById('plan-erase-modal-styles')) {
+      const st = document.createElement('style');
+      st.id = 'plan-erase-modal-styles';
+      st.textContent = [
+        '.plan-erase-backdrop{position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;',
+        '  padding:20px;background:rgba(20,12,4,.55);backdrop-filter:blur(3px);animation:planEraseFade .16s ease;}',
+        '@keyframes planEraseFade{from{opacity:0}to{opacity:1}}',
+        '.plan-erase-card{width:min(440px,100%);background:#fffdf7;border:1px solid rgba(185,138,43,.4);border-radius:18px;',
+        '  padding:22px 22px 18px;box-shadow:0 30px 70px rgba(60,40,10,.32);}',
+        ':root[data-theme="dark"] .plan-erase-card{background:#241d13;border-color:rgba(255,255,255,.14);color:#f4ecdd;}',
+        '.plan-erase-card .pe-icon{width:42px;height:42px;border-radius:12px;display:grid;place-items:center;font-size:22px;',
+        '  background:rgba(180,40,40,.12);color:#b42828;margin-bottom:12px;}',
+        '.plan-erase-card h3{margin:0 0 8px;font:800 18px/1.25 "Space Grotesk",system-ui,sans-serif;}',
+        '.plan-erase-card p{margin:0 0 18px;font-size:14px;line-height:1.55;opacity:.82;}',
+        '.plan-erase-actions{display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;}',
+        '.plan-erase-actions button{font:800 13px/1 "Space Grotesk",system-ui,sans-serif;padding:11px 16px;border-radius:11px;cursor:pointer;border:1px solid transparent;}',
+        '.pe-cancel{background:transparent;border-color:rgba(150,110,35,.35);color:#7a5312;}',
+        '.pe-confirm{background:#b42828;color:#fff;}',
+        '.pe-confirm:hover{background:#9c2020;}',
+        '@media (max-width:520px){.plan-erase-actions button{flex:1 1 auto;}}'
+      ].join('\n');
+      document.head.appendChild(st);
+    }
+    const back = document.createElement('div');
+    back.className = 'plan-erase-backdrop';
+    back.id = 'plan-erase-modal';
+    back.innerHTML = `
+      <div class="plan-erase-card" role="dialog" aria-modal="true" aria-label="${escapeHtml(title || 'Confirm')}">
+        <div class="pe-icon" aria-hidden="true">&#9888;</div>
+        <h3>${escapeHtml(title || 'Are you sure?')}</h3>
+        <p>${escapeHtml(body || '')}</p>
+        <div class="plan-erase-actions">
+          <button type="button" class="pe-cancel" data-pe-cancel>Keep it</button>
+          <button type="button" class="pe-confirm" data-pe-confirm>${escapeHtml(confirmLabel)}</button>
+        </div>
+      </div>`;
+    const close = () => back.remove();
+    back.addEventListener('click', (ev) => {
+      if (ev.target === back || ev.target.closest('[data-pe-cancel]')) { close(); return; }
+      if (ev.target.closest('[data-pe-confirm]')) { close(); if (typeof onConfirm === 'function') onConfirm(); }
+    });
+    document.addEventListener('keydown', function esc(ev) {
+      if (ev.key === 'Escape') { close(); document.removeEventListener('keydown', esc); }
+    });
+    document.body.appendChild(back);
+  }
+
   function titleizeStatus(raw, fallback = 'Pending') {
     const value = String(raw || '').trim();
     if (!value) return fallback;
@@ -557,10 +607,19 @@
             </div>
             <div class="client-actions">
               ${uid ? `<button type="button" class="client-btn primary" data-view-client-account="${escapeHtml(uid)}">Peer into account</button>` : ''}
-              ${uid ? `<button type="button" class="client-btn" data-client-plan="training" data-client-has="${workout ? '1' : '0'}" data-client-uid="${escapeHtml(uid)}">${workout ? 'Edit training' : 'Add training'}</button>` : ''}
-              ${uid ? `<button type="button" class="client-btn" data-client-plan="nutrition" data-client-has="${nutrition ? '1' : '0'}" data-client-uid="${escapeHtml(uid)}">${nutrition ? 'Edit nutrition' : 'Add nutrition'}</button>` : ''}
-              <button type="button" class="client-btn ghost" data-client-doc="training" data-client-uid="${escapeHtml(uid)}" data-client-name="${escapeHtml(name)}">Send training PDF</button>
-              <button type="button" class="client-btn ghost" data-client-doc="nutrition" data-client-uid="${escapeHtml(uid)}" data-client-name="${escapeHtml(name)}">Send nutrition PDF</button>
+              ${uid ? `
+              <div class="client-plan-group">
+                <span class="client-plan-tag">Training</span>
+                ${workout ? `<button type="button" class="client-btn" data-client-plan="training" data-plan-mode="modify" data-client-has="1" data-client-uid="${escapeHtml(uid)}" data-client-name="${escapeHtml(name)}">Modify training</button>` : ''}
+                <button type="button" class="client-btn${workout ? ' ghost' : ''}" data-client-plan="training" data-plan-mode="add" data-client-has="${workout ? '1' : '0'}" data-client-uid="${escapeHtml(uid)}" data-client-name="${escapeHtml(name)}">${workout ? 'Redo training' : 'Add training'}</button>
+                <button type="button" class="client-btn ghost" data-client-doc="training" data-client-uid="${escapeHtml(uid)}" data-client-name="${escapeHtml(name)}">Send PDF</button>
+              </div>
+              <div class="client-plan-group">
+                <span class="client-plan-tag">Nutrition</span>
+                ${nutrition ? `<button type="button" class="client-btn" data-client-plan="nutrition" data-plan-mode="modify" data-client-has="1" data-client-uid="${escapeHtml(uid)}" data-client-name="${escapeHtml(name)}">Modify nutrition</button>` : ''}
+                <button type="button" class="client-btn${nutrition ? ' ghost' : ''}" data-client-plan="nutrition" data-plan-mode="add" data-client-has="${nutrition ? '1' : '0'}" data-client-uid="${escapeHtml(uid)}" data-client-name="${escapeHtml(name)}">${nutrition ? 'Redo nutrition' : 'Add nutrition'}</button>
+                <button type="button" class="client-btn ghost" data-client-doc="nutrition" data-client-uid="${escapeHtml(uid)}" data-client-name="${escapeHtml(name)}">Send PDF</button>
+              </div>` : ''}
             </div>
           </article>`;
         }).join('')}
@@ -1523,9 +1582,8 @@
           <button type="button" class="account-trainer-pill${currentCount > 0 ? ' has-alert' : ''}" data-clients-view="current" aria-pressed="false">Current <span>${currentCount}</span></button>
           <button type="button" class="account-trainer-pill${pendingCount > 0 ? ' has-alert' : ''}" data-clients-view="pending" aria-pressed="false">Pending <span>${pendingCount}</span></button>
           <button type="button" class="account-trainer-pill${workoutApproveCount > 0 ? ' has-alert' : ''}" data-clients-view="workout-approve" aria-pressed="false">Workout Approve <span>${workoutApproveCount}</span></button>
-          <button type="button" class="account-trainer-pill${actionsCount > 0 ? ' has-alert' : ''}" data-clients-view="actions" aria-pressed="false">Actions <span>${actionsCount}</span></button>
-          <button type="button" class="account-trainer-pill${potentialCount > 0 ? ' has-alert' : ''}" data-clients-view="potential-clients" aria-pressed="false">Potential Clients <span>${potentialCount}</span></button>
-          <button type="button" class="account-trainer-pill" data-clients-view="history" aria-pressed="false">History</button>
+          <button type="button" class="account-trainer-pill${actionsCount > 0 ? ' has-alert' : ''}" data-clients-view="actions" aria-pressed="false" title="Things that still need you to do something">Actions <span>${actionsCount}</span></button>
+          <button type="button" class="account-trainer-pill" data-clients-view="history" aria-pressed="false" title="A read-only log of what already happened">History</button>
           <button type="button" class="account-trainer-pill${requestsCount > 0 ? ' has-alert' : ''}" data-clients-view="requests" aria-pressed="false">Requests <span>${requestsCount}</span></button>
         </div>
         <section class="account-trainer-panel" data-clients-panel="current">
@@ -1544,23 +1602,18 @@
           ${renderPendingWorkoutApprovals(pendingWorkoutApprovals)}
         </section>
         <section class="account-trainer-panel" data-clients-panel="actions">
-          <h3>Actions</h3>
-          <div class="account-trainer-muted">Newest client work, approvals, and follow-ups land here in one chronological feed.</div>
+          <h3>Actions &mdash; your to-do list</h3>
+          <div class="account-trainer-muted">Open items that still need you: new client requests to approve, workouts to review, and follow-ups. These clear off the list once you handle them.</div>
           ${renderTrainerActionFeed(feedItems)}
-        </section>
-        <section class="account-trainer-panel" data-clients-panel="potential-clients">
-          <h3>Potential Clients</h3>
-          <div class="account-trainer-muted">Public trainer page leads land here and stay scoped to your account only.</div>
-          ${renderPotentialLeads(leads, data?.leadUi || {})}
         </section>
         <section class="account-trainer-panel" data-clients-panel="consult-form-hits">
           <h3>Consult Form Hits</h3>
-          <div class="account-trainer-muted">Every pre-visit answer from your website link and every consultation form filled out on your coach page — in one place.</div>
+          <div class="account-trainer-muted">Every pre-visit answer from your website link and every consultation form filled out on your coach page — in one place. (Also your Potential Clients leads.)</div>
           ${renderConsultFormHits([...(Array.isArray(data?.funnelLeads) ? data.funnelLeads : []), ...leads])}
         </section>
         <section class="account-trainer-panel" data-clients-panel="history">
-          <h3>History</h3>
-          <div class="account-trainer-muted">Everything that happened, newest first — consult hits, plans made, payments, sign-ups. Click "Peer in" on any event tied to a client.</div>
+          <h3>History &mdash; the record</h3>
+          <div class="account-trainer-muted">A read-only timeline of everything that already happened, newest first — consult hits, plans made, payments, sign-ups. Nothing to do here; it's just the log. (Actions is your to-do list; History is the paper trail.)</div>
           ${renderTrainerHistory(data)}
         </section>
         <section class="account-trainer-panel" data-clients-panel="requests">
@@ -1999,11 +2052,16 @@
         '.client-stat.on{color:#2f7a3d;border-color:rgba(47,122,61,.4);background:rgba(47,122,61,.08);}',
         '.client-stat.off{opacity:.55;}',
         '.client-since{margin-left:auto;font-size:11px;opacity:.5;}',
-        '.client-actions{display:flex;flex-wrap:wrap;gap:7px;}',
-        '.client-btn{font:800 12px/1 "Space Grotesk",system-ui,sans-serif;padding:8px 12px;border-radius:10px;border:1px solid rgba(185,138,43,.4);background:rgba(212,175,55,.1);color:#7a5312;cursor:pointer;}',
-        '.client-btn:hover{background:rgba(212,175,55,.22);}',
-        '.client-btn.primary{background:#b98a2b;color:#fff;border-color:transparent;}',
-        '.client-btn.ghost{background:transparent;}',
+        '.client-actions{display:flex;flex-direction:column;gap:9px;margin-top:2px;}',
+        '.client-plan-group{display:flex;flex-wrap:wrap;align-items:center;gap:7px;padding:9px 10px;border-radius:12px;background:rgba(212,175,55,.06);border:1px solid rgba(185,138,43,.16);}',
+        ':root[data-theme="dark"] .client-plan-group{background:rgba(255,255,255,.03);border-color:rgba(255,255,255,.08);}',
+        '.client-plan-tag{font:800 10px/1 "Space Grotesk",system-ui,sans-serif;letter-spacing:.09em;text-transform:uppercase;color:#a1751f;opacity:.8;margin-right:2px;flex:0 0 auto;}',
+        '.client-btn{font:800 12px/1 "Space Grotesk",system-ui,sans-serif;padding:8px 12px;border-radius:10px;border:1px solid rgba(185,138,43,.4);background:rgba(212,175,55,.16);color:#7a5312;cursor:pointer;transition:background .12s ease;}',
+        '.client-btn:hover{background:rgba(212,175,55,.28);}',
+        '.client-btn.primary{background:#b98a2b;color:#fff;border-color:transparent;align-self:flex-start;}',
+        '.client-btn.primary:hover{background:#a6791f;}',
+        '.client-btn.ghost{background:transparent;font-weight:700;opacity:.9;}',
+        '.client-btn.ghost:hover{background:rgba(212,175,55,.14);}',
         '.consult-hit-notes{display:block;margin:10px 0 8px;}',
         '.consult-hit-notes span{display:block;font:800 10px/1.4 "Space Grotesk",system-ui,sans-serif;letter-spacing:.1em;text-transform:uppercase;opacity:.6;margin-bottom:4px;}',
         '.consult-hit-notes textarea{width:100%;min-height:52px;border:1px solid rgba(150,110,35,.28);border-radius:10px;padding:8px 10px;font:600 13px/1.4 inherit;background:#fdf8ec;color:inherit;resize:vertical;}',
@@ -2041,7 +2099,14 @@
         const pillsRow = shell.querySelector('.account-trainer-clients-pills');
         if (pillsRow) pillsRow.style.display = 'none';
         shell.querySelectorAll('[data-clients-panel]').forEach((panel) => {
-          panel.style.display = String(panel.getAttribute('data-clients-panel') || '') === 'consult-form-hits' ? '' : 'none';
+          const isConsultPanel = String(panel.getAttribute('data-clients-panel') || '') === 'consult-form-hits';
+          if (isConsultPanel) {
+            panel.removeAttribute('hidden');
+            panel.classList.add('active');
+            panel.style.display = '';
+          } else {
+            panel.style.display = 'none';
+          }
         });
       }
       // Sidebar active state: Clients and Consult Form Hits are the same page
@@ -2221,15 +2286,26 @@
     };
 
     const syncClientsPanels = () => {
-      const activeViews = new Set(
+      let activeViews = new Set(
         Array.from(shell.querySelectorAll('[data-clients-view].active'))
           .map((button) => String(button.getAttribute('data-clients-view') || '').trim())
           .filter(Boolean)
       );
-      const showAll = activeViews.size === 0;
+      // Default to the "Current" tab so panels don't stack all at once. Reflect
+      // it on the pill too so the highlight matches what's shown.
+      if (activeViews.size === 0) {
+        const currentPill = shell.querySelector('[data-clients-view="current"]');
+        if (currentPill) {
+          currentPill.classList.add('active');
+          currentPill.setAttribute('aria-pressed', 'true');
+        }
+        activeViews = new Set(['current']);
+      }
       shell.querySelectorAll('[data-clients-panel]').forEach((panel) => {
         const panelKey = String(panel.getAttribute('data-clients-panel') || '').trim();
-        const active = showAll || activeViews.has(panelKey);
+        // Consult Form Hits is its own console destination (sidebar link), never
+        // part of the in-page tab browsing.
+        const active = panelKey !== 'consult-form-hits' && activeViews.has(panelKey);
         panel.classList.toggle('active', active);
         if (active) {
           panel.removeAttribute('hidden');
@@ -2321,9 +2397,13 @@
       const clientViewBtn = target.closest('[data-clients-view]');
       if (clientViewBtn instanceof Element) {
         e.preventDefault();
-        const nextActive = !clientViewBtn.classList.contains('active');
-        clientViewBtn.classList.toggle('active', nextActive);
-        clientViewBtn.setAttribute('aria-pressed', nextActive ? 'true' : 'false');
+        // Single-select: clicking a pill makes it the only active view (one
+        // panel at a time), instead of stacking every panel on screen.
+        shell.querySelectorAll('[data-clients-view]').forEach((btn) => {
+          const on = btn === clientViewBtn;
+          btn.classList.toggle('active', on);
+          btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+        });
         syncClientsPanels();
         return;
       }
@@ -2402,22 +2482,41 @@
         setStatus(resp && resp.json && resp.json.ok ? 'Note saved.' : 'Could not save note.');
         return;
       }
-      // Add/Edit training or nutrition plan — peer into the client account and
-      // land on the right surface: an EXISTING plan opens the in-app editor
-      // (nutrition.html / training.html); a client with NO plan drops straight
-      // into the onboarding questions the trainer answers on their behalf
-      // (meal-program.html picker for nutrition, training.html wizard).
+      // Add / Modify training or nutrition plan — peer into the client account
+      // and land on the right surface.
+      //  • MODIFY opens the in-app editor (nutrition.html / training.html) and
+      //    keeps the existing plan intact.
+      //  • ADD drops into the onboarding questions the trainer answers on the
+      //    client's behalf (meal-program.html picker for nutrition, training.html
+      //    wizard). When a plan already exists this REPLACES it, so we confirm
+      //    first with an erase warning.
       const planTrigger = target.closest('[data-client-plan]');
       if (planTrigger instanceof Element) {
         const userId = String(planTrigger.getAttribute('data-client-uid') || '').trim();
         const kind = String(planTrigger.getAttribute('data-client-plan') || '').trim();
+        const mode = String(planTrigger.getAttribute('data-plan-mode') || 'modify').trim();
         const hasPlan = String(planTrigger.getAttribute('data-client-has') || '0') === '1';
-        let returnTo;
-        if (kind === 'nutrition') returnTo = hasPlan ? '/nutrition.html' : '/meal-program.html';
-        else returnTo = hasPlan ? '/training.html' : '/training.html?from=intake';
-        const href = buildTrainerClientAccountHref(userId, returnTo);
-        if (!href) { setStatus('This client has no attached account yet.'); return; }
-        window.location.href = href;
+        const cname = String(planTrigger.getAttribute('data-client-name') || 'this client').trim();
+        const label = kind === 'nutrition' ? 'nutrition plan' : 'training plan';
+        const editorPage = kind === 'nutrition' ? '/nutrition.html' : '/training.html';
+        const questionPage = kind === 'nutrition' ? '/meal-program.html' : '/training.html?from=intake';
+        const goTo = (returnTo) => {
+          const href = buildTrainerClientAccountHref(userId, returnTo);
+          if (!href) { setStatus('This client has no attached account yet.'); return; }
+          window.location.href = href;
+        };
+        if (mode === 'modify') { goTo(editorPage); return; }
+        // mode === 'add' (fresh build through the questions)
+        if (hasPlan) {
+          openPlanEraseConfirm({
+            title: `Start ${cname}'s ${label} over?`,
+            body: `This erases ${cname}'s current ${label} and walks through the questions again to build a brand-new one. Their old ${label} can't be recovered.`,
+            confirmLabel: `Erase & rebuild`,
+            onConfirm: () => goTo(questionPage)
+          });
+        } else {
+          goTo(questionPage);
+        }
         return;
       }
       // Send a training / nutrition PDF to the client.

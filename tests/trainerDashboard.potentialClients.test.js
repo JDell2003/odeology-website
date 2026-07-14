@@ -12,8 +12,11 @@ test('trainer dashboard frontend loads and updates scoped potential-client leads
   assert.match(src, /const LEAD_STAGES = \[/);
   assert.match(src, /api\('\/api\/auth\/trainer\/leads'\)/);
   assert.match(src, /api\('\/api\/auth\/trainer\/lead'/);
-  assert.match(src, /data-clients-view="potential-clients"/);
-  assert.match(src, /data-clients-panel="potential-clients"/);
+  // Potential Clients is no longer its own Clients sub-tab — those leads now
+  // live inside Consult Form Hits (merged funnelLeads + pageLeads).
+  assert.doesNotMatch(src, /data-clients-view="potential-clients"/);
+  assert.match(src, /data-clients-panel="consult-form-hits"/);
+  assert.match(src, /renderConsultFormHits/);
   assert.match(src, /renderPotentialLeads/);
   assert.match(src, /Submission history/);
   assert.match(src, /data-lead-history="1"/);
@@ -26,13 +29,10 @@ test('trainer dashboard frontend loads and updates scoped potential-client leads
   assert.match(src, /data-lead-upload-list="1"/);
 });
 
-test('trainer sidebar exposes a Potential Clients entry in dynamic and static control panels', () => {
+test('Potential Clients is no longer a standalone sidebar/tab entry — it folds into Consult Form Hits', () => {
   const mainSrc = read(path.join('js', 'main.js'));
-  const htmlSrc = read('trainer-dashboard.html');
-  assert.match(mainSrc, /control-trainer-potential-clients-link/);
-  assert.match(mainSrc, /trainer-dashboard\.html\?tab=potential-clients/);
-  assert.match(htmlSrc, /control-trainer-potential-clients-link/);
-  assert.match(htmlSrc, /trainer-dashboard\.html\?tab=potential-clients/);
+  // The sidebar link is stripped at runtime; leads surface inside Consult Form Hits.
+  assert.match(mainSrc, /trainerPotentialClientsLink\?\.remove\(\)/);
 });
 
 test('trainer page routes expose public lead throttling and event-backed history', () => {
