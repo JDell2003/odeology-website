@@ -171,6 +171,26 @@
 
     <script src="data/dri-targets.js?v=2026-02-24-micros-1"></script>
     <script src="js/main.js?v=2026-07-14-launchgate-1"></script>
+    <!-- Seed the restock calendar from the saved meal plan so it works on its own. -->
+    <script src="core/mealProgramConstants.js?v=2026-07-14-mp-4"></script>
+    <script src="core/mealProgramEngine.js?v=2026-07-14-mp-4"></script>
+    <script src="js/meal-program-onboarding.js?v=2026-07-14-mp-4"></script>
+    <script>
+      (function () {
+        try {
+          var plan = JSON.parse(localStorage.getItem('ode_meal_program_plan_v1') || 'null');
+          if (plan && window.MealProgramOnboarding) {
+            var payload = window.MealProgramOnboarding.planToGroceryPayload(plan);
+            if (payload && payload.items && payload.items.length) {
+              localStorage.setItem('ode_grocery_calendar_items_v1', JSON.stringify({
+                items: payload.items, unit: 'servings',
+                startDate: new Date().toISOString().slice(0, 10), savedAt: new Date().toISOString()
+              }));
+            }
+          }
+        } catch (e) { /* calendar keeps whatever was last synced */ }
+      })();
+    </script>
     <script src="js/grocery-calendar.js?v=2026-02-16-1"></script>
 </body>
 </html>

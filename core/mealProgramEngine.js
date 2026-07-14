@@ -427,8 +427,9 @@
         function costOfPick(id) { return cheapestCartTotal(mealsById[id]); }
 
         // (1) Reduce variety toward the cheapest picks (floor per slot).
+        // Skipped when the user has hand-set their picks on the Nutrition page.
         var guard = 0;
-        while (overBudget() && guard++ < 24) {
+        while (!args.respectPicks && overBudget() && guard++ < 24) {
             var slotMax = null, idMax = null, costMax = -1;
             C.week.slots.forEach(function (slot) {
                 if (picks[slot].length <= C.budget.varietyFloorPerSlot) return;
@@ -462,6 +463,10 @@
                 var current = picks[slot].slice().sort(function (a, b) { return costOfPick(b) - costOfPick(a); });
                 for (var pi = 0; pi < current.length && !swapped; pi++) {
                     var expensive = current[pi];
+                    // Never substitute a meal the user explicitly picked — only
+                    // backfilled picks are swappable. Keeps the plan honest to
+                    // what they chose (they edit it on the Nutrition page).
+                    if (args.lockedIds && args.lockedIds[expensive]) continue;
                     for (var qi = 0; qi < pool.length; qi++) {
                         var cand = pool[qi];
                         if (picks[slot].indexOf(cand.id) >= 0) continue;
@@ -539,7 +544,10 @@
                 if (m && mealAllowed(m, pref, allergies)) kept.push(id);
                 else if (m) swappedOut.push({ slot: slot, name: m.name });
             });
-            var minNeeded = C.picker.minPicksPerSlot[slot] || 2;
+            // respectPicks (Nutrition-page edits): honor the exact picks the
+            // user set — only ensure a slot isn't left completely empty. Normal
+            // (onboarding) generation backfills to a full minimum per slot.
+            var minNeeded = input.respectPicks ? 1 : (C.picker.minPicksPerSlot[slot] || 2);
             if (kept.length < minNeeded) {
                 var pool = slotPool(dataset.meals, slot, input.stats.goal, pref, allergies);
                 for (var i = 0; i < pool.length && kept.length < minNeeded; i++) {
@@ -553,11 +561,22 @@
                 swappedOut.map(function (s) { return s.name; }).join(', ') + '.');
         }
 
+        // Lock the user's explicit, dietary-allowed picks so budget fitting
+        // can't swap them for meals they never chose.
+        var lockedIds = {};
+        C.week.slots.forEach(function (slot) {
+            (input.picks[slot] || []).forEach(function (id) {
+                var m = mealsById[id];
+                if (m && mealAllowed(m, pref, allergies)) lockedIds[id] = true;
+            });
+        });
+
         var fitted = fitToBudget({
             dataset: dataset, mealsById: mealsById, picks: picks, stats: input.stats,
             budgetMonthly: input.budgetMonthly, state: input.state,
             storePref: input.storePref === 'cheapest' ? null : input.storePref,
-            dietaryPref: pref, allergies: allergies, tierOverride: input.tierOverride || null
+            dietaryPref: pref, allergies: allergies, tierOverride: input.tierOverride || null,
+            lockedIds: lockedIds, respectPicks: !!input.respectPicks
         });
 
         return {

@@ -1748,6 +1748,51 @@ const server = http.createServer(async (req, res) => {
         });
     }
 
+    // Image proxy: meal photos live on external recipe sites whose hotlink
+    // rules / mixed-content / CORS make them flaky to embed directly. Fetch
+    // them server-side (browser UA + referer) and stream back, so they render
+    // identically on localhost and production. SSRF-guarded to public https.
+    if (url.pathname === '/api/img' && req.method === 'GET') {
+        const raw = url.searchParams.get('u') || '';
+        let target;
+        try { target = new URL(raw); } catch { res.writeHead(400); return res.end('bad url'); }
+        const host = target.hostname.toLowerCase();
+        const isPrivate = target.protocol !== 'https:'
+            || host === 'localhost' || host.endsWith('.local')
+            || /^(127\.|10\.|192\.168\.|169\.254\.|0\.)/.test(host)
+            || /^172\.(1[6-9]|2\d|3[01])\./.test(host)
+            || host === '[::1]' || host === '::1';
+        if (isPrivate) { res.writeHead(400); return res.end('blocked'); }
+        try {
+            const controller = new AbortController();
+            const timer = setTimeout(() => controller.abort(), 10000);
+            const upstream = await fetch(target.href, {
+                redirect: 'follow',
+                signal: controller.signal,
+                headers: {
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36',
+                    'Accept': 'image/avif,image/webp,image/*,*/*;q=0.8',
+                    'Referer': `${target.protocol}//${target.hostname}/`
+                }
+            }).catch(() => null);
+            clearTimeout(timer);
+            const ctype = upstream && (upstream.headers.get('content-type') || '');
+            if (!upstream || !upstream.ok || !/^image\//i.test(ctype || '')) {
+                res.writeHead(404); return res.end('not an image');
+            }
+            const buf = Buffer.from(await upstream.arrayBuffer());
+            res.writeHead(200, {
+                'Content-Type': ctype,
+                'Content-Length': buf.length,
+                'Cache-Control': 'public, max-age=604800, immutable',
+                'Access-Control-Allow-Origin': '*'
+            });
+            return res.end(buf);
+        } catch (err) {
+            res.writeHead(502); return res.end('proxy error');
+        }
+    }
+
     // Avoid auth/session “randomly signed out” issues caused by switching between
     // `localhost` and `127.0.0.1` (cookies are host-scoped).
     // Default canonical host is `localhost` for local development; override with CANONICAL_HOST.

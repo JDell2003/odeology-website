@@ -7,7 +7,7 @@
     <script src="js/theme-color.js?v=2026-07-13-themebar-1" defer></script>
     <title>Nutrition · RiseForIt</title>
     <link rel="stylesheet" href="css/main.css?v=2026-07-13-nutri-1">
-    <link rel="stylesheet" href="css/meal-program.css?v=2026-07-13-mp-3">
+    <link rel="stylesheet" href="css/meal-program.css?v=2026-07-14-mp-4">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
@@ -136,10 +136,11 @@
             <div>
                 <p class="eyebrow">Nutrition</p>
                 <h1>Your Nutrition</h1>
-                <p class="ns-muted">Your 7-day meals, priced grocery plan, ingredients, and restock calendar — built to your budget.</p>
+                <p class="ns-muted">Your meals first, then the grocery plan and ingredients — edit any of it, anytime.</p>
             </div>
             <div class="gc-actions">
-                <a class="btn btn-ghost" href="meal-program.html">Rebuild plan</a>
+                <button class="btn btn-ghost" id="nut-default" type="button">Return to default</button>
+                <button class="btn btn-ghost" id="nut-restart" type="button">Restart</button>
                 <a class="btn btn-primary" href="overview.html">Overview</a>
             </div>
         </header>
@@ -147,70 +148,65 @@
         <!-- No plan yet -->
         <section class="plan-card nutrition-empty" id="nutrition-empty" hidden>
             <div class="card-head"><h3>No meal plan yet</h3></div>
-            <p class="ns-muted">Pick the meals you actually want to eat and set your budget — we'll build a 7-day plan with a priced grocery list and restock calendar.</p>
+            <p class="ns-muted">Pick the meals you actually want to eat and set your budget — we'll build a 7-day plan with a priced grocery list.</p>
             <p><a class="btn btn-primary" href="meal-program.html">Build my meal plan</a></p>
         </section>
 
-        <!-- Saved plan output (meal-program renderer, mp-* classes) -->
-        <section class="mp-step nutrition-plan" id="mp-step-plan" hidden>
-            <div class="mp-print-row">
-                <button class="btn btn-ghost" id="mp-print" type="button">Print plan</button>
-                <button class="btn btn-ghost" id="mp-start-over" type="button" style="display:none">Rebuild</button>
-            </div>
-            <div class="mp-plan-summary" id="mp-plan-summary"></div>
-            <div class="mp-budget-bar"><div class="mp-budget-fill" id="mp-budget-fill"></div></div>
-            <div class="mp-msgs" id="mp-plan-msgs"></div>
-            <div class="mp-stores" id="mp-store-compare"></div>
-            <div class="mp-plan-grid">
-                <section class="mp-panel" id="mp-grocery-panel">
-                    <h3>Grocery list — <span id="mp-grocery-store"></span> <span class="pill" id="mp-grocery-monthly"></span></h3>
-                    <div id="mp-grocery-items"></div>
-                    <p class="mp-free-items" id="mp-free-items"></p>
-                </section>
-                <section class="mp-panel">
-                    <h3>Your 7-day meal plan</h3>
-                    <div id="mp-days"></div>
-                </section>
-            </div>
-        </section>
+        <div id="nutrition-plan" hidden>
+            <div class="mp-plan-summary" id="nut-summary"></div>
+            <div class="mp-budget-bar"><div class="mp-budget-fill" id="nut-budget-fill"></div></div>
+            <div class="mp-msgs" id="nut-msgs"></div>
 
-        <!-- Restock calendar (js/grocery-calendar.js, seeded by js/nutrition.js) -->
-        <section class="plan-card food-calendar" id="food-calendar" aria-label="Grocery calendar">
-            <div class="card-head">
-                <h3>Restock calendar</h3>
-                <span class="pill" id="calendar-range">Projection</span>
-            </div>
-            <p class="ns-muted calendar-subtext">Built from your current grocery plan — click any day for what to buy.</p>
+            <!-- 1) MEALS FIRST (editable) -->
+            <section class="mp-panel">
+                <h3>Your meals</h3>
+                <p class="ns-muted tiny">Add or remove any meal — your plan and grocery list update instantly.</p>
+                <div id="nut-picks"></div>
+                <h4 class="nut-subhead">Your 7-day plan</h4>
+                <div id="nut-days"></div>
+            </section>
 
-            <div class="calendar-wrap">
-                <div class="calendar-nav">
-                    <button class="calendar-arrow" id="calendar-prev" type="button" aria-label="Previous month">&lsaquo;</button>
-                    <div class="calendar-month" id="calendar-month-1"></div>
-                    <button class="calendar-arrow" id="calendar-next" type="button" aria-label="Next month">&rsaquo;</button>
+            <!-- 2) GROCERY LIST (store choice + bulk note) -->
+            <section class="mp-panel">
+                <h3>Grocery list</h3>
+                <p class="ns-muted tiny">Buy from whichever store you like — we price all three.</p>
+                <div class="mp-stores" id="nut-stores"></div>
+                <div class="nut-bulk-note" id="nut-bulk-note"></div>
+                <div id="nut-grocery"></div>
+                <p class="mp-free-items" id="nut-free"></p>
+            </section>
+
+            <!-- 3) INGREDIENTS (subtract what you don't want) -->
+            <section class="mp-panel">
+                <h3>Ingredients</h3>
+                <p class="ns-muted tiny">Uncheck anything you already have or don't want — it drops from your grocery list.</p>
+                <div id="nut-ingredients"></div>
+            </section>
+        </div>
+
+        <!-- Add-meals picker modal -->
+        <div class="nut-modal" id="nut-picker" hidden>
+            <div class="nut-modal-backdrop" data-modal-close></div>
+            <div class="nut-modal-card" role="dialog" aria-modal="true">
+                <div class="nut-modal-head">
+                    <h3 class="nut-modal-title">Add meals</h3>
+                    <button type="button" class="nut-modal-x" data-modal-close aria-label="Close">&times;</button>
                 </div>
-
-                <div class="calendar-detail" id="calendar-detail">
-                    <div class="calendar-detail-head">
-                        <div class="calendar-detail-title">Buy details</div>
-                        <div class="calendar-detail-date" id="calendar-detail-date">Select a day</div>
-                    </div>
-                    <div class="calendar-detail-body" id="calendar-detail-body">
-                        <div class="calendar-detail-empty">Click a day to see predicted restocks.</div>
-                    </div>
+                <div class="nut-modal-grid mp-grid"></div>
+                <div class="nut-modal-foot">
+                    <button type="button" class="btn btn-ghost" data-modal-close>Cancel</button>
+                    <button type="button" class="btn btn-primary" data-modal-add>Add selected</button>
                 </div>
             </div>
-        </section>
+        </div>
     </main>
 
     <script src="data/dri-targets.js?v=2026-02-24-micros-1"></script>
     <script src="js/main.js?v=2026-07-14-launchgate-1"></script>
-    <script src="core/mealProgramConstants.js?v=2026-07-13-mp-3"></script>
-    <script src="core/mealProgramEngine.js?v=2026-07-13-mp-3"></script>
-    <script src="js/meal-program-data.js?v=2026-07-13-mp-3"></script>
-    <script src="js/meal-program-plan.js?v=2026-07-13-mp-3"></script>
-    <script src="js/meal-program-onboarding.js?v=2026-07-13-mp-3"></script>
-    <script src="js/nutrition.js?v=2026-07-13-nutrition-1"></script>
-    <script src="js/grocery-calendar.js?v=2026-02-16-1"></script>
+    <script src="core/mealProgramConstants.js?v=2026-07-14-mp-4"></script>
+    <script src="core/mealProgramEngine.js?v=2026-07-14-mp-4"></script>
+    <script src="js/meal-program-data.js?v=2026-07-14-mp-4"></script>
+    <script src="js/nutrition.js?v=2026-07-14-nutrition-2"></script>
 </body>
 </html>
 
