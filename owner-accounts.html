@@ -273,6 +273,103 @@
         align-items: flex-start;
       }
     }
+
+    /* ---- Add account modal (polished) ---- */
+    #owner-add-account-modal .owner-accounts-modal-card {
+      width: min(560px, 100%);
+      padding: 0;
+      border: 1px solid rgba(15, 23, 42, 0.1);
+      border-radius: 22px;
+      box-shadow: 0 40px 90px rgba(15, 23, 42, 0.28);
+      overflow: hidden;
+    }
+    .oaa-head {
+      display: flex; align-items: flex-start; gap: 14px;
+      padding: 22px 22px 18px;
+      background: linear-gradient(135deg, rgba(212,175,55,.16), rgba(212,175,55,.04));
+      border-bottom: 1px solid rgba(185,138,43,.24);
+    }
+    .oaa-head-icon {
+      flex: 0 0 auto; width: 46px; height: 46px; border-radius: 13px;
+      display: grid; place-items: center; color: #8a6414;
+      background: rgba(212,175,55,.22); border: 1px solid rgba(185,138,43,.45);
+    }
+    .oaa-head-copy { flex: 1 1 auto; min-width: 0; }
+    .oaa-head-title { margin: 0; font: 800 19px/1.2 "Space Grotesk", system-ui, sans-serif; color: #1a1206; }
+    .oaa-head-sub { margin: 4px 0 0; font-size: 12.5px; line-height: 1.5; color: rgba(26,18,6,.62); }
+    .oaa-head-close {
+      flex: 0 0 auto; border: 1px solid rgba(15,23,42,.14); background: #fff; color: #475569;
+      border-radius: 999px; padding: 6px 14px; font: 700 12.5px/1 system-ui, sans-serif; cursor: pointer;
+      transition: background .14s ease, border-color .14s ease;
+    }
+    .oaa-head-close:hover { background: #f8fafc; border-color: rgba(15,23,42,.28); }
+    .oaa-body { padding: 20px 22px 22px; display: grid; gap: 15px; }
+    #owner-add-account-modal .oaa-body[hidden] { display: none !important; }
+    .oaa-field { display: grid; gap: 6px; }
+    .oaa-label { font: 700 12px/1.3 system-ui, sans-serif; letter-spacing: .01em; color: #33465c; }
+    .oaa-label .oaa-opt { font-weight: 500; color: rgba(51,70,92,.55); }
+    #owner-add-account-modal .auth-input {
+      width: 100%; border-radius: 11px; border: 1px solid rgba(15,23,42,.16);
+      padding: 11px 13px; font-size: 14px; background: #fff; transition: border-color .14s ease, box-shadow .14s ease;
+    }
+    #owner-add-account-modal .auth-input:focus {
+      outline: 0; border-color: rgba(185,138,43,.8); box-shadow: 0 0 0 3px rgba(212,175,55,.18);
+    }
+    .oaa-inline { display: flex; gap: 8px; align-items: stretch; }
+    .oaa-inline .auth-input { flex: 1 1 auto; }
+    .oaa-btn {
+      flex: 0 0 auto; display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+      border-radius: 11px; padding: 0 14px; min-height: 42px; cursor: pointer; white-space: nowrap;
+      font: 700 12.5px/1 system-ui, sans-serif; transition: transform .12s ease, filter .12s ease, background .12s ease;
+    }
+    .oaa-btn:active { transform: translateY(1px); }
+    .oaa-btn-soft { background: rgba(212,175,55,.16); color: #8a6414; border: 1px solid rgba(185,138,43,.4); }
+    .oaa-btn-soft:hover { background: rgba(212,175,55,.26); }
+    .oaa-btn-ghost { background: #fff; color: #475569; border: 1px solid rgba(15,23,42,.16); }
+    .oaa-btn-ghost:hover { background: #f8fafc; }
+    .oaa-email-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+    .oaa-email-actions { display: flex; gap: 8px; }
+    .oaa-test-status {
+      display: inline-flex; align-items: center; gap: 7px; font: 700 12px/1.3 system-ui, sans-serif;
+      padding: 6px 12px; border-radius: 999px; opacity: 0; transform: translateY(2px);
+      transition: opacity .18s ease, transform .18s ease;
+    }
+    .oaa-test-status.show { opacity: 1; transform: none; }
+    .oaa-test-status.ok { background: rgba(22,163,74,.12); color: #15803d; border: 1px solid rgba(22,163,74,.32); }
+    .oaa-test-status.bad { background: rgba(220,38,38,.1); color: #b91c1c; border: 1px solid rgba(220,38,38,.3); }
+    .oaa-test-status.pending { background: rgba(15,23,42,.06); color: #475569; border: 1px solid rgba(15,23,42,.14); }
+    .oaa-test-badge { display: inline-grid; place-items: center; width: 18px; height: 18px; border-radius: 999px; font-size: 12px; font-weight: 900; color: #fff; }
+    .oaa-test-status.ok .oaa-test-badge { background: #16a34a; }
+    .oaa-test-status.bad .oaa-test-badge { background: #dc2626; }
+    .oaa-spin { width: 14px; height: 14px; border-radius: 999px; border: 2.5px solid rgba(71,85,105,.3); border-top-color: #475569; animation: oaaSpin .7s linear infinite; }
+    @keyframes oaaSpin { to { transform: rotate(360deg); } }
+    .oaa-check {
+      display: flex; gap: 10px; align-items: flex-start; padding: 11px 13px; border-radius: 12px;
+      background: #f8fafc; border: 1px solid rgba(15,23,42,.1); font-size: 12.5px; line-height: 1.5; color: #33465c; cursor: pointer;
+    }
+    .oaa-check input { margin-top: 2px; width: 16px; height: 16px; accent-color: #b98a2b; flex: 0 0 auto; }
+    .oaa-foot { display: flex; gap: 10px; justify-content: flex-end; flex-wrap: wrap; padding-top: 4px; }
+    #owner-add-account-modal .btn-primary {
+      background: linear-gradient(135deg, #d4a537, #b98a2b); border: 0; color: #1a1206;
+      border-radius: 11px; padding: 11px 20px; font-weight: 800; cursor: pointer;
+    }
+    #owner-add-account-modal .btn-primary:hover { filter: brightness(1.04); }
+    #owner-add-account-modal .btn-ghost {
+      background: #fff; border: 1px solid rgba(15,23,42,.16); color: #475569;
+      border-radius: 11px; padding: 11px 18px; font-weight: 700; cursor: pointer;
+    }
+    .oaa-result-card {
+      display: grid; gap: 12px; padding: 16px; border-radius: 14px;
+      background: linear-gradient(135deg, rgba(22,163,74,.08), rgba(22,163,74,.02));
+      border: 1px solid rgba(22,163,74,.28);
+    }
+    .oaa-result-cred { display: grid; gap: 4px; }
+    .oaa-result-cred-label { font: 700 10.5px/1 system-ui, sans-serif; letter-spacing: .1em; text-transform: uppercase; color: rgba(26,18,6,.5); }
+    .oaa-result-cred-value {
+      font: 800 15px/1.3 "Space Grotesk", ui-monospace, monospace; color: #14351f;
+      background: #fff; border: 1px solid rgba(22,163,74,.28); border-radius: 9px; padding: 9px 12px; word-break: break-all;
+    }
+    .oaa-result-head { display: flex; align-items: center; gap: 9px; font: 800 14px/1.2 system-ui, sans-serif; color: #15803d; }
   </style>
 </head>
 <body class="owner-accounts-page" data-require-auth="1">
@@ -422,69 +519,87 @@
 
   <div class="owner-accounts-modal" id="owner-add-account-modal" hidden>
     <div class="owner-accounts-modal-card">
-      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;">
-        <div>
-          <div style="font-weight:800;font-size:18px;">Add account</div>
-          <div class="owner-accounts-muted">Creates a username and temporary password. The person logs in and completes onboarding themselves.</div>
+      <div class="oaa-head">
+        <div class="oaa-head-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M19 8v6M22 11h-6"></path></svg>
         </div>
-        <button class="btn btn-ghost" type="button" id="owner-add-account-close">Close</button>
+        <div class="oaa-head-copy">
+          <h2 class="oaa-head-title">Add account</h2>
+          <p class="oaa-head-sub">Creates a username and temporary password. The person logs in and finishes onboarding themselves.</p>
+        </div>
+        <button class="oaa-head-close" type="button" id="owner-add-account-close">Close</button>
       </div>
 
-      <div id="owner-add-account-form" style="display:grid;gap:12px;">
-        <label style="display:grid;gap:4px;">
-          <span style="font-weight:700;font-size:13px;">Role</span>
+      <div id="owner-add-account-form" class="oaa-body">
+        <div class="oaa-field">
+          <span class="oaa-label">Role</span>
           <select id="owner-add-role" class="auth-input">
             <option value="trainer" selected>Trainer</option>
             <option value="manager">Manager</option>
             <option value="client">Client</option>
           </select>
-        </label>
-        <label style="display:grid;gap:4px;">
-          <span style="font-weight:700;font-size:13px;">Display name <span class="owner-accounts-muted">(optional)</span></span>
+        </div>
+        <div class="oaa-field">
+          <label class="oaa-label" for="owner-add-displayname">Display name <span class="oaa-opt">(optional)</span></label>
           <input id="owner-add-displayname" class="auth-input" placeholder="e.g. Avery Stone" autocomplete="off">
-        </label>
-        <label style="display:grid;gap:4px;">
-          <span style="font-weight:700;font-size:13px;">Username</span>
+        </div>
+        <div class="oaa-field">
+          <label class="oaa-label" for="owner-add-username">Username</label>
           <input id="owner-add-username" class="auth-input" placeholder="letters, numbers, underscores" autocomplete="off">
-        </label>
-        <label style="display:grid;gap:4px;">
-          <span style="font-weight:700;font-size:13px;">Email</span>
+        </div>
+        <div class="oaa-field">
+          <label class="oaa-label" for="owner-add-email">Email</label>
           <input id="owner-add-email" class="auth-input" type="email" placeholder="trainer@email.com" autocomplete="off">
-        </label>
-        <label style="display:grid;gap:4px;">
-          <span style="font-weight:700;font-size:13px;">Temporary password</span>
-          <div style="display:flex;gap:8px;">
-            <input id="owner-add-password" class="auth-input" placeholder="Leave blank to auto-generate" autocomplete="off" style="flex:1;">
-            <button class="btn btn-ghost" type="button" id="owner-add-genpass">Generate</button>
+          <div class="oaa-email-row">
+            <div class="oaa-email-actions">
+              <button class="oaa-btn oaa-btn-ghost" type="button" id="owner-add-autofill">Auto-fill mine</button>
+              <button class="oaa-btn oaa-btn-soft" type="button" id="owner-add-testemail">Send test email</button>
+            </div>
+            <span class="oaa-test-status" id="owner-add-test-status" role="status" aria-live="polite"></span>
           </div>
-        </label>
-        <label style="display:flex;gap:8px;align-items:flex-start;font-size:13px;">
-          <input id="owner-add-sendemail" type="checkbox" checked style="margin-top:3px;">
+        </div>
+        <div class="oaa-field">
+          <label class="oaa-label" for="owner-add-password">Temporary password</label>
+          <div class="oaa-inline">
+            <input id="owner-add-password" class="auth-input" placeholder="Leave blank to auto-generate" autocomplete="off">
+            <button class="oaa-btn oaa-btn-ghost" type="button" id="owner-add-genpass">Generate</button>
+          </div>
+        </div>
+        <label class="oaa-check">
+          <input id="owner-add-sendemail" type="checkbox" checked>
           <span>Email the user their login (a pre-written "your account is ready" message with the temp password).</span>
         </label>
-        <label style="display:flex;gap:8px;align-items:flex-start;font-size:13px;">
-          <input id="owner-add-ccowner" type="checkbox" style="margin-top:3px;">
+        <label class="oaa-check">
+          <input id="owner-add-ccowner" type="checkbox">
           <span>CC me a copy of that email.</span>
         </label>
-        <label style="display:grid;gap:4px;">
-          <span style="font-weight:700;font-size:13px;">Custom note <span class="owner-accounts-muted">(optional, replaces default message)</span></span>
+        <div class="oaa-field">
+          <label class="oaa-label" for="owner-add-message">Custom note <span class="oaa-opt">(optional, replaces default message)</span></label>
           <textarea id="owner-add-message" class="auth-input" rows="3" placeholder="Hey - made your account, still working on the website..."></textarea>
-        </label>
+        </div>
         <div class="owner-accounts-status" id="owner-add-status"></div>
-        <div style="display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;">
+        <div class="oaa-foot">
           <button class="btn btn-ghost" type="button" id="owner-add-cancel">Cancel</button>
           <button class="btn btn-primary" type="button" id="owner-add-submit">Create account</button>
         </div>
       </div>
 
-      <div id="owner-add-account-result" hidden style="display:grid;gap:10px;">
-        <div class="owner-accounts-status ok" style="font-weight:700;">Account created.</div>
-        <div class="owner-accounts-modal-item">
-          <div><strong>Username:</strong> <span id="owner-add-result-username"></span></div>
-          <div><strong>Temporary password:</strong> <span id="owner-add-result-password"></span></div>
-          <div id="owner-add-result-email" class="owner-accounts-muted"></div>
+      <div id="owner-add-account-result" class="oaa-body" hidden>
+        <div class="oaa-result-card">
+          <div class="oaa-result-head">
+            <span class="oaa-test-badge" style="background:#16a34a;">&#10003;</span> Account created
+          </div>
+          <div class="oaa-result-cred">
+            <span class="oaa-result-cred-label">Username</span>
+            <span class="oaa-result-cred-value" id="owner-add-result-username"></span>
+          </div>
+          <div class="oaa-result-cred">
+            <span class="oaa-result-cred-label">Temporary password</span>
+            <span class="oaa-result-cred-value" id="owner-add-result-password"></span>
+          </div>
+          <div id="owner-add-result-email" class="owner-accounts-muted" style="font-size:12.5px;"></div>
         </div>
-        <div style="display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;">
+        <div class="oaa-foot">
           <button class="btn btn-ghost" type="button" id="owner-add-copy">Copy login</button>
           <button class="btn btn-primary" type="button" id="owner-add-done">Done</button>
         </div>
@@ -493,7 +608,7 @@
   </div>
 
   <script src="js/main.js?v=2026-07-14-launchgate-3"></script>
-  <script src="js/ownerAccounts.js?v=2026-07-14-owner-createacct-2"></script>
+  <script src="js/ownerAccounts.js?v=2026-07-14-owner-createacct-3"></script>
 </body>
 </html>
 

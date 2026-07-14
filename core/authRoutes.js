@@ -9178,6 +9178,65 @@ async function handleOwnerCreateTrainerAccount(req, res) {
   });
 }
 
+// Owner-only: fire a sample invite email to any address (defaults to the
+// owner's own) WITHOUT creating an account. Lets the owner confirm the invite
+// email pipe end-to-end before provisioning real people. Returns the raw
+// provider result so the UI can show a check or an X.
+async function handleOwnerAccountTestEmail(req, res) {
+  const actor = await requireOwnerActor(req, res);
+  if (!actor) return true;
+
+  let payload;
+  try {
+    payload = await readJsonBody(req);
+  } catch (err) {
+    return sendJson(res, 400, { ok: false, error: err.message });
+  }
+
+  const email = normalizeEmail(payload?.email) || normalizeEmail(actor?.email);
+  if (!email) return sendJson(res, 400, { ok: false, error: 'Enter a valid email address to test.' });
+
+  const role = normalizeSignupRole(payload?.role || 'trainer') || 'trainer';
+  const roleLabel = role === 'manager' ? 'manager' : role === 'client' ? 'client' : 'trainer';
+  const displayName = String(payload?.displayName || actor?.displayName || 'RiseForIt').trim() || 'RiseForIt';
+  const greetingName = displayName.split(/\s+/)[0] || 'there';
+  const loginUrl = `${resolveAppBaseUrl(req) || ''}/`;
+  const customMessage = cleanLongText(payload?.message || '', 1200);
+  const introLine = customMessage
+    || `Hey ${greetingName} - this is a TEST of the RiseForIt ${roleLabel} account invite email. If you can read this, invites are wired up.`;
+
+  const eventProps = {
+    source: 'owner_test_email',
+    ode_test_email: 'true',
+    ode_email_subject: '[TEST] Your RiseForIt account is ready',
+    ode_email_preheader: 'This is a test of the account invite email.',
+    ode_email_cta_label: 'Log in & finish setup',
+    ode_email_cta_url: loginUrl,
+    ode_invite_username: 'sample_username',
+    ode_invite_temp_password: 'Rise-test1234',
+    ode_invite_role: roleLabel,
+    ode_invite_message: introLine,
+    ode_invite_login_url: loginUrl
+  };
+
+  let result = null;
+  try {
+    result = await emitKlaviyoEvent({ eventName: 'Trainer Account Invite', email, displayName, eventProps });
+  } catch (err) {
+    return sendJson(res, 200, { ok: false, delivered: false, error: err?.message || 'email_failed', email });
+  }
+
+  const delivered = Boolean(result?.ok);
+  return sendJson(res, 200, {
+    ok: delivered,
+    delivered,
+    email,
+    provider: result?.provider || null,
+    skipped: result?.skipped || null,
+    error: result?.error || null
+  });
+}
+
 async function handleOwnerImpersonateExit(req, res, url) {
   const cookies = parseCookies(req.headers.cookie);
   const backupToken = String(cookies[OWNER_BACKUP_COOKIE_NAME] || '').trim();
@@ -10928,6 +10987,10 @@ const authRoutes = async function authRoutes(req, res, url) {
 
     if (url.pathname === '/api/auth/owner/account/create' && req.method === 'POST') {
       return await handleOwnerCreateTrainerAccount(req, res);
+    }
+
+    if (url.pathname === '/api/auth/owner/account/test-email' && req.method === 'POST') {
+      return await handleOwnerAccountTestEmail(req, res);
     }
 
     if (url.pathname === '/api/auth/owner/demo-account' && req.method === 'POST') {

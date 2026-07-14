@@ -649,6 +649,21 @@
     return `Rise-${rand}`;
   }
 
+  // The owner's own inbox, for one-tap test sends.
+  const OWNER_TEST_EMAIL = 'jodellpersonal@gmail.com';
+
+  function setTestStatus(kind, text) {
+    const el = $('#owner-add-test-status');
+    if (!el) return;
+    el.classList.remove('ok', 'bad', 'pending', 'show');
+    if (!kind) { el.textContent = ''; return; }
+    const badge = kind === 'ok' ? '<span class="oaa-test-badge">✓</span>'
+      : kind === 'bad' ? '<span class="oaa-test-badge">✕</span>'
+        : '<span class="oaa-spin" aria-hidden="true"></span>';
+    el.classList.add(kind, 'show');
+    el.innerHTML = `${badge}<span>${text}</span>`;
+  }
+
   function openAddAccountModal() {
     const modal = $('#owner-add-account-modal');
     if (!modal) return;
@@ -667,6 +682,7 @@
     const ccEl = $('#owner-add-ccowner');
     if (ccEl) ccEl.checked = false;
     setAddStatus('');
+    setTestStatus('');
     modal.removeAttribute('hidden');
     const usernameEl = $('#owner-add-username');
     if (usernameEl) window.setTimeout(() => usernameEl.focus(), 30);
@@ -750,6 +766,48 @@
       genBtn.addEventListener('click', () => {
         const el = $('#owner-add-password');
         if (el) el.value = generateTempPassword();
+      });
+    }
+    const autofillBtn = $('#owner-add-autofill');
+    if (autofillBtn) {
+      autofillBtn.addEventListener('click', () => {
+        const el = $('#owner-add-email');
+        if (el) {
+          el.value = OWNER_TEST_EMAIL;
+          el.focus();
+        }
+        setTestStatus('');
+      });
+    }
+    const testBtn = $('#owner-add-testemail');
+    if (testBtn) {
+      testBtn.addEventListener('click', async () => {
+        const emailEl = $('#owner-add-email');
+        const email = String(emailEl?.value || '').trim() || OWNER_TEST_EMAIL;
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+          setTestStatus('bad', 'Enter a valid email first.');
+          return;
+        }
+        if (emailEl && !String(emailEl.value || '').trim()) emailEl.value = email;
+        testBtn.disabled = true;
+        setTestStatus('pending', `Sending to ${email}…`);
+        const role = String($('#owner-add-role')?.value || 'trainer').trim();
+        const displayName = String($('#owner-add-displayname')?.value || '').trim();
+        const message = String($('#owner-add-message')?.value || '').trim();
+        const resp = await api('/api/auth/owner/account/test-email', {
+          method: 'POST',
+          body: JSON.stringify({ email, role, displayName, message })
+        }).catch(() => null);
+        testBtn.disabled = false;
+        const json = resp?.json || {};
+        if (json.delivered) {
+          setTestStatus('ok', `Test email sent to ${email}.`);
+        } else {
+          const reason = json.skipped === 'not_configured' ? 'email provider not configured'
+            : json.skipped === 'event_not_enabled_for_profile' ? 'invite event not enabled'
+              : json.error || json.skipped || 'provider unavailable';
+          setTestStatus('bad', `Not sent (${reason}).`);
+        }
       });
     }
     const copyBtn = $('#owner-add-copy');

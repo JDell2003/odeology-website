@@ -23,7 +23,9 @@ const FREE_PLAN_EVENT_ALLOWLIST = new Set([
   'Password Reset Completed',
   'Friend Request Received',
   'Workout Share Invite Received',
-  'High Pain Report Submitted'
+  'High Pain Report Submitted',
+  // Owner-provisioned account invite (temp password) + its test send.
+  'Trainer Account Invite'
 ]);
 
 function parseEventList(raw) {
