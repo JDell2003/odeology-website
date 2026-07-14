@@ -1,9 +1,0 @@
-Server running on http://0.0.0.0:3000 (pid 21264)
-[asset] main.js resolved path: D:\Jasons Web\js\main.js
-[asset] /js/main.js {
-  filePath: 'D:\\Jasons Web\\js\\main.js',
-  headers: {
-    'Content-Type': 'application/javascript',
-    'Cache-Control': 'no-store'
-  }
-}

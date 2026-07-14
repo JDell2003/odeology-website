@@ -5,3 +5,17 @@ data/trainer-media/
 
 # GitHub 100MB limit: HQ kingdom master stays local (kingdom-crane.mp4 ships instead)
 videos/world/kingdom-crane-hq.mp4
+
+# Local scratch / debug artifacts — never commit
+tmp/
+tmp-*
+tmp_*
+mp-*
+pb-*
+rw-*
+railway-ctl.js
+run-scoring-tests.bat
+*.log
+*.patch
+_workorder_extract.pdf
+data/__store_test.json
