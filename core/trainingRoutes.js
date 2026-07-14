@@ -9182,13 +9182,27 @@ async function resolveUserFromSession(req) {
   const row = result.rows?.[0];
   if (!row) return null;
   await touchUserLastSeen(row.id);
+  const owner = isOwnerUser(row);
+  // A trainer is anyone carrying the 'trainer' admin-notes flag (set at
+  // trainer onboarding) — owners count too. Without this, user.isTrainer was
+  // always undefined and every trainer 403'd on trainer-only endpoints.
+  const isTrainer = owner || notesHasTrainerFlag(row.admin_notes);
   return {
     id: row.id,
     displayName: row.display_name,
     username: row.username || null,
     email: row.email || null,
-    isOwner: isOwnerUser(row)
+    isOwner: owner,
+    isTrainer
   };
+}
+
+function notesHasTrainerFlag(adminNotesRaw) {
+  return String(adminNotesRaw || '')
+    .split(/\s+/)
+    .map((part) => String(part || '').trim().toLowerCase())
+    .filter(Boolean)
+    .includes('trainer');
 }
 
 async function safeResolveUserFromSession(req, { routeName = 'trainingRoutes', fallback = 'service_unavailable' } = {}) {
