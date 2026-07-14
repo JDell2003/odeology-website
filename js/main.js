@@ -14451,19 +14451,24 @@ function initAuthUi() {
             trainerPaymentsLink.insertAdjacentElement('afterend', trainerCalendarLink);
         }
 
-        // The Arena is a Training Portal destination (under Coaches page) —
-        // no duplicated role-tab copy. Pure trainers have the whole client
-        // portal hidden, so for them the single link falls back into their
-        // role section instead of disappearing.
+        // The Arena is a Training Portal / community destination. Clients and
+        // owners get it under Coaches page. Pure trainers see ONLY their
+        // business tools in the sidebar, so The Arena is hidden for them
+        // rather than falling back into the trainer role section.
         trainerLeaderboardLink?.remove();
         const arenaLink = originalLeaderboardLink || panel.querySelector('#control-arena-link');
+        const pureTrainer = trainerMode && !canAccessClientTrainingPortal(user, meta);
         if (arenaLink) {
             arenaLink.id = 'control-arena-link';
             const arenaText = arenaLink.querySelector('.text');
             if (arenaText) arenaText.textContent = 'The Arena';
-            const portalUsable = canAccessClientTrainingPortal(user, meta);
-            const home = (portalUsable || !trainerMode) ? trainingSection : trainerSection;
-            if (home && arenaLink.parentElement !== home) home.appendChild(arenaLink);
+            if (pureTrainer) {
+                arenaLink.classList.add('hidden');
+            } else {
+                arenaLink.classList.remove('hidden');
+                const home = trainingSection || arenaLink.parentElement;
+                if (home && arenaLink.parentElement !== home) home.appendChild(arenaLink);
+            }
         }
 
         if (!trainerCoachesLink) {
@@ -14487,9 +14492,9 @@ function initAuthUi() {
         if (communitySection) communitySection.classList.toggle('hidden', trainerMode);
 
         if (originalMessagesLink) originalMessagesLink.classList.toggle('hidden', trainerMode);
-        // The Arena stays visible for every role — it lives in the Training
-        // Portal section now, not Community.
-        if (originalLeaderboardLink) originalLeaderboardLink.classList.remove('hidden');
+        // The Arena lives in the Training Portal for clients/owners; pure
+        // trainers don't get it in their business sidebar.
+        if (originalLeaderboardLink) originalLeaderboardLink.classList.toggle('hidden', pureTrainer);
         if (originalCoachesLink) {
             const textEl = originalCoachesLink.querySelector('.text') || originalCoachesLink;
             if (textEl) textEl.textContent = 'Coaches page';
