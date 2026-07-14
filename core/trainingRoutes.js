@@ -11558,15 +11558,35 @@ async function trainingRoutes(req, res, url) {
     const filename = String(payload?.filename || 'plan.pdf').trim().slice(0, 160);
     const dataUrl = String(payload?.dataUrl || '');
     if (!clientUserId) return sendJson(res, 400, { error: 'Missing client' });
+    if (!/^[0-9a-f-]{36}$/i.test(clientUserId)) return sendJson(res, 400, { error: 'Invalid client id' });
     if (!/^data:application\/pdf;base64,/.test(dataUrl)) return sendJson(res, 400, { error: 'Expected a PDF' });
     if (dataUrl.length > 8_500_000) return sendJson(res, 413, { error: 'PDF too large (max ~6MB)' });
+    // Owners can act on anyone; trainers only on clients attached to them.
+    if (!user.isOwner) {
+      const link = await db.query(
+        `SELECT 1 FROM (
+           SELECT linked_user_id FROM app_trainer_clients WHERE trainer_user_id = $1 AND status <> 'removed'
+           UNION
+           SELECT linked_user_id FROM app_trainer_invites WHERE trainer_user_id = $1 AND invite_type = 'coaching_invite' AND linked_user_id IS NOT NULL
+         ) l WHERE linked_user_id = $2::uuid LIMIT 1`,
+        [user.id, clientUserId]
+      ).catch(() => ({ rows: [] }));
+      if (!link.rows?.[0]) return sendJson(res, 403, { error: 'That client is not attached to your account' });
+    }
     try {
+      // A trainer-sent PDF IS the client's program: wipe the app-generated plan
+      // so there is one source of truth (the PDF the trainer uploaded).
+      if (kind === 'training') {
+        await db.query('DELETE FROM app_training_plans WHERE user_id = $1::uuid', [clientUserId]).catch(() => {});
+      } else {
+        await db.query('DELETE FROM app_grocery_lists WHERE user_id = $1::uuid', [clientUserId]).catch(() => {});
+      }
       const key = `client-docs:${clientUserId}`;
       const docs = (await jsonStore.getJson(key, [])) || [];
       const list = Array.isArray(docs) ? docs : [];
       list.unshift({ kind, filename, dataUrl, fromTrainerId: String(user.id), fromTrainerName: String(user.displayName || user.username || 'Your coach'), at: new Date().toISOString() });
       await jsonStore.setJson(key, list.slice(0, 12));
-      return sendJson(res, 200, { ok: true });
+      return sendJson(res, 200, { ok: true, replacedProgram: kind });
     } catch (err) {
       return sendJson(res, 500, { error: 'Failed to send document' });
     }

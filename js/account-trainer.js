@@ -427,11 +427,12 @@
     return `${minutes}m`;
   }
 
-  function buildTrainerClientAccountHref(userId) {
+  function buildTrainerClientAccountHref(userId, returnTo = '/account.html') {
     const id = String(userId || '').trim();
     if (!/^[0-9a-f-]{36}$/i.test(id)) return '';
-    const returnTo = '/account.html';
-    return `/api/auth/trainer/impersonate/${encodeURIComponent(id)}?returnTo=${encodeURIComponent(returnTo)}`;
+    const dest = String(returnTo || '/account.html');
+    const safeDest = dest.startsWith('/') ? dest : '/account.html';
+    return `/api/auth/trainer/impersonate/${encodeURIComponent(id)}?returnTo=${encodeURIComponent(safeDest)}`;
   }
 
   function titleizeStatus(raw, fallback = 'Pending') {
@@ -2401,15 +2402,22 @@
         setStatus(resp && resp.json && resp.json.ok ? 'Note saved.' : 'Could not save note.');
         return;
       }
-      // Add/Edit training or nutrition plan — peer into the client account,
-      // where the trainer builds or edits it directly.
+      // Add/Edit training or nutrition plan — peer into the client account and
+      // land on the right surface: an EXISTING plan opens the in-app editor
+      // (nutrition.html / training.html); a client with NO plan drops straight
+      // into the onboarding questions the trainer answers on their behalf
+      // (meal-program.html picker for nutrition, training.html wizard).
       const planTrigger = target.closest('[data-client-plan]');
       if (planTrigger instanceof Element) {
         const userId = String(planTrigger.getAttribute('data-client-uid') || '').trim();
         const kind = String(planTrigger.getAttribute('data-client-plan') || '').trim();
-        const href = buildTrainerClientAccountHref(userId);
+        const hasPlan = String(planTrigger.getAttribute('data-client-has') || '0') === '1';
+        let returnTo;
+        if (kind === 'nutrition') returnTo = hasPlan ? '/nutrition.html' : '/meal-program.html';
+        else returnTo = hasPlan ? '/training.html' : '/training.html?from=intake';
+        const href = buildTrainerClientAccountHref(userId, returnTo);
         if (!href) { setStatus('This client has no attached account yet.'); return; }
-        window.location.href = href + (href.includes('?') ? '&' : '?') + 'as=' + encodeURIComponent(kind);
+        window.location.href = href;
         return;
       }
       // Send a training / nutrition PDF to the client.
@@ -2617,6 +2625,7 @@
         const kind = String(target.dataset.kind || '').trim();
         const cname = String(target.dataset.cname || 'client').trim();
         if (file.size > 8 * 1024 * 1024) { setStatus('PDF is too large (max 8MB).'); return; }
+        const label = kind === 'nutrition' ? 'Nutrition' : 'Training';
         const reader = new FileReader();
         reader.onload = async () => {
           setStatus(`Sending ${kind} PDF to ${cname}…`);
@@ -2624,9 +2633,14 @@
             method: 'POST',
             body: JSON.stringify({ clientUserId: uid, kind, filename: file.name, dataUrl: String(reader.result || '') })
           }).catch(() => null);
-          setStatus(resp && resp.json && resp.json.ok
-            ? `${kind === 'nutrition' ? 'Nutrition' : 'Training'} PDF sent to ${cname}.`
-            : 'Could not send the PDF — try again.');
+          if (resp && resp.json && resp.json.ok) {
+            // The PDF becomes their program: the generated plan was wiped
+            // server-side, so refresh the roster to flip the status pill.
+            setStatus(`${label} PDF sent to ${cname} — it's now their ${kind} program.`);
+            await loadDashboard();
+          } else {
+            setStatus('Could not send the PDF — try again.');
+          }
         };
         reader.readAsDataURL(file);
       }
