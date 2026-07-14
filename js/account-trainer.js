@@ -612,13 +612,13 @@
                 <span class="client-plan-tag">Training</span>
                 ${workout ? `<button type="button" class="client-btn" data-client-plan="training" data-plan-mode="modify" data-client-has="1" data-client-uid="${escapeHtml(uid)}" data-client-name="${escapeHtml(name)}">Modify training</button>` : ''}
                 <button type="button" class="client-btn${workout ? ' ghost' : ''}" data-client-plan="training" data-plan-mode="add" data-client-has="${workout ? '1' : '0'}" data-client-uid="${escapeHtml(uid)}" data-client-name="${escapeHtml(name)}">${workout ? 'Redo training' : 'Add training'}</button>
-                <button type="button" class="client-btn ghost" data-client-doc="training" data-client-uid="${escapeHtml(uid)}" data-client-name="${escapeHtml(name)}">Send PDF</button>
+                <button type="button" class="client-btn ghost" data-client-doc="training" data-client-has="${workout ? '1' : '0'}" data-client-uid="${escapeHtml(uid)}" data-client-name="${escapeHtml(name)}">Send PDF</button>
               </div>
               <div class="client-plan-group">
                 <span class="client-plan-tag">Nutrition</span>
                 ${nutrition ? `<button type="button" class="client-btn" data-client-plan="nutrition" data-plan-mode="modify" data-client-has="1" data-client-uid="${escapeHtml(uid)}" data-client-name="${escapeHtml(name)}">Modify nutrition</button>` : ''}
                 <button type="button" class="client-btn${nutrition ? ' ghost' : ''}" data-client-plan="nutrition" data-plan-mode="add" data-client-has="${nutrition ? '1' : '0'}" data-client-uid="${escapeHtml(uid)}" data-client-name="${escapeHtml(name)}">${nutrition ? 'Redo nutrition' : 'Add nutrition'}</button>
-                <button type="button" class="client-btn ghost" data-client-doc="nutrition" data-client-uid="${escapeHtml(uid)}" data-client-name="${escapeHtml(name)}">Send PDF</button>
+                <button type="button" class="client-btn ghost" data-client-doc="nutrition" data-client-has="${nutrition ? '1' : '0'}" data-client-uid="${escapeHtml(uid)}" data-client-name="${escapeHtml(name)}">Send PDF</button>
               </div>` : ''}
             </div>
           </article>`;
@@ -2519,16 +2519,34 @@
         }
         return;
       }
-      // Send a training / nutrition PDF to the client.
+      // Send a training / nutrition PDF to the client. If they already have a
+      // plan of that kind, the PDF becomes what shows in their account for that
+      // plan — so confirm the overwrite first.
       const docTrigger = target.closest('[data-client-doc]');
       if (docTrigger instanceof Element) {
         const input = document.getElementById('client-doc-input');
         if (!input) return;
-        input.dataset.uid = String(docTrigger.getAttribute('data-client-uid') || '').trim();
-        input.dataset.kind = String(docTrigger.getAttribute('data-client-doc') || '').trim();
-        input.dataset.cname = String(docTrigger.getAttribute('data-client-name') || '').trim();
-        input.value = '';
-        input.click();
+        const kind = String(docTrigger.getAttribute('data-client-doc') || '').trim();
+        const cname = String(docTrigger.getAttribute('data-client-name') || 'this client').trim();
+        const hasPlan = String(docTrigger.getAttribute('data-client-has') || '0') === '1';
+        const label = kind === 'nutrition' ? 'nutrition plan' : 'training plan';
+        const openPicker = () => {
+          input.dataset.uid = String(docTrigger.getAttribute('data-client-uid') || '').trim();
+          input.dataset.kind = kind;
+          input.dataset.cname = cname;
+          input.value = '';
+          input.click();
+        };
+        if (hasPlan) {
+          openPlanEraseConfirm({
+            title: `Send a PDF over ${cname}'s ${label}?`,
+            body: `${cname} already has a ${label} in the app. The PDF you upload will show at the top of their ${kind === 'nutrition' ? 'Nutrition' : 'Training'} page as their coach's plan. Continue?`,
+            confirmLabel: 'Choose PDF',
+            onConfirm: openPicker
+          });
+        } else {
+          openPicker();
+        }
         return;
       }
       const workoutPdfTrigger = target.closest('[data-workout-review-pdf]');
