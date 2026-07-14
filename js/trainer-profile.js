@@ -12067,6 +12067,19 @@ footer{padding:34px 0;text-align:center;font-size:13px;color:var(--muted);}
       hideTrainerRouteLoader();
       return;
     }
+    // Deep-link: arriving with ?edit=1 (e.g. the "Create website" button on
+    // the Website page) opens the live code editor straight away instead of
+    // the preview page. Only for the owner editing their own page.
+    if (params.get('edit') === '1' && !param && canEditTrainerPage(pageState.trainer, view)) {
+      if (!pageState.currentTrainerPage) {
+        pageState.currentTrainerPage = Array.isArray(pageState.trainerPages) && pageState.trainerPages.length
+          ? cloneJson(pageState.trainerPages[0])
+          : createBlankTrainerPage(pageState.trainer);
+      }
+      openBuilderEditor(pageState.currentTrainerPage);
+      hideTrainerRouteLoader();
+      return;
+    }
     if (trainerId && (!viewerId || viewerId !== trainerId)) {
       api('/api/auth/trainer/profile-view', {
         method: 'POST',

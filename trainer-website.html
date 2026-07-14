@@ -469,7 +469,8 @@
       // because renderPreview() re-creates the button.
       document.addEventListener('click', (ev) => {
         if (ev.target.closest('#tw-create-site')) {
-          window.location.href = 'trainer-profile.html';
+          // Jump straight into the live code editor, not the preview page.
+          window.location.href = 'trainer-profile.html?edit=1';
         }
       });
       $('#tw-view-toggle').addEventListener('click', (ev) => {
