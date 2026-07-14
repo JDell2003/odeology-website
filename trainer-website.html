@@ -469,8 +469,10 @@
       // because renderPreview() re-creates the button.
       document.addEventListener('click', (ev) => {
         if (ev.target.closest('#tw-create-site')) {
-          // Jump straight into the live code editor, not the preview page.
-          window.location.href = 'trainer-profile.html?edit=1';
+          // Open the trainer's OWN coach page with its editor turned on —
+          // the same editor they get from "Edit page" on their profile.
+          const h = String(handle || '').trim();
+          window.location.href = h ? `/coach/${encodeURIComponent(h)}?edit=1` : 'trainer-profile.html';
         }
       });
       $('#tw-view-toggle').addEventListener('click', (ev) => {

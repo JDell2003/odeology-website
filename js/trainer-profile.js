@@ -12057,25 +12057,15 @@ footer{padding:34px 0;text-align:center;font-size:13px;color:var(--muted);}
     if (pageState.requestedPublicRoute && pageState.currentTrainerPage) {
       initializeQualificationState(pageState.currentTrainerPage);
     }
+    // Open the page editor on the coach route when: the page has no custom
+    // code yet, a pending open was queued, OR we arrived with ?edit=1 (the
+    // "Create website" button on the Website page links here with edit on).
     if (
       pathMatch
       && canEditTrainerPage(pageState.trainer, view)
       && pageState.currentTrainerPage
-      && (pageState.pendingStandaloneEditorOpen || !pageHasRenderableCustomCode(pageState.currentTrainerPage))
+      && (pageState.pendingStandaloneEditorOpen || params.get('edit') === '1' || !pageHasRenderableCustomCode(pageState.currentTrainerPage))
     ) {
-      openBuilderEditor(pageState.currentTrainerPage);
-      hideTrainerRouteLoader();
-      return;
-    }
-    // Deep-link: arriving with ?edit=1 (e.g. the "Create website" button on
-    // the Website page) opens the live code editor straight away instead of
-    // the preview page. Only for the owner editing their own page.
-    if (params.get('edit') === '1' && !param && canEditTrainerPage(pageState.trainer, view)) {
-      if (!pageState.currentTrainerPage) {
-        pageState.currentTrainerPage = Array.isArray(pageState.trainerPages) && pageState.trainerPages.length
-          ? cloneJson(pageState.trainerPages[0])
-          : createBlankTrainerPage(pageState.trainer);
-      }
       openBuilderEditor(pageState.currentTrainerPage);
       hideTrainerRouteLoader();
       return;
