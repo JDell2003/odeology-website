@@ -26,10 +26,15 @@
         .nut-coach-doc-body h3{margin:0 0 3px;font-size:18px;line-height:1.25;}
         .nut-coach-doc-body .tiny{margin:0;}
         .nut-coach-doc-actions{flex:0 0 auto;display:flex;gap:8px;flex-wrap:wrap;}
+        /* Inline PDF viewer — shown under the title when a coach PDF is the plan */
+        .nut-coach-doc-viewer{margin:0 0 22px;border-radius:16px;overflow:hidden;
+            border:1px solid rgba(185,138,43,.32);box-shadow:0 8px 24px rgba(90,60,10,.08);background:#f4efe6;}
+        .nut-coach-doc-viewer iframe{display:block;width:100%;height:78vh;min-height:520px;border:0;background:#f4efe6;}
         @media (max-width:640px){
             .nut-coach-doc{flex-wrap:wrap;}
             .nut-coach-doc-actions{width:100%;}
             .nut-coach-doc-actions .btn{flex:1 1 auto;}
+            .nut-coach-doc-viewer iframe{height:70vh;min-height:420px;}
         }
     </style>
 </head>
@@ -177,9 +182,14 @@
                 <p class="ns-muted tiny" id="nut-coach-doc-meta"></p>
             </div>
             <div class="nut-coach-doc-actions">
-                <button class="btn btn-primary" type="button" id="nut-coach-doc-view">View PDF</button>
+                <button class="btn btn-primary" type="button" id="nut-coach-doc-view">Open in new tab</button>
                 <button class="btn btn-ghost" type="button" id="nut-coach-doc-download">Download</button>
             </div>
+        </section>
+
+        <!-- Inline PDF viewer — the coach PDF IS the plan; shown in place of it -->
+        <section class="nut-coach-doc-viewer" id="nut-coach-doc-viewer" hidden>
+            <iframe id="nut-coach-doc-frame" title="Your nutrition PDF from your coach"></iframe>
         </section>
 
         <!-- No plan yet -->
@@ -243,7 +253,7 @@
     <script src="core/mealProgramConstants.js?v=2026-07-14-mp-4"></script>
     <script src="core/mealProgramEngine.js?v=2026-07-14-mp-4"></script>
     <script src="js/meal-program-data.js?v=2026-07-14-mp-4"></script>
-    <script src="js/nutrition.js?v=2026-07-14-nutrition-4-coachpdf"></script>
+    <script src="js/nutrition.js?v=2026-07-14-nutrition-5-coachpdf"></script>
 </body>
 </html>
 

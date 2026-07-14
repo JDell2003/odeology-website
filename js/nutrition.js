@@ -307,6 +307,15 @@
                     document.body.appendChild(a); a.click(); a.remove();
                 });
                 sec.hidden = false;
+                // The coach PDF IS the plan: embed it under the title and hide
+                // the generated meal-plan / empty state / edit controls so the
+                // two never show at once.
+                var frame = $('nut-coach-doc-frame'), viewer = $('nut-coach-doc-viewer');
+                if (frame && viewer) { frame.src = url; viewer.hidden = false; }
+                var planEl = $('nutrition-plan'); if (planEl) { planEl.hidden = true; planEl.style.display = 'none'; }
+                var emptyEl = $('nutrition-empty'); if (emptyEl) { emptyEl.hidden = true; emptyEl.style.display = 'none'; }
+                var defBtn = $('nut-default'); if (defBtn) defBtn.style.display = 'none';
+                var rstBtn = $('nut-restart'); if (rstBtn) rstBtn.style.display = 'none';
             })
             .catch(function () {});
     }
