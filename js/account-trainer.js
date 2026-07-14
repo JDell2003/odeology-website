@@ -1022,6 +1022,9 @@
   }
 
   function renderTrainerManagerCard(currentData) {
+    // Managers are retired — no "Find a Manager" card on the trainer dashboard.
+    return '';
+    // eslint-disable-next-line no-unreachable
     const trainer = currentData?.trainer || {};
     const managerDirectory = Array.isArray(currentData?.managerDirectory) ? currentData.managerDirectory : [];
     const reviews = Array.isArray(currentData?.trainerManagerReviews) ? currentData.trainerManagerReviews : [];
@@ -1311,6 +1314,52 @@
     `;
   }
 
+  /* Website funnel (visit.html pre-visit questions) -> consult-hit "leads".
+     Groups the raw start/answer/complete/exit events into one card per
+     visitor session, carrying the questions they answered (complete or
+     partial) so they read alongside coach-page consult submissions. */
+  function funnelLeadsFromInsights(json) {
+    const events = Array.isArray(json?.events) ? json.events : [];
+    const variants = Array.isArray(json?.config?.variants) ? json.config.variants : [];
+    const variantLabel = (id) => {
+      const v = variants.find((x) => String(x?.id) === String(id));
+      return v ? String(v.label || 'Version') : 'Website funnel';
+    };
+    const sessions = new Map();
+    events.forEach((e) => {
+      const key = `${e.visitorId || ''}|${e.variantId || ''}`;
+      if (!sessions.has(key)) {
+        sessions.set(key, { visitorId: e.visitorId, variantId: e.variantId, first: e.ts, last: e.ts, answers: [], complete: false });
+      }
+      const s = sessions.get(key);
+      if (e.ts && e.ts < s.first) s.first = e.ts;
+      if (e.ts && e.ts > s.last) s.last = e.ts;
+      if (e.type === 'answer' && String(e.question || '').trim()) s.answers.push({ q: e.question, a: e.answer });
+      if (e.type === 'complete') {
+        s.complete = true;
+        if (Array.isArray(e.answers) && e.answers.length) s.answers = e.answers.map((x) => ({ q: x.question, a: x.answer }));
+      }
+    });
+    // Number the visitors by first-seen order (Visitor 1, 2, ...).
+    const list = [...sessions.values()].filter((s) => s.answers.length || s.complete)
+      .sort((a, b) => String(a.first).localeCompare(String(b.first)));
+    return list.map((s, i) => {
+      const answers = {};
+      s.answers.forEach((a, ix) => { answers[String(a.q || `Question ${ix + 1}`)] = a.a; });
+      return {
+        id: `funnel:${s.visitorId}:${s.variantId}`,
+        fullName: `Website visitor ${i + 1}`,
+        email: '', phone: '',
+        answers,
+        createdAt: s.first, updatedAt: s.last,
+        status: s.complete ? 'new' : 'partial',
+        sourcePageName: 'Website funnel',
+        formId: `${variantLabel(s.variantId)} — ${s.answers.length} answered${s.complete ? '' : ' (left early)'}`,
+        __funnel: true
+      };
+    });
+  }
+
   function prettifyConsultFieldKey(key) {
     const clean = String(key || '').trim().replace(/[_-]+/g, ' ').replace(/\s+/g, ' ').trim();
     if (!clean) return 'Field';
@@ -1446,7 +1495,6 @@
           <button type="button" class="account-trainer-pill${workoutApproveCount > 0 ? ' has-alert' : ''}" data-clients-view="workout-approve" aria-pressed="false">Workout Approve <span>${workoutApproveCount}</span></button>
           <button type="button" class="account-trainer-pill${actionsCount > 0 ? ' has-alert' : ''}" data-clients-view="actions" aria-pressed="false">Actions <span>${actionsCount}</span></button>
           <button type="button" class="account-trainer-pill${potentialCount > 0 ? ' has-alert' : ''}" data-clients-view="potential-clients" aria-pressed="false">Potential Clients <span>${potentialCount}</span></button>
-          <button type="button" class="account-trainer-pill${potentialCount > 0 ? ' has-alert' : ''}" data-clients-view="consult-form-hits" aria-pressed="false">Consult Form Hits <span>${potentialCount}</span></button>
           <button type="button" class="account-trainer-pill${requestsCount > 0 ? ' has-alert' : ''}" data-clients-view="requests" aria-pressed="false">Requests <span>${requestsCount}</span></button>
         </div>
         <section class="account-trainer-panel" data-clients-panel="current">
@@ -1476,8 +1524,8 @@
         </section>
         <section class="account-trainer-panel" data-clients-panel="consult-form-hits">
           <h3>Consult Form Hits</h3>
-          <div class="account-trainer-muted">Every consultation form submission from your coach page, with every field the visitor filled out.</div>
-          ${renderConsultFormHits(leads)}
+          <div class="account-trainer-muted">Every pre-visit answer from your website link and every consultation form filled out on your coach page — in one place.</div>
+          ${renderConsultFormHits([...(Array.isArray(data?.funnelLeads) ? data.funnelLeads : []), ...leads])}
         </section>
         <section class="account-trainer-panel" data-clients-panel="requests">
           <h3>Requests</h3>
@@ -1871,6 +1919,15 @@
         });
       }
       syncClientsPanels();
+      // Consult Form Hits is its own control-panel destination (no longer a
+      // Clients sub-tab): show only that panel and hide the client pills.
+      if (requestedTab === 'consult-form-hits') {
+        const pillsRow = shell.querySelector('.account-trainer-clients-pills');
+        if (pillsRow) pillsRow.style.display = 'none';
+        shell.querySelectorAll('[data-clients-panel]').forEach((panel) => {
+          panel.style.display = String(panel.getAttribute('data-clients-panel') || '') === 'consult-form-hits' ? '' : 'none';
+        });
+      }
       bindTrainerPageChooser(meUser, currentData);
       fillInvitePanel();
       // Navbar "+" quick-add lands here with ?action=add-client: open the
@@ -1974,12 +2031,13 @@
     };
 
     const loadDashboard = async () => {
-      const [dashboardResp, managerDirResp, managerReviewsResp, workspaceResp, leadsResp] = await Promise.all([
+      const [dashboardResp, managerDirResp, managerReviewsResp, workspaceResp, leadsResp, funnelResp] = await Promise.all([
         api('/api/auth/trainer/dashboard'),
         api('/api/auth/trainer/manager-directory'),
         api('/api/auth/trainer/manager-review-requests'),
         api('/api/auth/workspace-requests/public'),
-        api('/api/auth/trainer/leads')
+        api('/api/auth/trainer/leads'),
+        api('/api/training/website-insights').catch(() => null)
       ]);
       if (!dashboardResp.ok || !dashboardResp.json?.ok) {
         const managerContext = getManagerDashboardContext();
@@ -2003,6 +2061,8 @@
         Array.isArray(workspaceResp?.json?.locationRequests) ? workspaceResp.json.locationRequests : []
       );
       currentData.pageLeads = Array.isArray(leadsResp?.json?.leads) ? leadsResp.json.leads : [];
+      // Website funnel pre-visit answers become consult hits too.
+      currentData.funnelLeads = funnelLeadsFromInsights(funnelResp?.json);
       currentData.leadUi = {
         search: leadSearchTerm,
         stage: leadStageFilter,
