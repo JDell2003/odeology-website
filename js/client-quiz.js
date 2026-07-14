@@ -195,7 +195,12 @@
         { id: 'mealPicksBreakfast', section: 'nutrition', type: 'mealGrid', slot: 'breakfast', minSelect: 2, title: 'Pick breakfasts you’d actually eat', subtitle: 'Tap the photos — your 7-day plan is built from these.', skipIf: () => !(window.MealProgramEngine && window.MealProgramData) },
         { id: 'mealPicksLunch', section: 'nutrition', type: 'mealGrid', slot: 'lunch', minSelect: 3, title: 'Now pick your lunches', subtitle: 'At least 3 — repeats are meal-prep friendly.', skipIf: () => !(window.MealProgramEngine && window.MealProgramData) },
         { id: 'mealPicksDinner', section: 'nutrition', type: 'mealGrid', slot: 'dinner', minSelect: 3, title: 'And your dinners', subtitle: 'Snacks get added automatically to hit your calorie and protein targets.', skipIf: () => !(window.MealProgramEngine && window.MealProgramData) },
-        { id: 'mealBudget', section: 'nutrition', type: 'choice', title: 'What’s your monthly grocery budget?', subtitle: 'Your budget drives your protein tier — we squeeze the most muscle out of every dollar.', options: ['Under $200', 'Around $300', 'Around $400', '$500 or more'] },
+        { id: 'mealBudget', section: 'nutrition', type: 'choice', title: 'What’s your monthly grocery budget?', subtitle: 'Here’s the real tradeoff: the more you can spend, the more protein we pack in — and protein is what builds muscle, keeps you full, and helps you feel your best. On a tighter budget we protect your protein where it matters most and fill the rest of your calories with cheaper carbs, so you still hit your goal. Quality dips a little, but you’ll very likely still get there.', options: [
+            { value: 'Under $200', desc: 'Leanest budget. Protein goes where it counts; the rest of your calories come from affordable carbs. Less variety, still on track.' },
+            { value: 'Around $300', desc: 'More protein in every meal and a bit more variety and quality.' },
+            { value: 'Around $400', desc: 'High protein across the board — better quality, food you’ll actually enjoy.' },
+            { value: '$500 or more', desc: 'Max protein tier: the most muscle, the best you’ll feel, and the widest food choice.' }
+        ] },
         { id: 'mealState', section: 'nutrition', type: 'stateSelect', title: 'Which state do you shop in?', subtitle: 'Grocery prices adjust to your area.', skipIf: () => !(window.MealProgramEngine && window.MealProgramData) },
         { id: 'dietaryPref', section: 'nutrition', type: 'choice', title: 'Any dietary preference?', options: ['No restrictions', 'Vegetarian', 'Vegan', 'Pescatarian', 'No red meat'] },
         { id: 'allergies', section: 'nutrition', type: 'multi', title: 'Any food allergies?', options: ['Fish', 'Eggs', 'Dairy', 'Gluten', 'None of the above'] },
@@ -503,12 +508,19 @@
                 </div>`;
         }
 
-        const choiceRow = (screen, opt, extra = '') => `
-            <button type="button" class="bm-option ${answers[screen.id] === opt ? 'is-selected' : ''}" data-bm-choice="${esc(opt)}">
-                <span class="bm-option-label">${esc(opt)}</span>
+        // Options are plain strings, or { value, desc } to show a short line
+        // under the label explaining what that choice means.
+        const choiceRow = (screen, opt, extra = '') => {
+            const value = typeof opt === 'object' ? opt.value : opt;
+            const label = typeof opt === 'object' ? (opt.label || opt.value) : opt;
+            const desc = typeof opt === 'object' ? (opt.desc || '') : '';
+            return `
+            <button type="button" class="bm-option ${desc ? 'has-desc' : ''} ${answers[screen.id] === value ? 'is-selected' : ''}" data-bm-choice="${esc(value)}">
+                <span class="bm-option-label">${esc(label)}${desc ? `<span class="bm-option-desc">${esc(desc)}</span>` : ''}</span>
                 ${extra}
                 <span class="bm-radio" aria-hidden="true"></span>
             </button>`;
+        };
 
         // Multi options are plain strings, or { value, label } when the stored
         // value must be a stable id (e.g. the pillar goals contract).

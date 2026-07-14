@@ -209,6 +209,17 @@ body.client-quiz-active .entry-hero {
     border-color: rgba(197, 141, 79, 0.55);
 }
 .bm-option-label { flex: 1; }
+/* Options with an explainer line sit taller and align to the top. */
+.bm-option.has-desc { align-items: flex-start; min-height: 0; }
+.bm-option-desc {
+    display: block;
+    margin-top: 4px;
+    font-size: 12.5px;
+    font-weight: 500;
+    line-height: 1.45;
+    color: rgba(36, 26, 18, 0.6);
+}
+.bm-option.is-selected .bm-option-desc { color: rgba(36, 26, 18, 0.72); }
 .bm-option-icon {
     width: 40px;
     height: 40px;
