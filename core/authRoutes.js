@@ -8575,6 +8575,7 @@ async function handleOwnerAccountsList(req, res, url) {
     workspaceId: row.workspace_id || '',
     locationId: row.location_id || '',
     isManager: row.is_manager_account === true,
+    ownerCreated: notesHasFlag(row.admin_notes || '', 'owner_created'),
     hasActivePlan: Boolean(row.active_plan_id),
     activePlanUpdatedAt: row.active_plan_updated_at || null,
     ownerMessageCount: Number(row.owner_message_count || 0),
@@ -9057,6 +9058,124 @@ async function handleOwnerCreateDemoAccount(req, res, url, options = {}) {
     console.error('[owner-demo-account]', err?.message || err);
     return sendJson(res, 500, { ok: false, error: 'Could not create demo account.' });
   }
+}
+
+function buildOwnerInvitePassword() {
+  // Human-typeable temp password that still clears the 8-char minimum.
+  return `Rise-${crypto.randomBytes(4).toString('hex')}`;
+}
+
+// Owner-provisioned account: sets username + temp password only. The account is
+// flagged as a trainer (or chosen role) but NOT onboarded, so the first login
+// falls through the onboarding gate and the trainer completes every step
+// themselves. `owner_created` marks it for the "New Accounts" bucket.
+async function handleOwnerCreateTrainerAccount(req, res) {
+  const actor = await requireOwnerActor(req, res);
+  if (!actor) return true;
+
+  let payload;
+  try {
+    payload = await readJsonBody(req);
+  } catch (err) {
+    return sendJson(res, 400, { ok: false, error: err.message });
+  }
+
+  const username = String(payload?.username || '').trim().toLowerCase();
+  const email = normalizeEmail(payload?.email);
+  const displayNameRaw = String(payload?.displayName || '').trim();
+  const role = normalizeSignupRole(payload?.role || 'trainer') || 'trainer';
+  const providedPassword = String(payload?.password || '');
+  const sendEmailFlag = cleanBoolean(payload?.sendEmail);
+  const ccOwnerFlag = cleanBoolean(payload?.ccOwner);
+  const customMessage = cleanLongText(payload?.message || '', 1200);
+
+  if (!username || username.length < 3) return sendJson(res, 400, { ok: false, error: 'Username must be at least 3 characters' });
+  if (!/^[a-z0-9_]+$/.test(username)) return sendJson(res, 400, { ok: false, error: 'Username can only use letters, numbers, underscores' });
+  if (!email) return sendJson(res, 400, { ok: false, error: 'Enter a valid email address' });
+  if (providedPassword && providedPassword.length < 8) return sendJson(res, 400, { ok: false, error: 'Temporary password must be at least 8 characters' });
+
+  const password = providedPassword && providedPassword.length >= 8 ? providedPassword : buildOwnerInvitePassword();
+  const displayName = displayNameRaw || username;
+  let adminNotes = buildAdminNotesForSignupRole(role);
+  adminNotes = setAdminNoteFlag(adminNotes, 'owner_created', true);
+
+  const passwordHash = await bcrypt.hash(password, 12);
+  let row = null;
+  try {
+    const inserted = await db.query(
+      `
+        INSERT INTO app_users (username, email, phone, display_name, password_hash, auth_provider, admin_notes)
+        VALUES ($1, $2, $3, $4, $5, 'local', $6)
+        RETURNING id, username, email, display_name, COALESCE(admin_notes, '') AS admin_notes;
+      `,
+      [username, email, null, displayName, passwordHash, adminNotes]
+    );
+    row = inserted.rows?.[0] || null;
+  } catch (err) {
+    const msg = String(err?.message || '');
+    if (msg.includes('app_users_username_key')) return sendJson(res, 409, { ok: false, error: 'Username already taken' });
+    if (msg.includes('app_users_email_key')) return sendJson(res, 409, { ok: false, error: 'Email already in use' });
+    throw err;
+  }
+  if (!row?.id) return sendJson(res, 500, { ok: false, error: 'Could not create account' });
+
+  const loginUrl = `${resolveAppBaseUrl(req) || ''}/`;
+  const roleLabel = role === 'manager' ? 'manager' : role === 'client' ? 'client' : 'trainer';
+  const greetingName = displayName.split(/\s+/)[0] || 'there';
+  const introLine = customMessage
+    || `Hey ${greetingName} - we made your RiseForIt ${roleLabel} account. We're building out the website; log in with the temporary password below and finish your setup whenever you're ready.`;
+
+  // Best-effort invite email. The props double as MailerLite custom fields, so
+  // the automation for "Trainer Account Invite" can render subject + creds.
+  let emailStatus = { requested: sendEmailFlag, ok: false, provider: null, skipped: sendEmailFlag ? null : 'not_requested', ccOwner: ccOwnerFlag };
+  if (sendEmailFlag) {
+    const eventProps = {
+      source: 'owner_manual_create',
+      ode_email_subject: 'Your RiseForIt account is ready',
+      ode_email_preheader: 'Log in with your temporary password and finish setup.',
+      ode_email_cta_label: 'Log in & finish setup',
+      ode_email_cta_url: loginUrl,
+      ode_invite_username: row.username,
+      ode_invite_temp_password: password,
+      ode_invite_role: roleLabel,
+      ode_invite_message: introLine,
+      ode_invite_login_url: loginUrl
+    };
+    try {
+      const result = await emitKlaviyoEvent({ eventName: 'Trainer Account Invite', email, displayName, eventProps });
+      emailStatus.ok = Boolean(result?.ok);
+      emailStatus.provider = result?.provider || null;
+      emailStatus.skipped = result?.skipped || null;
+    } catch (err) {
+      emailStatus.error = err?.message || 'email_failed';
+    }
+    if (ccOwnerFlag && actor?.email) {
+      try {
+        await emitKlaviyoEvent({
+          eventName: 'Trainer Account Invite',
+          email: actor.email,
+          displayName: actor.displayName || 'Owner',
+          eventProps: { ...eventProps, source: 'owner_manual_create_cc', ode_invite_cc: 'true' }
+        });
+      } catch (err) {
+        emailStatus.ccError = err?.message || 'cc_failed';
+      }
+    }
+  }
+
+  return sendJson(res, 200, {
+    ok: true,
+    account: {
+      id: row.id,
+      username: row.username,
+      email: row.email,
+      displayName: row.display_name,
+      role: roleLabel
+    },
+    credentials: { username: row.username, password },
+    loginUrl,
+    email: emailStatus
+  });
 }
 
 async function handleOwnerImpersonateExit(req, res, url) {
@@ -10805,6 +10924,10 @@ const authRoutes = async function authRoutes(req, res, url) {
 
     if (url.pathname === '/api/auth/manager/trainer-clients' && req.method === 'GET') {
       return await handleManagerTrainerClients(req, res, url);
+    }
+
+    if (url.pathname === '/api/auth/owner/account/create' && req.method === 'POST') {
+      return await handleOwnerCreateTrainerAccount(req, res);
     }
 
     if (url.pathname === '/api/auth/owner/demo-account' && req.method === 'POST') {

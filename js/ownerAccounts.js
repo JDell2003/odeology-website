@@ -183,6 +183,14 @@
     if (el) el.textContent = String(text || '');
   }
 
+  function isFinishedOnboarding(acct) {
+    if (!acct) return false;
+    // Trainers finish onboarding when their trainer profile is completed;
+    // everyone else when their client training onboarding is done.
+    if (acct.isTrainer === true) return acct.trainerOnboardingComplete === true;
+    return acct.onboardingComplete === true;
+  }
+
   function getFilteredAccounts() {
     const filter = String(state.accountFilter || 'all').trim().toLowerCase();
     if (filter === 'all') return state.accounts.slice();
@@ -191,6 +199,9 @@
       const hasTrainerAssignment = acct.hasTrainerAssignment === true;
       const isManager = acct.isManager === true;
       const isClient = !isTrainer && !isManager;
+      if (filter === 'new') return acct.ownerCreated === true;
+      if (filter === 'onboarded') return isFinishedOnboarding(acct);
+      if (filter === 'not-onboarded') return !isFinishedOnboarding(acct);
       if (filter === 'trainer') return isTrainer;
       if (filter === 'regular') return isClient;
       if (filter === 'with-trainer') return isClient && hasTrainerAssignment;
@@ -228,6 +239,12 @@
       const managerPill = acct.isManager
         ? '<span class="owner-accounts-pill good">Manager</span>'
         : '';
+      const onboardingPill = isFinishedOnboarding(acct)
+        ? '<span class="owner-accounts-pill good">Onboarded</span>'
+        : '<span class="owner-accounts-pill">Onboarding</span>';
+      const newPill = acct.ownerCreated
+        ? '<span class="owner-accounts-pill">New</span>'
+        : '';
       const primaryActionButton = acct.isManager
         ? `<button class="btn btn-ghost" type="button" data-action="trainers" data-account-id="${escapeHtml(acct.id)}">Trainers</button>`
         : acct.isTrainer
@@ -240,7 +257,7 @@
         <article class="owner-account-item" data-account-id="${escapeHtml(acct.id)}" role="button" tabindex="0">
           <div class="owner-account-row1">
             <div class="owner-account-name">${escapeHtml(acct.displayName || 'Account')}</div>
-            <div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;">${trainerPill}${managerPill}${assignedTrainerPill}${planPill}${msgPill}</div>
+            <div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;">${newPill}${trainerPill}${managerPill}${assignedTrainerPill}${onboardingPill}${planPill}${msgPill}</div>
           </div>
           <div class="owner-account-meta">
             <span>${escapeHtml(username)}</span>
@@ -252,6 +269,7 @@
             ${viewOverviewButton}
             ${primaryActionButton}
             <button class="btn btn-ghost" type="button" data-action="password" data-account-id="${escapeHtml(acct.id)}">Change Password</button>
+            <button class="btn btn-ghost" type="button" data-action="peer" data-account-id="${escapeHtml(acct.id)}">Peer</button>
             <button class="btn btn-ghost" type="button" data-action="delete" data-account-id="${escapeHtml(acct.id)}">Delete</button>
           </div>
         </article>
@@ -365,6 +383,22 @@
       return;
     }
     const returnTo = encodeURIComponent('/trainer-dashboard.html');
+    window.location.href = `/api/auth/owner/impersonate/${encodeURIComponent(id)}?returnTo=${returnTo}`;
+  }
+
+  // Peer = step into the account and act on their behalf. Trainers land on their
+  // trainer dashboard; everyone else on their overview. "Return to Owner Session"
+  // (top of page) restores the owner session.
+  function peerIntoAccount(accountId) {
+    const id = String(accountId || '').trim();
+    if (!id) return;
+    if (!state.ownerApiReady) {
+      setStatus('Owner view-as-account route is not active yet. Restart backend, then try again.', 'error');
+      return;
+    }
+    const acct = findAccount(id);
+    const dest = acct?.isTrainer ? '/trainer-dashboard.html' : '/overview.html';
+    const returnTo = encodeURIComponent(dest);
     window.location.href = `/api/auth/owner/impersonate/${encodeURIComponent(id)}?returnTo=${returnTo}`;
   }
 
@@ -490,6 +524,10 @@
       redirectToTrainerClients(accountId);
       return;
     }
+    if (action === 'peer') {
+      peerIntoAccount(accountId);
+      return;
+    }
     if (action === 'trainers') {
       openManagerTrainersModal(accountId);
       return;
@@ -539,6 +577,10 @@
       workspaceId: String(item.workspaceId || '').trim(),
       locationId: String(item.locationId || '').trim(),
       isManager: item.isManager === true,
+      ownerCreated: item.ownerCreated === true,
+      onboardingComplete: item.onboardingComplete === true,
+      trainerOnboardingComplete: item.trainerOnboardingComplete === true,
+      lastLogin: item.lastLogin || null,
       hasActivePlan: Boolean(item.hasActivePlan),
       ownerMessageCount: Number(item.ownerMessageCount || 0),
       lastSeen: item.lastSeen || null
@@ -594,7 +636,146 @@
     await loadWorkspaceRequests();
   }
 
+  function setAddStatus(text, kind = '') {
+    const el = $('#owner-add-status');
+    if (!el) return;
+    el.textContent = String(text || '');
+    el.classList.remove('error', 'ok');
+    if (kind) el.classList.add(kind);
+  }
+
+  function generateTempPassword() {
+    const rand = Math.random().toString(36).slice(2, 6) + Math.random().toString(36).slice(2, 6);
+    return `Rise-${rand}`;
+  }
+
+  function openAddAccountModal() {
+    const modal = $('#owner-add-account-modal');
+    if (!modal) return;
+    const form = $('#owner-add-account-form');
+    const result = $('#owner-add-account-result');
+    if (form) form.hidden = false;
+    if (result) result.hidden = true;
+    ['owner-add-displayname', 'owner-add-username', 'owner-add-email', 'owner-add-password', 'owner-add-message'].forEach((id) => {
+      const el = document.getElementById(id);
+      if (el) el.value = '';
+    });
+    const roleEl = $('#owner-add-role');
+    if (roleEl) roleEl.value = 'trainer';
+    const sendEl = $('#owner-add-sendemail');
+    if (sendEl) sendEl.checked = true;
+    const ccEl = $('#owner-add-ccowner');
+    if (ccEl) ccEl.checked = false;
+    setAddStatus('');
+    modal.removeAttribute('hidden');
+    const usernameEl = $('#owner-add-username');
+    if (usernameEl) window.setTimeout(() => usernameEl.focus(), 30);
+  }
+
+  function closeAddAccountModal() {
+    const modal = $('#owner-add-account-modal');
+    if (modal) modal.setAttribute('hidden', '');
+  }
+
+  async function submitAddAccount() {
+    const role = String($('#owner-add-role')?.value || 'trainer').trim();
+    const displayName = String($('#owner-add-displayname')?.value || '').trim();
+    const username = String($('#owner-add-username')?.value || '').trim().toLowerCase();
+    const email = String($('#owner-add-email')?.value || '').trim();
+    const password = String($('#owner-add-password')?.value || '').trim();
+    const sendEmail = Boolean($('#owner-add-sendemail')?.checked);
+    const ccOwner = Boolean($('#owner-add-ccowner')?.checked);
+    const message = String($('#owner-add-message')?.value || '').trim();
+
+    if (username.length < 3 || !/^[a-z0-9_]+$/.test(username)) {
+      setAddStatus('Username needs 3+ characters: letters, numbers, underscores only.', 'error');
+      return;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setAddStatus('Enter a valid email address.', 'error');
+      return;
+    }
+    if (password && password.length < 8) {
+      setAddStatus('Temporary password must be at least 8 characters (or leave blank to auto-generate).', 'error');
+      return;
+    }
+
+    const submitBtn = $('#owner-add-submit');
+    if (submitBtn) submitBtn.disabled = true;
+    setAddStatus('Creating account...');
+    const resp = await api('/api/auth/owner/account/create', {
+      method: 'POST',
+      body: JSON.stringify({ role, displayName, username, email, password, sendEmail, ccOwner, message })
+    });
+    if (submitBtn) submitBtn.disabled = false;
+
+    if (!resp.ok) {
+      setAddStatus(resp.json?.error || 'Could not create account.', 'error');
+      return;
+    }
+
+    const creds = resp.json?.credentials || {};
+    const emailInfo = resp.json?.email || {};
+    const usernameOut = $('#owner-add-result-username');
+    const passwordOut = $('#owner-add-result-password');
+    const emailOut = $('#owner-add-result-email');
+    if (usernameOut) usernameOut.textContent = creds.username || username;
+    if (passwordOut) passwordOut.textContent = creds.password || password;
+    if (emailOut) {
+      if (!emailInfo.requested) emailOut.textContent = 'No email sent. Share these credentials directly.';
+      else if (emailInfo.ok) emailOut.textContent = `Invite email queued to ${email}${emailInfo.ccOwner ? ' (copy sent to you)' : ''}.`;
+      else emailOut.textContent = `Email not delivered (${emailInfo.skipped || emailInfo.error || 'provider unavailable'}). Share these credentials directly.`;
+    }
+    state.addResultCreds = creds;
+    const form = $('#owner-add-account-form');
+    const result = $('#owner-add-account-result');
+    if (form) form.hidden = true;
+    if (result) result.hidden = false;
+    await loadAccounts();
+  }
+
+  function bindAddAccountEvents() {
+    const openBtn = $('#owner-add-account-btn');
+    if (openBtn) openBtn.addEventListener('click', openAddAccountModal);
+    const closeBtn = $('#owner-add-account-close');
+    if (closeBtn) closeBtn.addEventListener('click', closeAddAccountModal);
+    const cancelBtn = $('#owner-add-cancel');
+    if (cancelBtn) cancelBtn.addEventListener('click', closeAddAccountModal);
+    const doneBtn = $('#owner-add-done');
+    if (doneBtn) doneBtn.addEventListener('click', closeAddAccountModal);
+    const submitBtn = $('#owner-add-submit');
+    if (submitBtn) submitBtn.addEventListener('click', submitAddAccount);
+    const genBtn = $('#owner-add-genpass');
+    if (genBtn) {
+      genBtn.addEventListener('click', () => {
+        const el = $('#owner-add-password');
+        if (el) el.value = generateTempPassword();
+      });
+    }
+    const copyBtn = $('#owner-add-copy');
+    if (copyBtn) {
+      copyBtn.addEventListener('click', async () => {
+        const creds = state.addResultCreds || {};
+        const text = `Username: ${creds.username || ''}\nTemporary password: ${creds.password || ''}`;
+        try {
+          await navigator.clipboard.writeText(text);
+          copyBtn.textContent = 'Copied';
+          window.setTimeout(() => { copyBtn.textContent = 'Copy login'; }, 1500);
+        } catch {
+          copyBtn.textContent = 'Copy failed';
+        }
+      });
+    }
+    const modal = $('#owner-add-account-modal');
+    if (modal) {
+      modal.addEventListener('click', (e) => {
+        if (e.target === modal) closeAddAccountModal();
+      });
+    }
+  }
+
   function bindEvents() {
+    bindAddAccountEvents();
     const search = $('#owner-accounts-search');
     if (search) {
       search.addEventListener('input', (e) => {
