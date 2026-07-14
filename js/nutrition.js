@@ -86,14 +86,18 @@
         var pct = Math.min(100, monthly / Math.max(1, plan.budgetMonthly) * 100);
         fill.style.width = pct + '%';
         fill.classList.toggle('over', monthly > plan.budgetMonthly);
+        // One headline line; the detailed budget edits collapse behind a toggle.
         var box = $('nut-msgs'); box.innerHTML = '';
-        var head = document.createElement('div');
-        head.className = 'mp-msg ' + (monthly <= plan.budgetMonthly ? 'ok' : 'warn');
-        head.textContent = monthly <= plan.budgetMonthly
-            ? ('Under budget: ' + money(monthly) + ' of your ' + money(plan.budgetMonthly) + '/mo.')
-            : ('Closest fit: ' + money(monthly) + ' vs ' + money(plan.budgetMonthly) + '/mo (' + money(monthly - plan.budgetMonthly) + ' over). We trimmed variety and tier as far as we could without dropping meals you picked.');
-        box.appendChild(head);
-        (plan.messages || []).forEach(function (m) { var e = document.createElement('div'); e.className = 'mp-msg'; e.textContent = m; box.appendChild(e); });
+        var under = monthly <= plan.budgetMonthly;
+        var head = '<div class="mp-msg ' + (under ? 'ok' : 'warn') + '">' + (under
+            ? ('Under budget — ' + money(monthly) + ' of your ' + money(plan.budgetMonthly) + '/mo.')
+            : ('Closest fit: ' + money(monthly) + ' vs ' + money(plan.budgetMonthly) + '/mo (' + money(monthly - plan.budgetMonthly) + ' over) at the ' + esc(plan.tierLabel) + '.')) + '</div>';
+        var detail = (plan.messages || []).filter(Boolean);
+        if (detail.length) {
+            head += '<details class="nut-changes"><summary>What we changed to fit your budget (' + detail.length + ')</summary>' +
+                '<ul>' + detail.map(function (m) { return '<li>' + esc(m) + '</li>'; }).join('') + '</ul></details>';
+        }
+        box.innerHTML = head;
     }
 
     function recipeHtml(meal, mult) {
@@ -166,11 +170,15 @@
         }
         // Items
         var box = $('nut-grocery'); box.innerHTML = '';
+        var storeLabel = (C && C.pricing.storeLabels[activeStore]) || activeStore;
         includedItems(activeStore).slice().sort(function (a, b) { return (b.stores[activeStore].monthlyCost || 0) - (a.stores[activeStore].monthlyCost || 0); }).forEach(function (it) {
             var s = it.stores[activeStore];
-            var row = document.createElement('div'); row.className = 'mp-grocery-item';
-            row.innerHTML = '<div><strong>' + esc(it.canonical) + '</strong><span class="qty">' + esc(s.product || '') + ' · ' + esc(s.size || '') + ' × ' + s.containers + '</span></div>' +
-                '<div class="cost">' + money(s.monthlyCost) + (s.estimated ? '<span class="est">estimated</span>' : '') + '</div>';
+            var row = document.createElement('div'); row.className = 'nut-groc-row';
+            var buy = s.url ? '<a class="nut-buy" href="' + esc(s.url) + '" target="_blank" rel="noopener">Buy at ' + esc(storeLabel) + ' &rarr;</a>' : '';
+            row.innerHTML =
+                '<div class="nut-groc-main"><strong>' + esc(it.canonical) + '</strong>' +
+                '<span class="nut-groc-sub">' + esc(s.size || '') + ' × ' + s.containers + (s.estimated ? ' · <span class="est">est.</span>' : '') + '</span></div>' +
+                '<div class="nut-groc-right"><span class="nut-groc-cost">' + money(s.monthlyCost) + '</span>' + buy + '</div>';
             box.appendChild(row);
         });
         $('nut-free').textContent = (plan.freeItems && plan.freeItems.length) ? 'Pantry staples you likely have: ' + plan.freeItems.join(', ') + '.' : '';
