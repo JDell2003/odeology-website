@@ -4406,6 +4406,7 @@
                                 <p>Use the real onboarding steps with local-only test data. Nothing here saves to your live account or pushes you into the live dashboard.</p>
                             </div>
                             <div class="entry-test-actions">
+                                <button class="btn btn-primary" type="button" id="entry-test-fastforward">&#9889; Autofill &amp; skip to finish</button>
                                 <button class="btn btn-secondary" type="button" id="entry-test-autofill">Autofill test data</button>
                                 <button class="btn btn-secondary" type="button" id="entry-test-reset">Reset test draft</button>
                             </div>
@@ -5220,6 +5221,7 @@
         const testToolsEl = document.getElementById('entry-test-tools');
         const testPreviewEl = document.getElementById('entry-test-preview');
         const testAutofillBtn = document.getElementById('entry-test-autofill');
+        const testFastForwardBtn = document.getElementById('entry-test-fastforward');
         const testResetBtn = document.getElementById('entry-test-reset');
         if (TEST_ONBOARDING_MODE) {
           body.classList.add('entry-test-onboarding');
@@ -11332,6 +11334,40 @@ function formatWorkspaceLabel(workspace) {
           showEntryToast('Test onboarding autofilled.');
         }
 
+        // Owner test tool: fill every answer AND jump straight to the finish
+        // step so the whole flow can be exercised in one click. Steps are
+        // advanced instantly (no fade) via the same routing the Continue
+        // button uses, so conditional skips stay correct.
+        async function fastForwardTestOnboarding(path = state.selectedPath || TEST_ONBOARDING_PATH || 'user') {
+          if (!TEST_ONBOARDING_MODE) return;
+          await autofillTestOnboarding(path);
+          const activePath = state.selectedPath;
+          // Satisfy the client sub-quizzes so the finish step has real data.
+          if (activePath === 'user') {
+            Object.assign(state.answers.user, {
+              statQuizDone: true,
+              statQuizSkipped: false,
+              clientQuizComplete: true
+            });
+          }
+          const flow = currentFlow();
+          if (!flow) { renderPanel(); return; }
+          // Walk to the finish step instantly using the real next-step routing.
+          let guard = 0;
+          while (state.currentStep < flow.steps.length && guard < 60) {
+            state.questionIndex = 0;
+            state.trainerIdentityEdit = false;
+            const next = resolveNextStepNumber();
+            if (!next || next <= state.currentStep) break;
+            state.currentStep = next;
+            guard += 1;
+          }
+          state.questionIndex = 0;
+          state.trainerIdentityEdit = false;
+          renderPanel();
+          showEntryToast('Filled every answer and jumped to the finish step.');
+        }
+
         function resetTestOnboardingDraft() {
           if (!TEST_ONBOARDING_MODE) return;
           state.testOnboardingLastAction = null;
@@ -13179,6 +13215,9 @@ function formatWorkspaceLabel(workspace) {
         });
         testAutofillBtn?.addEventListener('click', () => {
           void autofillTestOnboarding();
+        });
+        testFastForwardBtn?.addEventListener('click', () => {
+          void fastForwardTestOnboarding();
         });
         testResetBtn?.addEventListener('click', () => {
           resetTestOnboardingDraft();
