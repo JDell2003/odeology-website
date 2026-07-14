@@ -2395,7 +2395,9 @@ async function getTrainerGrowthSnapshot(req, userLike, trainerProfile = null) {
               FROM app_training_workouts tw
               WHERE tw.user_id = u.id
                 AND COALESCE(tw.performed_at::date, tw.created_at::date) = CURRENT_DATE
-            ) AS worked_out_today
+            ) AS worked_out_today,
+            EXISTS (SELECT 1 FROM app_training_plans tp WHERE tp.user_id = u.id) AS has_workout_plan,
+            EXISTS (SELECT 1 FROM app_grocery_lists gl WHERE gl.user_id = u.id) AS has_nutrition_plan
           FROM app_users u
           LEFT JOIN app_daily_checkins dc
             ON dc.user_id = u.id
@@ -2408,6 +2410,15 @@ async function getTrainerGrowthSnapshot(req, userLike, trainerProfile = null) {
       const healthByUserId = new Map();
       (healthResult.rows || []).forEach((row) => {
         healthByUserId.set(String(row.id || ''), row);
+      });
+
+      // Surface whether each linked client has a workout / nutrition plan
+      // generated, so the trainer roster can show status + add/edit actions.
+      roster.forEach((client) => {
+        const h = healthByUserId.get(String(client.linkedUserId || '').trim());
+        client.hasWorkoutPlan = !!(h && h.has_workout_plan);
+        client.hasNutritionPlan = !!(h && h.has_nutrition_plan);
+        client.workedOutToday = !!(h && h.worked_out_today);
       });
 
       const warnings = roster.flatMap((client) => {

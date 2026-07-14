@@ -516,31 +516,55 @@
     return String(client?.source || '').toLowerCase() === 'manual' ? 'Manual' : titleizeStatus(client?.paymentStatus, 'Pending');
   }
 
+  // Map a payment status to a color tone + friendly label.
+  function paymentTone(status) {
+    const s = String(status || '').trim().toLowerCase();
+    if (['active', 'live', 'paid', 'current'].includes(s)) return { cls: 'ok', label: 'Payment live' };
+    if (['past_due', 'declined', 'failed', 'unpaid'].includes(s)) return { cls: 'bad', label: 'Payment declined' };
+    if (['paused', 'canceled', 'cancelled', 'on_hold'].includes(s)) return { cls: 'warn', label: 'Paused' };
+    return { cls: 'muted', label: titleizeStatus(status, 'Pending') };
+  }
+
   function renderClientRoster(clientRoster) {
     if (!Array.isArray(clientRoster) || !clientRoster.length) {
-      return renderEmpty('No trainer clients yet.');
+      return renderEmpty('No trainer clients yet. When someone becomes a paying client — or you move a consult hit over — they show up here.');
     }
     return `
-      <div class="account-trainer-roster">
-        ${clientRoster.map((client) => `
-          <article class="account-trainer-roster-card account-trainer-roster-card-clickable${client?.linkedUserId ? ' is-linked' : ''}"${client?.linkedUserId ? ` data-view-client-account="${escapeHtml(String(client.linkedUserId || ''))}"` : ''}>
-            <div class="account-trainer-roster-head">
-              <div>
-                <div class="account-trainer-roster-name">${escapeHtml(client.name || 'Client')}</div>
-                <div class="account-trainer-roster-sub">${escapeHtml(client.email || 'No email attached yet')}</div>
+      <div class="client-grid">
+        ${clientRoster.map((client) => {
+          const uid = String(client.linkedUserId || '').trim();
+          const name = String(client.name || 'Client').trim();
+          const initials = name.split(/\s+/).map((p) => p[0]).slice(0, 2).join('').toUpperCase();
+          const pay = paymentTone(client.paymentStatus);
+          const workout = !!client.hasWorkoutPlan;
+          const nutrition = !!client.hasNutritionPlan;
+          return `
+          <article class="client-card" data-client-uid="${escapeHtml(uid)}">
+            <div class="client-card-top">
+              <div class="client-avatar" aria-hidden="true">${escapeHtml(initials || 'C')}</div>
+              <div class="client-id">
+                <div class="client-name">${escapeHtml(name)}</div>
+                <div class="client-email">${escapeHtml(client.email || 'No email attached yet')}</div>
               </div>
-              <span class="account-trainer-roster-pill amount">${escapeHtml(formatClientAmountPill(client))}</span>
+              <span class="client-pay client-pay-${pay.cls}">${escapeHtml(pay.label)}</span>
             </div>
-            <div class="account-trainer-roster-meta">
-              ${client.packageName ? `<span class="account-trainer-roster-pill">${escapeHtml(client.packageName)}</span>` : ''}
-              <span class="account-trainer-roster-pill">${escapeHtml(titleizeStatus(client.paymentStatus, 'Pending'))}</span>
-              <span class="account-trainer-roster-pill">${escapeHtml(titleizeStatus(client.source, 'Client'))}</span>
-              ${client.joinedAt ? `<span class="account-trainer-roster-pill">${escapeHtml(`Joined ${formatShortDate(client.joinedAt)}`)}</span>` : ''}
+            <div class="client-status-row">
+              <span class="client-stat ${workout ? 'on' : 'off'}">${workout ? '&#10003;' : '&#9675;'} Workout plan</span>
+              <span class="client-stat ${nutrition ? 'on' : 'off'}">${nutrition ? '&#10003;' : '&#9675;'} Nutrition plan</span>
+              ${client.workedOutToday ? '<span class="client-stat on">&#10003; Trained today</span>' : ''}
+              ${client.joinedAt ? `<span class="client-since">Since ${escapeHtml(formatShortDate(client.joinedAt))}</span>` : ''}
             </div>
-            ${client?.linkedUserId ? `<div class="account-trainer-inline-action">Open client account</div>` : ''}
-          </article>
-        `).join('')}
+            <div class="client-actions">
+              ${uid ? `<button type="button" class="client-btn primary" data-view-client-account="${escapeHtml(uid)}">Peer into account</button>` : ''}
+              ${uid ? `<button type="button" class="client-btn" data-client-plan="training" data-client-has="${workout ? '1' : '0'}" data-client-uid="${escapeHtml(uid)}">${workout ? 'Edit training' : 'Add training'}</button>` : ''}
+              ${uid ? `<button type="button" class="client-btn" data-client-plan="nutrition" data-client-has="${nutrition ? '1' : '0'}" data-client-uid="${escapeHtml(uid)}">${nutrition ? 'Edit nutrition' : 'Add nutrition'}</button>` : ''}
+              <button type="button" class="client-btn ghost" data-client-doc="training" data-client-uid="${escapeHtml(uid)}" data-client-name="${escapeHtml(name)}">Send training PDF</button>
+              <button type="button" class="client-btn ghost" data-client-doc="nutrition" data-client-uid="${escapeHtml(uid)}" data-client-name="${escapeHtml(name)}">Send nutrition PDF</button>
+            </div>
+          </article>`;
+        }).join('')}
       </div>
+      <input type="file" id="client-doc-input" accept="application/pdf" hidden>
     `;
   }
 
@@ -1444,10 +1468,15 @@
                   `).join('')}
                 </div>
               ` : ''}
+              <label class="consult-hit-notes">
+                <span>Your notes</span>
+                <textarea data-consult-note="${escapeHtml(String(lead?.id || '').trim())}" placeholder="Add a note to move them through your process…">${escapeHtml(String(lead?.notes || '').trim())}</textarea>
+              </label>
               <div class="consult-hit-actions">
-                ${email ? `<a class="consult-hit-btn" href="mailto:${escapeHtml(email)}">Email back</a>` : ''}
-                ${phone ? `<a class="consult-hit-btn" href="sms:${escapeHtml(phone)}">Text back</a>` : ''}
-                <a class="consult-hit-btn is-ghost" href="trainer-dashboard.html?tab=potential-clients">Open in Potential Clients</a>
+                <button type="button" class="consult-hit-btn primary" data-consult-move data-move-name="${escapeHtml(name)}" data-move-email="${escapeHtml(email)}" data-move-phone="${escapeHtml(phone)}">Move to Clients</button>
+                ${!lead?.__funnel ? `<button type="button" class="consult-hit-btn" data-consult-save="${escapeHtml(String(lead?.id || '').trim())}">Save note</button>` : ''}
+                ${email ? `<a class="consult-hit-btn is-ghost" href="mailto:${escapeHtml(email)}">Email back</a>` : ''}
+                ${phone ? `<a class="consult-hit-btn is-ghost" href="sms:${escapeHtml(phone)}">Text back</a>` : ''}
               </div>
             </article>
           `;
@@ -1495,6 +1524,7 @@
           <button type="button" class="account-trainer-pill${workoutApproveCount > 0 ? ' has-alert' : ''}" data-clients-view="workout-approve" aria-pressed="false">Workout Approve <span>${workoutApproveCount}</span></button>
           <button type="button" class="account-trainer-pill${actionsCount > 0 ? ' has-alert' : ''}" data-clients-view="actions" aria-pressed="false">Actions <span>${actionsCount}</span></button>
           <button type="button" class="account-trainer-pill${potentialCount > 0 ? ' has-alert' : ''}" data-clients-view="potential-clients" aria-pressed="false">Potential Clients <span>${potentialCount}</span></button>
+          <button type="button" class="account-trainer-pill" data-clients-view="history" aria-pressed="false">History</button>
           <button type="button" class="account-trainer-pill${requestsCount > 0 ? ' has-alert' : ''}" data-clients-view="requests" aria-pressed="false">Requests <span>${requestsCount}</span></button>
         </div>
         <section class="account-trainer-panel" data-clients-panel="current">
@@ -1527,6 +1557,11 @@
           <div class="account-trainer-muted">Every pre-visit answer from your website link and every consultation form filled out on your coach page — in one place.</div>
           ${renderConsultFormHits([...(Array.isArray(data?.funnelLeads) ? data.funnelLeads : []), ...leads])}
         </section>
+        <section class="account-trainer-panel" data-clients-panel="history">
+          <h3>History</h3>
+          <div class="account-trainer-muted">Everything that happened, newest first — consult hits, plans made, payments, sign-ups. Click "Peer in" on any event tied to a client.</div>
+          ${renderTrainerHistory(data)}
+        </section>
         <section class="account-trainer-panel" data-clients-panel="requests">
           <h3>Requests</h3>
           <div class="account-trainer-muted">Manager requests land here. Approve one to attach that manager to your trainer account in live time.</div>
@@ -1534,6 +1569,39 @@
         </section>
       </div>
     `;
+  }
+
+  function renderTrainerHistory(data) {
+    const events = [];
+    const at = (t) => (t ? new Date(t) : null);
+    // Website funnel + coach-page consult hits.
+    (Array.isArray(data?.funnelLeads) ? data.funnelLeads : []).forEach((f) => {
+      events.push({ t: at(f.createdAt), dot: 'info', title: `${f.fullName || 'A visitor'} hit your website consult`, sub: f.formId || 'Website funnel' });
+    });
+    (Array.isArray(data?.pageLeads) ? data.pageLeads : []).forEach((l) => {
+      events.push({ t: at(l.createdAt || l.updatedAt), dot: 'info', title: `${l.fullName || 'Someone'} filled out your consult form`, sub: l.goal ? `Goal: ${l.goal}` : 'Coach page', uid: l.linkedUserId });
+    });
+    // Clients: joined + payment + plan state.
+    (Array.isArray(data?.growth?.clientRoster) ? data.growth.clientRoster : []).forEach((c) => {
+      const tone = paymentTone(c.paymentStatus);
+      if (c.joinedAt) events.push({ t: at(c.joinedAt), dot: 'ok', title: `${c.name} became a client`, sub: c.packageName || 'New client', uid: c.linkedUserId });
+      if (tone.cls === 'bad') events.push({ t: at(c.joinedAt), dot: 'bad', title: `${c.name}'s payment declined`, sub: 'Needs attention', uid: c.linkedUserId });
+      if (c.hasNutritionPlan) events.push({ t: at(c.joinedAt), dot: 'ok', title: `${c.name} has a nutrition plan`, sub: 'Nutrition generated', uid: c.linkedUserId });
+      if (c.hasWorkoutPlan) events.push({ t: at(c.joinedAt), dot: 'ok', title: `${c.name} has a training plan`, sub: 'Workout generated', uid: c.linkedUserId });
+    });
+    const sorted = events.filter((e) => e.t && !isNaN(e.t)).sort((a, b) => b.t - a.t).slice(0, 60);
+    if (!sorted.length) return renderEmpty('No activity yet. As people hit your funnel and clients come in, the timeline fills up here.');
+    const fmt = (d) => `${d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} ${d.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })}`;
+    return `<div class="history-timeline">${sorted.map((e) => `
+      <div class="history-item">
+        <span class="history-dot ${e.dot}"></span>
+        <span class="history-time">${escapeHtml(fmt(e.t))}</span>
+        <div class="history-body">
+          <div class="history-title">${escapeHtml(e.title)}</div>
+          <div class="history-sub">${escapeHtml(e.sub || '')}</div>
+          ${e.uid ? `<button type="button" class="history-peek" data-view-client-account="${escapeHtml(String(e.uid))}">Peer into account &rarr;</button>` : ''}
+        </div>
+      </div>`).join('')}</div>`;
   }
 
   function getIncomingManagerRequestById(data, requestIdRaw) {
@@ -1907,7 +1975,54 @@
       return true;
     };
 
+    const ensureTrainerCrmStyles = () => {
+      if (document.getElementById('trainer-crm-styles')) return;
+      const s = document.createElement('style');
+      s.id = 'trainer-crm-styles';
+      s.textContent = [
+        '.client-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px;}',
+        '.client-card{background:#fffdf7;border:1px solid rgba(150,110,35,.22);border-radius:16px;padding:16px;box-shadow:0 12px 28px rgba(120,90,20,.07);display:flex;flex-direction:column;gap:12px;}',
+        ':root[data-theme="dark"] .client-card{background:rgba(255,255,255,.04);border-color:rgba(255,255,255,.1);}',
+        '.client-card-top{display:flex;align-items:center;gap:11px;}',
+        '.client-avatar{width:42px;height:42px;border-radius:999px;flex:0 0 42px;display:grid;place-items:center;font:900 14px/1 "Space Grotesk",system-ui,sans-serif;color:#fff;background:linear-gradient(135deg,#e0b34a,#8a5c33);}',
+        '.client-id{flex:1;min-width:0;}',
+        '.client-name{font:800 15px/1.2 "Space Grotesk",system-ui,sans-serif;}',
+        '.client-email{font-size:12px;opacity:.6;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}',
+        '.client-pay{font:800 10px/1.5 "Space Grotesk",system-ui,sans-serif;letter-spacing:.04em;text-transform:uppercase;padding:3px 9px;border-radius:999px;white-space:nowrap;}',
+        '.client-pay-ok{background:rgba(47,122,61,.16);color:#2f7a3d;}',
+        '.client-pay-bad{background:rgba(180,40,40,.14);color:#b42828;}',
+        '.client-pay-warn{background:rgba(212,175,55,.2);color:#a1751f;}',
+        '.client-pay-muted{background:rgba(120,120,120,.14);color:#6b6b6b;}',
+        '.client-status-row{display:flex;flex-wrap:wrap;gap:6px;align-items:center;}',
+        '.client-stat{font:700 11px/1.4 "Space Grotesk",system-ui,sans-serif;padding:3px 9px;border-radius:999px;border:1px solid rgba(150,110,35,.2);}',
+        '.client-stat.on{color:#2f7a3d;border-color:rgba(47,122,61,.4);background:rgba(47,122,61,.08);}',
+        '.client-stat.off{opacity:.55;}',
+        '.client-since{margin-left:auto;font-size:11px;opacity:.5;}',
+        '.client-actions{display:flex;flex-wrap:wrap;gap:7px;}',
+        '.client-btn{font:800 12px/1 "Space Grotesk",system-ui,sans-serif;padding:8px 12px;border-radius:10px;border:1px solid rgba(185,138,43,.4);background:rgba(212,175,55,.1);color:#7a5312;cursor:pointer;}',
+        '.client-btn:hover{background:rgba(212,175,55,.22);}',
+        '.client-btn.primary{background:#b98a2b;color:#fff;border-color:transparent;}',
+        '.client-btn.ghost{background:transparent;}',
+        '.consult-hit-notes{display:block;margin:10px 0 8px;}',
+        '.consult-hit-notes span{display:block;font:800 10px/1.4 "Space Grotesk",system-ui,sans-serif;letter-spacing:.1em;text-transform:uppercase;opacity:.6;margin-bottom:4px;}',
+        '.consult-hit-notes textarea{width:100%;min-height:52px;border:1px solid rgba(150,110,35,.28);border-radius:10px;padding:8px 10px;font:600 13px/1.4 inherit;background:#fdf8ec;color:inherit;resize:vertical;}',
+        '.consult-hit-btn.primary{background:#b98a2b;color:#fff;border-color:transparent;}',
+        // History timeline
+        '.history-timeline{display:flex;flex-direction:column;gap:0;}',
+        '.history-item{display:flex;gap:12px;padding:12px 2px;border-bottom:1px solid rgba(150,110,35,.12);}',
+        '.history-time{flex:0 0 74px;font:800 12px/1.5 ui-monospace,monospace;color:#a1751f;}',
+        '.history-body{flex:1;min-width:0;}',
+        '.history-title{font-weight:700;font-size:13.5px;}',
+        '.history-sub{font-size:12px;opacity:.6;margin-top:2px;}',
+        '.history-dot{flex:0 0 10px;width:10px;height:10px;border-radius:999px;margin-top:5px;background:#b98a2b;}',
+        '.history-dot.bad{background:#b42828;}.history-dot.ok{background:#2f7a3d;}.history-dot.info{background:#3a6ea5;}',
+        '.history-peek{margin-top:5px;font:800 11px/1 "Space Grotesk",system-ui,sans-serif;color:#7a5312;background:none;border:0;cursor:pointer;text-decoration:underline;padding:0;}'
+      ].join('\n');
+      document.head.appendChild(s);
+    };
+
     const renderDashboardShell = () => {
+      ensureTrainerCrmStyles();
       if (managerHost) managerHost.innerHTML = renderTrainerManagerCard(currentData);
       shell.innerHTML = renderTrainerDashboard(currentData);
       const requestedTab = String(pageParams.get('tab') || '').trim();
@@ -1928,6 +2043,24 @@
           panel.style.display = String(panel.getAttribute('data-clients-panel') || '') === 'consult-form-hits' ? '' : 'none';
         });
       }
+      // Sidebar active state: Clients and Consult Form Hits are the same page
+      // with different tabs, so main.js can't tell them apart — fix it here so
+      // the right one highlights. Re-apply on a tick since main.js also runs.
+      const syncSidebarActive = () => {
+        const panel = document.getElementById('control-panel');
+        if (!panel) return;
+        const isConsult = requestedTab === 'consult-form-hits';
+        panel.querySelectorAll('.control-link').forEach((link) => {
+          const href = String(link.getAttribute('href') || '');
+          if (href.indexOf('tab=consult-form-hits') >= 0) {
+            link.classList.toggle('active', isConsult);
+          } else if (/(^|\/)trainer-dashboard\.html$/.test(href)) {
+            link.classList.toggle('active', !isConsult);
+          }
+        });
+      };
+      syncSidebarActive();
+      window.setTimeout(syncSidebarActive, 400);
       bindTrainerPageChooser(meUser, currentData);
       fillInvitePanel();
       // Navbar "+" quick-add lands here with ?action=add-client: open the
@@ -2235,6 +2368,62 @@
         window.location.href = href;
         return;
       }
+      // Consult hit -> move to Clients list.
+      const moveTrigger = target.closest('[data-consult-move]');
+      if (moveTrigger instanceof Element) {
+        const name = String(moveTrigger.getAttribute('data-move-name') || '').trim() || 'New client';
+        const email = String(moveTrigger.getAttribute('data-move-email') || '').trim();
+        const phone = String(moveTrigger.getAttribute('data-move-phone') || '').trim();
+        const noteEl = moveTrigger.closest('.consult-hit-card')?.querySelector('[data-consult-note]');
+        const notes = noteEl ? String(noteEl.value || '').trim() : '';
+        setStatus(`Moving ${name} to Clients…`);
+        const resp = await api('/api/auth/trainer/clients', {
+          method: 'POST',
+          body: JSON.stringify({ displayName: name, email, phone, notes, source: 'consult' })
+        }).catch(() => null);
+        if (resp && resp.json && resp.json.ok) {
+          setStatus(`${name} moved to Clients.`);
+          await loadDashboard();
+        } else {
+          setStatus(resp?.json?.error || 'Could not move to Clients.');
+        }
+        return;
+      }
+      // Save a note on a coach-page consult lead.
+      const saveNoteTrigger = target.closest('[data-consult-save]');
+      if (saveNoteTrigger instanceof Element) {
+        const leadId = String(saveNoteTrigger.getAttribute('data-consult-save') || '').trim();
+        const noteEl = saveNoteTrigger.closest('.consult-hit-card')?.querySelector('[data-consult-note]');
+        const notes = noteEl ? String(noteEl.value || '').trim() : '';
+        const resp = await api('/api/auth/trainer/lead', {
+          method: 'POST', body: JSON.stringify({ id: leadId, notes })
+        }).catch(() => null);
+        setStatus(resp && resp.json && resp.json.ok ? 'Note saved.' : 'Could not save note.');
+        return;
+      }
+      // Add/Edit training or nutrition plan — peer into the client account,
+      // where the trainer builds or edits it directly.
+      const planTrigger = target.closest('[data-client-plan]');
+      if (planTrigger instanceof Element) {
+        const userId = String(planTrigger.getAttribute('data-client-uid') || '').trim();
+        const kind = String(planTrigger.getAttribute('data-client-plan') || '').trim();
+        const href = buildTrainerClientAccountHref(userId);
+        if (!href) { setStatus('This client has no attached account yet.'); return; }
+        window.location.href = href + (href.includes('?') ? '&' : '?') + 'as=' + encodeURIComponent(kind);
+        return;
+      }
+      // Send a training / nutrition PDF to the client.
+      const docTrigger = target.closest('[data-client-doc]');
+      if (docTrigger instanceof Element) {
+        const input = document.getElementById('client-doc-input');
+        if (!input) return;
+        input.dataset.uid = String(docTrigger.getAttribute('data-client-uid') || '').trim();
+        input.dataset.kind = String(docTrigger.getAttribute('data-client-doc') || '').trim();
+        input.dataset.cname = String(docTrigger.getAttribute('data-client-name') || '').trim();
+        input.value = '';
+        input.click();
+        return;
+      }
       const workoutPdfTrigger = target.closest('[data-workout-review-pdf]');
       if (workoutPdfTrigger instanceof Element) {
         e.preventDefault();
@@ -2420,6 +2609,26 @@
         leadStageFilter = String(target.value || '').trim();
         currentData.leadUi = { search: leadSearchTerm, stage: leadStageFilter, tag: leadTagFilter };
         renderDashboardShell();
+      }
+      // Client training/nutrition PDF upload.
+      if (target.id === 'client-doc-input' && target.files && target.files[0]) {
+        const file = target.files[0];
+        const uid = String(target.dataset.uid || '').trim();
+        const kind = String(target.dataset.kind || '').trim();
+        const cname = String(target.dataset.cname || 'client').trim();
+        if (file.size > 8 * 1024 * 1024) { setStatus('PDF is too large (max 8MB).'); return; }
+        const reader = new FileReader();
+        reader.onload = async () => {
+          setStatus(`Sending ${kind} PDF to ${cname}…`);
+          const resp = await api('/api/training/client-doc', {
+            method: 'POST',
+            body: JSON.stringify({ clientUserId: uid, kind, filename: file.name, dataUrl: String(reader.result || '') })
+          }).catch(() => null);
+          setStatus(resp && resp.json && resp.json.ok
+            ? `${kind === 'nutrition' ? 'Nutrition' : 'Training'} PDF sent to ${cname}.`
+            : 'Could not send the PDF — try again.');
+        };
+        reader.readAsDataURL(file);
       }
     });
 

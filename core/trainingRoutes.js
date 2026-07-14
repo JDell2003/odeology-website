@@ -11538,6 +11538,40 @@ async function trainingRoutes(req, res, url) {
     }
   }
 
+  // Trainer sends a training/nutrition PDF to a client. Stored per client so
+  // the client can open it from their account. Trainer/owner only.
+  if (pathname === '/api/training/client-doc' && (req.method === 'POST' || req.method === 'GET')) {
+    const sessionState = await safeResolveUserFromSession(req, { routeName: 'training.client-doc', fallback: 'service_unavailable' });
+    if (sessionState.sessionUnavailable) return sendJson(res, 503, { error: 'Service unavailable' });
+    const user = sessionState.user;
+    if (!user) return sendJson(res, 401, { error: 'Not authenticated' });
+    if (req.method === 'GET') {
+      // A client fetching their own docs.
+      const docs = await jsonStore.getJson(`client-docs:${user.id}`, []);
+      return sendJson(res, 200, { ok: true, docs: Array.isArray(docs) ? docs : [] });
+    }
+    if (!user.isTrainer && !user.isOwner) return sendJson(res, 403, { error: 'Trainer access required' });
+    let payload;
+    try { payload = await readJsonBody(req); } catch (err) { return sendJson(res, 400, { error: err.message }); }
+    const clientUserId = String(payload?.clientUserId || '').trim();
+    const kind = String(payload?.kind || '').trim().toLowerCase() === 'nutrition' ? 'nutrition' : 'training';
+    const filename = String(payload?.filename || 'plan.pdf').trim().slice(0, 160);
+    const dataUrl = String(payload?.dataUrl || '');
+    if (!clientUserId) return sendJson(res, 400, { error: 'Missing client' });
+    if (!/^data:application\/pdf;base64,/.test(dataUrl)) return sendJson(res, 400, { error: 'Expected a PDF' });
+    if (dataUrl.length > 8_500_000) return sendJson(res, 413, { error: 'PDF too large (max ~6MB)' });
+    try {
+      const key = `client-docs:${clientUserId}`;
+      const docs = (await jsonStore.getJson(key, [])) || [];
+      const list = Array.isArray(docs) ? docs : [];
+      list.unshift({ kind, filename, dataUrl, fromTrainerId: String(user.id), fromTrainerName: String(user.displayName || user.username || 'Your coach'), at: new Date().toISOString() });
+      await jsonStore.setJson(key, list.slice(0, 12));
+      return sendJson(res, 200, { ok: true });
+    } catch (err) {
+      return sendJson(res, 500, { error: 'Failed to send document' });
+    }
+  }
+
   if (pathname === '/api/training/website-funnel' && req.method === 'GET') {
     // PUBLIC: visitors clicking a trainer link have no account.
     const entry = await findWebsiteByHandle(url.searchParams.get('t'));
