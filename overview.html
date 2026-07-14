@@ -6,8 +6,8 @@
     <meta name="theme-color" content="#140f0b">
     <script src="js/theme-color.js?v=2026-07-13-themebar-1" defer></script>
     <title>Overview · RiseForIt</title>
-    <link rel="stylesheet" href="css/main.css?v=2026-07-13-nutri-1">
-    <link rel="stylesheet" href="css/overview.css?v=2026-07-11-showcase-7">
+    <link rel="stylesheet" href="css/main.css?v=2026-07-14-grocery-tile-1">
+    <link rel="stylesheet" href="css/overview.css?v=2026-07-14-grocery-store-1">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
@@ -231,6 +231,16 @@
                                 Grocery Cards: Quick view of items and restock timing.
                             </div>
 
+                            <div class="overview-grocery-store-picker" id="overview-grocery-store-picker" aria-label="Preferred store">
+                                <span class="overview-grocery-store-label">Priced at</span>
+                                <div class="overview-grocery-store-options" role="group" aria-label="Choose store">
+                                    <button type="button" class="overview-store-opt active" data-store="Walmart" aria-pressed="true">Walmart</button>
+                                    <button type="button" class="overview-store-opt" data-store="Target" data-soon="1" aria-pressed="false">Target <span class="store-soon">soon</span></button>
+                                    <button type="button" class="overview-store-opt" data-store="Sams" data-soon="1" aria-pressed="false">Sam's Club <span class="store-soon">soon</span></button>
+                                </div>
+                                <div class="overview-grocery-store-note ns-muted hidden" id="overview-grocery-store-note"></div>
+                            </div>
+
                             <div class="overview-empty hidden" id="overview-empty">
                                 <h4>No grocery plan yet</h4>
                                 <p class="ns-muted">Build your grocery plan first. This page stays simple after that.</p>
@@ -442,7 +452,7 @@
 
     <script src="data/dri-targets.js?v=2026-02-24-micros-1"></script>
     <script src="js/main.js?v=2026-07-14-launchgate-3"></script>
-    <script src="js/overview.js?v=2026-03-25-training-trial-1"></script>
+    <script src="js/overview.js?v=2026-07-14-grocery-img-1"></script>
     <script src="js/identity-activity.js?v=2026-07-12-dash-1"></script>
     <script src="js/identity-engine.js?v=2026-07-13-seed-1"></script>
     <script src="js/daily-recap.js?v=2026-07-13-recap-4"></script>

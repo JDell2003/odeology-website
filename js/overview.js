@@ -2,6 +2,57 @@
     const $ = (sel, root = document) => root.querySelector(sel);
     const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
 
+    /* Grocery cards ship with a Walmart product URL but no image (the meal
+       data has none), so every card fell back to a generic 🛒 placeholder.
+       Pick a food-specific emoji from the item name, then its category, so
+       each card always shows a relevant picture. Keyword rules are ordered:
+       first match wins, so put specifics (e.g. "chicken broth" -> broth)
+       before broad terms. */
+    const GROCERY_FOOD_EMOJI = [
+        [/avocado/, '🥑'], [/chicken\s*(broth|stock)/, '🍜'], [/broth|stock/, '🍜'],
+        [/chicken/, '🍗'], [/turkey/, '🦃'], [/bacon/, '🥓'], [/pork|ham\b|sausage/, '🥓'],
+        [/steak|sirloin|ribeye|beef|ground meat|ground turkey|ground/, '🥩'],
+        [/salmon/, '🐟'], [/tuna|tilapia|cod|fish|halibut|mahi/, '🐟'], [/shrimp|prawn/, '🦐'],
+        [/egg/, '🥚'], [/cottage cheese/, '🧀'], [/cheese/, '🧀'], [/greek yogurt|yogurt/, '🥣'],
+        [/butter\b/, '🧈'], [/milk/, '🥛'], [/rice/, '🍚'], [/oat|oatmeal|granola/, '🌾'],
+        [/quinoa|barley|couscous/, '🌾'], [/tortilla|wrap|pita/, '🫓'], [/bagel|bun|roll/, '🥯'],
+        [/bread/, '🍞'], [/pasta|noodle|spaghetti|macaroni|penne/, '🍝'],
+        [/spinach|lettuce|kale|arugula|greens|salad/, '🥬'], [/broccoli/, '🥦'],
+        [/tomato/, '🍅'], [/banana/, '🍌'], [/apple/, '🍎'], [/blueberr|strawberr|raspberr|blackberr|berr/, '🫐'],
+        [/orange|clementine|mandarin/, '🍊'], [/lemon|lime/, '🍋'], [/grape/, '🍇'],
+        [/potato/, '🥔'], [/carrot/, '🥕'], [/onion/, '🧅'], [/garlic/, '🧄'],
+        [/bell pepper|peppers/, '🫑'], [/mushroom/, '🍄'], [/corn/, '🌽'], [/peas\b|green bean/, '🫛'],
+        [/cucumber/, '🥒'], [/pepper|salt|spice|season|paprika|cumin|cinnamon|oregano|basil|chili powder/, '🧂'],
+        [/baking (powder|soda)|flour|sugar/, '🥣'], [/olive oil|oil\b/, '🫒'],
+        [/bbq|barbecue|ketchup|marinara|salsa|sauce|dressing|vinaigrette|mayo|mustard/, '🥫'],
+        [/peanut butter|almond butter/, '🥜'], [/almond|cashew|walnut|pecan|nuts?\b/, '🌰'],
+        [/bean|lentil|chickpea|hummus/, '🫘'], [/honey|syrup|maple/, '🍯'], [/jam|jelly/, '🍓'],
+        [/protein powder|whey|casein|protein/, '💪'], [/coffee|espresso/, '☕'], [/tea\b/, '🍵'],
+        [/water|juice|soda|drink|beverage/, '🥤'], [/chocolate|cocoa/, '🍫'], [/frozen/, '🧊']
+    ];
+    const GROCERY_CATEGORY_EMOJI = {
+        produce: '🥬', 'meat & seafood': '🍖', 'meat and seafood': '🍖', meat: '🍖', seafood: '🐟',
+        dairy: '🧀', pantry: '🥫', frozen: '🧊', bakery: '🍞', beverages: '🥤', drinks: '🥤',
+        snacks: '🍿', supplements: '💊', condiments: '🥫', spices: '🧂', grains: '🌾', misc: '🛒'
+    };
+    const groceryFoodEmoji = (name, category) => {
+        const n = String(name || '').toLowerCase();
+        for (const [re, em] of GROCERY_FOOD_EMOJI) { if (re.test(n)) return em; }
+        return GROCERY_CATEGORY_EMOJI[String(category || '').toLowerCase().trim()] || '🛒';
+    };
+    // Inner HTML for a grocery card's image area: the real product photo when
+    // one exists, otherwise a food-emoji tile (category tint via data-cat).
+    const groceryImageMarkup = (name, category, img, url, esc) => {
+        const emoji = groceryFoodEmoji(name, category);
+        const inner = img
+            ? `<img src="${esc(img)}" alt="${esc(name)}" onerror="this.style.display='none'; this.parentElement.classList.add('food-tile'); this.parentElement.setAttribute('data-cat', ${JSON.stringify(String(category || '').toLowerCase().trim())});">`
+            : `<span class="grocery-food-emoji" aria-hidden="true">${emoji}</span>`;
+        const link = url
+            ? `<a href="${esc(url)}" target="_blank" class="grocery-card-link" rel="noopener" title="View item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg></a>`
+            : '';
+        return { cls: img ? '' : 'food-tile', cat: String(category || '').toLowerCase().trim(), inner, link, emoji };
+    };
+
     const parseMoney = (text) => {
         const n = Number(String(text || '').replace(/[^0-9.]/g, ''));
         return Number.isFinite(n) ? n : null;
@@ -376,15 +427,12 @@
                     const priceText = Number.isFinite(price) ? `$${price.toFixed(2)}` : '—';
                     const footer = fmtMoney(it?.estimatedWeeklyCost ?? it?.estimatedCost) ? `${fmtMoney(it?.estimatedWeeklyCost ?? it?.estimatedCost)} est` : '';
 
+                    const imgMk = groceryImageMarkup(name, category, img, url, escape);
                     return `
                         <div class="grocery-card" data-query="${escape(name.toLowerCase())}">
-                            <div class="grocery-card-image ${img ? '' : 'no-image'}">
-                                ${img ? `<img src="${escape(img)}" alt="${escape(name)}" onerror="this.style.display='none'; this.parentElement.classList.add('no-image');">` : ''}
-                                ${url ? `
-                                    <a href="${escape(url)}" target="_blank" class="grocery-card-link" rel="noopener" title="View item">
-                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
-                                    </a>
-                                ` : ''}
+                            <div class="grocery-card-image ${imgMk.cls}" data-cat="${escape(imgMk.cat)}">
+                                ${imgMk.inner}
+                                ${imgMk.link}
                             </div>
                             <div class="grocery-card-body">
                                 <h4 class="grocery-card-title">${escape(name)}</h4>
@@ -586,6 +634,54 @@
         });
 
         applyFilter('all');
+    };
+
+    /* Store picker in the grocery popup: Walmart is the only store with real
+       pricing today; Target and Sam's are "coming soon" (matches the picker
+       on grocery-final.html and meal-program.html). Picking a coming-soon
+       store surfaces a note and keeps Walmart pricing, but the choice is
+       remembered for when those stores go live. */
+    const initGroceryStorePicker = () => {
+        const picker = document.getElementById('overview-grocery-store-picker');
+        if (!picker || picker.__wired) return;
+        picker.__wired = true;
+        const opts = Array.from(picker.querySelectorAll('.overview-store-opt'));
+        const note = document.getElementById('overview-grocery-store-note');
+        const storePill = document.getElementById('store-pill');
+        const STORE_KEY = 'ode_grocery_store_pref_v1';
+        const LABEL = { Walmart: 'Walmart', Target: 'Target', Sams: "Sam's Club" };
+        let pref = 'Walmart';
+        try { const p = localStorage.getItem(STORE_KEY); if (p && LABEL[p]) pref = p; } catch { /* ignore */ }
+        const setActive = (store) => {
+            opts.forEach((b) => {
+                const on = b.getAttribute('data-store') === store;
+                b.classList.toggle('active', on);
+                b.setAttribute('aria-pressed', on ? 'true' : 'false');
+            });
+        };
+        const showSoonNote = (store) => {
+            if (!note) return;
+            note.textContent = `${LABEL[store]} pricing is coming soon — showing Walmart prices for now.`;
+            note.classList.remove('hidden');
+        };
+        // Walmart is always the store actually priced/displayed.
+        setActive('Walmart');
+        if (storePill) storePill.textContent = LABEL.Walmart;
+        if (pref !== 'Walmart') showSoonNote(pref);
+        opts.forEach((b) => {
+            b.addEventListener('click', () => {
+                const store = b.getAttribute('data-store');
+                const soon = b.getAttribute('data-soon') === '1';
+                try { localStorage.setItem(STORE_KEY, store); } catch { /* ignore */ }
+                setActive('Walmart');
+                if (soon) {
+                    showSoonNote(store);
+                } else if (note) {
+                    note.classList.add('hidden');
+                    if (storePill) storePill.textContent = LABEL.Walmart;
+                }
+            });
+        });
     };
 
     const initGroceryExpand = () => {
@@ -1981,15 +2077,12 @@
             const footerNum = Number(it?.estimatedWeeklyCost ?? it?.estimatedCost);
             const footerText = Number.isFinite(footerNum) ? `$${footerNum.toFixed(2)} est` : '';
 
+            const imgMk = groceryImageMarkup(name, category, img, url, escape);
             return `
                 <div class="grocery-card" data-query="${escape(name.toLowerCase())}">
-                    <div class="grocery-card-image ${img ? '' : 'no-image'}">
-                        ${img ? `<img src="${escape(img)}" alt="${escape(name)}" onerror="this.style.display='none'; this.parentElement.classList.add('no-image');">` : ''}
-                        ${url ? `
-                            <a href="${escape(url)}" target="_blank" class="grocery-card-link" rel="noopener" title="View item">
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
-                            </a>
-                        ` : ''}
+                    <div class="grocery-card-image ${imgMk.cls}" data-cat="${escape(imgMk.cat)}">
+                        ${imgMk.inner}
+                        ${imgMk.link}
                     </div>
                     <div class="grocery-card-body">
                         <h4 class="grocery-card-title">${escape(name)}</h4>
@@ -2288,15 +2381,12 @@
                         const priceText = Number.isFinite(price) ? `$${price.toFixed(2)}` : '—';
                         const footer = fmtMoney(it?.estimatedWeeklyCost ?? it?.estimatedCost) ? `${fmtMoney(it?.estimatedWeeklyCost ?? it?.estimatedCost)} est` : '';
 
+                        const imgMk = groceryImageMarkup(name, category, img, url, escape);
                         return `
                             <div class="grocery-card" data-query="${escape(name.toLowerCase())}">
-                                <div class="grocery-card-image ${img ? '' : 'no-image'}">
-                                    ${img ? `<img src="${escape(img)}" alt="${escape(name)}" onerror="this.style.display='none'; this.parentElement.classList.add('no-image');">` : ''}
-                                    ${url ? `
-                                        <a href="${escape(url)}" target="_blank" class="grocery-card-link" rel="noopener" title="View item">
-                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-                                        </a>
-                                    ` : ''}
+                                <div class="grocery-card-image ${imgMk.cls}" data-cat="${escape(imgMk.cat)}">
+                                    ${imgMk.inner}
+                                    ${imgMk.link}
                                 </div>
                                 <div class="grocery-card-body">
                                     <h4 class="grocery-card-title">${escape(name)}</h4>
@@ -3161,6 +3251,7 @@
         });
 
         initOverviewMiniNav();
+        initGroceryStorePicker();
     });
 })();
 

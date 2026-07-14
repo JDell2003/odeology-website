@@ -3884,6 +3884,32 @@ body.training-page {
     font-size: 3rem;
 }
 
+/* Food-emoji tile: shown when an item has no product photo (the common
+   case — meal data ships URLs but no images). Category-tinted so cards
+   read as a set rather than a wall of identical orange. */
+.grocery-card-image.food-tile {
+    background: linear-gradient(135deg, #f6b34a 0%, #dd8b1a 100%);
+}
+.grocery-card-image.food-tile[data-cat="produce"] { background: linear-gradient(135deg, #7fc37a 0%, #4f9a52 100%); }
+.grocery-card-image.food-tile[data-cat="meat & seafood"],
+.grocery-card-image.food-tile[data-cat="meat and seafood"],
+.grocery-card-image.food-tile[data-cat="meat"] { background: linear-gradient(135deg, #e0745f 0%, #b8452f 100%); }
+.grocery-card-image.food-tile[data-cat="seafood"] { background: linear-gradient(135deg, #5fb0d0 0%, #2f7d9c 100%); }
+.grocery-card-image.food-tile[data-cat="dairy"] { background: linear-gradient(135deg, #f2d98a 0%, #d9b64f 100%); }
+.grocery-card-image.food-tile[data-cat="pantry"],
+.grocery-card-image.food-tile[data-cat="condiments"],
+.grocery-card-image.food-tile[data-cat="grains"] { background: linear-gradient(135deg, #d7a86a 0%, #a9773c 100%); }
+.grocery-card-image.food-tile[data-cat="frozen"] { background: linear-gradient(135deg, #86c5e6 0%, #4f8fc0 100%); }
+.grocery-card-image.food-tile[data-cat="bakery"] { background: linear-gradient(135deg, #e6b877 0%, #c68a3e 100%); }
+.grocery-card-image.food-tile[data-cat="beverages"],
+.grocery-card-image.food-tile[data-cat="drinks"] { background: linear-gradient(135deg, #8bb6e8 0%, #5079b8 100%); }
+.grocery-card-image .grocery-food-emoji {
+    font-size: 3.4rem;
+    line-height: 1;
+    filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.22));
+    user-select: none;
+}
+
 .grocery-card-link {
     position: absolute;
     top: 0.75rem;

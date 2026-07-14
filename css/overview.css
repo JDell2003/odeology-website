@@ -1003,6 +1003,70 @@ html[data-theme="light"] .overview-page .overview-grocery-toolbar {
     opacity: 0.78;
 }
 
+/* Store picker (Walmart / Target / Sam's) inside the grocery popup. */
+.overview-page .overview-grocery-store-picker {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px 10px;
+    margin-top: 12px;
+}
+.overview-page .overview-grocery-store-label {
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    opacity: 0.6;
+}
+.overview-page .overview-grocery-store-options {
+    display: inline-flex;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+.overview-page .overview-store-opt {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 7px 13px;
+    border-radius: 999px;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    background: rgba(255, 255, 255, 0.04);
+    color: inherit;
+    font-size: 12.5px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.15s ease, border-color 0.15s ease;
+}
+.overview-page .overview-store-opt:hover { background: rgba(255, 255, 255, 0.1); }
+.overview-page .overview-store-opt.active {
+    background: var(--accent, #d9a15c);
+    border-color: var(--accent, #d9a15c);
+    color: #1a1206;
+}
+.overview-page .overview-store-opt .store-soon {
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    padding: 1px 5px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.14);
+    opacity: 0.75;
+}
+.overview-page .overview-store-opt.active .store-soon { background: rgba(0, 0, 0, 0.16); }
+.overview-page .overview-grocery-store-note {
+    flex-basis: 100%;
+    font-size: 11.5px;
+    font-weight: 600;
+    margin-top: 2px;
+}
+.overview-page .overview-grocery-store-note.hidden { display: none; }
+html[data-theme="light"] .overview-page .overview-store-opt {
+    border-color: rgba(13, 34, 50, 0.16);
+    background: rgba(13, 34, 50, 0.03);
+}
+html[data-theme="light"] .overview-page .overview-store-opt:hover { background: rgba(13, 34, 50, 0.07); }
+
 .overview-page .overview-grocery-toggle {
     display: inline-flex;
     padding: 4px;
