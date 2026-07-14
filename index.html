@@ -3979,6 +3979,21 @@
         background: linear-gradient(180deg, #d9a15c, #b9782d);
         color: #0c1119;
       }
+      /* Fast-fill sits just to the left of Skip, filled-in so it reads as the
+         primary owner shortcut. */
+      .owner-fastfill-btn {
+        right: 132px;
+        background: linear-gradient(180deg, #d9a15c, #b9782d);
+        color: #0c1119;
+        border-color: rgba(217, 161, 92, 0.85);
+      }
+      .owner-fastfill-btn:hover {
+        background: linear-gradient(180deg, #e8b877, #cf8a35);
+        color: #0c1119;
+      }
+      @media (max-width: 560px) {
+        .owner-fastfill-btn { right: 14px; bottom: 66px; }
+      }
 
       @media (max-width: 900px) {
         body.index-blank-mode.ode-entry-active .index-entry-shell {
@@ -10614,24 +10629,41 @@ function formatWorkspaceLabel(workspace) {
         // overview page. Rendered bottom-right, only for owner accounts.
         function syncOwnerSkipButton(stage) {
           const liveUser = window.__odeCurrentUser || readAuthUserHint() || null;
-          const show = Boolean(liveUser?.isOwner) && (stage === 'roles' || stage === 'onboarding');
+          const isOwner = Boolean(liveUser?.isOwner);
+          const show = isOwner && (stage === 'roles' || stage === 'onboarding');
           let btn = document.getElementById('owner-skip-onboarding');
-          if (!show) {
-            btn?.remove();
-            return;
+          if (show && !btn) {
+            btn = document.createElement('button');
+            btn.id = 'owner-skip-onboarding';
+            btn.type = 'button';
+            btn.className = 'owner-skip-btn';
+            btn.innerHTML = 'Skip <span aria-hidden="true">→</span>';
+            btn.setAttribute('aria-label', 'Skip onboarding (owner only)');
+            btn.addEventListener('click', () => {
+              markOnboardingDone();
+              window.location.href = 'overview.html#control-panel';
+            });
+            document.body.appendChild(btn);
+          } else if (!show && btn) {
+            btn.remove();
           }
-          if (btn) return;
-          btn = document.createElement('button');
-          btn.id = 'owner-skip-onboarding';
-          btn.type = 'button';
-          btn.className = 'owner-skip-btn';
-          btn.innerHTML = 'Skip <span aria-hidden="true">→</span>';
-          btn.setAttribute('aria-label', 'Skip onboarding (owner only)');
-          btn.addEventListener('click', () => {
-            markOnboardingDone();
-            window.location.href = 'overview.html#control-panel';
-          });
-          document.body.appendChild(btn);
+
+          // Owner fast-forward: fill every answer + jump to the finish step of
+          // whichever path is open. Only meaningful once a path is chosen.
+          const showFast = isOwner && stage === 'onboarding' && Boolean(state.selectedPath);
+          let fast = document.getElementById('owner-fastfill-onboarding');
+          if (showFast && !fast) {
+            fast = document.createElement('button');
+            fast.id = 'owner-fastfill-onboarding';
+            fast.type = 'button';
+            fast.className = 'owner-skip-btn owner-fastfill-btn';
+            fast.innerHTML = '<span aria-hidden="true">⚡</span> Fill &amp; finish';
+            fast.setAttribute('aria-label', 'Autofill test answers and jump to the finish step (owner only)');
+            fast.addEventListener('click', () => { void fastForwardTestOnboarding(); });
+            document.body.appendChild(fast);
+          } else if (!showFast && fast) {
+            fast.remove();
+          }
         }
 
         let entryFadeTimer = 0;
@@ -11233,8 +11265,14 @@ function formatWorkspaceLabel(workspace) {
           showEntryToast('All local test onboarding data deleted.');
         }
 
+        function isOwnerLiveUser() {
+          const liveUser = window.__odeCurrentUser || readAuthUserHint() || null;
+          return Boolean(liveUser?.isOwner);
+        }
+
         async function autofillTestOnboarding(path = state.selectedPath || TEST_ONBOARDING_PATH || 'user') {
-          if (!TEST_ONBOARDING_MODE) return;
+          // Available in test mode OR to a signed-in owner on the real flow.
+          if (!TEST_ONBOARDING_MODE && !isOwnerLiveUser()) return;
           const normalizedPath = FLOW_CONFIG[path] ? path : 'user';
           await loadOnboardingDirectory();
           if (state.selectedPath !== normalizedPath) {
@@ -11339,7 +11377,7 @@ function formatWorkspaceLabel(workspace) {
         // advanced instantly (no fade) via the same routing the Continue
         // button uses, so conditional skips stay correct.
         async function fastForwardTestOnboarding(path = state.selectedPath || TEST_ONBOARDING_PATH || 'user') {
-          if (!TEST_ONBOARDING_MODE) return;
+          if (!TEST_ONBOARDING_MODE && !isOwnerLiveUser()) return;
           await autofillTestOnboarding(path);
           const activePath = state.selectedPath;
           // Satisfy the client sub-quizzes so the finish step has real data.
