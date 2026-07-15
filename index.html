@@ -7109,6 +7109,28 @@ function formatWorkspaceLabel(workspace) {
           }
         }
 
+        // Coach-managed clients (added by a trainer) don't auto-build a plan —
+        // their coach delivers it. Cached so the finish handlers can check once.
+        let __coachManagedCache;
+        async function getCoachManaged() {
+          if (__coachManagedCache !== undefined) return __coachManagedCache;
+          try {
+            const r = await fetch('/api/auth/my-coach', { credentials: 'include' });
+            const j = r && r.ok ? await r.json() : null;
+            __coachManagedCache = (j && j.coach && j.coach.name) ? j.coach : null;
+          } catch { __coachManagedCache = null; }
+          return __coachManagedCache;
+        }
+        // Finish onboarding for a coach-managed client: mark done, save intake,
+        // but DON'T generate meals or set the workout auto-build flag (that would
+        // overwrite the coach's plan). Land them on Training, where the "your
+        // coach is building your plan" pending card shows.
+        function finishCoachManagedClient() {
+          markOnboardingDone();
+          try { localStorage.setItem(TRAINING_INTAKE_KEY, JSON.stringify(buildUserIntake())); } catch {}
+          window.location.href = 'training.html';
+        }
+
         function markOnboardingDone() {
           if (TEST_ONBOARDING_MODE) return;
           try {
@@ -13038,6 +13060,7 @@ function formatWorkspaceLabel(workspace) {
           }
           if (action === 'client-overview') {
             if (!validateCurrentStep()) return;
+            if (await getCoachManaged()) { finishCoachManagedClient(); return; }
             // Meal Program (Part 2): the plan is owed the moment onboarding ends —
             // generate + persist (localStorage + account) before leaving the page.
             // Time-boxed and fail-open so the finish can never hang on it.
@@ -13067,6 +13090,7 @@ function formatWorkspaceLabel(workspace) {
           }
           if (action === 'client-build' || action === 'client-dashboard') {
             if (!validateCurrentStep()) return;
+            if (await getCoachManaged()) { finishCoachManagedClient(); return; }
             // Meal Program (Part 2): see client-overview — same generation contract.
             try {
               if (window.MealProgramOnboarding) {
