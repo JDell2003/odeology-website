@@ -126,3 +126,27 @@ captured into `state.answers.user` by the existing generic handler, carried by
 3 new tests (history mapping, cold-start null, source-tier ordering). 97 pass /
 same 21 pre-existing fail. Verified the onboarding page still loads with zero
 new JS errors and the 3 lift inputs present.
+
+## Task 5 (core: reachability) — Progression style reachable in onboarding ✅ (commit: `feat(onboarding): discipline & style`)
+
+Makes the shipped Tasks 1-3 reachable by real users (they were dormant behind an
+unset flag).
+
+- `mapIntakeToOblueprintPayload` (`js/training.js`): **powerbuilding now defaults
+  to `double_progression`** (Jason's vision) unless the client explicitly picks a
+  style; bodybuilding stays on the standard ladder. `'auto'` = discipline default.
+  Powerbuilding is reachable from self-serve today via the "Get stronger" goal
+  (`getGoalPreset` → Powerbuilding).
+- Onboarding UI (`index.html`): a visible **"How your weights climb"** selector on
+  the profile step (Auto / Double progression / Hypertrophy double / Standard),
+  captured into `state.answers.user.progressionStyle` by the existing handler.
+
+Kept the powerbuilding default at the intake layer (not `coerce`/engine) so the
+byte-for-byte baseline test is untouched and trainer/server builds are unchanged
+unless a style is set explicitly. Verified the selector renders and onboarding
+loads with zero new JS errors; engine suite still 97 pass / 21 pre-existing fail.
+
+// TODO(owner): the explicit discipline picker (bodybuilding/powerbuilding/
+// athletic/military) and surfacing priority-muscles in the client flow (the rest
+// of Task 5) are deferred — powerbuilding is already reachable via the goal
+// question, and those are additive onboarding steps that can land without risk.

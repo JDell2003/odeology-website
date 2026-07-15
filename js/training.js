@@ -1034,7 +1034,15 @@
       hingeMovement: (intake.strength && intake.strength.deadliftWeight) ? 'Deadlift' : null,
       hingeWeight: Number(intake.strength && intake.strength.deadliftWeight) || null,
       hingeReps: Number(intake.strength && intake.strength.deadliftReps) || null,
-      progressionStyle: (typeof intake.progressionStyle === 'string' && intake.progressionStyle) || undefined
+      // Make Jason's double-progression the default for powerbuilding (his
+      // vision), while bodybuilding stays on the standard hypertrophy ladder,
+      // unless the client explicitly picked a style in onboarding ('auto' means
+      // "use the discipline default").
+      progressionStyle: (() => {
+        const picked = String(intake.progressionStyle || '').trim();
+        if (picked && picked !== 'auto') return picked;
+        return discipline === 'powerbuilding' ? 'double_progression' : undefined;
+      })()
     };
   }
 
