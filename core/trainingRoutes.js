@@ -7,7 +7,8 @@ const db = require('./db');
 const jsonStore = require('./jsonStore');
 const { DbUnavailableError, isTransientPgError } = require('./dbErrors');
 const { generatePlan, applyLogAdjustments, normalizeExperience, assertBodybuildingPlanIntegrity, estimateExerciseMinutes } = require('./trainingEngine');
-const { buildOblueprintPlan } = require('../generator/trainingEngine.oblueprint');
+const { buildOblueprintPlan, preprocessExercises, normalizeUserInput } = require('../generator/trainingEngine.oblueprint');
+const { buildSafeFallbackPlan } = require('../generator/safeFallbackPlan');
 const militaryHybrid = require('../generator/militaryHybrid.oblueprint');
 const { resolveWorkoutExercises } = require('./exerciseResolver');
 const { invalidateDatasetCache } = require('./exerciseCatalog');
@@ -1055,6 +1056,40 @@ function getOblueprintBuildTelemetry() {
   };
 }
 
+// Cached preprocessed pool for the safe fallback floor (Task 5). Loaded lazily
+// the same way the engine loads its catalog.
+let SAFE_FALLBACK_POOL = null;
+function getSafeFallbackPool() {
+  if (SAFE_FALLBACK_POOL) return SAFE_FALLBACK_POOL;
+  try {
+    const fsMod = require('fs');
+    const pathMod = require('path');
+    const srcText = fsMod.readFileSync(pathMod.join(__dirname, '..', 'data', 'exercises.master.js'), 'utf8');
+    const raw = Function(`return (${srcText.replace(/^\s*export\s+const\s+exercises\s*=\s*/, '').replace(/;\s*$/, '')})`)();
+    const pre = preprocessExercises(raw);
+    SAFE_FALLBACK_POOL = (pre && Array.isArray(pre.exercises)) ? pre.exercises : [];
+  } catch {
+    SAFE_FALLBACK_POOL = [];
+  }
+  return SAFE_FALLBACK_POOL;
+}
+// The floor: turn any build error into a complete, safe, renderable plan. No
+// onboarding input can reach a throw or an empty plan.
+function makeSafeFallbackResult(src, lastError) {
+  try {
+    const user = normalizeUserInput(src);
+    if (user && !user.error) {
+      const plan = buildSafeFallbackPlan(user, getSafeFallbackPool(), {
+        notes: ['Your exact plan couldn\'t be assembled within every preference, so we built the best safe plan for your equipment and any injuries.']
+      });
+      if (plan && Array.isArray(plan.weeks) && plan.weeks.length && plan.weeks.every((w) => Array.isArray(w.days) && w.days.length && w.days.every((d) => Array.isArray(d.exercises) && d.exercises.length))) {
+        return { plan, usedPayload: { ...src, _safeFallback: true }, _safeFallback: true, originalError: lastError || null };
+      }
+    }
+  } catch { /* fall through — should never happen, but never throw */ }
+  return null;
+}
+
 function buildOblueprintPlanWithFallback(payload, opts = {}) {
   const src = payload && typeof payload === 'object' ? payload : {};
   const buildStartedAt = Date.now();
@@ -1547,13 +1582,17 @@ function buildOblueprintPlanWithFallback(payload, opts = {}) {
   const directBuild = tryBuildSeries(src, directAttempts);
   if (directBuild) return finish(directBuild);
   if (String(lastError?.error || '') === 'LOWER_BODY_REPAIR_LOOP_LIMIT') {
-    return finish({ error: lastError });
+    return finish(makeSafeFallbackResult(src, lastError) || { error: lastError });
   }
 
   const relaxedPayload = normalizeOblueprintPayload(src, { relax: true });
   const relaxedBuild = tryBuildSeries(relaxedPayload, relaxedAttempts);
   if (relaxedBuild) return finish({ ...relaxedBuild, usedPayload: { ...relaxedBuild.usedPayload, _relaxedFallback: true } });
   if (lastPlan) return finish({ plan: lastPlan, usedPayload: lastPayload });
+  // The floor (Task 5): never surface a failure to a user. If the builder can't
+  // converge, hand back a complete, safe, renderable fallback plan.
+  const safe = makeSafeFallbackResult(src, lastError);
+  if (safe) return finish(safe);
   return finish({ error: lastError || { error: 'PLAN_BUILD_FAILED', reason: 'Failed to build a valid Oblueprint plan.' } });
 }
 

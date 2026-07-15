@@ -87,3 +87,23 @@ keeps the golden-56 untouched.
 `// TODO(owner):` a catalog consolidation pass (fix mislabeled requiredEquipment on
 source rows) would further widen thin cells; deferred as data-cleanup, not required
 for the guarantee.
+
+## Task 5 — Guaranteed safe fallback floor ✅ (commit: `feat(selection): safe fallback`)
+
+**Done ahead of Tasks 3/4 on purpose — it is the actual user-facing guarantee.**
+New `generator/safeFallbackPlan.js#buildSafeFallbackPlan` assembles a COMPLETE,
+SAFE, RENDERABLE plan directly from the guaranteed-safe pool (equipment-compatible
++ injury-safe via truth flags + has-image), as a full-body rotation across the
+user's day count and week block. It respects the safety line — real equipment,
+every injury contraindication, session cap — and simplifies everything else, each
+simplification recorded in `plan.meta.notes` with `safeFallback: true`.
+
+Wired into `buildOblueprintPlanWithFallback`: both error-return paths now route
+through `makeSafeFallbackResult(src, lastError)` first, so **the route wrapper — the
+real onboarding path — can never return an error or empty plan.** The raw
+`buildOblueprintPlan` still returns errors in isolation (that's what the class-A/B
+unit tests call directly); those are reclassified in Task 6 to the wrapper.
+
+Verified: a brutal input (bands-only + 3 severe injuries + odd priorities + 30-min
+sessions) returns a complete 5-day plan; the golden-56 are byte-for-byte unchanged
+(fallback only triggers on failure, which they never hit).
