@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="RiseForIt">
+  <defs>
+    <linearGradient id="rfg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ecc25f"/>
+      <stop offset="1" stop-color="#9c6f1c"/>
+    </linearGradient>
+  </defs>
+  <rect x="3" y="3" width="58" height="58" rx="16" fill="url(#rfg)"/>
+  <path d="M15 41 L32 21 L49 41" fill="none" stroke="#20160a" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M23 48 L32 37 L41 48" fill="none" stroke="#20160a" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" opacity="0.5"/>
+</svg>

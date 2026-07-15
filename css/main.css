@@ -5987,6 +5987,32 @@ section {
     opacity: 0.95;
 }
 
+/* Small yellow "beta" badge after the RiseForIt wordmark + dot
+   (navbar + loading screen preloader + store brand mark). */
+.navbar-brand::after,
+.preloader-word::after,
+.store-brand-mark::after {
+    content: 'beta';
+    display: inline-block;
+    align-self: flex-start;   /* .preloader-word is inline-flex */
+    vertical-align: top;      /* .navbar-brand / store are inline */
+    margin-left: 6px;
+    padding: 0.18em 0.46em;
+    border-radius: 999px;
+    background: #f6c945;
+    color: #241704;
+    -webkit-text-fill-color: #241704;
+    font-family: "Space Grotesk", sans-serif;
+    font-weight: 800;
+    font-size: 0.4em;
+    letter-spacing: 0.05em;
+    line-height: 1;
+    text-transform: uppercase;
+    box-shadow: 0 1px 2px rgba(120, 90, 20, 0.3);
+    position: relative;
+    top: 0.15em;
+}
+
 .preloader-word .brand-char {
     filter: none;
 }

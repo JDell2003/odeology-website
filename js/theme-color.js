@@ -22,6 +22,25 @@
 
     var FALLBACK = '#140f0b'; // site's dark base tone
 
+    /* Brand favicon: swap the legacy pink /favicon.ico for the SVG mark
+       on every page that loads this script. Modern browsers prefer the
+       SVG; the .ico stays as a fallback for very old ones. */
+    var ensureFavicon = function () {
+        try {
+            if (!document.head) return;
+            var links = document.head.querySelectorAll('link[rel~="icon"]');
+            for (var i = 0; i < links.length; i++) {
+                if ((links[i].getAttribute('href') || '').indexOf('favicon.svg') !== -1) return;
+            }
+            var link = document.createElement('link');
+            link.setAttribute('rel', 'icon');
+            link.setAttribute('type', 'image/svg+xml');
+            link.setAttribute('href', '/favicon.svg');
+            document.head.appendChild(link);
+        } catch (e) { /* never break the host page */ }
+    };
+    ensureFavicon();
+
     /* Parse a CSS color; return {rgb:'rgb(r,g,b)', a:alpha} or null. */
     var parse = function (c) {
         if (!c || c === 'transparent' || c === 'none') return null;
