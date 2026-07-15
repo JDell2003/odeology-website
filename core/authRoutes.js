@@ -5544,7 +5544,10 @@ function buildAuthUserFromRow(row) {
     isManager,
     manager: { active: isManager },
     isClient,
-    client: { active: isClient }
+    client: { active: isClient },
+    // Invited accounts (auto-generated username/temp password) must pick their
+    // real username + password on first login before onboarding.
+    needsLoginClaim: notesHasFlag(adminNotes, 'needs_login_claim')
   };
 }
 
@@ -9307,6 +9310,159 @@ async function handleTrainerCreateAccount(req, res) {
   });
 }
 
+// Any signed-in user (trainer OR client) invites someone by email. No username
+// needed — we auto-generate a placeholder username + temp password; the invited
+// person sets their real username + password on first login (needs_login_claim)
+// and then runs onboarding for the role they were invited as.
+async function handleUserInvite(req, res) {
+  const inviter = await getUserFromRequest(req);
+  if (!inviter) return sendJson(res, 401, { ok: false, error: 'UNAUTHORIZED' });
+
+  let payload;
+  try {
+    payload = await readJsonBody(req);
+  } catch (err) {
+    return sendJson(res, 400, { ok: false, error: err.message });
+  }
+
+  const roleRaw = String(payload?.role || 'client').trim().toLowerCase();
+  const role = roleRaw === 'trainer' ? 'trainer' : 'client';
+  const email = normalizeEmail(payload?.email);
+  if (!email) return sendJson(res, 400, { ok: false, error: 'Enter a valid email address' });
+  const sendEmailFlag = payload?.sendEmail === undefined ? true : cleanBoolean(payload?.sendEmail);
+  const ccInviterFlag = cleanBoolean(payload?.ccInviter);
+  const customMessage = cleanLongText(payload?.message || '', 1200);
+
+  const password = buildOwnerInvitePassword();
+  const passwordHash = await bcrypt.hash(password, 12);
+  const inviterIsTrainer = Boolean(inviter.isTrainer || inviter.isOwner);
+
+  let adminNotes = buildAdminNotesForSignupRole(role);
+  adminNotes = setAdminNoteFlag(adminNotes, 'invited', true);
+  adminNotes = setAdminNoteFlag(adminNotes, 'needs_login_claim', true);
+  if (role === 'client' && inviterIsTrainer) adminNotes = setAdminNoteFlag(adminNotes, `coach:${inviter.id}`, true);
+
+  // Insert with a unique placeholder username, retrying on collision.
+  let row = null;
+  for (let attempt = 0; attempt < 5 && !row; attempt += 1) {
+    const username = `invitee_${crypto.randomBytes(4).toString('hex')}`;
+    try {
+      const inserted = await db.query(
+        `
+          INSERT INTO app_users (username, email, phone, display_name, password_hash, auth_provider, admin_notes)
+          VALUES ($1, $2, NULL, $3, $4, 'local', $5)
+          RETURNING id, username, email, display_name;
+        `,
+        [username, email, 'New member', passwordHash, adminNotes]
+      );
+      row = inserted.rows?.[0] || null;
+    } catch (err) {
+      const msg = String(err?.message || '');
+      if (msg.includes('app_users_email_key')) return sendJson(res, 409, { ok: false, error: 'That email is already registered' });
+      if (!msg.includes('app_users_username_key')) throw err;
+      // username collided — loop and try another
+    }
+  }
+  if (!row?.id) return sendJson(res, 500, { ok: false, error: 'Could not create the invite' });
+
+  // Trainer inviting a client → attach them to the trainer's roster now.
+  if (role === 'client' && inviterIsTrainer) {
+    try {
+      await db.query(
+        `
+          INSERT INTO app_trainer_clients (trainer_user_id, linked_user_id, display_name, email, phone, notes, status, source, updated_at)
+          VALUES ($1, $2, $3, $4, NULL, $5, 'active', 'invite', now())
+          ON CONFLICT DO NOTHING;
+        `,
+        [inviter.id, row.id, 'New member', email, 'Invited — onboarding in progress.']
+      );
+    } catch (err) {
+      try { console.error('invite_link_failed', err?.message || err); } catch {}
+    }
+  }
+
+  const appBase = resolveAppBaseUrl(req) || '';
+  const inviteCtaUrl = `${appBase}/?authMode=login&u=${encodeURIComponent(row.username)}`;
+  const inviterName = String(inviter.displayName || inviter.username || 'A RiseForIt member');
+  const introLine = customMessage || (role === 'client'
+    ? `Hey - ${inviterName} invited you to RiseForIt. Log in with the temporary password below; you'll set your own username and password, then finish a quick setup.`
+    : `Hey - ${inviterName} invited you to coach on RiseForIt. Log in with the temporary password below; you'll set your own username and password, then finish your trainer setup.`);
+
+  let emailStatus = { requested: sendEmailFlag, ok: false, provider: null, skipped: sendEmailFlag ? null : 'not_requested', ccInviter: ccInviterFlag };
+  if (sendEmailFlag) {
+    try {
+      const result = await sendInviteEmail({
+        email, displayName: 'there', roleLabel: role,
+        username: row.username, tempPassword: password,
+        loginUrl: inviteCtaUrl, message: introLine
+      });
+      emailStatus.ok = Boolean(result?.ok);
+      emailStatus.provider = result?.provider || null;
+      emailStatus.skipped = result?.skipped || null;
+      emailStatus.error = result?.error || null;
+    } catch (err) {
+      emailStatus.error = err?.message || 'email_failed';
+    }
+    if (ccInviterFlag && inviter?.email) {
+      try {
+        await sendInviteEmail({
+          email: inviter.email, displayName: inviterName, roleLabel: role,
+          username: row.username, tempPassword: password, loginUrl: inviteCtaUrl,
+          message: `(Your copy) ${introLine}`
+        });
+      } catch (err) { emailStatus.ccError = err?.message || 'cc_failed'; }
+    }
+  }
+
+  return sendJson(res, 200, {
+    ok: true,
+    delivered: Boolean(emailStatus.ok),
+    role,
+    account: { id: row.id, username: row.username, email: row.email },
+    credentials: { username: row.username, password },
+    email: emailStatus
+  });
+}
+
+// Invited user sets their real username + password on first login. Clears the
+// needs_login_claim flag so onboarding can proceed on the next load.
+async function handleClaimCredentials(req, res) {
+  const user = await getUserFromRequest(req);
+  if (!user) return sendJson(res, 401, { ok: false, error: 'UNAUTHORIZED' });
+
+  let payload;
+  try {
+    payload = await readJsonBody(req);
+  } catch (err) {
+    return sendJson(res, 400, { ok: false, error: err.message });
+  }
+
+  const username = String(payload?.username || '').trim().toLowerCase();
+  const password = String(payload?.password || '');
+  if (!username || username.length < 3) return sendJson(res, 400, { ok: false, error: 'Username must be at least 3 characters' });
+  if (!/^[a-z0-9_]+$/.test(username)) return sendJson(res, 400, { ok: false, error: 'Username can only use letters, numbers, underscores' });
+  if (!password || password.length < 8) return sendJson(res, 400, { ok: false, error: 'Password must be at least 8 characters' });
+
+  const current = await db.query('SELECT COALESCE(admin_notes, \'\') AS admin_notes FROM app_users WHERE id = $1 LIMIT 1;', [user.id]);
+  let adminNotes = current.rows?.[0]?.admin_notes || '';
+  adminNotes = setAdminNoteFlag(adminNotes, 'needs_login_claim', false);
+  const passwordHash = await bcrypt.hash(password, 12);
+
+  try {
+    await db.query(
+      'UPDATE app_users SET username = $2, password_hash = $3, admin_notes = $4, updated_at = now() WHERE id = $1;',
+      [user.id, username, passwordHash, adminNotes]
+    );
+  } catch (err) {
+    const msg = String(err?.message || '');
+    if (msg.includes('app_users_username_key')) return sendJson(res, 409, { ok: false, error: 'That username is taken — pick another' });
+    throw err;
+  }
+
+  const refreshed = await db.query('SELECT id, username, email, phone, display_name, COALESCE(admin_notes, \'\') AS admin_notes FROM app_users WHERE id = $1 LIMIT 1;', [user.id]);
+  return sendJson(res, 200, { ok: true, user: buildAuthUserFromRow(refreshed.rows?.[0]) });
+}
+
 // A signed-in user's coach (if any): used by client onboarding to skip the
 // "are you working with a trainer?" question, disable the coaches page, and
 // default the plan to "my trainer builds it for me".
@@ -11141,6 +11297,14 @@ const authRoutes = async function authRoutes(req, res, url) {
 
     if (url.pathname === '/api/auth/trainer/account/create' && req.method === 'POST') {
       return await handleTrainerCreateAccount(req, res);
+    }
+
+    if (url.pathname === '/api/auth/invite' && req.method === 'POST') {
+      return await handleUserInvite(req, res);
+    }
+
+    if (url.pathname === '/api/auth/claim-credentials' && req.method === 'POST') {
+      return await handleClaimCredentials(req, res);
     }
 
     if (url.pathname === '/api/auth/my-coach' && req.method === 'GET') {

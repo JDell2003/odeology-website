@@ -14549,23 +14549,227 @@ function initAuthUi() {
             document.addEventListener('click', (ev) => {
                 if (!plusWrap.contains(ev.target)) menu.classList.add('hidden');
             });
+            // Delegated: menu items open the invite modal (survives innerHTML rebuilds).
+            menu.addEventListener('click', (ev) => {
+                const link = ev.target.closest?.('[data-invite-role]');
+                if (!link) return;
+                ev.preventDefault();
+                menu.classList.add('hidden');
+                openInviteModal(link.getAttribute('data-invite-role'));
+            });
         }
         plusWrap.classList.remove('hidden');
         const menu = plusWrap.querySelector('#nav-plus-menu');
         if (!menu) return;
-        const trainerMode = isTrainerClientUser(user);
-        const items = trainerMode
-            ? [
-                { icon: '&#128100;', label: 'Client', href: 'trainer-dashboard.html?action=add-client' },
-                { icon: '&#128172;', label: 'Message', href: 'friends.html' }
-            ]
-            : [
-                { icon: '&#129309;', label: 'Friends', href: 'friends.html' },
-                { icon: '&#127947;', label: 'Add friends to workout', href: 'training.html?share=friends' },
-                { icon: '&#128172;', label: 'Message', href: 'friends.html' }
-            ];
-        menu.innerHTML = items.map((item) => `<a href="${item.href}"><span class="ic">${item.icon}</span>${item.label}</a>`).join('');
+        // Everyone (trainers + clients) can invite a client or a trainer.
+        const items = [
+            { icon: '&#128100;', label: 'Invite a client', role: 'client' },
+            { icon: '&#127947;', label: 'Invite a trainer', role: 'trainer' }
+        ];
+        menu.innerHTML = items.map((item) => `<a href="#" data-invite-role="${item.role}"><span class="ic">${item.icon}</span>${item.label}</a>`).join('');
     };
+
+    /* Simplified invite modal launched from the navbar "+" (any user invites a
+       client or trainer). No username / display name / temp password — those are
+       auto-generated; the invited person sets their own on first login. */
+    function ensureInviteStyles() {
+        if (document.getElementById('rf-invite-styles')) return;
+        const s = document.createElement('style');
+        s.id = 'rf-invite-styles';
+        s.textContent = [
+            '.rf-inv-back{position:fixed;inset:0;z-index:9000;display:grid;place-items:center;padding:16px;background:rgba(15,23,42,.5);}',
+            '.rf-inv-back[hidden]{display:none;}',
+            '.rf-inv-card{width:min(460px,100%);background:#fff;border-radius:20px;overflow:hidden;box-shadow:0 40px 90px rgba(15,23,42,.32);}',
+            '.rf-inv-head{display:flex;align-items:flex-start;gap:12px;padding:20px 22px 16px;background:linear-gradient(135deg,rgba(212,175,55,.16),rgba(212,175,55,.04));border-bottom:1px solid rgba(185,138,43,.24);}',
+            '.rf-inv-head-ic{flex:0 0 auto;width:42px;height:42px;border-radius:12px;display:grid;place-items:center;font-size:22px;background:rgba(212,175,55,.22);border:1px solid rgba(185,138,43,.45);}',
+            '.rf-inv-title{margin:0;font:800 18px/1.2 "Space Grotesk",system-ui,sans-serif;color:#1a1206;}',
+            '.rf-inv-sub{margin:3px 0 0;font-size:12.5px;line-height:1.5;color:rgba(26,18,6,.62);}',
+            '.rf-inv-close{margin-left:auto;flex:0 0 auto;border:1px solid rgba(15,23,42,.14);background:#fff;color:#475569;border-radius:999px;padding:6px 13px;font:700 12px/1 system-ui,sans-serif;cursor:pointer;}',
+            '.rf-inv-body{padding:18px 22px 22px;display:grid;gap:14px;}',
+            '.rf-inv-field{display:grid;gap:6px;}',
+            '.rf-inv-label{font:700 12px/1.3 system-ui,sans-serif;color:#33465c;}',
+            '.rf-inv-input{width:100%;border-radius:11px;border:1px solid rgba(15,23,42,.16);padding:11px 13px;font-size:14px;background:#fff;}',
+            '.rf-inv-input:focus{outline:0;border-color:rgba(185,138,43,.8);box-shadow:0 0 0 3px rgba(212,175,55,.18);}',
+            '.rf-inv-check{display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border-radius:11px;background:#f8fafc;border:1px solid rgba(15,23,42,.1);font-size:12.5px;line-height:1.5;color:#33465c;cursor:pointer;}',
+            '.rf-inv-check input{margin-top:2px;width:16px;height:16px;accent-color:#b98a2b;flex:0 0 auto;}',
+            '.rf-inv-foot{display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;padding-top:2px;}',
+            '.rf-inv-btn{border-radius:11px;padding:11px 20px;font:800 13px/1 system-ui,sans-serif;cursor:pointer;border:0;}',
+            '.rf-inv-btn.primary{background:linear-gradient(135deg,#d4a537,#b98a2b);color:#1a1206;}',
+            '.rf-inv-btn.ghost{background:#fff;border:1px solid rgba(15,23,42,.16);color:#475569;}',
+            '.rf-inv-status{display:none;align-items:center;gap:8px;font:700 12.5px/1.4 system-ui,sans-serif;padding:9px 12px;border-radius:11px;}',
+            '.rf-inv-status.show{display:flex;}',
+            '.rf-inv-status.ok{background:rgba(22,163,74,.12);color:#15803d;border:1px solid rgba(22,163,74,.3);}',
+            '.rf-inv-status.bad{background:rgba(220,38,38,.1);color:#b91c1c;border:1px solid rgba(220,38,38,.3);}',
+            '.rf-inv-status.pending{background:rgba(15,23,42,.06);color:#475569;}',
+            '.rf-inv-creds{font:800 13px/1.5 ui-monospace,monospace;color:#14351f;background:#f0fdf4;border:1px solid rgba(22,163,74,.28);border-radius:10px;padding:10px 12px;word-break:break-all;}'
+        ].join('\n');
+        document.head.appendChild(s);
+    }
+
+    let inviteRole = 'client';
+    function ensureInviteModal() {
+        ensureInviteStyles();
+        let back = document.getElementById('rf-invite-modal');
+        if (back) return back;
+        back = document.createElement('div');
+        back.id = 'rf-invite-modal';
+        back.className = 'rf-inv-back';
+        back.hidden = true;
+        back.innerHTML = [
+            '<div class="rf-inv-card" role="dialog" aria-modal="true">',
+            '  <div class="rf-inv-head">',
+            '    <div class="rf-inv-head-ic" aria-hidden="true">&#9993;</div>',
+            '    <div><h2 class="rf-inv-title" id="rf-inv-title">Invite</h2>',
+            '    <p class="rf-inv-sub">We email them a temporary login. They set their own username &amp; password, then finish onboarding.</p></div>',
+            '    <button type="button" class="rf-inv-close" data-inv-close>Close</button>',
+            '  </div>',
+            '  <div class="rf-inv-body">',
+            '    <div class="rf-inv-field"><label class="rf-inv-label" for="rf-inv-email">Email</label>',
+            '      <input id="rf-inv-email" class="rf-inv-input" type="email" placeholder="name@email.com" autocomplete="off"></div>',
+            '    <label class="rf-inv-check"><input type="checkbox" id="rf-inv-sendemail" checked><span>Email them their login (a pre-written "you\'re invited" message with the temp password).</span></label>',
+            '    <label class="rf-inv-check"><input type="checkbox" id="rf-inv-cc"><span>CC me a copy of that email.</span></label>',
+            '    <div class="rf-inv-field"><label class="rf-inv-label" for="rf-inv-note">Custom note <span style="font-weight:500;color:#94a3b8;">(optional)</span></label>',
+            '      <textarea id="rf-inv-note" class="rf-inv-input" rows="3" placeholder="Hey - join me on RiseForIt..."></textarea></div>',
+            '    <div class="rf-inv-status" id="rf-inv-status" role="status" aria-live="polite"></div>',
+            '    <div class="rf-inv-foot">',
+            '      <button type="button" class="rf-inv-btn ghost" data-inv-close>Cancel</button>',
+            '      <button type="button" class="rf-inv-btn primary" id="rf-inv-send">Send invite</button>',
+            '    </div>',
+            '  </div>',
+            '</div>'
+        ].join('');
+        document.body.appendChild(back);
+        back.addEventListener('click', (ev) => {
+            if (ev.target === back || ev.target.closest('[data-inv-close]')) closeInviteModal();
+        });
+        const setStatus = (kind, text) => {
+            const el = back.querySelector('#rf-inv-status');
+            el.className = 'rf-inv-status' + (kind ? ' show ' + kind : '');
+            el.innerHTML = kind === 'ok' ? '<span>&#10003;</span><span>' + text + '</span>'
+                : kind === 'bad' ? '<span>&#10005;</span><span>' + text + '</span>'
+                : '<span>' + text + '</span>';
+        };
+        back.querySelector('#rf-inv-send').addEventListener('click', async () => {
+            const email = String(back.querySelector('#rf-inv-email').value || '').trim();
+            if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { setStatus('bad', 'Enter a valid email first.'); return; }
+            const sendBtn = back.querySelector('#rf-inv-send');
+            sendBtn.disabled = true;
+            setStatus('pending', 'Sending invite…');
+            let resp = null;
+            try {
+                const r = await fetch('/api/auth/invite', {
+                    method: 'POST', credentials: 'include',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        role: inviteRole, email,
+                        sendEmail: back.querySelector('#rf-inv-sendemail').checked,
+                        ccInviter: back.querySelector('#rf-inv-cc').checked,
+                        message: String(back.querySelector('#rf-inv-note').value || '').trim()
+                    })
+                });
+                resp = await r.json().catch(() => ({}));
+            } catch { resp = null; }
+            sendBtn.disabled = false;
+            if (resp && resp.ok) {
+                if (resp.delivered) {
+                    setStatus('ok', 'Invite emailed to ' + email + '.');
+                } else if (resp.credentials) {
+                    setStatus('ok', 'Account created. Share this login:');
+                    const el = back.querySelector('#rf-inv-status');
+                    el.insertAdjacentHTML('beforeend', '<div class="rf-inv-creds" style="width:100%;margin-top:8px;">Username: ' + resp.credentials.username + '<br>Temp password: ' + resp.credentials.password + '</div>');
+                } else {
+                    setStatus('ok', 'Invite created.');
+                }
+            } else {
+                setStatus('bad', (resp && resp.error) || 'Could not send the invite.');
+            }
+        });
+        return back;
+    }
+    function openInviteModal(role) {
+        inviteRole = role === 'trainer' ? 'trainer' : 'client';
+        const back = ensureInviteModal();
+        const label = inviteRole === 'trainer' ? 'trainer' : 'client';
+        back.querySelector('#rf-inv-title').textContent = 'Invite a ' + label;
+        back.querySelector('#rf-inv-email').value = '';
+        back.querySelector('#rf-inv-note').value = '';
+        back.querySelector('#rf-inv-sendemail').checked = true;
+        back.querySelector('#rf-inv-cc').checked = false;
+        const st = back.querySelector('#rf-inv-status'); st.className = 'rf-inv-status'; st.innerHTML = '';
+        back.hidden = false;
+        setTimeout(() => back.querySelector('#rf-inv-email')?.focus(), 40);
+    }
+    function closeInviteModal() {
+        const back = document.getElementById('rf-invite-modal');
+        if (back) back.hidden = true;
+    }
+    window.odeOpenInviteModal = openInviteModal;
+
+    /* First-login gate for invited accounts: before anything else, make them
+       pick a real username + password (they logged in with an auto-generated
+       one). Clearing needs_login_claim lets onboarding run on reload. */
+    function syncLoginClaimGate(user = currentUser) {
+        if (!user || !user.needsLoginClaim) {
+            document.getElementById('rf-claim-modal')?.remove();
+            return;
+        }
+        if (document.getElementById('rf-claim-modal')) return;
+        ensureInviteStyles();
+        const back = document.createElement('div');
+        back.id = 'rf-claim-modal';
+        back.className = 'rf-inv-back';
+        back.style.zIndex = '9500';
+        back.innerHTML = [
+            '<div class="rf-inv-card" role="dialog" aria-modal="true">',
+            '  <div class="rf-inv-head">',
+            '    <div class="rf-inv-head-ic" aria-hidden="true">&#128273;</div>',
+            '    <div><h2 class="rf-inv-title">Set up your login</h2>',
+            '    <p class="rf-inv-sub">You signed in with a temporary login. Pick your own username and password to finish claiming your account.</p></div>',
+            '  </div>',
+            '  <div class="rf-inv-body">',
+            '    <div class="rf-inv-field"><label class="rf-inv-label" for="rf-claim-username">Username</label>',
+            '      <input id="rf-claim-username" class="rf-inv-input" placeholder="letters, numbers, underscores" autocomplete="username"></div>',
+            '    <div class="rf-inv-field"><label class="rf-inv-label" for="rf-claim-password">Password</label>',
+            '      <input id="rf-claim-password" class="rf-inv-input" type="password" placeholder="At least 8 characters" autocomplete="new-password"></div>',
+            '    <div class="rf-inv-status" id="rf-claim-status" role="status" aria-live="polite"></div>',
+            '    <div class="rf-inv-foot">',
+            '      <button type="button" class="rf-inv-btn primary" id="rf-claim-save" style="width:100%;">Save &amp; continue</button>',
+            '    </div>',
+            '  </div>',
+            '</div>'
+        ].join('');
+        document.body.appendChild(back);
+        const setStatus = (kind, text) => {
+            const el = back.querySelector('#rf-claim-status');
+            el.className = 'rf-inv-status' + (kind ? ' show ' + kind : '');
+            el.textContent = text || '';
+        };
+        back.querySelector('#rf-claim-save').addEventListener('click', async () => {
+            const username = String(back.querySelector('#rf-claim-username').value || '').trim().toLowerCase();
+            const password = String(back.querySelector('#rf-claim-password').value || '');
+            if (username.length < 3 || !/^[a-z0-9_]+$/.test(username)) { setStatus('bad', 'Username: 3+ letters, numbers, underscores.'); return; }
+            if (password.length < 8) { setStatus('bad', 'Password must be at least 8 characters.'); return; }
+            const btn = back.querySelector('#rf-claim-save');
+            btn.disabled = true; setStatus('pending', 'Saving…');
+            let resp = null;
+            try {
+                const r = await fetch('/api/auth/claim-credentials', {
+                    method: 'POST', credentials: 'include',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+                resp = await r.json().catch(() => ({}));
+            } catch { resp = null; }
+            if (resp && resp.ok) {
+                setStatus('ok', 'Saved! Starting your setup…');
+                setTimeout(() => window.location.reload(), 700);
+            } else {
+                btn.disabled = false;
+                setStatus('bad', (resp && resp.error) || 'Could not save — try again.');
+            }
+        });
+    }
+    window.__odeSyncLoginClaimGate = syncLoginClaimGate;
 
     const syncManagerSidebarSection = (user = currentUser) => {
         const panel = document.getElementById('control-panel');
@@ -15049,6 +15253,7 @@ function initAuthUi() {
         syncTrainingPortalSection(user, meta);
         syncTrainerSidebarSection(user);
         syncNavPlusMenu(user);
+        syncLoginClaimGate(user);
         syncManagerSidebarSection(user);
         reconcileManagerReviewNotifications({ user, allowToast: false });
         reconcileTrainerManagerReviewNotifications({ user, allowToast: false });
