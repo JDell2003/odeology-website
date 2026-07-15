@@ -13,16 +13,55 @@
 <body>
   <div id="wb-root"><div id="wb-loading">Loading the workout builder…</div></div>
 
-  <script src="js/workout-builder.js?v=2026-07-15-wb-3"></script>
+  <script src="js/workout-builder.js?v=2026-07-15-wb-4"></script>
   <script type="module">
     import { exercises } from '/data/exercises.master.js';
 
-    // Load any existing manual workout to edit (Save overwrites it).
-    let existing = null;
-    try { existing = JSON.parse(localStorage.getItem('ode_manual_workout_v1') || 'null'); } catch {}
+    const DAYS = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
+    const REST_OPTS = ['30 sec','45 sec','60 sec','90 sec','2 min','3 min','5 min'];
+    // name -> exercise (for image lookup when prefilling)
+    const byName = new Map();
+    exercises.forEach(e => { if (e && e.name) byName.set(String(e.name).toLowerCase(), e); });
+    const imgOf = (name, i) => { const e = byName.get(String(name||'').toLowerCase()); const p = e && Array.isArray(e.images) ? e.images[i] : null; return p ? ('/' + String(p).replace(/^\/+/, '')) : ''; };
+    const restLabel = (sec) => { sec = Number(sec) || 90; if (sec % 60 === 0 && sec >= 120) { const m = sec/60; return REST_OPTS.includes(m+' min') ? m+' min' : m+' min'; } return sec + ' sec'; };
+    const uid = () => 'x' + Math.random().toString(36).slice(2,9);
+
+    // Map the user's active server plan into the builder's day/exercise shape,
+    // so "Modify workout" opens with their current workout already loaded.
+    function mapServerPlan(planObj) {
+      if (!planObj || !Array.isArray(planObj.weeks) || !planObj.weeks[0]) return null;
+      const out = { name: (planObj.meta && planObj.meta.name) || 'My workout', instructions: '', days: {} };
+      DAYS.forEach(d => { out.days[d] = []; });
+      let any = false;
+      (planObj.weeks[0].days || []).forEach(day => {
+        const wd = DAYS.includes(day.day) ? day.day : (DAYS.includes(day.label) ? day.label : null);
+        if (!wd) return;
+        (day.exercises || []).forEach(ex => {
+          const name = ex.displayName || ex.name; if (!name) return;
+          any = true;
+          const isTime = !!(ex.targetTime && String(ex.targetTime).trim());
+          out.days[wd].push({
+            id: uid(), kind: 'exercise', name, exerciseId: name,
+            img0: imgOf(name, 0), img1: imgOf(name, 1),
+            sets: ex.sets || 3, targetType: isTime ? 'time' : 'text',
+            target: isTime ? ex.targetTime : (ex.reps != null ? String(ex.reps) : ''),
+            rest: restLabel(ex.restSeconds)
+          });
+        });
+      });
+      return any ? out : null;
+    }
+
+    async function loadPrefill() {
+      // Prefer the live active plan (real "modify"); fall back to the local draft.
+      try {
+        const r = await fetch('/api/training/state', { credentials: 'include' });
+        if (r.ok) { const j = await r.json(); const mapped = mapServerPlan(j && j.plan && j.plan.plan); if (mapped) return mapped; }
+      } catch {}
+      try { return JSON.parse(localStorage.getItem('ode_manual_workout_v1') || 'null'); } catch { return null; }
+    }
 
     async function persist(plan) {
-      // Overwrite the local manual workout, then best-effort push to the profile.
       try { localStorage.setItem('ode_manual_workout_v1', JSON.stringify(plan)); } catch {}
       try {
         const r = await fetch('/api/training/manual-workout', {
@@ -32,14 +71,12 @@
         });
         if (r.ok) return { ok: true, message: 'Saved to your profile.' };
       } catch {}
-      // Endpoint not available yet — local save still holds.
       return { ok: true, message: 'Saved. Redirecting to your workout…' };
     }
 
+    const existing = await loadPrefill();
     window.RiseWorkoutBuilder.mount(document.getElementById('wb-root'), {
       exercises,
-      name: (existing && existing.name) || 'My workout',
-      instructions: (existing && existing.instructions) || '',
       plan: existing || null,
       onSave: async (plan) => {
         const res = await persist(plan);

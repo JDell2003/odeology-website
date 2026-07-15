@@ -30,7 +30,7 @@
       '.wb{--gold:#d4a537;--ink:#1f2937;--line:rgba(15,23,42,.12);display:flex;flex-direction:column;height:100vh;background:#fff;font-family:system-ui,-apple-system,"Segoe UI",sans-serif;color:var(--ink);}',
       '.wb *{box-sizing:border-box;}',
       // slim light top strip (no black bar): just Save + close
-      '.wb-bar{display:flex;align-items:center;justify-content:flex-end;gap:10px;padding:10px 18px;border-bottom:1px solid var(--line);flex:0 0 auto;background:#fff;}',
+      '.wb-bar{position:relative;display:flex;align-items:center;justify-content:flex-end;gap:10px;padding:10px 18px;border-bottom:1px solid var(--line);flex:0 0 auto;background:#fff;}',
       '.wb-save{background:#2f6f8f;border:0;color:#fff;font:800 13px/1 system-ui;padding:10px 22px;border-radius:9px;cursor:pointer;}',
       '.wb-save:hover{filter:brightness(1.08);}',
       '.wb-x{background:#fff;border:1px solid var(--line);color:#475569;width:34px;height:34px;border-radius:9px;font-size:19px;cursor:pointer;line-height:1;}',
@@ -65,6 +65,19 @@
       // inline target (dropdown + value side by side)
       '.wb-target{display:flex;gap:6px;align-items:center;}',
       '.wb-target select{flex:0 0 92px;} .wb-target input{flex:1 1 auto;min-width:0;}',
+      // center the Sets / Target / Rest columns + their headers for a tidy look
+      '.wb-colhead span:not(:first-child){text-align:center;}',
+      '.wb-row input[type=number].wb-in{text-align:center;}',
+      '.wb-row select.wb-in{text-align:center;text-align-last:center;}',
+      '.wb-target input[data-f=target]{text-align:center;}',
+      // Clear button + its popup
+      '.wb-clear{background:#fff;border:1px solid var(--line);color:#475569;font:700 13px/1 system-ui;padding:10px 16px;border-radius:9px;cursor:pointer;margin-right:auto;}',
+      '.wb-clear:hover{background:#f8fafc;}',
+      '.wb-clear-pop{position:absolute;top:calc(100% + 4px);left:18px;z-index:60;background:#fff;border:1px solid var(--line);border-radius:12px;box-shadow:0 18px 44px rgba(15,23,42,.2);padding:8px;display:grid;gap:4px;min-width:230px;}',
+      '.wb-clear-pop[hidden]{display:none;}',
+      '.wb-clear-pop-title{font:700 11px/1.4 system-ui;letter-spacing:.04em;text-transform:uppercase;color:#94a3b8;padding:6px 10px 2px;}',
+      '.wb-clear-opt{display:block;width:100%;text-align:left;border:0;background:#fff;border-radius:8px;padding:10px 12px;font:600 13px/1.3 system-ui;color:#33465c;cursor:pointer;}',
+      '.wb-clear-opt:hover{background:#f1f5f9;} .wb-clear-opt.danger{color:#b91c1c;} .wb-clear-opt.danger:hover{background:rgba(220,38,38,.08);}',
       '.wb-del{border:0;background:transparent;color:#cbd5e1;font-size:18px;cursor:pointer;}',
       '.wb-del:hover{color:#ef4444;}',
       // library
@@ -82,7 +95,9 @@
       '.wb-card-img img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transition:opacity .3s ease;}',
       '.wb-card-img .f1{opacity:0;}',
       '.wb-card:hover .wb-card-img{box-shadow:0 4px 12px rgba(0,0,0,.14);}',
-      '.wb-card:hover .wb-card-img .f0{opacity:0;} .wb-card:hover .wb-card-img .f1{opacity:1;}',
+      // continuous back-and-forth fade between the before (f0) and after (f1) pose
+      '@keyframes wbFlip{0%{opacity:0}45%{opacity:0}55%{opacity:1}100%{opacity:1}}',
+      '.wb-card:hover .wb-card-img .f1{animation:wbFlip 1.5s ease-in-out infinite alternate;}',
       '.wb-card-badge{position:absolute;top:6px;left:6px;background:rgba(31,41,55,.72);color:#fff;font:700 9px/1 system-ui;letter-spacing:.06em;text-transform:uppercase;padding:3px 6px;border-radius:6px;opacity:0;transition:opacity .2s;}',
       '.wb-card:hover .wb-card-badge{opacity:1;}',
       '.wb-card-name{font:600 12px/1.3 system-ui;color:#2f6f8f;}',
@@ -215,7 +230,15 @@
       var dayItems = state.days[state.activeDay] || [];
       root.innerHTML = ''
         + '<div class="wb">'
-        + '<div class="wb-bar"><button class="wb-save" id="wb-save">SAVE</button><button class="wb-x" id="wb-x" title="Close">&times;</button></div>'
+        + '<div class="wb-bar">'
+        + '<button class="wb-clear" id="wb-clear">Clear</button>'
+        + '<div class="wb-clear-pop" id="wb-clear-pop" hidden>'
+        + '<div class="wb-clear-pop-title">Clear which?</div>'
+        + '<button class="wb-clear-opt" data-clear="day">Clear <b>' + state.activeDay + '</b> only</button>'
+        + '<button class="wb-clear-opt danger" data-clear="all">Clear the entire workout</button>'
+        + '<button class="wb-clear-opt" data-clear="cancel" style="color:#94a3b8;">Cancel</button>'
+        + '</div>'
+        + '<button class="wb-save" id="wb-save">SAVE</button><button class="wb-x" id="wb-x" title="Close">&times;</button></div>'
         + '<div class="wb-mtabs"><button class="wb-mtab" data-mtab="work">Workout</button><button class="wb-mtab" data-mtab="lib">Exercises</button></div>'
         + '<div class="wb-body">'
         + '<div class="wb-left">'
@@ -287,6 +310,20 @@
       }
       root.querySelector('#wb-x').addEventListener('click', function () { if (opts.onClose) opts.onClose(); });
       root.querySelector('#wb-save').addEventListener('click', doSave);
+      // Clear button -> popup (this day / entire workout)
+      var clearBtn = root.querySelector('#wb-clear');
+      var clearPop = root.querySelector('#wb-clear-pop');
+      if (clearBtn && clearPop) {
+        clearBtn.addEventListener('click', function (e) { e.stopPropagation(); clearPop.hidden = !clearPop.hidden; });
+        document.addEventListener('click', function (e) { if (!clearPop.hidden && !clearPop.contains(e.target) && e.target !== clearBtn) clearPop.hidden = true; });
+        clearPop.addEventListener('click', function (e) {
+          var opt = e.target.closest('[data-clear]'); if (!opt) return;
+          var which = opt.getAttribute('data-clear');
+          if (which === 'day') { state.days[state.activeDay] = []; render(); }
+          else if (which === 'all') { DAYS.forEach(function (d) { state.days[d] = []; }); render(); }
+          else { clearPop.hidden = true; }
+        });
+      }
       root.querySelector('#wb-days').addEventListener('click', function (e) {
         var b = e.target.closest('[data-day]'); if (!b) return;
         state.activeDay = b.getAttribute('data-day'); render();
