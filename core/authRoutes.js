@@ -9188,6 +9188,156 @@ async function handleOwnerCreateTrainerAccount(req, res) {
   });
 }
 
+// Trainer-facing "Add client / Add trainer". Mirrors the owner create flow, but
+// scoped to a trainer: a CLIENT is created AND linked to this trainer (so the
+// trainer can peer in and build the plan before the client finishes onboarding),
+// while a TRAINER is just invited to the app. Returns a peer-in URL for clients.
+async function handleTrainerCreateAccount(req, res) {
+  const actor = await requireTrainerActor(req, res);
+  if (!actor) return true;
+
+  let payload;
+  try {
+    payload = await readJsonBody(req);
+  } catch (err) {
+    return sendJson(res, 400, { ok: false, error: err.message });
+  }
+
+  const roleRaw = String(payload?.role || 'client').trim().toLowerCase();
+  const role = roleRaw === 'trainer' ? 'trainer' : 'client';
+  const username = String(payload?.username || '').trim().toLowerCase();
+  const email = normalizeEmail(payload?.email);
+  const displayNameRaw = String(payload?.displayName || '').trim();
+  const providedPassword = String(payload?.password || '');
+  const sendEmailFlag = payload?.sendEmail === undefined ? true : cleanBoolean(payload?.sendEmail);
+  const customMessage = cleanLongText(payload?.message || '', 1200);
+
+  if (!username || username.length < 3) return sendJson(res, 400, { ok: false, error: 'Username must be at least 3 characters' });
+  if (!/^[a-z0-9_]+$/.test(username)) return sendJson(res, 400, { ok: false, error: 'Username can only use letters, numbers, underscores' });
+  if (!email) return sendJson(res, 400, { ok: false, error: 'Enter a valid email address' });
+  if (providedPassword && providedPassword.length < 8) return sendJson(res, 400, { ok: false, error: 'Temporary password must be at least 8 characters' });
+
+  const password = providedPassword && providedPassword.length >= 8 ? providedPassword : buildOwnerInvitePassword();
+  const displayName = displayNameRaw || username;
+  let adminNotes = buildAdminNotesForSignupRole(role);
+  adminNotes = setAdminNoteFlag(adminNotes, 'trainer_created', true);
+  // Stamp the linking trainer so client onboarding can tell it's coach-managed
+  // (pre-picks "working with a trainer", defaults to "my trainer builds it").
+  if (role === 'client') adminNotes = setAdminNoteFlag(adminNotes, `coach:${actor.id}`, true);
+
+  const passwordHash = await bcrypt.hash(password, 12);
+  let row = null;
+  try {
+    const inserted = await db.query(
+      `
+        INSERT INTO app_users (username, email, phone, display_name, password_hash, auth_provider, admin_notes)
+        VALUES ($1, $2, $3, $4, $5, 'local', $6)
+        RETURNING id, username, email, display_name, COALESCE(admin_notes, '') AS admin_notes;
+      `,
+      [username, email, null, displayName, passwordHash, adminNotes]
+    );
+    row = inserted.rows?.[0] || null;
+  } catch (err) {
+    const msg = String(err?.message || '');
+    if (msg.includes('app_users_username_key')) return sendJson(res, 409, { ok: false, error: 'Username already taken' });
+    if (msg.includes('app_users_email_key')) return sendJson(res, 409, { ok: false, error: 'Email already in use' });
+    throw err;
+  }
+  if (!row?.id) return sendJson(res, 500, { ok: false, error: 'Could not create account' });
+
+  // Link a new client straight onto this trainer's roster.
+  if (role === 'client') {
+    try {
+      await db.query(
+        `
+          INSERT INTO app_trainer_clients (
+            trainer_user_id, linked_user_id, display_name, email, phone, notes, status, source, updated_at
+          )
+          VALUES ($1, $2, $3, $4, NULL, $5, 'active', 'trainer_created', now())
+          ON CONFLICT DO NOTHING;
+        `,
+        [actor.id, row.id, displayName, email, 'Added by trainer — onboarding in progress.']
+      );
+    } catch (err) {
+      // Non-fatal: the account exists; linking can be retried from the roster.
+      try { console.error('trainer_create_link_failed', err?.message || err); } catch {}
+    }
+  }
+
+  const appBase = resolveAppBaseUrl(req) || '';
+  const loginUrl = `${appBase}/`;
+  const inviteCtaUrl = `${appBase}/?authMode=login&u=${encodeURIComponent(row.username)}`;
+  const roleLabel = role === 'client' ? 'client' : 'trainer';
+  const coachName = String(actor.displayName || actor.username || 'your coach');
+  const greetingName = displayName.split(/\s+/)[0] || 'there';
+  const introLine = customMessage || (role === 'client'
+    ? `Hey ${greetingName} - ${coachName} set up your RiseForIt account. Log in with the temporary password below and finish your quick setup; your coach is building your plan for you.`
+    : `Hey ${greetingName} - you've been invited to coach on RiseForIt. Log in with the temporary password below to set up your trainer account.`);
+
+  let emailStatus = { requested: sendEmailFlag, ok: false, provider: null, skipped: sendEmailFlag ? null : 'not_requested' };
+  if (sendEmailFlag) {
+    try {
+      const result = await sendInviteEmail({
+        email, displayName, roleLabel,
+        username: row.username, tempPassword: password,
+        loginUrl: inviteCtaUrl, message: introLine
+      });
+      emailStatus.ok = Boolean(result?.ok);
+      emailStatus.provider = result?.provider || null;
+      emailStatus.skipped = result?.skipped || null;
+      emailStatus.error = result?.error || null;
+    } catch (err) {
+      emailStatus.error = err?.message || 'email_failed';
+    }
+  }
+
+  // Clients: hand the trainer a link that peers straight into the new account so
+  // they can build training + nutrition before the client ever logs in.
+  const peerInUrl = role === 'client'
+    ? `/api/auth/trainer/impersonate/${encodeURIComponent(row.id)}?returnTo=${encodeURIComponent('/training.html')}`
+    : null;
+
+  return sendJson(res, 200, {
+    ok: true,
+    account: { id: row.id, username: row.username, email: row.email, displayName: row.display_name, role: roleLabel },
+    credentials: { username: row.username, password },
+    loginUrl,
+    email: emailStatus,
+    peerInUrl
+  });
+}
+
+// A signed-in user's coach (if any): used by client onboarding to skip the
+// "are you working with a trainer?" question, disable the coaches page, and
+// default the plan to "my trainer builds it for me".
+async function handleMyCoach(req, res) {
+  const user = await getUserFromRequest(req);
+  if (!user) return sendJson(res, 401, { ok: false, error: 'UNAUTHORIZED' });
+  try {
+    const result = await db.query(
+      `
+        SELECT tc.trainer_user_id AS trainer_id,
+               COALESCE(NULLIF(TRIM(u.display_name), ''), u.username) AS trainer_name
+        FROM app_trainer_clients tc
+        JOIN app_users u ON u.id = tc.trainer_user_id
+        WHERE tc.linked_user_id = $1
+          AND tc.status <> 'removed'
+        ORDER BY tc.updated_at DESC NULLS LAST
+        LIMIT 1;
+      `,
+      [user.id]
+    );
+    const row = result.rows?.[0] || null;
+    if (!row) return sendJson(res, 200, { ok: true, coach: null });
+    return sendJson(res, 200, {
+      ok: true,
+      coach: { trainerId: row.trainer_id, name: row.trainer_name || 'your coach' }
+    });
+  } catch (err) {
+    return sendJson(res, 200, { ok: true, coach: null });
+  }
+}
+
 // Owner-only: fire a sample invite email to any address (defaults to the
 // owner's own) WITHOUT creating an account. Lets the owner confirm the invite
 // email pipe end-to-end before provisioning real people. Returns the raw
@@ -10987,6 +11137,14 @@ const authRoutes = async function authRoutes(req, res, url) {
 
     if (url.pathname === '/api/auth/owner/account/create' && req.method === 'POST') {
       return await handleOwnerCreateTrainerAccount(req, res);
+    }
+
+    if (url.pathname === '/api/auth/trainer/account/create' && req.method === 'POST') {
+      return await handleTrainerCreateAccount(req, res);
+    }
+
+    if (url.pathname === '/api/auth/my-coach' && req.method === 'GET') {
+      return await handleMyCoach(req, res);
     }
 
     if (url.pathname === '/api/auth/owner/account/test-email' && req.method === 'POST') {

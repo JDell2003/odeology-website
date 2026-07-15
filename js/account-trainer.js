@@ -485,6 +485,144 @@
     document.body.appendChild(back);
   }
 
+  // Trainer "Add client / Invite trainer" modal. Creates the account server-side
+  // (POST /api/auth/trainer/account/create); a client is linked to this trainer
+  // and, on success, offers "Build their plans now" which peers straight into the
+  // new account so the coach can make the workout + nutrition before first login.
+  function genTempPassword() {
+    const words = ['Rise', 'Strong', 'Power', 'Peak', 'Forge', 'Iron', 'Summit', 'Drive'];
+    const w = words[Math.floor(Math.random() * words.length)];
+    return `${w}-${Math.floor(1000 + Math.random() * 8999)}${String.fromCharCode(97 + Math.floor(Math.random() * 26))}`;
+  }
+  function openTrainerAddModal(initialRole = 'client') {
+    document.getElementById('trainer-add-modal')?.remove();
+    const back = document.createElement('div');
+    back.className = 'tadd-backdrop';
+    back.id = 'trainer-add-modal';
+    back.innerHTML = `
+      <div class="tadd-card" role="dialog" aria-modal="true" aria-label="Add a client or trainer">
+        <div data-tadd-form>
+          <h3 data-tadd-title></h3>
+          <p class="tadd-sub" data-tadd-sub></p>
+          <label class="tadd-field"><span>Adding a…</span>
+            <select data-tadd-role>
+              <option value="client">Client (you build their plan)</option>
+              <option value="trainer">Trainer (invite a coach)</option>
+            </select>
+          </label>
+          <label class="tadd-field"><span>Their name</span>
+            <input data-tadd-name placeholder="e.g. Jordan Miles" autocomplete="off"></label>
+          <label class="tadd-field"><span>Username</span>
+            <input data-tadd-username placeholder="letters, numbers, underscores" autocomplete="off"></label>
+          <label class="tadd-field"><span>Email</span>
+            <input data-tadd-email type="email" placeholder="them@email.com" autocomplete="off"></label>
+          <label class="tadd-field"><span>Temporary password</span>
+            <span class="tadd-inline">
+              <input data-tadd-password placeholder="Leave blank to auto-generate" autocomplete="off">
+              <button type="button" class="client-btn" data-tadd-genpass>Generate</button>
+            </span></label>
+          <label class="tadd-check">
+            <input type="checkbox" data-tadd-sendemail checked>
+            <span>Email them their login now (temp password + a link to finish setup).</span>
+          </label>
+          <label class="tadd-field"><span>Note in the email (optional)</span>
+            <textarea data-tadd-message rows="2" placeholder="Optional — replaces the default message."></textarea></label>
+          <div class="tadd-status" data-tadd-status role="status" aria-live="polite"></div>
+          <div class="tadd-foot">
+            <button type="button" class="client-btn ghost" data-tadd-cancel>Cancel</button>
+            <button type="button" class="client-btn primary" data-tadd-submit>Create account</button>
+          </div>
+        </div>
+        <div data-tadd-result hidden>
+          <div class="tadd-result">
+            <div style="font:800 14px/1.3 'Space Grotesk',system-ui,sans-serif;margin-bottom:8px;">&#10003; <span data-tadd-result-title>Account created</span></div>
+            <div class="tadd-cred"><span>Username</span><b data-tadd-result-username></b></div>
+            <div class="tadd-cred"><span>Temp password</span><b data-tadd-result-password></b></div>
+            <div class="tadd-cred" data-tadd-result-email style="opacity:.75;font-size:12px;"></div>
+          </div>
+          <div class="tadd-foot">
+            <button type="button" class="client-btn ghost" data-tadd-copy>Copy login</button>
+            <button type="button" class="client-btn ghost" data-tadd-done>Done</button>
+            <button type="button" class="client-btn primary" data-tadd-peer hidden>Build their plans now &rarr;</button>
+          </div>
+        </div>
+      </div>`;
+
+    const $$ = (sel) => back.querySelector(sel);
+    const roleSel = $$('[data-tadd-role]');
+    roleSel.value = initialRole === 'trainer' ? 'trainer' : 'client';
+    const syncCopy = () => {
+      const isClient = roleSel.value === 'client';
+      $$('[data-tadd-title]').textContent = isClient ? 'Add a client' : 'Invite a trainer';
+      $$('[data-tadd-sub]').textContent = isClient
+        ? 'Creates their account and links them to you. Build their plan now — they see it done when they log in.'
+        : 'Creates a coach account and emails them a login to set up their own trainer profile.';
+    };
+    syncCopy();
+    roleSel.addEventListener('change', syncCopy);
+
+    const status = (msg, isErr) => {
+      const el = $$('[data-tadd-status]');
+      el.textContent = msg || '';
+      el.classList.toggle('err', !!isErr);
+    };
+    const close = () => back.remove();
+    let resultCreds = null;
+
+    back.addEventListener('click', async (ev) => {
+      const t = ev.target;
+      if (t === back || t.closest('[data-tadd-cancel]')) { close(); return; }
+      if (t.closest('[data-tadd-genpass]')) { $$('[data-tadd-password]').value = genTempPassword(); return; }
+      if (t.closest('[data-tadd-done]')) { close(); window.location.reload(); return; }
+      if (t.closest('[data-tadd-copy]')) {
+        const creds = resultCreds || {};
+        try { await navigator.clipboard.writeText(`Username: ${creds.username || ''}\nTemporary password: ${creds.password || ''}`); t.closest('[data-tadd-copy]').textContent = 'Copied'; } catch {}
+        return;
+      }
+      if (t.closest('[data-tadd-peer]')) {
+        const url = t.closest('[data-tadd-peer]').getAttribute('data-peer-url');
+        if (url) window.location.href = url;
+        return;
+      }
+      if (t.closest('[data-tadd-submit]')) {
+        const role = roleSel.value === 'trainer' ? 'trainer' : 'client';
+        const displayName = String($$('[data-tadd-name]').value || '').trim();
+        const username = String($$('[data-tadd-username]').value || '').trim().toLowerCase();
+        const email = String($$('[data-tadd-email]').value || '').trim();
+        const password = String($$('[data-tadd-password]').value || '').trim();
+        const sendEmail = !!$$('[data-tadd-sendemail]').checked;
+        const message = String($$('[data-tadd-message]').value || '').trim();
+        if (username.length < 3 || !/^[a-z0-9_]+$/.test(username)) { status('Username needs 3+ characters: letters, numbers, underscores.', true); return; }
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { status('Enter a valid email address.', true); return; }
+        if (password && password.length < 8) { status('Temp password must be 8+ characters (or leave blank).', true); return; }
+        const submitBtn = t.closest('[data-tadd-submit]');
+        submitBtn.disabled = true;
+        status(role === 'client' ? 'Creating client…' : 'Inviting trainer…');
+        const resp = await api('/api/auth/trainer/account/create', {
+          method: 'POST',
+          body: JSON.stringify({ role, displayName, username, email, password, sendEmail, message })
+        }).catch(() => null);
+        submitBtn.disabled = false;
+        if (!resp || !resp.ok || !resp.json?.ok) { status(resp?.json?.error || 'Could not create the account.', true); return; }
+        const j = resp.json;
+        resultCreds = j.credentials || {};
+        $$('[data-tadd-result-title]').textContent = role === 'client' ? 'Client added' : 'Trainer invited';
+        $$('[data-tadd-result-username]').textContent = resultCreds.username || username;
+        $$('[data-tadd-result-password]').textContent = resultCreds.password || password || '(set by them)';
+        const em = j.email || {};
+        $$('[data-tadd-result-email]').textContent = !em.requested ? 'No email sent — share the login above.'
+          : em.ok ? `Invite email sent to ${email}.`
+          : `Email not delivered (${em.skipped || em.error || 'provider issue'}) — share the login above.`;
+        const peerBtn = $$('[data-tadd-peer]');
+        if (j.peerInUrl) { peerBtn.hidden = false; peerBtn.setAttribute('data-peer-url', j.peerInUrl); }
+        $$('[data-tadd-form]').hidden = true;
+        $$('[data-tadd-result]').hidden = false;
+      }
+    });
+    document.body.appendChild(back);
+    window.setTimeout(() => $$('[data-tadd-name]')?.focus(), 40);
+  }
+
   function titleizeStatus(raw, fallback = 'Pending') {
     const value = String(raw || '').trim();
     if (!value) return fallback;
@@ -1614,6 +1752,16 @@
 
     return `
       <div class="account-trainer-clients-shell">
+        <div class="trainer-add-bar">
+          <div class="trainer-add-bar-copy">
+            <h3>Your clients</h3>
+            <p>Add a client to build their plan before they even log in — or invite another coach.</p>
+          </div>
+          <div class="trainer-add-bar-actions">
+            <button type="button" class="client-btn primary" data-trainer-add="client">+ Add client</button>
+            <button type="button" class="client-btn" data-trainer-add="trainer">Invite a trainer</button>
+          </div>
+        </div>
         <div class="account-trainer-clients-pills" role="tablist" aria-label="Client views">
           <button type="button" class="account-trainer-pill${currentCount > 0 ? ' has-alert' : ''}" data-clients-view="current" aria-pressed="false">Current <span>${currentCount}</span></button>
           <button type="button" class="account-trainer-pill${pendingCount > 0 ? ' has-alert' : ''}" data-clients-view="pending" aria-pressed="false">Pending <span>${pendingCount}</span></button>
@@ -2098,6 +2246,31 @@
         '.client-btn.primary:hover{background:#a6791f;}',
         '.client-btn.ghost{background:transparent;font-weight:700;opacity:.9;}',
         '.client-btn.ghost:hover{background:rgba(212,175,55,.14);}',
+        // Add-client bar + modal
+        '.trainer-add-bar{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;padding:14px 16px;margin-bottom:4px;border-radius:16px;border:1px solid rgba(185,138,43,.22);background:linear-gradient(135deg,rgba(212,175,55,.1),rgba(212,175,55,.03));}',
+        '.trainer-add-bar-copy h3{margin:0 0 2px;font:800 15px/1.2 "Space Grotesk",system-ui,sans-serif;}',
+        '.trainer-add-bar-copy p{margin:0;font-size:12.5px;opacity:.7;max-width:52ch;}',
+        '.trainer-add-bar-actions{display:flex;gap:8px;flex-wrap:wrap;}',
+        '.tadd-backdrop{position:fixed;inset:0;z-index:9998;display:flex;align-items:center;justify-content:center;padding:20px;background:rgba(20,12,4,.55);backdrop-filter:blur(3px);}',
+        '.tadd-backdrop[hidden]{display:none;}',
+        '.tadd-card{width:min(460px,100%);max-height:92vh;overflow:auto;background:#fffdf7;border:1px solid rgba(185,138,43,.4);border-radius:18px;padding:22px;box-shadow:0 30px 70px rgba(60,40,10,.32);}',
+        ':root[data-theme="dark"] .tadd-card{background:#241d13;border-color:rgba(255,255,255,.14);color:#f4ecdd;}',
+        '.tadd-card h3{margin:0 0 4px;font:800 19px/1.2 "Space Grotesk",system-ui,sans-serif;}',
+        '.tadd-card .tadd-sub{margin:0 0 16px;font-size:13px;opacity:.72;}',
+        '.tadd-field{display:block;margin-bottom:12px;}',
+        '.tadd-field span{display:block;font:800 11px/1.4 "Space Grotesk",system-ui,sans-serif;letter-spacing:.05em;text-transform:uppercase;opacity:.66;margin-bottom:5px;}',
+        '.tadd-field input,.tadd-field select,.tadd-field textarea{width:100%;border:1px solid rgba(150,110,35,.32);border-radius:10px;padding:10px 12px;font:600 14px/1.4 inherit;background:#fdf8ec;color:inherit;}',
+        ':root[data-theme="dark"] .tadd-field input,:root[data-theme="dark"] .tadd-field select,:root[data-theme="dark"] .tadd-field textarea{background:rgba(255,255,255,.06);color:#f4ecdd;}',
+        '.tadd-inline{display:flex;gap:8px;}',
+        '.tadd-inline input{flex:1;}',
+        '.tadd-check{display:flex;gap:8px;align-items:flex-start;font-size:13px;margin-bottom:12px;cursor:pointer;}',
+        '.tadd-check input{margin-top:2px;}',
+        '.tadd-status{min-height:18px;font-size:12.5px;margin:2px 0 10px;color:#a1751f;}',
+        '.tadd-status.err{color:#b42828;}',
+        '.tadd-foot{display:flex;gap:9px;justify-content:flex-end;flex-wrap:wrap;}',
+        '.tadd-result{border:1px solid rgba(47,122,61,.4);background:rgba(47,122,61,.07);border-radius:12px;padding:14px;margin-bottom:14px;}',
+        '.tadd-cred{display:flex;justify-content:space-between;gap:10px;font-size:13px;padding:3px 0;}',
+        '.tadd-cred b{font:800 13px/1.4 ui-monospace,monospace;}',
         '.consult-hit-notes{display:block;margin:10px 0 8px;}',
         '.consult-hit-notes span{display:block;font:800 10px/1.4 "Space Grotesk",system-ui,sans-serif;letter-spacing:.1em;text-transform:uppercase;opacity:.6;margin-bottom:4px;}',
         '.consult-hit-notes textarea{width:100%;min-height:52px;border:1px solid rgba(150,110,35,.28);border-radius:10px;padding:8px 10px;font:600 13px/1.4 inherit;background:#fdf8ec;color:inherit;resize:vertical;}',
@@ -2430,6 +2603,12 @@
     shell.addEventListener('click', async (e) => {
       const target = e.target;
       if (!(target instanceof Element)) return;
+      const addTrigger = target.closest('[data-trainer-add]');
+      if (addTrigger instanceof Element) {
+        e.preventDefault();
+        openTrainerAddModal(String(addTrigger.getAttribute('data-trainer-add') || 'client'));
+        return;
+      }
       const clientViewBtn = target.closest('[data-clients-view]');
       if (clientViewBtn instanceof Element) {
         e.preventDefault();
