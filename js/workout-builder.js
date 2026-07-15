@@ -71,9 +71,9 @@
       '.wb-row select.wb-in{text-align:center;text-align-last:center;}',
       '.wb-target input[data-f=target]{text-align:center;}',
       // Clear button + its popup
-      '.wb-clear{background:#fff;border:1px solid var(--line);color:#475569;font:700 13px/1 system-ui;padding:10px 16px;border-radius:9px;cursor:pointer;margin-right:auto;}',
-      '.wb-clear:hover{background:#f8fafc;}',
-      '.wb-clear-pop{position:absolute;top:calc(100% + 4px);left:18px;z-index:60;background:#fff;border:1px solid var(--line);border-radius:12px;box-shadow:0 18px 44px rgba(15,23,42,.2);padding:8px;display:grid;gap:4px;min-width:230px;}',
+      '.wb-clear{background:#dc2626;border:0;color:#fff;font:800 13px/1 system-ui;padding:10px 18px;border-radius:9px;cursor:pointer;}',
+      '.wb-clear:hover{filter:brightness(1.06);}',
+      '.wb-clear-pop{position:absolute;top:calc(100% + 4px);right:18px;left:auto;z-index:60;background:#fff;border:1px solid var(--line);border-radius:12px;box-shadow:0 18px 44px rgba(15,23,42,.2);padding:8px;display:grid;gap:4px;min-width:240px;}',
       '.wb-clear-pop[hidden]{display:none;}',
       '.wb-clear-pop-title{font:700 11px/1.4 system-ui;letter-spacing:.04em;text-transform:uppercase;color:#94a3b8;padding:6px 10px 2px;}',
       '.wb-clear-opt{display:block;width:100%;text-align:left;border:0;background:#fff;border-radius:8px;padding:10px 12px;font:600 13px/1.3 system-ui;color:#33465c;cursor:pointer;}',

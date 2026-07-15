@@ -13,7 +13,7 @@
 <body>
   <div id="wb-root"><div id="wb-loading">Loading the workout builder…</div></div>
 
-  <script src="js/workout-builder.js?v=2026-07-15-wb-4"></script>
+  <script src="js/workout-builder.js?v=2026-07-15-wb-5"></script>
   <script type="module">
     import { exercises } from '/data/exercises.master.js';
 
@@ -26,16 +26,41 @@
     const restLabel = (sec) => { sec = Number(sec) || 90; if (sec % 60 === 0 && sec >= 120) { const m = sec/60; return REST_OPTS.includes(m+' min') ? m+' min' : m+' min'; } return sec + ' sec'; };
     const uid = () => 'x' + Math.random().toString(36).slice(2,9);
 
-    // Map the user's active server plan into the builder's day/exercise shape,
-    // so "Modify workout" opens with their current workout already loaded.
+    const dayFor = (name, idx) => DAYS.includes(name) ? name : DAYS[idx % 7];
+
+    // "Modify workout" (training.js) drops a snapshot of the current plan into
+    // sessionStorage['ode_training_builder_prefill_v1']. Map it into the builder
+    // so the workout is already loaded, ready to edit.
+    function mapEditSnapshot(snap) {
+      if (!snap || !Array.isArray(snap.days) || !snap.days.length) return null;
+      const out = { name: 'My workout', instructions: '', days: {} };
+      DAYS.forEach(d => { out.days[d] = []; });
+      let any = false;
+      snap.days.forEach((d, i) => {
+        const wd = dayFor(d.weekday || d.day || d.label, i);
+        (d.exercises || []).forEach(ex => {
+          const name = ex.name || ex.displayName; if (!name) return;
+          any = true;
+          out.days[wd].push({
+            id: uid(), kind: 'exercise', name, exerciseId: name,
+            img0: imgOf(name, 0) || ex.imageUrl || '', img1: imgOf(name, 1) || '',
+            sets: ex.sets || 3, targetType: 'text',
+            target: ex.reps != null ? String(ex.reps) : '',
+            rest: restLabel(ex.restSec != null ? ex.restSec : ex.restSeconds)
+          });
+        });
+      });
+      return any ? out : null;
+    }
+
+    // Fallback: map a server plan (weeks[0].days) if the snapshot isn't present.
     function mapServerPlan(planObj) {
       if (!planObj || !Array.isArray(planObj.weeks) || !planObj.weeks[0]) return null;
       const out = { name: (planObj.meta && planObj.meta.name) || 'My workout', instructions: '', days: {} };
       DAYS.forEach(d => { out.days[d] = []; });
       let any = false;
-      (planObj.weeks[0].days || []).forEach(day => {
-        const wd = DAYS.includes(day.day) ? day.day : (DAYS.includes(day.label) ? day.label : null);
-        if (!wd) return;
+      (planObj.weeks[0].days || []).forEach((day, i) => {
+        const wd = dayFor(day.day || day.label, i);
         (day.exercises || []).forEach(ex => {
           const name = ex.displayName || ex.name; if (!name) return;
           any = true;
@@ -53,11 +78,18 @@
     }
 
     async function loadPrefill() {
-      // Prefer the live active plan (real "modify"); fall back to the local draft.
+      // 1) the edit-workout snapshot from training.js (the real "modify" source)
+      try {
+        const snap = JSON.parse(sessionStorage.getItem('ode_training_builder_prefill_v1') || 'null');
+        const mapped = mapEditSnapshot(snap);
+        if (mapped) return mapped;
+      } catch {}
+      // 2) the live active plan
       try {
         const r = await fetch('/api/training/state', { credentials: 'include' });
         if (r.ok) { const j = await r.json(); const mapped = mapServerPlan(j && j.plan && j.plan.plan); if (mapped) return mapped; }
       } catch {}
+      // 3) local manual draft
       try { return JSON.parse(localStorage.getItem('ode_manual_workout_v1') || 'null'); } catch { return null; }
     }
 
