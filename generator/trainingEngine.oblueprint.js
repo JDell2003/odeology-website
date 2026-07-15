@@ -32,6 +32,35 @@ function resolveSchemeRepBase(scheme, repRange) {
   const n = Number(scheme.repBase);
   return Number.isFinite(n) ? n : repRange.min;
 }
+// The compound "main lift" families. Everything else (isolation) — and any
+// bodyweight/loaded-bodyweight movement like a pull-up — counts as an accessory,
+// which gets the scheme's accessoryRepBase (e.g. base 8 under double_progression).
+const MAJOR_LOAD_FAMILIES = new Set([
+  'chest_press', 'horizontal_pull', 'vertical_pull', 'shoulder_press',
+  'squat_pattern', 'hinge_pattern', 'hip_thrust', 'leg_press'
+]);
+function isAccessoryProgression(family, progressionMode) {
+  if (progressionMode && progressionMode !== 'external_load') return true;
+  return !MAJOR_LOAD_FAMILIES.has(String(family || ''));
+}
+// Rep base honoring the accessory override (accessories keep their own base).
+function resolveSchemeRepBaseForExercise(scheme, repRange, family, progressionMode) {
+  if (scheme && scheme.accessoryRepBase != null && isAccessoryProgression(family, progressionMode)) {
+    const n = Number(scheme.accessoryRepBase);
+    if (Number.isFinite(n)) return n;
+  }
+  return resolveSchemeRepBase(scheme, repRange);
+}
+// Per-lift load step: scheme.loadStepByFamily[family] ?? _default. Under
+// 'standard' the map is only { _default: 5 }, so every family resolves to 5 —
+// byte-for-byte with the old flat REP_LADDER_LOAD_STEP_LB.
+function resolveSchemeLoadStep(scheme, family) {
+  const map = (scheme && scheme.loadStepByFamily) || {};
+  const perFamily = map[String(family || '')];
+  const step = perFamily != null ? perFamily : map._default;
+  const n = Number(step);
+  return Number.isFinite(n) ? n : 5;
+}
 
 const STYLE_ENUM = new Set(['Compound', 'Isolation', 'Mobility', 'Skill', 'Cardio', 'Power', 'Plyo']);
 const PATTERN_ENUM = new Set([
@@ -3566,9 +3595,9 @@ function progressionRuleForExercise(ex, user) {
   }
   const scheme = getProgressionScheme(user);
   const cycleWeeks = Math.max(1, Number(scheme.cycleWeeks) || REP_LADDER_CYCLE_WEEKS);
-  const step = Number((scheme.loadStepByFamily && scheme.loadStepByFamily._default) != null
-    ? scheme.loadStepByFamily._default
-    : REP_LADDER_LOAD_STEP_LB);
+  // Per-lift step so the coaching text matches the ladder (standard = flat +5).
+  const family = (typeof projectionFamilyForExercise === 'function') ? projectionFamilyForExercise(ex, user) : null;
+  const step = resolveSchemeLoadStep(scheme, family);
   if (user.discipline === 'powerbuilding' && ex.style === 'Compound') {
     return `Rep ladder: same weight all cycle, add 1 rep each week for ${cycleWeeks} weeks; then add ${step} lb and drop back to the starting reps.`;
   }
@@ -6499,17 +6528,19 @@ const REP_LADDER_LOAD_STEP_LB = 5;
 function buildProjectionWeekRowsForExercise(exercise, user, estimate, deloadWeeks, anchorStatus) {
   const repRange = parseRepRangeText(exercise?.reps);
   const setsBase = Math.max(1, Number(exercise?.sets || 0) || 3);
+  const progressionMode = progressionModeForExercise(exercise);
   // Progression scheme (default 'standard' == the old REP_LADDER_* constants).
   const scheme = getProgressionScheme(user);
+  const family = estimate && estimate.family;
   const cycleWeeks = Math.max(1, Number(scheme.cycleWeeks) || REP_LADDER_CYCLE_WEEKS);
-  const repBase = resolveSchemeRepBase(scheme, repRange);
+  // Accessory (isolation / bodyweight) movements keep the scheme's accessory base
+  // (e.g. base 8 pull-ups) instead of the main-lift base.
+  const repBase = resolveSchemeRepBaseForExercise(scheme, repRange, family, progressionMode);
   const minRep = repBase; // base of the rep cycle (repRange.min under 'standard')
-  // Task 1 uses the scheme's flat _default step; per-family steps land in Task 2.
-  const loadStep = Number((scheme.loadStepByFamily && scheme.loadStepByFamily._default) != null
-    ? scheme.loadStepByFamily._default
-    : REP_LADDER_LOAD_STEP_LB);
+  // Per-lift load step (deadlift/squat +20, main upper +10, isolation +5 under
+  // double_progression; flat +5 for everything under 'standard').
+  const loadStep = resolveSchemeLoadStep(scheme, family);
   const increment = Number(estimate?.increment || 2.5);
-  const progressionMode = progressionModeForExercise(exercise);
   const baseLoad = Number(estimate?.value || 0);
   const rows = [];
   for (let week = 1; week <= 16; week += 1) {

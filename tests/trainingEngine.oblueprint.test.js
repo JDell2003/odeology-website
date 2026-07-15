@@ -2047,6 +2047,7 @@ test('deload produces a clearly reduced deload target', () => {
 
 /* ---- Progression styles (Work Order Tasks 1-2) --------------------------- */
 const P_PRIV = trainingRoutes._private;
+const MAJOR_FAMILIES = new Set(["chest_press","horizontal_pull","vertical_pull","shoulder_press","squat_pattern","hinge_pattern","hip_thrust","leg_press"]);
 function progressionProfile(disc, days, seed, style) {
   const p = {
     discipline: disc, phase: 'maintain', daysPerWeek: days, planSeed: seed,
@@ -2113,4 +2114,40 @@ test('progression: numbers come only from progressionSchemes.js (standard cycle=
   assert.equal(schemes.standard.cycleWeeks, 4);
   assert.equal(schemes.standard.loadStepByFamily._default, 5);
   assert.equal(schemes.double_progression.repBase, 6);
+});
+
+test('progression: double_progression applies per-lift load steps (+20 lower, +10 upper, +5 iso)', () => {
+  const plan = buildProgressionPlan('powerbuilding', 5, 900, 'double_progression');
+  const sums = summarySnapshot(plan);
+  const perCycle = (fam) => {
+    const e = sums.find((s) => s.family === fam && s.mode === 'external_load' && s.w1 && s.w8);
+    return e ? (Number(e.w8) - Number(e.w1)) : null; // w8 sits in cycle index 1 => exactly one step above w1
+  };
+  assert.equal(perCycle('squat_pattern'), 20, 'squat should step +20/cycle');
+  assert.equal(perCycle('hinge_pattern'), 20, 'deadlift/RDL should step +20/cycle');
+  assert.equal(perCycle('chest_press'), 10, 'main upper compound should step +10/cycle');
+  const iso = sums.find((s) => /_iso$|raise|calves/.test(s.family) && s.mode === 'external_load' && s.w1 && s.w8);
+  assert.ok(iso, 'expected an isolation exercise');
+  assert.equal(Number(iso.w8) - Number(iso.w1), 5, 'isolation should step +5/cycle');
+});
+
+test('progression: double_progression uses accessory rep base 8 for isolation, base 6 for mains', () => {
+  const plan = buildProgressionPlan('bodybuilding', 5, 901, 'double_progression');
+  const pj = projectionOf(plan);
+  const wk1 = (name) => (pj.weeklyTable || []).find((r) => r.exercise === name && r.week === 1);
+  const mainMajor = (pj.exerciseSummaries || []).find((s) => MAJOR_FAMILIES.has(s.family) && s.progressionMode === 'external_load');
+  const accessory = (pj.exerciseSummaries || []).find((s) => !MAJOR_FAMILIES.has(s.family) && s.progressionMode === 'external_load');
+  if (mainMajor) assert.equal(wk1(mainMajor.exercise).repRange, '6', 'main lift base should be 6');
+  if (accessory) assert.equal(wk1(accessory.exercise).repRange, '8', 'accessory base should be 8');
+});
+
+test('progression: hypertrophy_double ladders 8 -> 12 over a 5-week cycle', () => {
+  const plan = buildProgressionPlan('bodybuilding', 4, 902, 'hypertrophy_double');
+  const pj = projectionOf(plan);
+  const ext = (pj.exerciseSummaries || []).find((s) => s.progressionMode === 'external_load');
+  assert.ok(ext, 'expected an external-load exercise');
+  const rows = (pj.weeklyTable || []).filter((r) => r.exercise === ext.exercise).sort((a, b) => a.week - b.week);
+  assert.equal(rows[0].repRange, '8', 'week 1 base 8');
+  assert.equal(rows[4].repRange, '12', 'week 5 ceiling 12');
+  assert.equal(rows[5].repRange, '8', 'week 6 resets to 8');
 });

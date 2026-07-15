@@ -80,3 +80,21 @@ suite fails **21 selection/split/validation tests on pristine HEAD** (87 pass /
 This work order does not touch that core; my changes add 4 passing progression
 tests and introduce **zero** new failures (91 pass / same 21 fail). Those 21 are
 tracked separately from the progression work.
+
+## Task 2 — Per-lift load steps + accessory rep base ✅ (commit: `feat(engine): per-lift load steps`)
+
+`buildProjectionWeekRowsForExercise` now resolves the load step per movement
+family (`resolveSchemeLoadStep` → `scheme.loadStepByFamily[estimate.family] ??
+_default`) and the rep base per accessory-vs-main (`resolveSchemeRepBaseForExercise`
++ `MAJOR_LOAD_FAMILIES` / `isAccessoryProgression`). `progressionRuleForExercise`
+uses the same per-family step so the coaching text matches the ladder.
+`roundProjectedLoad` + the per-family `increment` are unchanged, so plate math holds.
+
+Under `double_progression`: squat/deadlift/leg-press/hip-thrust step **+20**/cycle,
+main upper compounds (bench/row/pulldown/OHP) **+10**, isolation **+5**; mains use
+rep base **6**, accessories (isolation + pull-ups) rep base **8**.
+`hypertrophy_double` ladders **8→12** over a 5-week cycle.
+
+`standard` is unaffected (its map is only `{ _default: 5 }` and it sets no
+accessory base) — the byte-for-byte baseline test still passes. 3 new tests
+(per-lift steps, accessory base, hypertrophy). 94 pass / same 21 pre-existing fail.
