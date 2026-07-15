@@ -21915,7 +21915,7 @@ function injectNutritionLink(panel) {
    Clients, Consult Form Hits, Payments, and Calendar (see
    LAUNCH_LIVE_TRAINER_IDS). The owner still sees everything, with a
    "Hidden" badge on each tab that's hidden from other users, so they can
-   keep building. The client onboarding path is hidden the same way. */
+   keep building. Client onboarding ("I'm a Client") is now live for all. */
 var LAUNCH_LIVE_HREFS = [
     'trainer-website.html',
     // Client-facing training portal — now live for every account:
@@ -21954,12 +21954,9 @@ function ensureLaunchGateStyles() {
         '.control-section.launch-hidden{display:none !important;}',
         '.launch-hidden-badge{display:inline-block;margin-left:8px;padding:1px 7px;border-radius:999px;',
         '  font:800 9px/1.6 "Space Grotesk",system-ui,sans-serif;letter-spacing:.08em;text-transform:uppercase;',
-        '  background:rgba(212,175,55,.22);color:#a1751f;border:1px solid rgba(185,138,43,.5);vertical-align:middle;}',
-        'body.ode-launch-gated [data-path-card="user"]{display:none !important;}',
-        'body.ode-launch-owner [data-path-card="user"]{position:relative;}',
-        'body.ode-launch-owner [data-path-card="user"]::after{content:"Hidden";position:absolute;top:12px;right:12px;z-index:3;',
-        '  padding:2px 9px;border-radius:999px;font:800 10px/1.6 "Space Grotesk",system-ui,sans-serif;letter-spacing:.08em;',
-        '  text-transform:uppercase;background:rgba(212,175,55,.9);color:#1a1206;}'
+        '  background:rgba(212,175,55,.22);color:#a1751f;border:1px solid rgba(185,138,43,.5);vertical-align:middle;}'
+        // Client onboarding ("I'm a Client" path card) is now LIVE for everyone —
+        // no longer hidden for gated users, no "Hidden" badge for the owner.
     ].join('\n');
     document.head.appendChild(s);
 }
