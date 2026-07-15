@@ -216,7 +216,7 @@ cold-start null + source-tier ordering, legacy-throws + oblueprint-builds
 suite tests are pre-existing selection/validation cases untouched by this work
 (verified against pristine HEAD).
 
-## Tasks 6 & 7 — Cardio + spider coupling — DEFERRED (Phase 2, with plan)
+## Tasks 6 & 7 — Cardio + spider coupling — NOTE: now COMPLETED (see the two sections at the end of this file)
 
 Deliberately deferred as genuinely larger features; rushing them under finite
 autonomous budget would violate the "safe" mandate. Neither is a blocker for
@@ -250,7 +250,7 @@ default + visible selector — makes the vision reachable), **8** (wall off lega
 generatePlan), **9** (build telemetry), **4-slice** (earn-the-rep verified +
 readiness governor), **10** (tests). Jason's double-progression is now a real,
 selectable, configurable, per-lift first-class style that powerbuilding defaults
-to. **6 & 7 deferred** with plans. No owner action required.
+to. **6** (cardio) and **7** (training→spider) are now complete too. **All 10 tasks shipped.** No owner action required.
 
 ## Task 6 — Cardio prescription ✅ (commit: `feat(engine): cardio prescription`)
 
