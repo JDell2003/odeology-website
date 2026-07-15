@@ -49,21 +49,40 @@
     .ta-split-row { display: grid; grid-template-columns: minmax(120px, 1.4fr) 70px 80px 90px 110px; gap: 10px; align-items: center; padding: 10px 4px; border-top: 1px solid rgba(150, 110, 35, .12); font: 700 13px/1.3 "Space Grotesk", system-ui, sans-serif; color: #2b2214; }
     .ta-split-row.is-head { font: 800 10px/1 "Space Grotesk", system-ui, sans-serif; letter-spacing: .14em; text-transform: uppercase; color: #a1751f; border-top: 0; }
     .ta-split-row .s-win { color: #2f7a3d; font-weight: 900; }
-    /* hits */
-    .ta-hit { border-top: 1px solid rgba(150, 110, 35, .12); padding: 12px 4px; cursor: pointer; }
-    .ta-hit:hover { background: rgba(212, 175, 55, .08); }
-    .ta-hit-head { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
-    .ta-hit-badge { width: 30px; height: 30px; border-radius: 999px; background: linear-gradient(135deg, #e0b34a, #8a5c33); color: #fff; display: grid; place-items: center; font: 900 10.5px/1 "Space Grotesk", system-ui, sans-serif; flex: 0 0 30px; }
-    .ta-hit-title { font: 800 13.5px/1.3 "Space Grotesk", system-ui, sans-serif; color: #241b0e; }
-    .ta-hit-meta { font: 700 11.5px/1.4 "Space Grotesk", system-ui, sans-serif; color: rgba(60, 48, 28, .55); }
-    .ta-hit-tag { margin-left: auto; padding: 4px 10px; border-radius: 999px; font: 800 10.5px/1 "Space Grotesk", system-ui, sans-serif; }
-    .ta-hit-tag.is-done { background: rgba(47, 122, 61, .14); color: #2f7a3d; }
-    .ta-hit-tag.is-fell { background: rgba(170, 51, 51, .12); color: #a33; }
-    .ta-hit-answers { display: none; margin-top: 10px; }
-    .ta-hit.is-open .ta-hit-answers { display: block; }
-    .ta-hit-qa { padding: 8px 12px; border: 1px solid rgba(150, 110, 35, .2); border-radius: 10px; background: #fdf8ec; margin-bottom: 6px; }
-    .ta-hit-qa .qa-q { font: 800 10px/1.3 "Space Grotesk", system-ui, sans-serif; letter-spacing: .12em; text-transform: uppercase; color: #a1751f; }
-    .ta-hit-qa .qa-a { margin-top: 4px; font: 700 13.5px/1.4 "Space Grotesk", system-ui, sans-serif; color: #241b0e; }
+    /* consult hits table (matches owner-analytics "Who joined") */
+    .ta-table-card { padding: 0; overflow: hidden; }
+    .ta-table-card h3 { padding: 18px 18px 0; }
+    .ta-table-card .ta-hint { padding: 0 18px; }
+    .ta-row { display: grid; grid-template-columns: minmax(150px, 1.3fr) minmax(110px, .9fr) 118px minmax(110px, 1fr) 96px; gap: 10px; align-items: center; padding: 11px 18px; border-top: 1px solid rgba(150, 110, 35, .12); cursor: pointer; transition: background .15s ease; }
+    .ta-row:hover { background: rgba(212, 175, 55, .1); }
+    .ta-row.ta-row-head { cursor: default; font: 800 10px/1 "Space Grotesk", system-ui, sans-serif; letter-spacing: .14em; text-transform: uppercase; color: #a1751f; border-top: 0; }
+    .ta-row.ta-row-head:hover { background: transparent; }
+    .ta-row .r-name { font-weight: 800; color: #241b0e; display: flex; align-items: center; gap: 8px; min-width: 0; }
+    .ta-row .r-ava { width: 28px; height: 28px; border-radius: 999px; background: linear-gradient(135deg, #e0b34a, #8a5c33); color: #fff; display: grid; place-items: center; font: 900 10.5px/1 "Space Grotesk", system-ui, sans-serif; flex: 0 0 28px; }
+    .ta-row .r-dim { color: rgba(60, 48, 28, .65); font-weight: 700; font-size: 12.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .ta-row .r-status { justify-self: start; padding: 4px 10px; border-radius: 999px; font: 800 10.5px/1 "Space Grotesk", system-ui, sans-serif; white-space: nowrap; }
+    .ta-row .r-status.is-done { background: rgba(47, 122, 61, .14); color: #2f7a3d; }
+    .ta-row .r-status.is-fell { background: rgba(170, 51, 51, .12); color: #a33; }
+    /* detail drawer (matches owner-analytics) */
+    .ta-detail-backdrop { position: fixed; inset: 0; background: rgba(20, 14, 6, .45); z-index: 900; opacity: 0; pointer-events: none; transition: opacity .25s ease; }
+    .ta-detail-backdrop.is-on { opacity: 1; pointer-events: auto; }
+    .ta-detail { position: fixed; top: 0; right: -440px; width: min(420px, 94vw); height: 100vh; z-index: 901; background: #fffdf7; border-left: 1px solid rgba(150, 110, 35, .3); box-shadow: -24px 0 60px rgba(30, 18, 4, .25); padding: 26px 24px; transition: right .3s cubic-bezier(.2,.8,.3,1); overflow-y: auto; }
+    .ta-detail.is-on { right: 0; }
+    .ta-detail .d-close { position: absolute; top: 14px; right: 16px; border: 0; background: transparent; font-size: 22px; color: #6f6257; cursor: pointer; }
+    .ta-detail .d-role { font: 800 10px/1 "Space Grotesk", system-ui, sans-serif; letter-spacing: .2em; text-transform: uppercase; color: #a1751f; }
+    .ta-detail h2 { margin: 6px 0 2px; color: #241b0e; font-size: 24px; }
+    .ta-detail .d-handle { color: rgba(60, 48, 28, .55); font-weight: 700; font-size: 13px; }
+    .ta-detail .d-status { display: inline-block; margin-top: 12px; padding: 5px 12px; border-radius: 999px; font: 800 11px/1 "Space Grotesk", system-ui, sans-serif; }
+    .ta-detail .d-status.is-done { background: rgba(47, 122, 61, .14); color: #2f7a3d; }
+    .ta-detail .d-status.is-fell { background: rgba(170, 51, 51, .12); color: #a33; }
+    .ta-detail .d-block { margin-top: 14px; padding: 14px 16px; border: 1px solid rgba(150, 110, 35, .2); border-radius: 14px; background: #fdf8ec; }
+    .ta-detail .d-block .b-k { font: 800 9.5px/1.3 "Space Grotesk", system-ui, sans-serif; letter-spacing: .16em; text-transform: uppercase; color: #a1751f; }
+    .ta-detail .d-block .b-v { margin-top: 6px; font-weight: 800; color: #241b0e; font-size: 15px; }
+    .ta-detail .d-empty { margin-top: 18px; color: rgba(60, 48, 28, .55); font-weight: 700; font-size: 13px; }
+    @media (max-width: 760px) {
+      .ta-row { grid-template-columns: minmax(120px, 1.5fr) 106px 84px; }
+      .ta-row .r-version, .ta-row .r-progress { display: none; }
+    }
     .ta-gate { max-width: 520px; margin: 18vh auto; text-align: center; color: #241b0e; font-weight: 800; }
     .ta-cta { font: 700 12.5px/1.5 "Space Grotesk", system-ui, sans-serif; color: rgba(60, 48, 28, .6); }
     .ta-cta a { color: #7a5312; font-weight: 800; }
@@ -141,14 +160,17 @@
       </div>
     </section>
 
-    <section class="ta-card">
+    <section class="ta-card ta-table-card">
       <h3>Consult form hits</h3>
-      <p class="ta-hint">Everyone who went through your pre-visit questions. Click one to read their answers.</p>
+      <p class="ta-hint">Everyone who went through your pre-visit questions. Click a row to read their answers.</p>
       <div id="ta-hits"></div>
     </section>
   </main>
 
   <div class="ta-gate" id="ta-gate" hidden>Trainer access required.</div>
+
+  <div class="ta-detail-backdrop" id="ta-backdrop"></div>
+  <aside class="ta-detail" id="ta-detail" aria-label="Visitor detail"></aside>
 
   <script src="js/main.js?v=2026-07-14-launchgate-3"></script>
   <script>
@@ -265,32 +287,52 @@
           `;
         }
 
-        // Consult hits + fell-offs.
+        // Consult hits + fell-offs (owner-style table; click a row -> detail drawer).
         const hits = $('#ta-hits');
         if (!sessions.length) {
-          hits.innerHTML = `<div class="ta-empty">Nothing yet. Share your link and hits land here.</div><div class="ta-cta">Set up your questions in the <a href="trainer-website.html">Website tab</a>.</div>`;
+          hits.innerHTML = `<div class="ta-empty" style="padding:14px 18px;">Nothing yet. Share your link and hits land here.</div><div class="ta-cta" style="padding:0 18px 16px;">Set up your questions in the <a href="trainer-website.html">Website tab</a>.</div>`;
         } else {
-          hits.innerHTML = sessions.map((s, i) => `
-            <div class="ta-hit" data-i="${i}">
-              <div class="ta-hit-head">
-                <span class="ta-hit-badge">#${s.dayNumber}</span>
-                <div>
-                  <div class="ta-hit-title">Visitor ${s.dayNumber} &middot; ${fmtDay(s.startedAt)}</div>
-                  <div class="ta-hit-meta">${esc(variantLabel(s.variantId))} &middot; ${s.complete ? `finished in ${fmtDur(s.ms)}` : `fell off at question ${s.steps + 1}${s.ms ? ` after ${fmtDur(s.ms)}` : ''}`}</div>
-                </div>
-                <span class="ta-hit-tag ${s.complete ? 'is-done' : 'is-fell'}">${s.complete ? 'Consult hit' : 'Fell off'}</span>
-              </div>
-              <div class="ta-hit-answers">
-                ${s.complete && s.answers.length
-                  ? s.answers.map((a) => `<div class="ta-hit-qa"><div class="qa-q">${esc(a.question)}</div><div class="qa-a">${esc(a.answer)}</div></div>`).join('')
-                  : `<div class="ta-hit-qa"><div class="qa-a">${s.complete ? 'No answers recorded.' : `Answered ${s.steps} of your questions, then left.`}</div></div>`}
-              </div>
-            </div>`).join('');
-          hits.querySelectorAll('.ta-hit').forEach((el) => {
-            el.addEventListener('click', () => el.classList.toggle('is-open'));
+          hits.innerHTML = `
+            <div class="ta-row ta-row-head"><div>Visitor</div><div class="r-version">Version</div><div>Status</div><div class="r-progress">Progress</div><div>Date</div></div>
+            ${sessions.map((s, i) => `
+              <div class="ta-row" data-i="${i}">
+                <div class="r-name"><span class="r-ava">#${s.dayNumber}</span>Visitor ${s.dayNumber}</div>
+                <div class="r-dim r-version">${esc(variantLabel(s.variantId))}</div>
+                <div><span class="r-status ${s.complete ? 'is-done' : 'is-fell'}">${s.complete ? 'Consult hit' : 'Fell off'}</span></div>
+                <div class="r-dim r-progress">${s.complete ? `finished in ${fmtDur(s.ms)}` : `left at Q${s.steps + 1}`}</div>
+                <div class="r-dim">${fmtDay(s.startedAt)}</div>
+              </div>`).join('')}
+          `;
+          hits.querySelectorAll('.ta-row[data-i]').forEach((el) => {
+            el.addEventListener('click', () => openHit(sessions[Number(el.dataset.i)]));
           });
         }
       }
+
+      function openHit(s) {
+        if (!s) return;
+        const d = $('#ta-detail');
+        const answers = (s.complete && s.answers && s.answers.length)
+          ? s.answers.map((a) => `<div class="d-block"><div class="b-k">${esc(a.question)}</div><div class="b-v">${esc(a.answer)}</div></div>`).join('')
+          : `<div class="d-empty">${s.complete ? 'No answers were recorded for this visitor.' : `Answered ${s.steps} of your ${s.steps === 1 ? 'question' : 'questions'}, then left before finishing.`}</div>`;
+        d.innerHTML = `
+          <button type="button" class="d-close" aria-label="Close">&times;</button>
+          <div class="d-role">Visitor &middot; ${esc(variantLabel(s.variantId))}</div>
+          <h2>Visitor ${s.dayNumber}</h2>
+          <div class="d-handle">${fmtDay(s.startedAt)}${s.complete ? ` &middot; finished in ${fmtDur(s.ms)}` : ` &middot; left at question ${s.steps + 1}`}</div>
+          <span class="d-status ${s.complete ? 'is-done' : 'is-fell'}">${s.complete ? 'Consult hit' : 'Fell off'}</span>
+          ${answers}
+        `;
+        d.querySelector('.d-close').addEventListener('click', closeHit);
+        d.classList.add('is-on');
+        $('#ta-backdrop').classList.add('is-on');
+      }
+      function closeHit() {
+        $('#ta-detail').classList.remove('is-on');
+        $('#ta-backdrop').classList.remove('is-on');
+      }
+      $('#ta-backdrop').addEventListener('click', closeHit);
+      document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeHit(); });
 
       $('#ta-quick').addEventListener('click', (ev) => {
         const b = ev.target.closest('[data-days]');
