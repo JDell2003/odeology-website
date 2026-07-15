@@ -4657,6 +4657,27 @@
                                         <option value="75+">75+ minutes</option>
                                     </select>
                                 </div>
+                                <div class="entry-field full">
+                                    <span class="entry-group-title">Your biggest lifts <span class="oaa-opt" style="opacity:.6;font-weight:600;">(optional — skip if unknown)</span></span>
+                                    <p class="entry-note" style="margin:2px 0 8px;">Enter a recent hard set for any of these and we'll start your weights from real numbers instead of an estimate. Leave blank and we'll estimate from your bodyweight.</p>
+                                    <div class="entry-lift-grid" style="display:grid;grid-template-columns:1fr;gap:8px;">
+                                        <div style="display:grid;grid-template-columns:80px 1fr 1fr;gap:8px;align-items:center;">
+                                            <span style="font-weight:800;">Bench</span>
+                                            <input name="benchWeight" type="number" min="0" step="5" inputmode="numeric" placeholder="weight (lb)" autocomplete="off">
+                                            <input name="benchReps" type="number" min="1" max="15" inputmode="numeric" placeholder="reps" autocomplete="off">
+                                        </div>
+                                        <div style="display:grid;grid-template-columns:80px 1fr 1fr;gap:8px;align-items:center;">
+                                            <span style="font-weight:800;">Squat</span>
+                                            <input name="squatWeight" type="number" min="0" step="5" inputmode="numeric" placeholder="weight (lb)" autocomplete="off">
+                                            <input name="squatReps" type="number" min="1" max="15" inputmode="numeric" placeholder="reps" autocomplete="off">
+                                        </div>
+                                        <div style="display:grid;grid-template-columns:80px 1fr 1fr;gap:8px;align-items:center;">
+                                            <span style="font-weight:800;">Deadlift</span>
+                                            <input name="deadliftWeight" type="number" min="0" step="5" inputmode="numeric" placeholder="weight (lb)" autocomplete="off">
+                                            <input name="deadliftReps" type="number" min="1" max="15" inputmode="numeric" placeholder="reps" autocomplete="off">
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
@@ -7575,6 +7596,17 @@ function formatWorkspaceLabel(workspace) {
               weight: String(user.weight || '').trim(),
               injuries: selectedInjuries.join(', '),
               goals: String(user.goal || '').trim()
+            },
+            // Optional "biggest lifts" (Task 3): real starting-weight anchors.
+            // Empty/unknown fields are dropped downstream and fall back to the
+            // bodyweight estimate, so skipping this is safe.
+            strength: {
+              benchWeight: Number(user.benchWeight) || null,
+              benchReps: Number(user.benchReps) || null,
+              squatWeight: Number(user.squatWeight) || null,
+              squatReps: Number(user.squatReps) || null,
+              deadliftWeight: Number(user.deadliftWeight) || null,
+              deadliftReps: Number(user.deadliftReps) || null
             },
             workspaceContext: {
               connectionType: String(user.connectionType || ''),

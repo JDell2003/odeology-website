@@ -978,6 +978,12 @@ function normalizeOblueprintPayload(payload, { relax = false } = {}) {
     sleepHours: Math.max(4, Math.min(10, Number(src.sleepHours) || 7)),
     activityLevel: oneOf(String(src.activityLevel || '').trim(), ['Sedentary', 'Active', 'Very active'], 'Active'),
     stress: oneOf(String(src.stress || '').trim(), ['Low', 'Medium', 'High'], 'Medium'),
+    // Progression seam (Tasks 1-3). The engine defaults unknown/absent to
+    // 'standard', so passing these through is safe when unset.
+    progressionStyle: String(src.progressionStyle || '').trim() || undefined,
+    liftHistoryAnchors: (src.liftHistoryAnchors && typeof src.liftHistoryAnchors === 'object')
+      ? src.liftHistoryAnchors
+      : undefined,
     planSeed: Number.isFinite(Number(src.planSeed)) ? Math.floor(Number(src.planSeed)) : Date.now()
   };
 
@@ -1628,8 +1634,57 @@ function coerceClassicBodybuildingToOblueprintPayload(payload) {
     sleepHours: 7,
     activityLevel: 'Active',
     stress: 'Medium',
+    progressionStyle: String(src?.progressionStyle || strength?.progressionStyle || '').trim() || undefined,
+    liftHistoryAnchors: (src?.liftHistoryAnchors && typeof src.liftHistoryAnchors === 'object')
+      ? src.liftHistoryAnchors
+      : undefined,
     planSeed: Number(src?.planSeed) || Date.now()
   }, { relax: false });
+}
+
+// Returning-user starting weights: scan logged lift history for the big three
+// and take the best logged e1RM for each. Fed to the engine as
+// user.liftHistoryAnchors so anchorInputsForUser can use real numbers instead of
+// a bodyweight guess. Returns null when nothing recognizable is logged.
+function deriveLiftHistoryAnchors(liftHistory) {
+  const rows = Array.isArray(liftHistory) ? liftHistory : [];
+  const bestFor = (matcher) => {
+    let best = 0;
+    for (const row of rows) {
+      const name = String(row?.exerciseName || '').toLowerCase();
+      const base = String(row?.baseId || '').toLowerCase();
+      if (!matcher(name, base)) continue;
+      const e1rm = Number(row?.best?.estimated1rm || row?.last?.estimated1rm || 0);
+      if (Number.isFinite(e1rm) && e1rm > best) best = e1rm;
+    }
+    return best > 0 ? Math.round(best) : null;
+  };
+  const bench1rm = bestFor((n, b) => /bench press/.test(n) || /bench[_-]?press/.test(b));
+  const squat1rm = bestFor((n, b) => (/squat/.test(n) && !/split|bulgarian|goblet|hack/.test(n)) || /barbell[_-]?squat|back[_-]?squat/.test(b));
+  const deadlift1rm = bestFor((n, b) => /deadlift/.test(n) || /deadlift/.test(b));
+  if (!bench1rm && !squat1rm && !deadlift1rm) return null;
+  return { bench1rm, squat1rm, deadlift1rm };
+}
+
+// Best-effort: when a build payload carries no explicit lifts, fill
+// payload.liftHistoryAnchors from the user's logged history so returning users
+// get anchored from real numbers instead of a bodyweight guess. Non-fatal.
+async function attachLiftHistoryAnchorsToPayload(payload, userId) {
+  try {
+    if (!payload || typeof payload !== 'object' || !userId) return;
+    const strength = (payload.strength && typeof payload.strength === 'object') ? payload.strength : {};
+    const hasExplicit = [
+      payload.bench, payload.squat, payload.deadlift,
+      strength.bench, strength.squat, strength.deadlift,
+      strength.benchWeight, strength.lowerWeight, strength.hingeWeight
+    ].some((value) => Number(value) > 0);
+    if (hasExplicit) return;
+    const state = await safeListLiftHistory(userId);
+    const anchors = deriveLiftHistoryAnchors(state && state.liftHistory);
+    if (anchors) payload.liftHistoryAnchors = anchors;
+  } catch (err) {
+    // A missing anchor must never block a build.
+  }
 }
 
 function safeLocalReturnTo(raw, fallback = '/training.html?demoPlan=1') {
@@ -12710,6 +12765,9 @@ async function trainingRoutes(req, res, url) {
     } catch (err) {
       return sendJson(res, 400, { error: err.message });
     }
+    // Returning-user starting weights: if this payload has no explicit lifts,
+    // anchor from logged history (Task 3). Best-effort, never blocks onboarding.
+    await attachLiftHistoryAnchorsToPayload(payload, user?.id);
     // v2 scoring (SCORING_ENGINE_V2): capture normalization identity when the
     // onboarding payload carries it. Best-effort and non-blocking — a scoring
     // field must never fail onboarding itself.
@@ -13322,6 +13380,8 @@ async function trainingRoutes(req, res, url) {
 trainingRoutes._private = {
   buildOblueprintPlanWithFallback,
   coerceClassicBodybuildingToOblueprintPayload,
+  deriveLiftHistoryAnchors,
+  attachLiftHistoryAnchorsToPayload,
   assertBodybuildingPlanByEngine,
   assertPowerbuildingPlanByEngine,
   assertMilitaryHybridPlanByEngine: militaryHybrid.validateMilitaryPlan,

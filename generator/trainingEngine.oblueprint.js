@@ -5891,17 +5891,26 @@ function anchorInputsForUser(user) {
   const derivedDeadlift = hingeWorkingWeight > 0 && (movementLooksLikeHingeAnchor(hingeVariation) || !hingeVariation)
     ? conservativeOneRepFromWorking(hingeWorkingWeight, hingeWorkingReps)
     : null;
+  // Returning-user tier: real e1RM from logged history (best_estimated_1rm_lb),
+  // threaded in by the route as user.liftHistoryAnchors. Sits between derived
+  // working-weight and the bodyweight guess. Unset => today's precedence exactly.
+  const historyBench = Math.max(0, Number(user?.liftHistoryAnchors?.bench1rm || 0));
+  const historySquat = Math.max(0, Number(user?.liftHistoryAnchors?.squat1rm || 0));
+  const historyDeadlift = Math.max(0, Number(user?.liftHistoryAnchors?.deadlift1rm || 0));
   const bodyweightFallback = bodyweightFallbackAnchors(user);
-  const bench = explicitBench || derivedBench || bodyweightFallback.bench1rm;
-  const squat = explicitSquat || derivedSquat || bodyweightFallback.squat1rm;
-  const deadlift = explicitDeadlift || derivedDeadlift || bodyweightFallback.deadlift1rm;
+  const bench = explicitBench || derivedBench || historyBench || bodyweightFallback.bench1rm;
+  const squat = explicitSquat || derivedSquat || historySquat || bodyweightFallback.squat1rm;
+  const deadlift = explicitDeadlift || derivedDeadlift || historyDeadlift || bodyweightFallback.deadlift1rm;
   const explicitCount = [explicitBench, explicitSquat, explicitDeadlift].filter((value) => Number.isFinite(value) && value > 0).length;
   const workingCount = [derivedBench, derivedSquat, derivedDeadlift].filter((value) => Number.isFinite(value) && value > 0).length;
+  const historyCount = [historyBench, historySquat, historyDeadlift].filter((value) => Number.isFinite(value) && value > 0).length;
   const anchorSource = explicitCount > 0
     ? 'explicit_pr'
     : workingCount > 0
       ? 'working_weight_fallback'
-      : 'bodyweight_family_fallback';
+      : historyCount > 0
+        ? 'lift_history_fallback'
+        : 'bodyweight_family_fallback';
   return {
     anchorSource,
     inputBench: explicitBench > 0 ? explicitBench : null,

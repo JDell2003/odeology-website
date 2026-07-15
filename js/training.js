@@ -1023,7 +1023,18 @@
       painProfilesByArea,
       sleepHours: Math.max(4, Math.min(10, Number(intake.sleepHours) || 7)),
       activityLevel: mapActivityLevel(intake.activityLevel),
-      stress: mapStress(intake.stress)
+      stress: mapStress(intake.stress),
+      // Optional "biggest lifts" (Task 3) — real starting-weight anchors. Passed
+      // straight through to normalizeOblueprintPayload / anchorInputsForUser.
+      benchWeight: Number(intake.strength && intake.strength.benchWeight) || null,
+      benchReps: Number(intake.strength && intake.strength.benchReps) || null,
+      lowerMovement: (intake.strength && intake.strength.squatWeight) ? 'Back Squat' : null,
+      lowerWeight: Number(intake.strength && intake.strength.squatWeight) || null,
+      lowerReps: Number(intake.strength && intake.strength.squatReps) || null,
+      hingeMovement: (intake.strength && intake.strength.deadliftWeight) ? 'Deadlift' : null,
+      hingeWeight: Number(intake.strength && intake.strength.deadliftWeight) || null,
+      hingeReps: Number(intake.strength && intake.strength.deadliftReps) || null,
+      progressionStyle: (typeof intake.progressionStyle === 'string' && intake.progressionStyle) || undefined
     };
   }
 

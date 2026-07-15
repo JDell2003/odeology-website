@@ -2151,3 +2151,39 @@ test('progression: hypertrophy_double ladders 8 -> 12 over a 5-week cycle', () =
   assert.equal(rows[4].repRange, '12', 'week 5 ceiling 12');
   assert.equal(rows[5].repRange, '8', 'week 6 resets to 8');
 });
+
+/* ---- Task 3: real strength anchors ---------------------------------------- */
+test('anchors: deriveLiftHistoryAnchors maps the big three from logged history', () => {
+  const anchors = P_PRIV.deriveLiftHistoryAnchors([
+    { exerciseName: 'Barbell Bench Press', best: { estimated1rm: 275 } },
+    { exerciseName: 'Barbell Bench Press', best: { estimated1rm: 300 } }, // higher wins
+    { exerciseName: 'Barbell Back Squat', best: { estimated1rm: 405 } },
+    { exerciseName: 'Conventional Deadlift', best: { estimated1rm: 495 } },
+    { exerciseName: 'Bulgarian Split Squat', best: { estimated1rm: 120 } } // excluded from squat
+  ]);
+  assert.equal(anchors.bench1rm, 300);
+  assert.equal(anchors.squat1rm, 405);
+  assert.equal(anchors.deadlift1rm, 495);
+});
+
+test('anchors: deriveLiftHistoryAnchors returns null on a cold start', () => {
+  assert.equal(P_PRIV.deriveLiftHistoryAnchors([]), null);
+  assert.equal(P_PRIV.deriveLiftHistoryAnchors([{ exerciseName: 'Leg Curl', best: { estimated1rm: 100 } }]), null);
+});
+
+test('anchors: projection source is explicit PR > lift history > bodyweight guess', () => {
+  const buildWith = (mut) => {
+    const base = { discipline: 'powerbuilding', phase: 'maintain', daysPerWeek: 4, planSeed: 222,
+      equipmentAccess: { bodyweight: true, dumbbell: true, barbell: true, cable: true, machine: true },
+      emphasis: ['chest', 'back'], unavailableDays: [], equipmentStylePref: 'mix',
+      strength: { phase: 'maintain', trainingAgeBucket: '6_18', timePerSession: '60_75', equipmentStylePref: 'mix', injury: { has: false, joints: [], note: '' }, injurySeverityByJoint: {} } };
+    const coerced = P_PRIV.coerceClassicBodybuildingToOblueprintPayload(base);
+    mut(coerced);
+    const built = P_PRIV.buildOblueprintPlanWithFallback(coerced);
+    const pj = built.plan.progressionProjection || built.plan.meta?.progressionProjection || {};
+    return pj.anchorInputs?.anchorSource;
+  };
+  assert.equal(buildWith((c) => { c.bench = 315; }), 'explicit_pr');
+  assert.equal(buildWith((c) => { c.liftHistoryAnchors = { bench1rm: 315, squat1rm: 405, deadlift1rm: 495 }; }), 'lift_history_fallback');
+  assert.equal(buildWith(() => {}), 'bodyweight_family_fallback');
+});

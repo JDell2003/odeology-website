@@ -98,3 +98,31 @@ rep base **6**, accessories (isolation + pull-ups) rep base **8**.
 `standard` is unaffected (its map is only `{ _default: 5 }` and it sets no
 accessory base) — the byte-for-byte baseline test still passes. 3 new tests
 (per-lift steps, accessory base, hypertrophy). 94 pass / same 21 pre-existing fail.
+
+## Task 3 — Real strength anchors ✅ (commit: `feat(engine): real strength anchors`) — HIGHEST IMPACT
+
+Starting weights no longer default to a bodyweight guess.
+
+**Engine** (`anchorInputsForUser`): new anchor tier order — explicit PR →
+derived from working weight×reps → **logged lift-history e1RM** (`user.liftHistoryAnchors`,
+new) → bodyweight fallback. `anchorSource` now reports `lift_history_fallback`.
+Unset `liftHistoryAnchors` preserves today's precedence — baseline test still passes.
+
+**Route** (`core/trainingRoutes.js`): `deriveLiftHistoryAnchors(liftHistory)` scans
+logged history for the big three and takes the best e1RM each;
+`attachLiftHistoryAnchorsToPayload` fills `payload.liftHistoryAnchors` in the
+`/api/training/onboarding` handler when no explicit lifts are given (best-effort,
+never blocks a build). `normalizeOblueprintPayload` + `coerce…` now pass
+`liftHistoryAnchors` **and** `progressionStyle` through (the latter was being
+dropped — needed for Task 5).
+
+**Onboarding UI** (`index.html` + `js/training.js`): optional "your biggest lifts"
+group (bench/squat/deadlift weight×reps, "skip if unknown") on the profile step;
+captured into `state.answers.user` by the existing generic handler, carried by
+`buildUserIntake().strength`, and mapped into the payload by
+`mapIntakeToOblueprintPayload`. A 225×5 bench → conservative e1RM ~248
+(`conservativeOneRepFromWorking`) instead of a bodyweight estimate.
+
+3 new tests (history mapping, cold-start null, source-tier ordering). 97 pass /
+same 21 pre-existing fail. Verified the onboarding page still loads with zero
+new JS errors and the 3 lift inputs present.
