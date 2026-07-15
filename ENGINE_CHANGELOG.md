@@ -166,3 +166,18 @@ Tests: one asserts the legacy branch still throws (documented + contained) and
 that `applyLogAdjustments` is still exported; one asserts the oblueprint builder
 handles bodybuilding (the path `createNewPlan` now uses). Both pass. All engine
 failures remain the pre-existing 21 selection tests (none are mine).
+
+## Task 9 — Build telemetry ✅ (commit: `chore(engine): progression telemetry`)
+
+`buildOblueprintPlanWithFallback` now records, per build: attempt count, latency,
+success/failure, and (on failure) the failing invariant — via
+`recordOblueprintBuildTelemetry` (in-memory, process-lifetime). Retry-heavy (>3
+attempts), slow (>1500ms), or failed builds log an `[oblueprint-telemetry]` line
+with running averages and the current **top failing invariant**.
+`getOblueprintBuildTelemetry()` (exported on `_private`) returns
+`{ builds, failures, avgAttempts, maxAttempts, avgMs, maxMs, invariantFailCounts,
+topFailingInvariant }`.
+
+Real data: simple bodybuilding/powerbuilding builds succeed on **attempt 1**
+(~400ms) — the retry-heaviness is specific to constrained/injured/priority combos,
+now measurable instead of anecdotal. 1 test. No user-facing change.

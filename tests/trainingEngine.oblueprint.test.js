@@ -2203,3 +2203,14 @@ test('walloff: the oblueprint builder handles bodybuilding (the path createNewPl
   const plan = buildProgressionPlan('bodybuilding', 4, 1212);
   assert.ok(Array.isArray(plan.weeks) && plan.weeks.length, 'oblueprint builds a valid bodybuilding plan');
 });
+
+/* ---- Task 9: build telemetry ---------------------------------------------- */
+test('telemetry: getOblueprintBuildTelemetry tracks attempts, latency, and top failing invariant', () => {
+  const before = P_PRIV.getOblueprintBuildTelemetry().builds;
+  buildProgressionPlan('bodybuilding', 4, 4242);
+  const after = P_PRIV.getOblueprintBuildTelemetry();
+  assert.ok(after.builds > before, 'a build increments the counter');
+  assert.ok(after.avgAttempts >= 1, 'avgAttempts is at least 1');
+  assert.ok(Number.isFinite(after.avgMs), 'avgMs is measured');
+  assert.ok('topFailingInvariant' in after, 'exposes the top failing invariant');
+});

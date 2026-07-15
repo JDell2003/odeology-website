@@ -1006,8 +1006,57 @@ function normalizeOblueprintPayload(payload, { relax = false } = {}) {
   return normalized;
 }
 
+// Task 9 observability: measure retry-heaviness + which invariant fails most,
+// instead of it being anecdotal. In-memory, process-lifetime; read via
+// getOblueprintBuildTelemetry(). No user-facing change.
+const OBLUEPRINT_BUILD_TELEMETRY = {
+  builds: 0,
+  failures: 0,
+  totalAttempts: 0,
+  totalMs: 0,
+  maxAttempts: 0,
+  maxMs: 0,
+  invariantFailCounts: {}
+};
+function recordOblueprintBuildTelemetry({ ok, attempts, ms, failedInvariant }) {
+  const t = OBLUEPRINT_BUILD_TELEMETRY;
+  t.builds += 1;
+  t.totalAttempts += Number(attempts) || 0;
+  t.totalMs += Number(ms) || 0;
+  t.maxAttempts = Math.max(t.maxAttempts, Number(attempts) || 0);
+  t.maxMs = Math.max(t.maxMs, Number(ms) || 0);
+  if (!ok) {
+    t.failures += 1;
+    const key = String(failedInvariant || 'unknown').trim() || 'unknown';
+    t.invariantFailCounts[key] = (t.invariantFailCounts[key] || 0) + 1;
+  }
+  // Surface retry-heavy or slow builds so the pattern is visible in logs.
+  if ((Number(attempts) || 0) > 3 || (Number(ms) || 0) > 1500 || !ok) {
+    try {
+      const top = Object.entries(t.invariantFailCounts).sort((a, b) => b[1] - a[1])[0];
+      console.info('[oblueprint-telemetry]', JSON.stringify({
+        ok, attempts, ms, failedInvariant: failedInvariant || null,
+        avgAttempts: t.builds ? Math.round((t.totalAttempts / t.builds) * 100) / 100 : 0,
+        avgMs: t.builds ? Math.round(t.totalMs / t.builds) : 0,
+        topFailingInvariant: top ? { invariant: top[0], count: top[1] } : null
+      }));
+    } catch { /* logging must never break a build */ }
+  }
+}
+function getOblueprintBuildTelemetry() {
+  const t = OBLUEPRINT_BUILD_TELEMETRY;
+  const top = Object.entries(t.invariantFailCounts).sort((a, b) => b[1] - a[1])[0];
+  return {
+    ...t,
+    avgAttempts: t.builds ? Math.round((t.totalAttempts / t.builds) * 100) / 100 : 0,
+    avgMs: t.builds ? Math.round(t.totalMs / t.builds) : 0,
+    topFailingInvariant: top ? { invariant: top[0], count: top[1] } : null
+  };
+}
+
 function buildOblueprintPlanWithFallback(payload, opts = {}) {
   const src = payload && typeof payload === 'object' ? payload : {};
+  const buildStartedAt = Date.now();
   const seedBase = Number(src?.planSeed);
   const baseSeed = Number.isFinite(seedBase) ? Math.floor(seedBase) : Date.now();
   const buildOpts = opts && typeof opts === 'object' ? opts : {};
@@ -1353,8 +1402,10 @@ function buildOblueprintPlanWithFallback(payload, opts = {}) {
   let lastError = null;
   let lastPlan = null;
   let lastPayload = null;
+  let attemptsUsed = 0;
   const tryBuildSeries = (seriesPayload, attempts = 6) => {
     for (let attempt = 0; attempt < attempts; attempt += 1) {
+      attemptsUsed += 1;
       const nextPayload = {
         ...seriesPayload,
         planSeed: baseSeed + (attempt * 9973)
@@ -1479,17 +1530,30 @@ function buildOblueprintPlanWithFallback(payload, opts = {}) {
     return null;
   };
 
+  const finish = (result) => {
+    const invariant = result?.error
+      ? (lastError?.failedInvariant || lastError?.validatorSection || lastError?.error || result?.error?.error || 'unknown')
+      : null;
+    recordOblueprintBuildTelemetry({
+      ok: !result?.error && !!result?.plan,
+      attempts: attemptsUsed,
+      ms: Date.now() - buildStartedAt,
+      failedInvariant: invariant
+    });
+    return result;
+  };
+
   const directBuild = tryBuildSeries(src, directAttempts);
-  if (directBuild) return directBuild;
+  if (directBuild) return finish(directBuild);
   if (String(lastError?.error || '') === 'LOWER_BODY_REPAIR_LOOP_LIMIT') {
-    return { error: lastError };
+    return finish({ error: lastError });
   }
 
   const relaxedPayload = normalizeOblueprintPayload(src, { relax: true });
   const relaxedBuild = tryBuildSeries(relaxedPayload, relaxedAttempts);
-  if (relaxedBuild) return { ...relaxedBuild, usedPayload: { ...relaxedBuild.usedPayload, _relaxedFallback: true } };
-  if (lastPlan) return { plan: lastPlan, usedPayload: lastPayload };
-  return { error: lastError || { error: 'PLAN_BUILD_FAILED', reason: 'Failed to build a valid Oblueprint plan.' } };
+  if (relaxedBuild) return finish({ ...relaxedBuild, usedPayload: { ...relaxedBuild.usedPayload, _relaxedFallback: true } });
+  if (lastPlan) return finish({ plan: lastPlan, usedPayload: lastPayload });
+  return finish({ error: lastError || { error: 'PLAN_BUILD_FAILED', reason: 'Failed to build a valid Oblueprint plan.' } });
 }
 
 function equipmentAccessToList(raw) {
@@ -13471,6 +13535,7 @@ trainingRoutes._private = {
   buildOblueprintPlanWithFallback,
   coerceClassicBodybuildingToOblueprintPayload,
   deriveLiftHistoryAnchors,
+  getOblueprintBuildTelemetry,
   attachLiftHistoryAnchorsToPayload,
   assertBodybuildingPlanByEngine,
   assertPowerbuildingPlanByEngine,
