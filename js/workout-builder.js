@@ -89,7 +89,28 @@
       '.wb-more{grid-column:1/-1;text-align:center;padding:10px;}',
       '.wb-more button{border:1px solid var(--line);background:#fff;border-radius:8px;padding:9px 18px;font:700 12px/1 system-ui;cursor:pointer;color:#475569;}',
       '.wb-dragging{opacity:.5;}',
-      '@media (max-width:820px){.wb-body{grid-template-columns:1fr;}.wb-left{border-right:0;border-bottom:1px solid var(--line);}}'
+      // mobile toggle (Workout | Exercises), hidden on desktop
+      '.wb-mtabs{display:none;}',
+      '@media (max-width:820px){',
+      '  .wb{height:100dvh;}',
+      '  .wb-top{position:sticky;top:0;z-index:20;padding:10px 12px;gap:10px;}',
+      '  .wb-name{font-size:15px;} .wb-save{padding:9px 16px;}',
+      '  .wb-mtabs{display:flex;gap:6px;padding:8px 12px;background:#fff;border-bottom:1px solid var(--line);position:sticky;top:52px;z-index:15;}',
+      '  .wb-mtab{flex:1;border:1px solid var(--line);background:#f1f3f5;border-radius:9px;padding:10px;font:800 13px/1 system-ui;color:#475569;cursor:pointer;}',
+      '  .wb-mtab.is-active{background:var(--ink);color:#fff;border-color:var(--ink);}',
+      '  .wb-body{display:block;overflow:auto;-webkit-overflow-scrolling:touch;}',
+      '  .wb-left,.wb-right{border:0;min-height:0;}',
+      '  .wb-rows,.wb-grid{overflow:visible;}',
+      '  .wb-days{gap:6px;overflow-x:auto;flex-wrap:nowrap;padding:10px 12px;}',
+      '  .wb-day{flex:0 0 auto;}',
+      '  .wb-grid{grid-template-columns:repeat(3,1fr);gap:10px;padding:12px;}',
+      // mobile pane switch: show one at a time
+      '  body.wb-m-lib .wb-left{display:none;} body.wb-m-lib .wb-right{display:flex;}',
+      '  body.wb-m-work .wb-right{display:none;} body.wb-m-work .wb-left{display:flex;}',
+      // bigger touch targets in rows
+      '  .wb-row{grid-template-columns:1fr 54px 110px 84px 26px;gap:6px;}',
+      '  .wb-in{padding:9px 8px;} .wb-search{padding:12px;}',
+      '}'
     ].join('\n');
     document.head.appendChild(s);
   }
@@ -173,6 +194,7 @@
         + '<span class="wb-status" id="wb-status"></span>'
         + '<button class="wb-save" id="wb-save">SAVE</button>'
         + '<button class="wb-x" id="wb-x" title="Close">&times;</button></div>'
+        + '<div class="wb-mtabs"><button class="wb-mtab" data-mtab="work">Workout</button><button class="wb-mtab" data-mtab="lib">Exercises</button></div>'
         + '<div class="wb-body">'
         // LEFT
         + '<div class="wb-left">'
@@ -203,6 +225,22 @@
     function currentDayEl() { return root.querySelector('#wb-rows'); }
 
     function wire() {
+      // mobile pane toggle (Workout | Exercises); body class persists across renders
+      if (!document.body.classList.contains('wb-m-work') && !document.body.classList.contains('wb-m-lib')) {
+        document.body.classList.add('wb-m-work');
+      }
+      var mtabs = root.querySelector('.wb-mtabs');
+      if (mtabs) {
+        var cur = document.body.classList.contains('wb-m-lib') ? 'lib' : 'work';
+        mtabs.querySelectorAll('.wb-mtab').forEach(function (t) { t.classList.toggle('is-active', t.getAttribute('data-mtab') === cur); });
+        mtabs.addEventListener('click', function (e) {
+          var b = e.target.closest('[data-mtab]'); if (!b) return;
+          var m = b.getAttribute('data-mtab');
+          document.body.classList.toggle('wb-m-lib', m === 'lib');
+          document.body.classList.toggle('wb-m-work', m === 'work');
+          mtabs.querySelectorAll('.wb-mtab').forEach(function (t) { t.classList.toggle('is-active', t.getAttribute('data-mtab') === m); });
+        });
+      }
       var nameEl = root.querySelector('#wb-name');
       nameEl.addEventListener('input', function () { state.name = nameEl.value; });
       root.querySelector('#wb-instr').addEventListener('input', function (e) { state.instructions = e.target.value; });
@@ -282,10 +320,30 @@
       rows.addEventListener('dragover', over);
       rows.addEventListener('dragenter', function () { var em = root.querySelector('#wb-empty'); if (em) em.classList.add('is-drop'); });
       rows.addEventListener('dragleave', function () { var em = root.querySelector('#wb-empty'); if (em) em.classList.remove('is-drop'); });
+      // reorder existing rows within the active day
+      rows.addEventListener('dragstart', function (e) {
+        var row = e.target.closest('.wb-row'); if (!row) return;
+        e.dataTransfer.setData('text/plain', 'row:' + row.getAttribute('data-id'));
+        row.classList.add('wb-dragging');
+      });
+      rows.addEventListener('dragend', function (e) {
+        var row = e.target.closest('.wb-row'); if (row) row.classList.remove('wb-dragging');
+      });
       rows.addEventListener('drop', function (e) {
         e.preventDefault();
         var data = e.dataTransfer.getData('text/plain') || '';
-        if (data.indexOf('lib:') === 0) addExerciseToDay(allExercises[Number(data.slice(4))], state.activeDay);
+        if (data.indexOf('lib:') === 0) { addExerciseToDay(allExercises[Number(data.slice(4))], state.activeDay); return; }
+        if (data.indexOf('row:') === 0) {
+          var arr = state.days[state.activeDay];
+          var from = arr.findIndex(function (x) { return x.id === data.slice(4); });
+          if (from < 0) return;
+          var moved = arr.splice(from, 1)[0];
+          var targetRow = e.target.closest('.wb-row');
+          var to = arr.length;
+          if (targetRow) { var tid = targetRow.getAttribute('data-id'); var idx = arr.findIndex(function (x) { return x.id === tid; }); if (idx >= 0) to = idx; }
+          arr.splice(to, 0, moved);
+          render();
+        }
       });
       // day tabs as drop targets (drop onto a specific day)
       root.querySelectorAll('.wb-day').forEach(function (tab) {

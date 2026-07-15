@@ -2713,7 +2713,7 @@
         const hasPlan = String(planTrigger.getAttribute('data-client-has') || '0') === '1';
         const cname = String(planTrigger.getAttribute('data-client-name') || 'this client').trim();
         const label = kind === 'nutrition' ? 'nutrition plan' : 'training plan';
-        const editorPage = kind === 'nutrition' ? '/nutrition.html' : '/training.html';
+        const editorPage = kind === 'nutrition' ? '/nutrition.html' : '/workout-builder.html';
         const goTo = (returnTo) => {
           const href = buildTrainerClientAccountHref(userId, returnTo);
           if (!href) { setStatus('This client has no attached account yet.'); return; }
@@ -2728,7 +2728,7 @@
         //    during impersonation, so the trainer sees the client's setup state
         //    and starts it from there.
         const goToQuestions = () => {
-          goTo(kind === 'training' ? '/training.html' : '/meal-program.html');
+          goTo(kind === 'training' ? '/workout-builder.html' : '/meal-program.html');
         };
         if (mode === 'modify') { goTo(editorPage); return; }
         // mode === 'add' (fresh build through the questions)
