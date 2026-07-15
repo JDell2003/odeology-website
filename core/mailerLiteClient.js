@@ -171,9 +171,88 @@ async function recordMailerLiteEvent({
   return { ok: true, subscriberId: subscriberId || null, groupId, mailingListId };
 }
 
+/* ---- real one-off send (campaign to a single-recipient group) ----
+   MailerLite has no transactional endpoint, but a "regular" campaign sent
+   with delivery:instant to a group containing only the target reaches the
+   inbox right away. We build a throwaway group per send so a campaign never
+   re-mails a previous recipient, and prune old throwaway groups opportunis-
+   tically so they don't pile up. The from-address must be a verified sender
+   on the account (account.sender_email). */
+const TX_GROUP_PREFIX = 'RiseForIt TX';
+let senderCache = null; // { email, name } cached from /account
+
+async function resolveVerifiedSender() {
+  if (senderCache) return senderCache;
+  const acct = await mlFetch('/account');
+  const data = acct?.data || {};
+  senderCache = {
+    email: String(data.sender_email || '').trim(),
+    name: String(data.sender_name || 'RiseForIt').trim() || 'RiseForIt'
+  };
+  return senderCache;
+}
+
+async function pruneOldTxGroups() {
+  // Best-effort: delete throwaway send-groups older than 2 hours.
+  try {
+    const found = await mlFetch(`/groups?filter[name]=${encodeURIComponent(TX_GROUP_PREFIX)}&limit=50`);
+    const cutoff = Date.now() - 2 * 60 * 60 * 1000;
+    for (const g of (found?.data || [])) {
+      if (!String(g?.name || '').startsWith(TX_GROUP_PREFIX)) continue;
+      const created = Date.parse(g?.created_at || '') || 0;
+      if (created && created < cutoff && g.id) {
+        try { await mlFetch(`/groups/${g.id}`, { method: 'DELETE' }); } catch { /* ignore */ }
+      }
+    }
+  } catch { /* pruning is best-effort */ }
+}
+
+async function sendCampaignEmail({ email, firstName = '', lastName = '', subject, html, tag = 'send' } = {}) {
+  if (!isMailerLiteConfigured()) return { ok: false, skipped: 'not_configured' };
+  const safeEmail = String(email || '').trim().toLowerCase();
+  if (!safeEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(safeEmail)) return { ok: false, skipped: 'no_email' };
+  if (!String(subject || '').trim() || !String(html || '').trim()) return { ok: false, skipped: 'no_content' };
+
+  const sender = await resolveVerifiedSender();
+  if (!sender.email) return { ok: false, skipped: 'no_verified_sender' };
+
+  pruneOldTxGroups(); // fire-and-forget
+
+  // 1. throwaway group holding only this recipient
+  const groupName = `${TX_GROUP_PREFIX} ${clip(tag, 24)} ${Date.now()}-${Math.random().toString(36).slice(2, 7)}`.slice(0, 250);
+  const group = await mlFetch('/groups', { method: 'POST', body: { name: groupName } });
+  const groupId = group?.data?.id;
+  if (!groupId) return { ok: false, error: 'group_create_failed' };
+
+  // 2. upsert the subscriber straight into that group
+  const fields = {};
+  if (firstName) fields.name = clip(firstName, 120);
+  if (lastName) fields.last_name = clip(lastName, 120);
+  await mlFetch('/subscribers', { method: 'POST', body: { email: safeEmail, fields, groups: [groupId] } });
+
+  // 3. create + instant-send the campaign to that group
+  const campaign = await mlFetch('/campaigns', {
+    method: 'POST',
+    body: {
+      name: `RiseForIt ${clip(tag, 40)} ${new Date().toISOString()}`.slice(0, 250),
+      type: 'regular',
+      groups: [groupId],
+      emails: [{ subject: clip(subject, 250), from_name: sender.name, from: sender.email, content: String(html) }]
+    }
+  });
+  const campaignId = campaign?.data?.id;
+  if (!campaignId) return { ok: false, error: 'campaign_create_failed' };
+
+  const scheduled = await mlFetch(`/campaigns/${campaignId}/schedule`, { method: 'POST', body: { delivery: 'instant' } });
+  const status = String(scheduled?.data?.status || '').trim();
+  const ok = ['ready', 'sending', 'sent'].includes(status);
+  return { ok, provider: 'mailerlite-campaign', campaignId, status, from: sender.email };
+}
+
 module.exports = {
   isMailerLiteConfigured,
   recordMailerLiteEvent,
+  sendCampaignEmail,
   groupNameForEvent,
   // exposed for testing/cleanup
   mlFetch

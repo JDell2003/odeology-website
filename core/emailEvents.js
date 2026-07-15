@@ -5,7 +5,7 @@ const {
   createKlaviyoEvent
 } = require('./klaviyoClient');
 const { buildKlaviyoEmailTemplate } = require('./klaviyoEmailTemplates');
-const { isMailerLiteConfigured, recordMailerLiteEvent } = require('./mailerLiteClient');
+const { isMailerLiteConfigured, recordMailerLiteEvent, sendCampaignEmail } = require('./mailerLiteClient');
 const { applyOwnerEmailOverride } = require('./emailTemplateOverrides');
 
 /* Default send list = the emails that matter, none of the daily-volume ones.
@@ -271,10 +271,64 @@ function buildOnboardingEmailPayload({ displayName = '' } = {}) {
   };
 }
 
+function escapeHtml(raw) {
+  return String(raw == null ? '' : raw)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+// Branded HTML for the owner-provisioned account invite. Used for both the
+// real invite and the "send test" button so they look identical.
+function buildInviteEmailHtml({ displayName = '', roleLabel = 'trainer', username = '', tempPassword = '', loginUrl = '', message = '', isTest = false } = {}) {
+  const greeting = String(displayName || '').trim().split(/\s+/)[0] || 'there';
+  const url = loginUrl || 'https://riseforit.com/';
+  const intro = message
+    || `Your RiseForIt ${roleLabel} account is ready. Log in with the temporary password below and finish your setup whenever you're ready.`;
+  const testBanner = isTest
+    ? '<div style="background:#fef3c7;border:1px solid #f59e0b;color:#92400e;border-radius:10px;padding:10px 14px;font:600 13px/1.5 system-ui,Arial,sans-serif;margin:0 0 18px">This is a <b>test</b> of the account-invite email. If you can read this, invites are wired up.</div>'
+    : '';
+  return `<div style="background:#f6f7f9;padding:28px 0;font-family:system-ui,Segoe UI,Arial,sans-serif">
+    <div style="max-width:520px;margin:0 auto;background:#fff;border-radius:16px;overflow:hidden;border:1px solid #e6e8eb">
+      <div style="background:linear-gradient(135deg,#d4a537,#b98a2b);padding:22px 26px">
+        <div style="font:800 20px/1 system-ui,Arial,sans-serif;color:#1a1206">RiseForIt</div>
+      </div>
+      <div style="padding:26px">
+        ${testBanner}
+        <h1 style="margin:0 0 8px;font:800 22px/1.25 system-ui,Arial,sans-serif;color:#14212e">Hey ${escapeHtml(greeting)} — your account is ready</h1>
+        <p style="margin:0 0 20px;font:400 15px/1.6 system-ui,Arial,sans-serif;color:#475569">${escapeHtml(intro)}</p>
+        <div style="background:#f8fafc;border:1px solid #e6e8eb;border-radius:12px;padding:16px 18px;margin:0 0 22px">
+          <div style="font:700 11px/1 system-ui,Arial,sans-serif;letter-spacing:.08em;text-transform:uppercase;color:#94a3b8;margin:0 0 4px">Username</div>
+          <div style="font:800 16px/1.3 ui-monospace,Menlo,Consolas,monospace;color:#14212e;margin:0 0 14px">${escapeHtml(username)}</div>
+          <div style="font:700 11px/1 system-ui,Arial,sans-serif;letter-spacing:.08em;text-transform:uppercase;color:#94a3b8;margin:0 0 4px">Temporary password</div>
+          <div style="font:800 16px/1.3 ui-monospace,Menlo,Consolas,monospace;color:#14212e">${escapeHtml(tempPassword)}</div>
+        </div>
+        <a href="${escapeHtml(url)}" style="display:inline-block;background:linear-gradient(135deg,#d4a537,#b98a2b);color:#1a1206;text-decoration:none;font:800 15px/1 system-ui,Arial,sans-serif;padding:14px 24px;border-radius:10px">Log in &amp; finish setup</a>
+        <p style="margin:22px 0 0;font:400 13px/1.6 system-ui,Arial,sans-serif;color:#94a3b8">Change your password after logging in. If you weren't expecting this, you can ignore this email.</p>
+      </div>
+    </div>
+  </div>`;
+}
+
+// Send the owner-provisioned invite as a REAL email (MailerLite campaign,
+// instant delivery). Returns { ok, provider, status, ... } for a UI check/X.
+async function sendInviteEmail({ email, displayName = '', roleLabel = 'trainer', username = '', tempPassword = '', loginUrl = '', message = '', isTest = false } = {}) {
+  const subject = isTest ? '[TEST] Your RiseForIt account is ready' : 'Your RiseForIt account is ready';
+  const html = buildInviteEmailHtml({ displayName, roleLabel, username, tempPassword, loginUrl, message, isTest });
+  return sendCampaignEmail({
+    email,
+    firstName: String(displayName || '').trim().split(/\s+/)[0] || '',
+    subject,
+    html,
+    tag: isTest ? 'invite-test' : 'invite'
+  });
+}
+
 module.exports = {
   emitKlaviyoEvent,
   emitUserEvent,
   buildOnboardingEmailPayload,
+  buildInviteEmailHtml,
+  sendInviteEmail,
   FREE_PLAN_EVENT_ALLOWLIST,
   isEventAllowedByPlan
 };

@@ -4,6 +4,7 @@ const db = require('./db');
 const { DbUnavailableError, isTransientPgError } = require('./dbErrors');
 const {
   emitKlaviyoEvent,
+  sendInviteEmail,
   buildOnboardingEmailPayload,
   isEventAllowedByPlan
 } = require('./emailEvents');
@@ -9137,37 +9138,29 @@ async function handleOwnerCreateTrainerAccount(req, res) {
   const introLine = customMessage
     || `Hey ${greetingName} - we made your RiseForIt ${roleLabel} account. We're building out the website; log in with the temporary password below and finish your setup whenever you're ready.`;
 
-  // Best-effort invite email. The props double as MailerLite custom fields, so
-  // the automation for "Trainer Account Invite" can render subject + creds.
+  // Real invite email — MailerLite campaign, instant delivery (not an
+  // automation), so it actually lands without dashboard setup.
   let emailStatus = { requested: sendEmailFlag, ok: false, provider: null, skipped: sendEmailFlag ? null : 'not_requested', ccOwner: ccOwnerFlag };
   if (sendEmailFlag) {
-    const eventProps = {
-      source: 'owner_manual_create',
-      ode_email_subject: 'Your RiseForIt account is ready',
-      ode_email_preheader: 'Log in with your temporary password and finish setup.',
-      ode_email_cta_label: 'Log in & finish setup',
-      ode_email_cta_url: loginUrl,
-      ode_invite_username: row.username,
-      ode_invite_temp_password: password,
-      ode_invite_role: roleLabel,
-      ode_invite_message: introLine,
-      ode_invite_login_url: loginUrl
-    };
     try {
-      const result = await emitKlaviyoEvent({ eventName: 'Trainer Account Invite', email, displayName, eventProps });
+      const result = await sendInviteEmail({
+        email, displayName, roleLabel,
+        username: row.username, tempPassword: password,
+        loginUrl, message: introLine
+      });
       emailStatus.ok = Boolean(result?.ok);
       emailStatus.provider = result?.provider || null;
       emailStatus.skipped = result?.skipped || null;
+      emailStatus.error = result?.error || null;
     } catch (err) {
       emailStatus.error = err?.message || 'email_failed';
     }
     if (ccOwnerFlag && actor?.email) {
       try {
-        await emitKlaviyoEvent({
-          eventName: 'Trainer Account Invite',
-          email: actor.email,
-          displayName: actor.displayName || 'Owner',
-          eventProps: { ...eventProps, source: 'owner_manual_create_cc', ode_invite_cc: 'true' }
+        await sendInviteEmail({
+          email: actor.email, displayName: actor.displayName || 'Owner', roleLabel,
+          username: row.username, tempPassword: password, loginUrl,
+          message: `(CC) ${introLine}`
         });
       } catch (err) {
         emailStatus.ccError = err?.message || 'cc_failed';
@@ -9217,23 +9210,13 @@ async function handleOwnerAccountTestEmail(req, res) {
   const introLine = customMessage
     || `Hey ${greetingName} - this is a TEST of the RiseForIt ${roleLabel} account invite email. If you can read this, invites are wired up.`;
 
-  const eventProps = {
-    source: 'owner_test_email',
-    ode_test_email: 'true',
-    ode_email_subject: '[TEST] Your RiseForIt account is ready',
-    ode_email_preheader: 'This is a test of the account invite email.',
-    ode_email_cta_label: 'Log in & finish setup',
-    ode_email_cta_url: loginUrl,
-    ode_invite_username: 'sample_username',
-    ode_invite_temp_password: 'Rise-test1234',
-    ode_invite_role: roleLabel,
-    ode_invite_message: introLine,
-    ode_invite_login_url: loginUrl
-  };
-
   let result = null;
   try {
-    result = await emitKlaviyoEvent({ eventName: 'Trainer Account Invite', email, displayName, eventProps });
+    result = await sendInviteEmail({
+      email, displayName, roleLabel,
+      username: 'sample_username', tempPassword: 'Rise-test1234',
+      loginUrl, message: introLine, isTest: true
+    });
   } catch (err) {
     return sendJson(res, 200, { ok: false, delivered: false, error: err?.message || 'email_failed', email });
   }
