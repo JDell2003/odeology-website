@@ -2268,6 +2268,28 @@ function syncNavbarDashboardLink(user = null) {
     link.href = href;
 }
 
+// Cardio entry behavior, decided by the onboarding cardioSource pref:
+//  • 'builtin' (default) → open the in-app GPS tracker (cardio.html).
+//  • 'strava' → deep-link OUT to the Strava app (nothing tracks in-app);
+//    fall back to strava.com if the app isn't installed.
+function odeOpenCardio() {
+    let src = 'builtin';
+    try {
+        const p = JSON.parse(localStorage.getItem('ode_tracking_prefs_v1') || '{}');
+        if (p && (p.cardioSource === 'strava' || p.cardioSource === 'builtin' || p.cardioSource === 'none')) src = p.cardioSource;
+    } catch { /* default builtin */ }
+    if (src === 'strava') {
+        const started = Date.now();
+        // If the Strava app opens, the page is backgrounded and the timeout is
+        // throttled; if not, we bounce to the website.
+        window.setTimeout(() => { if (Date.now() - started < 1600) window.location.href = 'https://www.strava.com/'; }, 1200);
+        window.location.href = 'strava://';
+        return;
+    }
+    window.location.href = 'cardio.html';
+}
+try { window.odeOpenCardio = odeOpenCardio; } catch { /* ignore */ }
+
 function setupNav() {
     const hamburger = document.getElementById('hamburger');
     const navMenu = document.getElementById('nav-menu');
@@ -2285,8 +2307,17 @@ function setupNav() {
         <li><a href="${homeHref}">Home</a></li>
         <li><a href="${macroHref}">Macro Calculator</a></li>
         <li><a href="${trainingHref}">Training</a></li>
+        <li><a href="cardio.html" data-nav-cardio="1">Cardio</a></li>
         <li><a href="${getDashboardNavHref()}" data-nav-dashboard="1">Dashboard</a></li>
     `;
+    // Cardio routes by the onboarding cardioSource pref (built-in tracker vs
+    // deep-link out to Strava). Delegated so it survives nav re-renders.
+    navMenu.addEventListener('click', (ev) => {
+        const link = ev.target.closest?.('[data-nav-cardio]');
+        if (!link) return;
+        ev.preventDefault();
+        odeOpenCardio();
+    });
 
     const closeDrawer = () => {
         navMenu.classList.remove('active');
@@ -2426,6 +2457,10 @@ function ensureControlMobileFabNav() {
             <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="7" height="7" rx="1.5"></rect><rect x="13" y="4" width="7" height="4.5" rx="1.5"></rect><rect x="13" y="10.5" width="7" height="9.5" rx="1.5"></rect><rect x="4" y="13" width="7" height="7" rx="1.5"></rect></svg>
             <span class="control-mobile-fab-link-label">Dashboard</span>
         </a>
+        <button class="control-mobile-fab-link control-mobile-fab-action" id="control-mobile-fab-cardio" type="button" aria-label="Cardio">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="14" cy="5" r="1.6"></circle><path d="M6.5 20l2.5-5 3-2 1-4 3 3h3"></path><path d="M9 10l2-2 3 1"></path></svg>
+            <span class="control-mobile-fab-link-label">Cardio</span>
+        </button>
         <a class="control-mobile-fab-link" href="overview.html#wake-checkin-mount" aria-label="Wake Check-In">
             <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"></circle><path d="M8.5 12.2 11 14.7l4.5-5"></path></svg>
             <span class="control-mobile-fab-link-label">Check In</span>
@@ -2435,6 +2470,14 @@ function ensureControlMobileFabNav() {
             <span class="control-mobile-fab-link-label">Dash</span>
         </button>
     `.trim();
+    const cardioBtn = nav.querySelector('#control-mobile-fab-cardio');
+    if (cardioBtn && cardioBtn.dataset.bound !== '1') {
+        cardioBtn.dataset.bound = '1';
+        cardioBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            try { odeOpenCardio(); } catch { window.location.href = 'cardio.html'; }
+        });
+    }
     const dashBtn = nav.querySelector('#control-mobile-fab-dash');
     if (dashBtn && dashBtn.dataset.bound !== '1') {
         dashBtn.dataset.bound = '1';

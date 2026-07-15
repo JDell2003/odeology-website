@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0e1626">
+  <title>Cardio · RiseForIt</title>
+  <!--
+    Built-in GPS cardio tracker (the default; onboarding cardioSource='builtin').
+    Reuses the watchPosition distance logic from activity.html, wrapped in a
+    Strava-style start/stop UI with a pre-run checklist gate + 3-2-1 countdown.
+
+    HONEST PLATFORM LIMIT: a plain web page cannot keep GPS sampling in the true
+    background once the phone locks or another app is foreground — mobile
+    browsers suspend the page's JS + location. TIME stays correct (computed from
+    timestamps); DISTANCE recorded while backgrounded is gapped. We persist the
+    session and auto-resume on return, hold a Screen Wake Lock while foreground,
+    and tell the user to keep the app open. TRUE background GPS (music app open,
+    screen off) requires shipping this as an installable PWA and/or a Capacitor
+    wrapper with a background-geolocation plugin — documented as the fast-follow.
+  -->
+  <style>
+    :root { --bg:#0e1626; --card:#16233b; --line:rgba(255,255,255,.1); --gold:#d4a537; --ink:#f6f8fc; --muted:rgba(246,248,252,.62); }
+    html,body { margin:0; height:100%; background:var(--bg); color:var(--ink); font-family:system-ui,-apple-system,"Segoe UI",sans-serif; }
+    .cd-wrap { max-width:560px; margin:0 auto; min-height:100dvh; display:flex; flex-direction:column; padding:20px 18px 28px; }
+    .cd-top { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+    .cd-brand { font:800 16px/1 "Space Grotesk",system-ui,sans-serif; letter-spacing:.02em; }
+    .cd-back { color:var(--muted); text-decoration:none; font:700 13px/1 system-ui; border:1px solid var(--line); border-radius:9px; padding:8px 12px; }
+    .cd-gps { font:700 11px/1 system-ui; color:var(--muted); display:flex; align-items:center; gap:6px; }
+    .cd-gps .dot { width:8px; height:8px; border-radius:99px; background:#64748b; }
+    .cd-gps.is-good .dot { background:#4ade80; } .cd-gps.is-poor .dot { background:#f59e0b; }
+    .cd-stats { flex:1 1 auto; display:flex; flex-direction:column; justify-content:center; align-items:center; gap:8px; padding:20px 0; }
+    .cd-time { font:800 68px/1 "Space Grotesk",ui-monospace,monospace; letter-spacing:-.01em; }
+    .cd-row { display:flex; gap:34px; margin-top:8px; }
+    .cd-metric { text-align:center; }
+    .cd-metric b { display:block; font:800 30px/1 "Space Grotesk",monospace; }
+    .cd-metric span { font:700 10px/1.4 system-ui; letter-spacing:.12em; text-transform:uppercase; color:var(--muted); }
+    .cd-note { text-align:center; font:600 12px/1.5 system-ui; color:var(--muted); margin:8px 20px 0; }
+    .cd-status { text-align:center; font:700 13px/1.4 system-ui; min-height:20px; margin-top:10px; }
+    .cd-status.bad { color:#f87171; } .cd-status.good { color:#4ade80; }
+    .cd-actions { display:grid; gap:12px; }
+    .cd-btn { border:0; border-radius:14px; padding:18px; font:800 17px/1 system-ui; cursor:pointer; }
+    .cd-start { background:linear-gradient(135deg,#d4a537,#b98a2b); color:#1a1206; }
+    .cd-start:disabled { background:#2a3550; color:#64748b; cursor:not-allowed; }
+    .cd-stop { background:#dc2626; color:#fff; }
+    .cd-pause { background:transparent; border:1px solid var(--line); color:var(--ink); }
+    .hidden { display:none !important; }
+    /* checklist gate */
+    .cd-modal { position:fixed; inset:0; z-index:50; display:grid; place-items:center; padding:18px; background:rgba(4,8,16,.82); }
+    .cd-modal[hidden] { display:none; }
+    .cd-modal-card { width:min(440px,100%); background:var(--card); border:1px solid var(--line); border-radius:20px; padding:22px; }
+    .cd-modal-card h2 { margin:0 0 4px; font:800 19px/1.2 system-ui; }
+    .cd-modal-card .sub { margin:0 0 16px; font:500 13px/1.5 system-ui; color:var(--muted); }
+    .cd-check { display:flex; gap:12px; align-items:flex-start; padding:13px 14px; border:1px solid var(--line); border-radius:12px; margin-bottom:10px; cursor:pointer; font:600 13.5px/1.45 system-ui; }
+    .cd-check input { margin-top:2px; width:20px; height:20px; accent-color:var(--gold); flex:0 0 auto; }
+    .cd-modal-actions { display:flex; gap:10px; margin-top:6px; }
+    .cd-modal-actions .cd-btn { flex:1; padding:14px; font-size:15px; }
+    .cd-cancel { background:transparent; border:1px solid var(--line); color:var(--muted); }
+    /* countdown */
+    .cd-count { position:fixed; inset:0; z-index:60; display:grid; place-items:center; background:rgba(4,8,16,.9); }
+    .cd-count[hidden] { display:none; }
+    .cd-count b { font:800 140px/1 "Space Grotesk",monospace; color:var(--gold); animation:cdpop .9s ease; }
+    @keyframes cdpop { from{transform:scale(.5);opacity:0} 40%{transform:scale(1);opacity:1} to{transform:scale(1.15);opacity:0} }
+  </style>
+</head>
+<body data-require-auth="1">
+  <div class="cd-wrap">
+    <div class="cd-top">
+      <span class="cd-brand">Cardio</span>
+      <div class="cd-gps" id="cd-gps"><span class="dot"></span><span id="cd-gps-label">GPS idle</span></div>
+      <a class="cd-back" href="overview.html">Done</a>
+    </div>
+
+    <div class="cd-stats">
+      <div class="cd-time" id="cd-time">00:00</div>
+      <div class="cd-row">
+        <div class="cd-metric"><b id="cd-dist">0.00</b><span>Miles</span></div>
+        <div class="cd-metric"><b id="cd-pace">—</b><span>Pace /mi</span></div>
+        <div class="cd-metric"><b id="cd-speed">0.0</b><span>MPH</span></div>
+      </div>
+      <p class="cd-note" id="cd-note">Keep RiseForIt open while tracking for full distance.</p>
+      <div class="cd-status" id="cd-status"></div>
+    </div>
+
+    <div class="cd-actions">
+      <button class="cd-btn cd-start" id="cd-start" type="button">Start</button>
+      <button class="cd-btn cd-pause hidden" id="cd-pause" type="button">Pause</button>
+      <button class="cd-btn cd-stop hidden" id="cd-stop" type="button">Stop &amp; save</button>
+    </div>
+  </div>
+
+  <!-- pre-run checklist gate -->
+  <div class="cd-modal" id="cd-modal" hidden>
+    <div class="cd-modal-card">
+      <h2>Before you start</h2>
+      <p class="sub">A web page can’t track GPS in the background. Confirm you understand — Start unlocks when all three are checked.</p>
+      <label class="cd-check"><input type="checkbox" data-gate><span>Music only — <b>no video</b> or other apps that take over the screen.</span></label>
+      <label class="cd-check"><input type="checkbox" data-gate><span><b>Keep the screen on</b> and this tab open — leaving pauses distance tracking.</span></label>
+      <label class="cd-check"><input type="checkbox" data-gate><span>I get that <b>leaving mid-run tanks my data &amp; Consistency.</b></span></label>
+      <div class="cd-modal-actions">
+        <button class="cd-btn cd-cancel" id="cd-cancel" type="button">Cancel</button>
+        <button class="cd-btn cd-start" id="cd-go" type="button" disabled>Start run</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="cd-count" id="cd-count" hidden><b id="cd-count-n">3</b></div>
+
+  <script src="js/main.js?v=2026-07-14-launchgate-3"></script>
+  <script>
+  (function () {
+    'use strict';
+    var $ = function (s) { return document.querySelector(s); };
+    var METERS_PER_MILE = 1609.344;
+    var STORE = 'ode_cardio_session_v1';
+    var KIND = 'run';
+    var state = { running:false, paused:false, startedAt:0, pausedTotal:0, pauseStart:0, distanceMeters:0, lastFix:null, watchId:null, tick:null, wakeLock:null };
+
+    function persist() {
+      try {
+        localStorage.setItem(STORE, JSON.stringify({
+          running: state.running, paused: state.paused, startedAt: state.startedAt,
+          pausedTotal: state.pausedTotal, pauseStart: state.pauseStart,
+          distanceMeters: state.distanceMeters, lastFix: state.lastFix, kind: KIND, savedAt: Date.now()
+        }));
+      } catch (e) {}
+    }
+    function clearPersist() { try { localStorage.removeItem(STORE); } catch (e) {} }
+
+    // Elapsed is always derived from timestamps, so time is correct even after
+    // the tab was backgrounded (it never "resets").
+    function elapsedMs() {
+      if (!state.startedAt) return 0;
+      var now = state.paused && state.pauseStart ? state.pauseStart : Date.now();
+      return Math.max(0, now - state.startedAt - state.pausedTotal);
+    }
+    function fmt(sec) { sec = Math.max(0, Math.floor(sec)); var h = Math.floor(sec/3600), m = Math.floor((sec%3600)/60), s = sec%60; var p = function(n){return String(n).padStart(2,'0');}; return (h?h+':':'') + p(m) + ':' + p(s); }
+
+    function haversine(a1, o1, a2, o2) {
+      var R = 6371000, toRad = function (d) { return d * Math.PI / 180; };
+      var dLat = toRad(a2 - a1), dLng = toRad(o2 - o1);
+      var s = Math.sin(dLat/2)*Math.sin(dLat/2) + Math.cos(toRad(a1))*Math.cos(toRad(a2))*Math.sin(dLng/2)*Math.sin(dLng/2);
+      return 2 * R * Math.asin(Math.sqrt(s));
+    }
+
+    function setGps(acc) {
+      var el = $('#cd-gps'), lbl = $('#cd-gps-label');
+      el.classList.remove('is-good','is-poor');
+      if (!Number.isFinite(acc)) { lbl.textContent = 'GPS idle'; return; }
+      if (acc <= 25) { el.classList.add('is-good'); lbl.textContent = 'GPS ±' + Math.round(acc) + 'm'; }
+      else { el.classList.add('is-poor'); lbl.textContent = 'GPS ±' + Math.round(acc) + 'm'; }
+    }
+
+    function onFix(pos) {
+      var c = pos.coords, lat = c.latitude, lng = c.longitude, acc = c.accuracy;
+      setGps(acc);
+      if (acc > 50) return; // ignore junk fixes (same filter as activity.html)
+      if (state.lastFix && !state.paused) {
+        var seg = haversine(state.lastFix.lat, state.lastFix.lng, lat, lng);
+        if (seg >= Math.max(3, acc * 0.35) && seg < 300) { state.distanceMeters += seg; }
+      }
+      state.lastFix = { lat: lat, lng: lng };
+      persist();
+      render();
+    }
+
+    function startWatch() {
+      if (!navigator.geolocation) { setStatus('This device has no GPS.', 'bad'); return; }
+      if (state.watchId !== null) return;
+      state.watchId = navigator.geolocation.watchPosition(onFix, function (err) {
+        setStatus(err.code === 1 ? 'Location denied — allow it to track distance.' : 'GPS signal weak, retrying…', 'bad');
+      }, { enableHighAccuracy: true, maximumAge: 2000, timeout: 15000 });
+    }
+    function stopWatch() { if (state.watchId !== null) { navigator.geolocation.clearWatch(state.watchId); state.watchId = null; } }
+
+    async function wakeLock() { try { state.wakeLock = await navigator.wakeLock.request('screen'); } catch (e) {} }
+    function releaseWake() { try { state.wakeLock && state.wakeLock.release(); } catch (e) {} state.wakeLock = null; }
+
+    function setStatus(t, tone) { var el = $('#cd-status'); el.className = 'cd-status ' + (tone||''); el.textContent = t || ''; }
+
+    function render() {
+      var sec = elapsedMs() / 1000;
+      var miles = state.distanceMeters / METERS_PER_MILE;
+      $('#cd-time').textContent = fmt(sec);
+      $('#cd-dist').textContent = miles.toFixed(2);
+      var hrs = sec / 3600;
+      $('#cd-speed').textContent = hrs > 0 ? (miles / hrs).toFixed(1) : '0.0';
+      $('#cd-pace').textContent = miles > 0.02 ? fmt((sec / miles)) : '—';
+    }
+
+    function beginTracking() {
+      state.running = true; state.paused = false;
+      if (!state.startedAt) state.startedAt = Date.now();
+      state.pausedTotal = state.pausedTotal || 0;
+      $('#cd-start').classList.add('hidden');
+      $('#cd-pause').classList.remove('hidden');
+      $('#cd-stop').classList.remove('hidden');
+      startWatch(); wakeLock();
+      if (!state.tick) state.tick = setInterval(function () { render(); persist(); }, 1000);
+      persist(); render();
+      setStatus('Tracking — keep the app open.', '');
+    }
+
+    function pause() {
+      if (state.paused) { // resume
+        state.pausedTotal += Date.now() - state.pauseStart; state.pauseStart = 0; state.paused = false;
+        $('#cd-pause').textContent = 'Pause'; startWatch(); setStatus('Tracking — keep the app open.', '');
+      } else {
+        state.paused = true; state.pauseStart = Date.now(); $('#cd-pause').textContent = 'Resume'; setStatus('Paused.', '');
+      }
+      persist(); render();
+    }
+
+    async function stop() {
+      var durationSeconds = Math.round(elapsedMs() / 1000);
+      var distanceMeters = Math.round(state.distanceMeters);
+      state.running = false; stopWatch(); releaseWake();
+      if (state.tick) { clearInterval(state.tick); state.tick = null; }
+      if (durationSeconds < 30) { setStatus('Under 30 seconds — not saved.', 'bad'); reset(); return; }
+      setStatus('Saving…', '');
+      try {
+        var r = await fetch('/api/health/activity', {
+          method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ kind: KIND, durationSeconds: durationSeconds, distanceMeters: distanceMeters, source: 'gps' })
+        });
+        var j = await r.json().catch(function () { return {}; });
+        if (r.ok && j.ok) {
+          var mi = (distanceMeters / METERS_PER_MILE).toFixed(2);
+          setStatus('Saved — ' + mi + ' mi in ' + fmt(durationSeconds) + '. Counts on your Cardio axis.', 'good');
+        } else setStatus(j.error || 'Could not save.', 'bad');
+      } catch (e) { setStatus('Could not reach the server — not saved.', 'bad'); }
+      reset();
+    }
+
+    function reset() {
+      clearPersist();
+      state.distanceMeters = 0; state.startedAt = 0; state.pausedTotal = 0; state.pauseStart = 0; state.paused = false; state.lastFix = null;
+      $('#cd-start').classList.remove('hidden');
+      $('#cd-pause').classList.add('hidden'); $('#cd-pause').textContent = 'Pause';
+      $('#cd-stop').classList.add('hidden');
+      render();
+    }
+
+    // ---- checklist gate + countdown ----
+    function openGate() {
+      var m = $('#cd-modal'); m.hidden = false;
+      var boxes = m.querySelectorAll('[data-gate]'); boxes.forEach(function (b) { b.checked = false; });
+      $('#cd-go').disabled = true;
+      m.querySelectorAll('[data-gate]').forEach(function (b) {
+        b.addEventListener('change', function () {
+          var all = Array.prototype.every.call(boxes, function (x) { return x.checked; });
+          $('#cd-go').disabled = !all;
+        });
+      });
+    }
+    function countdown(done) {
+      var n = 3, el = $('#cd-count'), num = $('#cd-count-n');
+      el.hidden = false; num.textContent = n;
+      var t = setInterval(function () {
+        n -= 1;
+        if (n <= 0) { clearInterval(t); el.hidden = true; done(); return; }
+        num.textContent = n; num.style.animation = 'none'; void num.offsetWidth; num.style.animation = '';
+      }, 900);
+    }
+
+    // ---- resume across app-switch ----
+    function tryResume() {
+      var raw; try { raw = JSON.parse(localStorage.getItem(STORE) || 'null'); } catch (e) { raw = null; }
+      if (!raw || !raw.running || !raw.startedAt) return;
+      // stale guard: if it's been >12h, drop it
+      if (Date.now() - raw.startedAt > 12 * 3600 * 1000) { clearPersist(); return; }
+      state.startedAt = raw.startedAt; state.pausedTotal = raw.pausedTotal || 0; state.paused = !!raw.paused;
+      state.pauseStart = raw.pauseStart || 0; state.distanceMeters = raw.distanceMeters || 0; state.lastFix = raw.lastFix || null;
+      $('#cd-start').classList.add('hidden');
+      $('#cd-pause').classList.remove('hidden'); $('#cd-pause').textContent = state.paused ? 'Resume' : 'Pause';
+      $('#cd-stop').classList.remove('hidden');
+      state.running = true;
+      if (!state.paused) { startWatch(); wakeLock(); }
+      if (!state.tick) state.tick = setInterval(function () { render(); persist(); }, 1000);
+      render();
+      setStatus('Resumed your run — time is accurate; distance while you were away may be gapped.', '');
+    }
+
+    // wire
+    $('#cd-start').addEventListener('click', openGate);
+    $('#cd-cancel').addEventListener('click', function () { $('#cd-modal').hidden = true; });
+    $('#cd-go').addEventListener('click', function () {
+      $('#cd-modal').hidden = true;
+      countdown(function () { beginTracking(); });
+    });
+    $('#cd-pause').addEventListener('click', pause);
+    $('#cd-stop').addEventListener('click', stop);
+
+    // persist on background, re-acquire wake lock on return
+    document.addEventListener('visibilitychange', function () {
+      persist();
+      if (document.visibilityState === 'visible' && state.running && !state.paused) { wakeLock(); render(); }
+    });
+    window.addEventListener('pagehide', persist);
+    window.addEventListener('beforeunload', persist);
+
+    tryResume();
+    render();
+  })();
+  </script>
+</body>
+</html>

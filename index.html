@@ -5853,7 +5853,14 @@
                 localStorage.setItem('ode_tracking_prefs_v1', JSON.stringify({
                   steps: String(payload.raw?.permSteps || '').startsWith('Yes'),
                   sleep: String(payload.raw?.permSleep || '').startsWith('Yes'),
-                  wakeTime: String(payload.raw?.wakeTime || '')
+                  wakeTime: String(payload.raw?.wakeTime || ''),
+                  // How they want cardio tracked: built-in GPS (default), Strava, or none.
+                  cardioSource: (() => {
+                    const c = String(payload.raw?.cardioSource || '');
+                    if (c.indexOf('Strava') >= 0) return 'strava';
+                    if (c.indexOf('Not now') >= 0) return 'none';
+                    return 'builtin';
+                  })()
                 }));
               } catch {}
               persistOnboardingDraft();

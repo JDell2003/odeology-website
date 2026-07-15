@@ -255,6 +255,9 @@
         { id: 'permSteps', section: 'tracking', type: 'choice', title: 'Can we count your daily steps?', subtitle: 'Steps feed your Cardio and Consistency stats automatically — no logging needed.', options: [
             'Yes — track my steps', 'Not right now'
         ] },
+        { id: 'cardioSource', section: 'tracking', type: 'choice', title: 'Want us to track your runs & cardio?', subtitle: 'Pick how cardio gets logged — it feeds your Cardio stat at the device-verified tier.', options: [
+            'Use RiseForIt’s built-in tracker', 'Connect Strava (beta)', 'Not now'
+        ] },
         { id: 'permSleep', section: 'tracking', type: 'choice', title: 'Sync sleep from your sleep app?', subtitle: 'Sleep hours feed your Recovery stat while you do nothing at all.', options: [
             'Yes — sync my sleep', 'Not right now'
         ] },
