@@ -1073,6 +1073,38 @@ function getSafeFallbackPool() {
   }
   return SAFE_FALLBACK_POOL;
 }
+// Unambiguous name-based contraindications per injury area — the inviolable
+// safety line the floor gate enforces on the final plan. Kept in sync with the
+// fuzz test's CONTRA map (tests/selection.fuzz.test.js).
+const INJURY_NAME_CONTRA = {
+  'lower back': [/good morning/i, /conventional deadlift/i],
+  knee: [/pistol squat/i, /sissy squat/i],
+  shoulder: [/behind the neck/i, /upright row/i],
+  wrist: [/\bfront squat\b/i]
+};
+function planPassesFloorGate(plan, src) {
+  try {
+    const weeks = Array.isArray(plan?.weeks) ? plan.weeks : [];
+    if (!weeks.length) return false;
+    const areas = Array.isArray(src?.painAreas) ? src.painAreas.map((a) => String(a || '').toLowerCase()) : [];
+    const contra = areas.flatMap((a) => INJURY_NAME_CONTRA[a] || []);
+    for (const w of weeks) {
+      const days = Array.isArray(w?.days) ? w.days : [];
+      if (!days.length) return false;
+      for (const d of days) {
+        const exs = Array.isArray(d?.exercises) ? d.exercises : [];
+        if (exs.length < 2) return false; // completeness
+        for (const e of exs) {
+          const name = String(e?.name || e?.displayName || '');
+          if (!name) return false;
+          for (const re of contra) if (re.test(name)) return false; // safety
+        }
+      }
+    }
+    return true;
+  } catch { return false; }
+}
+
 // The floor: turn any build error into a complete, safe, renderable plan. No
 // onboarding input can reach a throw or an empty plan.
 function makeSafeFallbackResult(src, lastError) {
@@ -1570,6 +1602,15 @@ function buildOblueprintPlanWithFallback(payload, opts = {}) {
     const invariant = result?.error
       ? (lastError?.failedInvariant || lastError?.validatorSection || lastError?.error || result?.error?.error || 'unknown')
       : null;
+    // Final floor gate (Task 5/7): a "successful" plan must still be complete
+    // (>=2 exercises/day) and injury-safe (no name-contraindicated movement for a
+    // logged injury). If it isn't, downgrade to the guaranteed safe fallback — the
+    // safety line and completeness are inviolable. Healthy plans always pass, so
+    // the golden-56 are unaffected.
+    if (result && !result.error && result.plan && !result._safeFallback && !planPassesFloorGate(result.plan, src)) {
+      const safe = makeSafeFallbackResult(src, { error: 'FLOOR_GATE', reason: 'thin or unsafe day repaired via safe fallback' });
+      if (safe) result = safe;
+    }
     recordOblueprintBuildTelemetry({
       ok: !result?.error && !!result?.plan,
       attempts: attemptsUsed,

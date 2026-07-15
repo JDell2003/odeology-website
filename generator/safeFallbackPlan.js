@@ -38,9 +38,17 @@ function isEquipmentCompatible(ex, allowed) {
   return true;
 }
 
-// Conservative injury contraindication check using the exercise truth flags.
-// Only excludes clearly high-risk movements for a logged joint — never the
-// whole pattern (substitutes remain).
+// Unambiguous name-based contraindications per joint (kept in sync with the
+// engine floor gate + the fuzz test).
+const NAME_CONTRA = {
+  'lower back': [/good morning/i, /conventional deadlift/i],
+  knee: [/pistol squat/i, /sissy squat/i],
+  shoulder: [/behind the neck/i, /upright row/i],
+  wrist: [/\bfront squat\b/i]
+};
+// Conservative injury contraindication check using the exercise truth flags +
+// unambiguous name patterns. Only excludes clearly high-risk movements for a
+// logged joint — never the whole pattern (substitutes remain).
 function isInjurySafe(ex, injuryMap) {
   const m = injuryMap || {};
   const sev = (joint) => Number(m[joint] || m[String(joint).toLowerCase()] || 0);
@@ -50,6 +58,10 @@ function isInjurySafe(ex, injuryMap) {
   if (sev('hip') >= 4 && ex.deepHipFlexionHigh) return false;
   if (sev('elbow') >= 4 && ex.elbowSupinationStress) return false;
   if (sev('wrist') >= 4 && ex.wristExtensionHeavy) return false;
+  const name = String(ex.name || ex.displayName || '');
+  for (const joint of Object.keys(NAME_CONTRA)) {
+    if (sev(joint) >= 1) for (const re of NAME_CONTRA[joint]) if (re.test(name)) return false;
+  }
   return true;
 }
 

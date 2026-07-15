@@ -107,3 +107,22 @@ unit tests call directly); those are reclassified in Task 6 to the wrapper.
 Verified: a brutal input (bands-only + 3 severe injuries + odd priorities + 30-min
 sessions) returns a complete 5-day plan; the golden-56 are byte-for-byte unchanged
 (fallback only triggers on failure, which they never hit).
+
+## Task 7 — The proof: fuzz / property test ✅ (commit: `test(selection): universal guarantee`)
+
+`tests/selection.fuzz.test.js` deterministically samples onboarding inputs across
+{discipline × goal × days(2-6) × time × experience × 5 equipment subsets × single &
+paired injuries × 9 priority combos} and asserts EVERY case, through the real user
+path (`buildOblueprintPlanWithFallback`), produces a plan that is:
+**no error/empty**, **complete** (≥2 exercises every day, correct day count),
+**coherent** (no duplicate within a day — cross-day repeats are intentional
+frequency), and **safe** (no name-contraindicated movement for a logged injury).
+Sample size via `SELECTION_FUZZ` (default 400).
+
+**Result: 100% pass.** The fuzz caught two real floor violations first — thin
+(<2-exercise) days on some 2-day constrained splits, and an upright-row slipping
+through for a shoulder injury — which drove the **final floor gate**
+(`planPassesFloorGate` in `buildOblueprintPlanWithFallback`): any "successful" plan
+that is thin or unsafe is downgraded to the safe fallback. The golden-56 pass the
+gate untouched (verified byte-for-byte). `// TODO(owner): the fuzz runs ~0.5s/case;
+run it as a dedicated/nightly CI job (SELECTION_FUZZ=1000+) rather than every push.`
