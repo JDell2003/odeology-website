@@ -181,3 +181,26 @@ topFailingInvariant }`.
 Real data: simple bodybuilding/powerbuilding builds succeed on **attempt 1**
 (~400ms) — the retry-heaviness is specific to constrained/injured/priority combos,
 now measurable instead of anecdotal. 1 test. No user-facing change.
+
+## Task 4 (slice) — Readiness governor + earn-the-rep status ✅ (commit: `feat(engine): earn-the-rep progression`)
+
+**Already built + wired (verified):** the earn-the-rep loop exists on the live
+log path — `/api/training/log*` → `applyProgressionFromLog` (`core/trainingRoutes.js`)
+→ `applyLogAdjustments` (`core/trainingEngine.js`) compares prescribed vs actual
+(`entry.actual.{weight,reps,rpe}` vs `target.weight`), advances on hits / backs off
+on misses, and bumps the plan `version`. `buildNextSessionRecommendation` computes
+hit/hold/deload from `summarizeLoggedSets`. So "hit the reps → target advances" is
+real today.
+
+**New (was NOT BUILT):** a **readiness governor**. `app_training_workouts.readiness`
+(1-10) was logged but ignored by progression. `applyLogAdjustments` now holds the
+plan (no auto-advance, stamps `meta.lastReadinessHold`) when a session's readiness
+is <=3 — a bad-sleep/high-stress day can't push loads up. Implemented as a guarded
+early-return so **normal/absent readiness is byte-for-byte the existing path**
+(asserted by test). 1 test (low holds / normal + absent run normal).
+
+// TODO(owner): the deeper "single earned-target pointer that the baked ladder and
+// the log-adjuster both read/write" unification is intentionally deferred — the
+// two mechanisms already agree in direction, and rewriting the live log path for a
+// pure refactor is higher risk than reward. The readiness governor was the missing
+// real behavior; it's in.

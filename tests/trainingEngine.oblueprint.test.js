@@ -2214,3 +2214,21 @@ test('telemetry: getOblueprintBuildTelemetry tracks attempts, latency, and top f
   assert.ok(Number.isFinite(after.avgMs), 'avgMs is measured');
   assert.ok('topFailingInvariant' in after, 'exposes the top failing invariant');
 });
+
+/* ---- Task 4 (slice): readiness governor ----------------------------------- */
+test('readiness governor: low readiness holds the plan; normal/absent runs the normal path', () => {
+  const legacy = require('../core/trainingEngine');
+  const plan = {
+    meta: { discipline: 'powerbuilding', experience: '6-24m' },
+    baselines: {},
+    weeks: [{ weekIndex: 1, days: [{ dayIndex: 1, exercises: [] }] }]
+  };
+  const log = { weekIndex: 1, dayIndex: 1, entries: [] };
+  const held = legacy.applyLogAdjustments({ plan, workoutLog: { ...log, readiness: 2 }, experience: '6-24m' });
+  assert.ok(held.meta.lastReadinessHold, 'low readiness stamps a hold marker');
+  assert.equal(held.meta.lastReadinessHold.readiness, 2);
+  const normal = legacy.applyLogAdjustments({ plan, workoutLog: { ...log, readiness: 8 }, experience: '6-24m' });
+  assert.ok(!normal.meta.lastReadinessHold, 'normal readiness does not hold');
+  const absent = legacy.applyLogAdjustments({ plan, workoutLog: { ...log }, experience: '6-24m' });
+  assert.ok(!absent.meta.lastReadinessHold, 'absent readiness leaves the normal path unchanged');
+});

@@ -4808,6 +4808,22 @@ function applyLogAdjustments({ plan, workoutLog, experience }) {
   const dayIndex = clampInt(workoutLog?.dayIndex, 1, 7, null);
   if (!weekIndex || !dayIndex) return plan;
 
+  // Readiness governor (Task 4): a low-readiness session (<=3 on the 1-10
+  // check-in scale) should not auto-advance targets — hold the plan this
+  // session so a bad-sleep/high-stress day can't push loads up. Normal or
+  // absent readiness leaves the existing adjustment logic byte-for-byte
+  // unchanged. Back-offs still apply on the next normal-readiness session.
+  // TODO(owner): threshold (<=3) is tunable if you want a stricter/looser gate.
+  const sessionReadiness = Number(workoutLog?.readiness);
+  if (Number.isFinite(sessionReadiness) && sessionReadiness > 0 && sessionReadiness <= 3) {
+    const held = JSON.parse(JSON.stringify(plan));
+    held.meta = {
+      ...(held.meta || {}),
+      lastReadinessHold: { weekIndex, dayIndex, readiness: sessionReadiness, at: new Date().toISOString() }
+    };
+    return held;
+  }
+
   const done = Array.isArray(workoutLog?.entries) ? workoutLog.entries : [];
   const byBase = new Map();
   for (const entry of done) {
