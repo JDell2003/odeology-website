@@ -61,3 +61,29 @@ locally; `// TODO(owner): mark @slow / nightly if CI budget is tight.`)
 ladder converges to a valid plan / consistent repair). Genuinely over-constrained
 (class C, e.g. #14 back-pain with all hinges unsafe) → **Task 5** fallback + **Task 6**
 reclassify the assertion to expect the safe degraded output with a visible note.
+
+## Task 2 — Selection-pool audit ✅ (commit: `fix(selection): fill empty cells`)
+
+`scripts/selection-pool-audit.js` counts equipment-compatible exercises for every
+(equipment subset × muscle) and (equipment subset × movement pattern) cell across
+the 549 preprocessed catalog exercises.
+
+**Key finding — the catalog is NOT the bottleneck.** Zero **empty** required cells.
+Only 4 thin (<2) cells, all in edge equipment that onboarding never offers
+alone: `bands_only`/`bodyweight_only` × `Biceps`/`Calves` (bodyweight direct
+biceps/calves is genuinely limited; chin-ups + bodyweight calf raises cover them).
+Equipment × pattern: 0 empty, a few thin (Power/Lunge on constrained kits — Power
+isn't a demanded hypertrophy slot).
+
+**Therefore the class-A `NO_ELIGIBLE_EXERCISE` failures are NOT missing catalog
+entries — they are fine-grained filter intersections** (injury flags + style purity
++ per-week dedupe + difficulty caps emptying a *contextual* cell mid-build), plus
+equipment mislabeling in the source data (e.g. "3/4 Sit-Up" tagged `requiredEquipment:
+['barbell']`). The guarantee is therefore delivered by the **relaxation ladder
+(Task 4)** + **injury-safe substitutes (Task 3)** + the **safe fallback floor
+(Task 5)**, not by stuffing the catalog. This is the correct, lower-risk path and
+keeps the golden-56 untouched.
+
+`// TODO(owner):` a catalog consolidation pass (fix mislabeled requiredEquipment on
+source rows) would further widen thin cells; deferred as data-cleanup, not required
+for the guarantee.
