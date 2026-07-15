@@ -1018,29 +1018,44 @@ const OBLUEPRINT_BUILD_TELEMETRY = {
   totalMs: 0,
   maxAttempts: 0,
   maxMs: 0,
-  invariantFailCounts: {}
+  invariantFailCounts: {},
+  // Task 8: how often the relaxation/floor path fires + what forced it.
+  relaxedFallbacks: 0,
+  safeFallbacks: 0,
+  fallbackReasonCounts: {}
 };
-function recordOblueprintBuildTelemetry({ ok, attempts, ms, failedInvariant }) {
+function recordOblueprintBuildTelemetry({ ok, attempts, ms, failedInvariant, safeFallback, relaxedFallback, fallbackReason }) {
   const t = OBLUEPRINT_BUILD_TELEMETRY;
   t.builds += 1;
   t.totalAttempts += Number(attempts) || 0;
   t.totalMs += Number(ms) || 0;
   t.maxAttempts = Math.max(t.maxAttempts, Number(attempts) || 0);
   t.maxMs = Math.max(t.maxMs, Number(ms) || 0);
+  if (relaxedFallback) t.relaxedFallbacks += 1;
+  if (safeFallback) {
+    t.safeFallbacks += 1;
+    const rk = String(fallbackReason || 'unknown').trim() || 'unknown';
+    t.fallbackReasonCounts[rk] = (t.fallbackReasonCounts[rk] || 0) + 1;
+  }
   if (!ok) {
     t.failures += 1;
     const key = String(failedInvariant || 'unknown').trim() || 'unknown';
     t.invariantFailCounts[key] = (t.invariantFailCounts[key] || 0) + 1;
   }
-  // Surface retry-heavy or slow builds so the pattern is visible in logs.
-  if ((Number(attempts) || 0) > 3 || (Number(ms) || 0) > 1500 || !ok) {
+  // Surface retry-heavy / slow / relaxed / fallback builds so thin spots are
+  // visible in production logs (Task 8).
+  if ((Number(attempts) || 0) > 3 || (Number(ms) || 0) > 1500 || !ok || safeFallback) {
     try {
       const top = Object.entries(t.invariantFailCounts).sort((a, b) => b[1] - a[1])[0];
+      const topFb = Object.entries(t.fallbackReasonCounts).sort((a, b) => b[1] - a[1])[0];
       console.info('[oblueprint-telemetry]', JSON.stringify({
         ok, attempts, ms, failedInvariant: failedInvariant || null,
+        relaxedFallback: !!relaxedFallback, safeFallback: !!safeFallback, fallbackReason: fallbackReason || null,
         avgAttempts: t.builds ? Math.round((t.totalAttempts / t.builds) * 100) / 100 : 0,
         avgMs: t.builds ? Math.round(t.totalMs / t.builds) : 0,
-        topFailingInvariant: top ? { invariant: top[0], count: top[1] } : null
+        safeFallbackRate: t.builds ? Math.round((t.safeFallbacks / t.builds) * 1000) / 10 : 0,
+        topFailingInvariant: top ? { invariant: top[0], count: top[1] } : null,
+        topFallbackReason: topFb ? { reason: topFb[0], count: topFb[1] } : null
       }));
     } catch { /* logging must never break a build */ }
   }
@@ -1048,11 +1063,14 @@ function recordOblueprintBuildTelemetry({ ok, attempts, ms, failedInvariant }) {
 function getOblueprintBuildTelemetry() {
   const t = OBLUEPRINT_BUILD_TELEMETRY;
   const top = Object.entries(t.invariantFailCounts).sort((a, b) => b[1] - a[1])[0];
+  const topFb = Object.entries(t.fallbackReasonCounts || {}).sort((a, b) => b[1] - a[1])[0];
   return {
     ...t,
     avgAttempts: t.builds ? Math.round((t.totalAttempts / t.builds) * 100) / 100 : 0,
     avgMs: t.builds ? Math.round(t.totalMs / t.builds) : 0,
-    topFailingInvariant: top ? { invariant: top[0], count: top[1] } : null
+    safeFallbackRate: t.builds ? Math.round((t.safeFallbacks / t.builds) * 1000) / 10 : 0,
+    topFailingInvariant: top ? { invariant: top[0], count: top[1] } : null,
+    topFallbackReason: topFb ? { reason: topFb[0], count: topFb[1] } : null
   };
 }
 
@@ -1615,7 +1633,10 @@ function buildOblueprintPlanWithFallback(payload, opts = {}) {
       ok: !result?.error && !!result?.plan,
       attempts: attemptsUsed,
       ms: Date.now() - buildStartedAt,
-      failedInvariant: invariant
+      failedInvariant: invariant,
+      safeFallback: !!result?._safeFallback,
+      relaxedFallback: !!(result?.usedPayload && result.usedPayload._relaxedFallback),
+      fallbackReason: result?._safeFallback ? String(result?.originalError?.error || result?.originalError?.reason || invariant || 'unknown') : null
     });
     return result;
   };
