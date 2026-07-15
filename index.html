@@ -4688,6 +4688,15 @@
                                     </select>
                                     <p class="entry-note" style="margin:6px 0 0;">Auto picks double progression if you're chasing strength, and the hypertrophy ladder if you're chasing size. You can change this later.</p>
                                 </div>
+                                <div class="entry-field full">
+                                    <label for="user-entry-cardio">Add cardio / conditioning?</label>
+                                    <select id="user-entry-cardio" name="wantsCardio">
+                                        <option value="" selected>Auto — add it if I'm losing fat</option>
+                                        <option value="yes">Yes — give me a progressive conditioning plan</option>
+                                        <option value="no">No — lifting only</option>
+                                    </select>
+                                    <p class="entry-note" style="margin:6px 0 0;">Conditioning builds the same way your lifts do: add minutes for a few weeks, then step the intensity up and reset. Optional — skip it anytime.</p>
+                                </div>
                             </div>
                         </div>
 
@@ -7618,6 +7627,8 @@ function formatWorkspaceLabel(workspace) {
               deadliftWeight: Number(user.deadliftWeight) || null,
               deadliftReps: Number(user.deadliftReps) || null
             },
+            // Optional conditioning (Task 6): 'yes' | 'no' | '' (auto by goal).
+            wantsCardio: String(user.wantsCardio || ''),
             workspaceContext: {
               connectionType: String(user.connectionType || ''),
               inviteCode: String(user.inviteCode || ''),

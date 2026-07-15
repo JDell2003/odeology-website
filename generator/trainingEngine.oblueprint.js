@@ -14,6 +14,7 @@ const {
 const powerbuildingPriority = require('./powerbuildingPriority.oblueprint');
 const militaryHybrid = require('./militaryHybrid.oblueprint');
 const PROGRESSION_SCHEMES = require('./progressionSchemes');
+const { buildConditioningPlan } = require('./cardioPrescription');
 
 // Progression style seam (see generator/progressionSchemes.js). Unknown/unset
 // style falls back to 'standard', which reproduces pre-seam output byte-for-byte.
@@ -2446,6 +2447,7 @@ function normalizeUserInput(input) {
     preferredDays,
     planSeed,
     progressionStyle: normalizeProgressionStyle(src.progressionStyle),
+    wantsCardio: src.wantsCardio === true || src.wantsCardio === 'true' || src.wantsCardio === 1 || src.wantsCardio === '1',
     _selectionCursor: 0,
     debugTrace: null
   };
@@ -12799,6 +12801,15 @@ function buildOblueprintPlan(input, opts = {}) {
       stage: plan?.stage || plan?.failedStage || 'route repair',
       failedStage: plan?.failedStage || plan?.stage || 'route repair'
     });
+    // Optional conditioning block (Task 6). Additive: only present when the user
+    // opted in, and it never touches the resistance weeks — a plan without it is
+    // unchanged.
+    if (plan && typeof plan === 'object' && user?.wantsCardio) {
+      try {
+        const conditioning = buildConditioningPlan(user);
+        if (conditioning) plan.conditioning = conditioning;
+      } catch { /* conditioning is optional — never fail a build over it */ }
+    }
     if (user?.discipline === 'powerbuilding' && Array.isArray(plan?.weeks)) {
       const shoulderPriority = Number(user?.profile?.powerbuilding?.priorityRanks?.Shoulders || 99) <= 2;
       plan.weeks = plan.weeks.map((week) => ({

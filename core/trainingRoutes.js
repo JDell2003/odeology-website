@@ -984,6 +984,7 @@ function normalizeOblueprintPayload(payload, { relax = false } = {}) {
     liftHistoryAnchors: (src.liftHistoryAnchors && typeof src.liftHistoryAnchors === 'object')
       ? src.liftHistoryAnchors
       : undefined,
+    wantsCardio: src.wantsCardio === true || src.wantsCardio === 'true' || src.wantsCardio === 1 || src.wantsCardio === '1' || undefined,
     planSeed: Number.isFinite(Number(src.planSeed)) ? Math.floor(Number(src.planSeed)) : Date.now()
   };
 
@@ -1702,6 +1703,7 @@ function coerceClassicBodybuildingToOblueprintPayload(payload) {
     liftHistoryAnchors: (src?.liftHistoryAnchors && typeof src.liftHistoryAnchors === 'object')
       ? src.liftHistoryAnchors
       : undefined,
+    wantsCardio: src?.wantsCardio === true || src?.wantsCardio === 'true' || src?.wantsCardio === 1 || src?.wantsCardio === '1' || undefined,
     planSeed: Number(src?.planSeed) || Date.now()
   }, { relax: false });
 }

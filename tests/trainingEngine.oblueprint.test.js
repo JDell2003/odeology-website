@@ -2232,3 +2232,33 @@ test('readiness governor: low readiness holds the plan; normal/absent runs the n
   const absent = legacy.applyLogAdjustments({ plan, workoutLog: { ...log }, experience: '6-24m' });
   assert.ok(!absent.meta.lastReadinessHold, 'absent readiness leaves the normal path unchanged');
 });
+
+/* ---- Task 6: cardio prescription ------------------------------------------ */
+const cardio = require('../generator/cardioPrescription');
+test('cardio: opt-out returns no conditioning; a standard plan is unchanged', () => {
+  assert.equal(cardio.buildConditioningPlan({ wantsCardio: false, primaryGoal: 'Cut fat' }), null);
+  const plan = buildProgressionPlan('bodybuilding', 111, undefined); // no wantsCardio
+  assert.ok(!plan.conditioning, 'a plan without opt-in carries no conditioning block');
+});
+
+test('cardio: opt-in adds a progressive conditioning block (add volume, then intensity)', () => {
+  const c = cardio.buildConditioningPlan({ wantsCardio: true, primaryGoal: 'Cut fat', discipline: 'bodybuilding' });
+  assert.ok(c && Array.isArray(c.weeklyTable) && c.weeklyTable.length === 16);
+  assert.equal(c.progressionMode, 'add_volume_then_intensity');
+  assert.equal(c.sessionsPerWeek, 3, 'fat-loss gets 3 sessions/week');
+  const t = c.weeklyTable;
+  // Within a cycle: minutes climb.
+  assert.ok(t[1].minutesPerSession > t[0].minutesPerSession, 'minutes add within a cycle');
+  assert.equal(t[0].minutesPerSession, 20);
+  assert.equal(t[3].minutesPerSession, 35);
+  // Cycle boundary: minutes reset AND intensity steps up.
+  assert.equal(t[4].minutesPerSession, 20, 'duration resets at the new cycle');
+  assert.notEqual(t[4].intensity, t[0].intensity, 'intensity steps up at the new cycle');
+});
+
+test('cardio: sessions scale with goal/discipline', () => {
+  assert.equal(cardio.sessionsPerWeekFor({ primaryGoal: 'Cut fat' }), 3);
+  assert.equal(cardio.sessionsPerWeekFor({ primaryGoal: 'Recomp' }), 2);
+  assert.equal(cardio.sessionsPerWeekFor({ primaryGoal: 'Build size' }), 1);
+  assert.equal(cardio.sessionsPerWeekFor({ discipline: 'military' }), 4);
+});

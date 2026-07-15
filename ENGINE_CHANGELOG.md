@@ -251,3 +251,20 @@ generatePlan), **9** (build telemetry), **4-slice** (earn-the-rep verified +
 readiness governor), **10** (tests). Jason's double-progression is now a real,
 selectable, configurable, per-lift first-class style that powerbuilding defaults
 to. **6 & 7 deferred** with plans. No owner action required.
+
+## Task 6 — Cardio prescription ✅ (commit: `feat(engine): cardio prescription`)
+
+New `generator/cardioPrescription.js` builds an optional conditioning block attached
+as `plan.conditioning` **only when `user.wantsCardio`** — purely additive, never
+touches the resistance selection/split/validation core (standard plans are
+byte-for-byte unchanged; the baseline test still passes). Its 16-week progression
+mirrors the lifting philosophy: **add duration for a 4-week cycle, then step the
+intensity up one rung and reset the duration** (`progressionMode:
+'add_volume_then_intensity'`). Sessions/week scale with intent (Cut fat 3, Recomp 2,
+Build size 1, military 4).
+
+Threaded `wantsCardio` through `normalizeUserInput` → attach point in
+`buildOblueprintPlan`, plus `normalizeOblueprintPayload` / `coerce` / `mapIntake`
+passthrough. Onboarding: a "Add cardio / conditioning?" selector (Auto/Yes/No) on
+the profile step; Auto turns it on for a fat-loss goal. 3 tests. 104 pass / 21
+pre-existing fail.

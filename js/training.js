@@ -1042,6 +1042,14 @@
         const picked = String(intake.progressionStyle || '').trim();
         if (picked && picked !== 'auto') return picked;
         return discipline === 'powerbuilding' ? 'double_progression' : undefined;
+      })(),
+      // Optional conditioning (Task 6). Explicit yes/no wins; 'auto'/unset turns
+      // it on for a fat-loss goal (skippable either way).
+      wantsCardio: (() => {
+        const c = String(intake.wantsCardio || '').toLowerCase();
+        if (c === 'yes' || c === 'true' || c === 'on') return true;
+        if (c === 'no' || c === 'false' || c === 'off') return false;
+        return primaryGoal === 'Cut fat';
       })()
     };
   }
