@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Workout Builder | RiseForIt</title>
+  <style>
+    html, body { margin: 0; padding: 0; height: 100%; background: #fff; }
+    #wb-root { height: 100vh; }
+    #wb-loading { display: grid; place-items: center; height: 100vh; font: 600 14px/1.5 system-ui, sans-serif; color: #64748b; }
+  </style>
+</head>
+<body>
+  <div id="wb-root"><div id="wb-loading">Loading the workout builder…</div></div>
+
+  <script src="js/workout-builder.js?v=2026-07-15-wb-1"></script>
+  <script type="module">
+    import { exercises } from '/data/exercises.master.js';
+
+    // Load any existing manual workout to edit (Save overwrites it).
+    let existing = null;
+    try { existing = JSON.parse(localStorage.getItem('ode_manual_workout_v1') || 'null'); } catch {}
+
+    async function persist(plan) {
+      // Overwrite the local manual workout, then best-effort push to the profile.
+      try { localStorage.setItem('ode_manual_workout_v1', JSON.stringify(plan)); } catch {}
+      try {
+        const r = await fetch('/api/training/manual-workout', {
+          method: 'POST', credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ plan })
+        });
+        if (r.ok) return { ok: true, message: 'Saved to your profile.' };
+      } catch {}
+      // Endpoint not available yet — local save still holds.
+      return { ok: true, message: 'Saved. Redirecting to your workout…' };
+    }
+
+    window.RiseWorkoutBuilder.mount(document.getElementById('wb-root'), {
+      exercises,
+      name: (existing && existing.name) || 'My workout',
+      instructions: (existing && existing.instructions) || '',
+      plan: existing || null,
+      onSave: async (plan) => {
+        const res = await persist(plan);
+        setTimeout(() => { window.location.href = 'training.html'; }, 900);
+        return res;
+      },
+      onClose: () => { window.location.href = 'training.html'; }
+    });
+  </script>
+</body>
+</html>

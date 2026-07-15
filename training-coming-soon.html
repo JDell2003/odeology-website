@@ -943,7 +943,7 @@
           user=null;
         }
         if(user&&user.id){
-          window.location.href='training-custom-builder.html';
+          window.location.href='workout-builder.html';
           return;
         }
         openDecision({
@@ -953,7 +953,7 @@
           secondaryLabel:'Sign up',
           onPrimary:()=>{
             try{
-              sessionStorage.setItem('ode_auth_return_to','training-custom-builder.html');
+              sessionStorage.setItem('ode_auth_return_to','workout-builder.html');
               sessionStorage.removeItem('ode_auth_no_redirect');
             }catch{}
             if(typeof odeOpenAuthModal==='function')odeOpenAuthModal('login');
@@ -961,7 +961,7 @@
           },
           onSecondary:()=>{
             try{
-              sessionStorage.setItem('ode_auth_return_to','training-custom-builder.html');
+              sessionStorage.setItem('ode_auth_return_to','workout-builder.html');
               sessionStorage.removeItem('ode_auth_no_redirect');
             }catch{}
             if(typeof odeOpenAuthModal==='function')odeOpenAuthModal('signup');

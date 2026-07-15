@@ -14531,7 +14531,7 @@ function toggleSharePopover(force) {
         // ignore storage failures
       }
 
-      window.location.href = 'training-custom-builder.html?from=edit-workout';
+      window.location.href = 'workout-builder.html?from=edit-workout';
     };
 
     const normalizeSmsPhone = (raw) => {
