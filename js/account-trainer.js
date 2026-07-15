@@ -2542,18 +2542,14 @@
         };
         // Open the fresh "questions" flow for the client.
         //  • Nutrition uses the dedicated meal-program builder.
-        //  • Training must open the setup WIZARD for the trainer to fill in by
-        //    hand — NOT ?from=intake, which auto-builds from whatever intake is
-        //    in *this* browser (the trainer's), producing the wrong plan and a
-        //    180s "Loading…" hang while it polls. The wizard-only flag rides
-        //    through the impersonation redirect in the same tab's sessionStorage.
+        //  • Training lands on the client's training page. We do NOT use
+        //    ?from=intake — while impersonating, that auto-builds from whatever
+        //    intake is in *this* browser (the trainer's), producing the wrong
+        //    plan and a 180s "Loading…" hang. training.js now blocks auto-build
+        //    during impersonation, so the trainer sees the client's setup state
+        //    and starts it from there.
         const goToQuestions = () => {
-          if (kind === 'training') {
-            try { sessionStorage.setItem('ode_training_open_wizard_only', '1'); } catch (err) { /* ignore */ }
-            goTo('/training.html');
-          } else {
-            goTo('/meal-program.html');
-          }
+          goTo(kind === 'training' ? '/training.html' : '/meal-program.html');
         };
         if (mode === 'modify') { goTo(editorPage); return; }
         // mode === 'add' (fresh build through the questions)

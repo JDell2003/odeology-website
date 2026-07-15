@@ -1,6 +1,11 @@
 ﻿(() => {
   const root = document.getElementById('training-root');
   if (!root) return;
+  // True when an owner/trainer is peering into a client's account. The local
+  // browser's saved intake belongs to the ACTOR, not the viewed client, so we
+  // must never auto-build a plan from it while impersonating (that produced the
+  // wrong plan and a long "Loading…" hang). Set from /api/auth/me.
+  let sessionIsImpersonated = false;
   const trainingDebugCombo = window.TrainingDebugCombo || null;
   const evaluateTrainingDebugCombo = trainingDebugCombo?.evaluateGlutesLegsCoreDebugCombo || null;
 
@@ -1078,6 +1083,10 @@
 
   async function tryAutoOnboardFromIntake(force = false) {
     if (autoOnboardInFlight) return false;
+    // Never auto-build while impersonating — the saved intake in this browser
+    // is the trainer's, not the client's. The trainer builds by hand through
+    // the wizard instead.
+    if (sessionIsImpersonated) return false;
     if (hasRenderablePlanRow(state.planRow)) {
       // A plan already exists — any owed-build flag from onboarding is stale.
       clearOwedAutoBuild();
@@ -9961,6 +9970,7 @@ function toggleSharePopover(force) {
     }
 
     const meUser = me.ok ? (me.json?.user || null) : null;
+    sessionIsImpersonated = !!(me.ok && me.json?.impersonation?.active);
     if (!me.ok || !meUser) {
       if (silent && (state.auth.user || hadRenderablePlan)) return;
       state.auth.user = null;
@@ -12663,7 +12673,9 @@ function toggleSharePopover(force) {
       if (isWorkoutBuildPending()) {
         return renderGenerating();
       }
-      const hasIntake = !!readLocalIntake();
+      // While impersonating, the local intake is the trainer's — never offer to
+      // build the client's plan from it (wrong data + a long build hang).
+      const hasIntake = !sessionIsImpersonated && !!readLocalIntake();
       const msg = neutralizePlanLoadError(state.planError) || (hasIntake ? 'Ready to generate your workout.' : 'No plan found.');
       return el('div', { class: 'training-card training-center' },
         el('div', { class: 'training-muted' }, msg),
