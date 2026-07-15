@@ -90,20 +90,47 @@
         mount.hidden = false;
     }
 
+    function renderPending(mount, kind, coachName) {
+        ensureStyles();
+        var label = kind === 'nutrition' ? 'nutrition' : 'training';
+        var who = coachName || 'Your coach';
+        var card = document.createElement('section');
+        card.className = 'coach-doc-card';
+        card.innerHTML =
+            '<div class="cdc-icon" aria-hidden="true">' +
+            '<svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 2"></path></svg>' +
+            '</div>' +
+            '<div class="cdc-body">' +
+            '<p class="cdc-eyebrow">From your coach</p>' +
+            '<h3 class="cdc-title">' + esc(who) + ' is building your ' + label + ' plan</h3>' +
+            '<p class="cdc-meta">Your plan will show up here within 48 hours — as a PDF or right on this page. Message ' + esc(who) + ' with any questions.</p>' +
+            '</div>';
+        mount.innerHTML = '';
+        mount.appendChild(card);
+        mount.hidden = false;
+    }
+
     function boot() {
         var mounts = document.querySelectorAll('[data-coach-doc]');
         if (!mounts.length) return;
-        fetch('/api/training/client-doc', { credentials: 'include' })
-            .then(function (r) { return r.ok ? r.json() : null; })
-            .then(function (j) {
-                var docs = (j && Array.isArray(j.docs)) ? j.docs : [];
-                Array.prototype.forEach.call(mounts, function (mount) {
-                    var kind = String(mount.getAttribute('data-kind') || 'training').trim();
-                    var doc = docs.filter(function (d) { return d && d.kind === kind && d.dataUrl; })[0];
-                    if (doc) render(mount, kind, doc);
-                });
-            })
-            .catch(function () {});
+        Promise.all([
+            fetch('/api/training/client-doc', { credentials: 'include' }).then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; }),
+            fetch('/api/auth/my-coach', { credentials: 'include' }).then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; })
+        ]).then(function (results) {
+            var docs = (results[0] && Array.isArray(results[0].docs)) ? results[0].docs : [];
+            var coach = (results[1] && results[1].coach) ? results[1].coach : null;
+            Array.prototype.forEach.call(mounts, function (mount) {
+                var kind = String(mount.getAttribute('data-kind') || 'training').trim();
+                var doc = docs.filter(function (d) { return d && d.kind === kind && d.dataUrl; })[0];
+                if (doc) { render(mount, kind, doc); return; }
+                // No delivered plan yet, but they're coach-managed: show a
+                // "your coach is building it" pending card (unless the page opts
+                // out via data-no-pending, e.g. when a real plan already exists).
+                if (coach && coach.name && mount.getAttribute('data-no-pending') == null) {
+                    renderPending(mount, kind, coach.name);
+                }
+            });
+        });
     }
 
     if (document.readyState === 'loading') {

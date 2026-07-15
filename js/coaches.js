@@ -540,6 +540,29 @@
     }, 12000);
     const meResp = await apiWithTimeout('/api/auth/me', 6000);
     currentUser = meResp.ok ? (meResp.json?.user || null) : null;
+
+    // Coach-managed clients don't shop for coaches — they already have one.
+    // Lock the page down to a "you're with <coach>" panel.
+    if (currentUser?.id && !currentUser?.isTrainer && !currentUser?.isOwner) {
+      try {
+        const coachResp = await apiWithTimeout('/api/auth/my-coach', 5000);
+        const coach = coachResp.ok ? (coachResp.json?.coach || null) : null;
+        if (coach && coach.name) {
+          window.clearTimeout(deckWatchdog);
+          const name = String(coach.name).replace(/</g, '&lt;');
+          const filters = document.querySelector('.coaches-filters, #coaches-filters, .coach-search');
+          if (filters) filters.style.display = 'none';
+          gridEl.innerHTML = `
+            <div class="coach-managed-lock" style="grid-column:1/-1;text-align:center;max-width:520px;margin:24px auto;padding:28px 24px;border-radius:18px;border:1px solid rgba(185,138,43,.3);background:linear-gradient(135deg,rgba(212,175,55,.12),rgba(212,175,55,.04));">
+              <div style="font:800 11px/1.4 'Space Grotesk',system-ui,sans-serif;letter-spacing:.12em;text-transform:uppercase;color:#a1751f;margin-bottom:8px;">Your coach</div>
+              <h2 style="margin:0 0 8px;font-size:24px;">You're working with ${name}</h2>
+              <p style="margin:0;opacity:.75;line-height:1.55;">${name} manages your training and nutrition. Browsing for other coaches is turned off while you're coached. Reach out to ${name} directly with any questions.</p>
+            </div>`;
+          return;
+        }
+      } catch { /* fall through to normal browsing */ }
+    }
+
     const canModerate = canModerateTrainerReviews(currentUser);
     if (reviewTabsEl) reviewTabsEl.classList.toggle('is-visible', canModerate);
 
