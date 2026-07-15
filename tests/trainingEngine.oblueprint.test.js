@@ -2044,3 +2044,73 @@ test('deload produces a clearly reduced deload target', () => {
   assert.equal(result.decisionSource, 'movement_family');
   assert.equal(result.decisionSourceExercise, 'Incline Dumbbell Press');
 });
+
+/* ---- Progression styles (Work Order Tasks 1-2) --------------------------- */
+const P_PRIV = trainingRoutes._private;
+function progressionProfile(disc, days, seed, style) {
+  const p = {
+    discipline: disc, phase: 'maintain', daysPerWeek: days, planSeed: seed,
+    equipmentAccess: { bodyweight: true, dumbbell: true, barbell: true, cable: true, machine: true },
+    emphasis: ['chest', 'back'], unavailableDays: [], equipmentStylePref: 'mix',
+    strength: {
+      phase: 'maintain', trainingAgeBucket: '6_18', timePerSession: '60_75',
+      equipmentStylePref: 'mix', injury: { has: false, joints: [], note: '' },
+      injurySeverityByJoint: {}, bench: 225, squat: 315, deadlift: 405
+    }
+  };
+  if (style) p.progressionStyle = style;
+  return p;
+}
+function buildProgressionPlan(disc, days, seed, style) {
+  const coerced = P_PRIV.coerceClassicBodybuildingToOblueprintPayload(progressionProfile(disc, days, seed, style));
+  if (style) coerced.progressionStyle = style;
+  const built = P_PRIV.buildOblueprintPlanWithFallback(coerced);
+  assert.equal(built.error, undefined, JSON.stringify(built.error || {}));
+  return built.plan;
+}
+function projectionOf(plan) {
+  return plan.progressionProjection || plan.meta?.progressionProjection || {};
+}
+function summarySnapshot(plan) {
+  return (projectionOf(plan).exerciseSummaries || []).map((s) => ({
+    exercise: s.exercise, family: s.family, mode: s.progressionMode,
+    reps: s.repRange, w1: s.week1Load, w8: s.week8Load, w16: s.week16Load, start: s.startingLoad
+  }));
+}
+
+test('progression: standard style reproduces the saved HEAD baseline byte-for-byte', () => {
+  const baseline = JSON.parse(fs.readFileSync(path.join(__dirname, 'fixtures', 'progression-standard-baseline.json'), 'utf8'));
+  const cfgs = [['bodybuilding', 4, 111], ['powerbuilding', 4, 222], ['bodybuilding', 3, 333]];
+  for (const [disc, days, seed] of cfgs) {
+    const snap = summarySnapshot(buildProgressionPlan(disc, days, seed)); // no style => 'standard'
+    assert.deepEqual(snap, baseline[`${disc}-${days}-${seed}`].sums, `standard drift for ${disc}-${days}-${seed}`);
+  }
+});
+
+test('progression: unset and explicit "standard" are identical', () => {
+  const a = summarySnapshot(buildProgressionPlan('bodybuilding', 4, 111));
+  const b = summarySnapshot(buildProgressionPlan('bodybuilding', 4, 111, 'standard'));
+  assert.deepEqual(a, b);
+});
+
+test('progression: double_progression forces rep base 6 and resets each cycle', () => {
+  const plan = buildProgressionPlan('powerbuilding', 4, 222, 'double_progression');
+  const pj = projectionOf(plan);
+  const ext = (pj.exerciseSummaries || []).find((s) => s.progressionMode === 'external_load');
+  assert.ok(ext, 'expected at least one external-load exercise');
+  const rows = (pj.weeklyTable || []).filter((r) => r.exercise === ext.exercise).sort((a, b) => a.week - b.week);
+  // 4-week cycle: reps 6,7,8,9 then reset to 6 on week 5.
+  assert.equal(rows[0].repRange, '6', 'week 1 rep base should be 6');
+  assert.equal(rows[3].repRange, '9', 'week 4 rep ceiling should be 9');
+  assert.equal(rows[4].repRange, '6', 'week 5 should reset to base 6');
+  // Load holds within a cycle, steps up at the boundary.
+  assert.equal(Number(rows[0].targetLoad), Number(rows[3].targetLoad), 'load holds across a cycle');
+  assert.ok(Number(rows[4].targetLoad) > Number(rows[0].targetLoad), 'load steps up at the cycle boundary');
+});
+
+test('progression: numbers come only from progressionSchemes.js (standard cycle=4, step=5)', () => {
+  const schemes = require('../generator/progressionSchemes');
+  assert.equal(schemes.standard.cycleWeeks, 4);
+  assert.equal(schemes.standard.loadStepByFamily._default, 5);
+  assert.equal(schemes.double_progression.repBase, 6);
+});

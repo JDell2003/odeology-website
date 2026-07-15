@@ -48,3 +48,35 @@ Rationale (objective, not owner-dependent):
 **Base is stable. All subsequent tasks target HEAD's line numbers, re-verified per task.**
 
 ---
+
+## Task 1 — Progression config + `progressionStyle` flag ✅ (commit: `feat(engine): progression config`)
+
+**New file `generator/progressionSchemes.js`** — the single source of progression
+numbers. Three schemes: `standard` (= today's flat +5 / rangeMin ladder),
+`double_progression` (Jason's: base 6 mains / 8 accessories, +1 rep×4wk, per-lift
++5/+10/+20 reset — Task 2 activates the per-lift steps), `hypertrophy_double`
+(base 8→12 over a 5-week cycle for the bodybuilding discipline).
+
+**Seam wired (only the two functions the work order names):**
+- `normalizeUserInput` (`:2400`) now normalizes `user.progressionStyle`
+  (`normalizeProgressionStyle`, defaults to `'standard'`).
+- `buildProjectionWeekRowsForExercise` (`~:6500`) reads `cycleWeeks`, resolved
+  `repBase`, and (Task 1) the flat `_default` load step from the active scheme
+  instead of the `REP_LADDER_*` constants.
+- `progressionRuleForExercise` (`~:3560`) templates its prose from the scheme.
+- Top-of-file helpers: `getProgressionScheme`, `normalizeProgressionStyle`,
+  `resolveSchemeRepBase`.
+
+**Verification:**
+- Saved fixture `tests/fixtures/progression-standard-baseline.json` (3 seeded
+  configs, captured on pristine HEAD). `standard` (and unset) reproduce it
+  **byte-for-byte** — asserted by the new test.
+- `double_progression` forces rep base 6, ladders 6→9, resets on week 5 — asserted.
+- 4 new tests, all green.
+
+**Pre-existing test state (important, not caused by this work):** the oblueprint
+suite fails **21 selection/split/validation tests on pristine HEAD** (87 pass /
+21 fail) — verified by stashing all changes and running the untouched tree.
+This work order does not touch that core; my changes add 4 passing progression
+tests and introduce **zero** new failures (91 pass / same 21 fail). Those 21 are
+tracked separately from the progression work.

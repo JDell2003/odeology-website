@@ -13,6 +13,25 @@ const {
 } = require('../js/training-debug-combo');
 const powerbuildingPriority = require('./powerbuildingPriority.oblueprint');
 const militaryHybrid = require('./militaryHybrid.oblueprint');
+const PROGRESSION_SCHEMES = require('./progressionSchemes');
+
+// Progression style seam (see generator/progressionSchemes.js). Unknown/unset
+// style falls back to 'standard', which reproduces pre-seam output byte-for-byte.
+function getProgressionScheme(user) {
+  const key = String((user && user.progressionStyle) || '').trim();
+  return PROGRESSION_SCHEMES[key] || PROGRESSION_SCHEMES.standard;
+}
+function normalizeProgressionStyle(value) {
+  const key = String(value || '').trim();
+  return PROGRESSION_SCHEMES[key] ? key : 'standard';
+}
+// Resolve the rep base for a scheme against an exercise's own rep range.
+// 'rangeMin' == today's behavior (bottom of the slot's range).
+function resolveSchemeRepBase(scheme, repRange) {
+  if (!scheme || scheme.repBase === 'rangeMin' || scheme.repBase == null) return repRange.min;
+  const n = Number(scheme.repBase);
+  return Number.isFinite(n) ? n : repRange.min;
+}
 
 const STYLE_ENUM = new Set(['Compound', 'Isolation', 'Mobility', 'Skill', 'Cardio', 'Power', 'Plyo']);
 const PATTERN_ENUM = new Set([
@@ -2397,6 +2416,7 @@ function normalizeUserInput(input) {
     injuryNoteFlags,
     preferredDays,
     planSeed,
+    progressionStyle: normalizeProgressionStyle(src.progressionStyle),
     _selectionCursor: 0,
     debugTrace: null
   };
@@ -3544,10 +3564,15 @@ function progressionRuleForExercise(ex, user) {
     const override = militaryHybrid.progressionRuleOverride(ex.slotId);
     if (override) return override;
   }
+  const scheme = getProgressionScheme(user);
+  const cycleWeeks = Math.max(1, Number(scheme.cycleWeeks) || REP_LADDER_CYCLE_WEEKS);
+  const step = Number((scheme.loadStepByFamily && scheme.loadStepByFamily._default) != null
+    ? scheme.loadStepByFamily._default
+    : REP_LADDER_LOAD_STEP_LB);
   if (user.discipline === 'powerbuilding' && ex.style === 'Compound') {
-    return 'Rep ladder: same weight all cycle, add 1 rep each week for 4 weeks; then add 5 lb and drop back to the starting reps.';
+    return `Rep ladder: same weight all cycle, add 1 rep each week for ${cycleWeeks} weeks; then add ${step} lb and drop back to the starting reps.`;
   }
-  return 'Rep ladder: keep the weight the same and add 1 rep each week; after week 4, add 5 lb and reset to the starting reps.';
+  return `Rep ladder: keep the weight the same and add 1 rep each week; after week ${cycleWeeks}, add ${step} lb and reset to the starting reps.`;
 }
 
 function priorityBudgetTargetForExercise(ex, user) {
@@ -6474,16 +6499,24 @@ const REP_LADDER_LOAD_STEP_LB = 5;
 function buildProjectionWeekRowsForExercise(exercise, user, estimate, deloadWeeks, anchorStatus) {
   const repRange = parseRepRangeText(exercise?.reps);
   const setsBase = Math.max(1, Number(exercise?.sets || 0) || 3);
-  const minRep = repRange.min;
+  // Progression scheme (default 'standard' == the old REP_LADDER_* constants).
+  const scheme = getProgressionScheme(user);
+  const cycleWeeks = Math.max(1, Number(scheme.cycleWeeks) || REP_LADDER_CYCLE_WEEKS);
+  const repBase = resolveSchemeRepBase(scheme, repRange);
+  const minRep = repBase; // base of the rep cycle (repRange.min under 'standard')
+  // Task 1 uses the scheme's flat _default step; per-family steps land in Task 2.
+  const loadStep = Number((scheme.loadStepByFamily && scheme.loadStepByFamily._default) != null
+    ? scheme.loadStepByFamily._default
+    : REP_LADDER_LOAD_STEP_LB);
   const increment = Number(estimate?.increment || 2.5);
   const progressionMode = progressionModeForExercise(exercise);
   const baseLoad = Number(estimate?.value || 0);
   const rows = [];
   for (let week = 1; week <= 16; week += 1) {
-    const cycle = Math.floor((week - 1) / REP_LADDER_CYCLE_WEEKS);
-    const pos = (week - 1) % REP_LADDER_CYCLE_WEEKS;
+    const cycle = Math.floor((week - 1) / cycleWeeks);
+    const pos = (week - 1) % cycleWeeks;
     const repTarget = minRep + pos;
-    const lastWeekOfCycle = pos === REP_LADDER_CYCLE_WEEKS - 1;
+    const lastWeekOfCycle = pos === cycleWeeks - 1;
     if (progressionMode !== 'external_load' && progressionMode !== 'loaded_bodyweight') {
       rows.push({
         week,
@@ -6522,7 +6555,7 @@ function buildProjectionWeekRowsForExercise(exercise, user, estimate, deloadWeek
       });
       continue;
     }
-    const load = roundProjectedLoad(baseLoad + (REP_LADDER_LOAD_STEP_LB * cycle), increment);
+    const load = roundProjectedLoad(baseLoad + (loadStep * cycle), increment);
     rows.push({
       week,
       exercise: exercise.displayName || exercise.name,
@@ -6534,7 +6567,7 @@ function buildProjectionWeekRowsForExercise(exercise, user, estimate, deloadWeek
       deloadLabel: null,
       progressionMode,
       note: lastWeekOfCycle
-        ? `Last week of this cycle at ${load} lb. Next week: +${REP_LADDER_LOAD_STEP_LB} lb and reps reset to ${minRep}.`
+        ? `Last week of this cycle at ${load} lb. Next week: +${loadStep} lb and reps reset to ${minRep}.`
         : `Same weight as last week - add 1 rep (${repTarget} this week).`,
       displayTarget: `${load} lb`,
       postDeloadReturnTarget: null
