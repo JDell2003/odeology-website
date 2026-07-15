@@ -9708,6 +9708,24 @@ function queuePlanMediaEnrichment({ planId, planObj, equipmentAccess } = {}) {
 }
 
 async function createNewPlan(userId, { discipline, daysPerWeek, experience, strength, equipmentAccess }) {
+  // Wall off the legacy generatePlan bodybuilding branch — it throws
+  // "Could not generate a strict-valid bodybuilding day" every run. Route the
+  // oblueprint disciplines to the healthy builder; keep generatePlan (and the
+  // module, for the live applyLogAdjustments) for anything else.
+  const disc = String(discipline || '').trim().toLowerCase();
+  if (disc === 'bodybuilding' || disc === 'powerbuilding' || disc === 'military') {
+    const built = buildOblueprintPlanWithFallback(coerceClassicBodybuildingToOblueprintPayload({
+      discipline: disc,
+      daysPerWeek,
+      experience,
+      equipmentAccess,
+      strength: (strength && typeof strength === 'object') ? strength : {}
+    }));
+    if (built?.error || !built?.plan) {
+      throw new Error(built?.error?.reason || built?.error?.error || 'Failed to build plan');
+    }
+    return await createNewOblueprintPlan(userId, { discipline: disc, daysPerWeek, plan: built.plan });
+  }
   const plan = generatePlan({ discipline, daysPerWeek, experience, strength });
   try {
     resolveWorkoutExercises(plan, buildResolverProfile({ discipline, strength, equipmentAccess }));
@@ -11551,6 +11569,78 @@ async function trainingRoutes(req, res, url) {
     const entry = Object.values(all).find((row) => String(row?.username || '').toLowerCase() === key);
     return entry || null;
   };
+
+  if (pathname === '/api/training/manual-workout' && req.method === 'POST') {
+    // Save a hand-built workout (from workout-builder.html) as the user's
+    // active plan — overwrites whatever plan they had. When a trainer is
+    // peered into a client, `user` is the client, so it saves to them.
+    const sessionState = await safeResolveUserFromSession(req, {
+      routeName: 'training.manual-workout',
+      fallback: 'service_unavailable'
+    });
+    if (sessionState.sessionUnavailable) return sendJson(res, 503, { error: 'Service unavailable' });
+    const user = sessionState.user;
+    if (!user) return sendJson(res, 401, { error: 'Not authenticated' });
+    let payload;
+    try { payload = await readJsonBody(req); } catch (err) { return sendJson(res, 400, { error: err.message }); }
+    const src = payload && payload.plan && typeof payload.plan === 'object' ? payload.plan : null;
+    if (!src || !src.days || typeof src.days !== 'object') return sendJson(res, 400, { error: 'Missing workout' });
+
+    const WEEKDAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+    const slugOf = (n) => String(n || '').trim().toLowerCase().replace(/['"]/g, '').replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
+    const restToSeconds = (r) => {
+      const s = String(r || '').trim().toLowerCase();
+      const m = s.match(/(\d+)\s*(sec|min)/);
+      if (!m) return 90;
+      return m[2] === 'min' ? Number(m[1]) * 60 : Number(m[1]);
+    };
+    const days = [];
+    WEEKDAYS.forEach((wd) => {
+      const items = Array.isArray(src.days[wd]) ? src.days[wd] : [];
+      const exercises = items
+        .filter((it) => it && it.kind !== 'rest' && String(it.name || '').trim())
+        .map((it) => {
+          const isTime = String(it.targetType || '') === 'time';
+          return {
+            name: String(it.name).trim(),
+            displayName: String(it.name).trim(),
+            exerciseId: slugOf(it.name),
+            slug: slugOf(it.name),
+            sets: Math.max(1, Math.min(20, Number(it.sets) || 3)),
+            reps: !isTime ? String(it.target || '').slice(0, 40) : '',
+            targetTime: isTime ? String(it.target || '').slice(0, 40) : '',
+            restSeconds: restToSeconds(it.rest),
+            manual: true
+          };
+        });
+      if (exercises.length) days.push({ day: wd, dayType: 'Workout', label: wd, exercises });
+    });
+    if (!days.length) return sendJson(res, 400, { error: 'Add at least one exercise' });
+
+    const planObj = {
+      meta: {
+        manual: true,
+        name: String(src.name || 'My workout').slice(0, 120),
+        instructions: String(src.instructions || '').slice(0, 2000),
+        createdAt: new Date().toISOString()
+      },
+      discipline: 'custom',
+      daysPerWeek: days.length,
+      weeks: [{ weekIndex: 1, weekType: 'custom', days }]
+    };
+
+    try {
+      await db.query('UPDATE app_training_plans SET active = false, updated_at = now() WHERE user_id = $1 AND active = true;', [user.id]);
+      const inserted = await db.query(
+        `INSERT INTO app_training_plans (user_id, active, version, discipline, days_per_week, plan)
+         VALUES ($1, true, 1, 'custom', $2, $3::jsonb) RETURNING id;`,
+        [user.id, days.length, JSON.stringify(planObj)]
+      );
+      return sendJson(res, 200, { ok: true, planId: inserted.rows?.[0]?.id || null, days: days.length });
+    } catch (err) {
+      return sendJson(res, 500, { error: 'Could not save workout' });
+    }
+  }
 
   if (pathname === '/api/training/website-config' && (req.method === 'GET' || req.method === 'POST')) {
     const sessionState = await safeResolveUserFromSession(req, {

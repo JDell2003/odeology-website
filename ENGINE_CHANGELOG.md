@@ -150,3 +150,19 @@ loads with zero new JS errors; engine suite still 97 pass / 21 pre-existing fail
 // athletic/military) and surfacing priority-muscles in the client flow (the rest
 // of Task 5) are deferred — powerbuilding is already reachable via the goal
 // question, and those are additive onboarding steps that can land without risk.
+
+## Task 8 — Wall off the legacy generatePlan bodybuilding branch ✅ (commit: `fix(engine): legacy generatePlan`)
+
+`core/trainingEngine.js` `generatePlan()` throws "Could not generate a strict-valid
+bodybuilding day" on every bodybuilding run. It's reached live via `createNewPlan`
+(the `/api/training/onboarding` fallback creator, `:9711`).
+
+Fix: `createNewPlan` now routes `bodybuilding` / `powerbuilding` / `military` to
+`buildOblueprintPlanWithFallback` (the healthy builder) + `createNewOblueprintPlan`,
+and only calls the legacy `generatePlan` for other disciplines. The legacy module
+is **kept** — it holds the live `applyLogAdjustments` on the workout-log path.
+
+Tests: one asserts the legacy branch still throws (documented + contained) and
+that `applyLogAdjustments` is still exported; one asserts the oblueprint builder
+handles bodybuilding (the path `createNewPlan` now uses). Both pass. All engine
+failures remain the pre-existing 21 selection tests (none are mine).

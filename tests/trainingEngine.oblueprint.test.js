@@ -2187,3 +2187,19 @@ test('anchors: projection source is explicit PR > lift history > bodyweight gues
   assert.equal(buildWith((c) => { c.liftHistoryAnchors = { bench1rm: 315, squat1rm: 405, deadlift1rm: 495 }; }), 'lift_history_fallback');
   assert.equal(buildWith(() => {}), 'bodyweight_family_fallback');
 });
+
+/* ---- Task 8: legacy generatePlan bodybuilding is walled off ---------------- */
+test('legacy: core/trainingEngine generatePlan still throws for bodybuilding (documented, contained)', () => {
+  const legacy = require('../core/trainingEngine');
+  assert.throws(() => legacy.generatePlan({
+    discipline: 'bodybuilding', daysPerWeek: 4, experience: 'intermediate',
+    strength: { bodyweight: 190, benchWeight: 185, benchReps: 8, lowerWeight: 225, lowerReps: 10, hingeWeight: 225, hingeReps: 8, rowWeight: 160, rowReps: 10, lowerMovement: 'squat', hingeMovement: 'rdl' }
+  }), /strict-valid bodybuilding|bodybuilding day/i);
+  // applyLogAdjustments — the reason we keep the module — is still exported.
+  assert.equal(typeof legacy.applyLogAdjustments, 'function');
+});
+
+test('walloff: the oblueprint builder handles bodybuilding (the path createNewPlan now uses)', () => {
+  const plan = buildProgressionPlan('bodybuilding', 4, 1212);
+  assert.ok(Array.isArray(plan.weeks) && plan.weeks.length, 'oblueprint builds a valid bodybuilding plan');
+});
