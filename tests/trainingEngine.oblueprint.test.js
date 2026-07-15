@@ -2262,3 +2262,20 @@ test('cardio: sessions scale with goal/discipline', () => {
   assert.equal(cardio.sessionsPerWeekFor({ primaryGoal: 'Build size' }), 1);
   assert.equal(cardio.sessionsPerWeekFor({ discipline: 'military' }), 4);
 });
+
+/* ---- Task 7: earned progression -> spider signal --------------------------- */
+test('spider: detectEarnedProgressions credits only sessions that hit the target reps at the target weight', () => {
+  const det = P_PRIV.detectEarnedProgressions;
+  const earned = det({ entries: [{ baseId: 'bench', name: 'Bench Press', target: { weight: 225 }, prescribed: { repsTarget: 5, sets: 3 }, sets: [{ weight: 225, reps: 5 }, { weight: 225, reps: 5 }, { weight: 225, reps: 6 }] }] });
+  assert.equal(earned.length, 1, 'hitting all sets at target reps+weight earns');
+  assert.equal(earned[0].implausible, false);
+
+  const missed = det({ entries: [{ baseId: 'bench', target: { weight: 225 }, prescribed: { repsTarget: 5, sets: 3 }, sets: [{ weight: 225, reps: 4 }, { weight: 225, reps: 4 }, { weight: 225, reps: 4 }] }] });
+  assert.equal(missed.length, 0, 'missing the target reps earns nothing');
+
+  const gamed = det({ entries: [{ baseId: 'bench', name: 'Bench', target: { weight: 225 }, prescribed: { repsTarget: 5, sets: 1 }, sets: [{ weight: 400, reps: 5 }] }] });
+  assert.equal(gamed.length, 1);
+  assert.equal(gamed[0].implausible, true, 'a >50% overshoot is flagged implausible (0 trust)');
+
+  assert.equal(det({ entries: [] }).length, 0);
+});

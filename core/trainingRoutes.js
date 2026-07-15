@@ -10586,6 +10586,65 @@ async function patchExerciseOverride({
   return updated.rows?.[0] || null;
 }
 
+// Task 7 — the "hard to game, real work" signal. An earned progression = enough
+// sets hit the top of the prescribed rep range AT the prescribed weight. Pure +
+// testable.
+const EARNED_PROGRESSION_TRUST = { device: 1.00, self_report: 0.70, implausible: 0.00 };
+function detectEarnedProgressions(logPayload) {
+  const entries = Array.isArray(logPayload?.entries) ? logPayload.entries : [];
+  const earned = [];
+  for (const entry of entries) {
+    const baseId = String(entry?.baseId || '').trim();
+    if (!baseId) continue;
+    const targetW = Number(entry?.target?.weight ?? entry?.prescribed?.projectedWeight);
+    const repsTarget = Number(entry?.prescribed?.repsTarget);
+    const sets = Array.isArray(entry?.sets) ? entry.sets : [];
+    if (!Number.isFinite(targetW) || targetW <= 0 || !Number.isFinite(repsTarget) || repsTarget <= 0) continue;
+    const neededSets = Math.max(1, Number(entry?.prescribed?.sets) || sets.length || 1);
+    const hitSets = sets.filter((s) => Number(s?.weight) >= targetW && Number(s?.reps) >= repsTarget).length;
+    if (hitSets < neededSets) continue;
+    const topWeight = sets.reduce((m, s) => Math.max(m, Number(s?.weight) || 0), 0);
+    // Anti-gaming: >50% over the prescribed load in a single session is implausible.
+    const implausible = topWeight > targetW * 1.5;
+    earned.push({ baseId, name: String(entry?.name || entry?.displayName || baseId), weight: targetW, reps: repsTarget, topWeight, implausible });
+  }
+  return earned;
+}
+async function sessionGymVerified(userId, dayIso) {
+  try {
+    const r = await db.query('SELECT gym_visit FROM app_health_daily WHERE user_id = $1 AND day = $2::date LIMIT 1;', [userId, dayIso]);
+    return r.rows?.[0]?.gym_visit === true;
+  } catch { return false; }
+}
+// Emit an auditable Strength score event per earned progression, tagged with the
+// trust tier (device when the session is geofence-verified, else self_report;
+// implausible sessions get 0 trust). The axis itself still recomputes from the
+// trust-weighted e1RM in the scoring engine — this event is the ledger record
+// that makes the "real work" auditable and gates gamed sessions. Never blocks a log.
+async function emitEarnedProgressionEvents(userId, planId, logPayload) {
+  try {
+    if (!userId || typeof scoringV2Enabled !== 'function' || !scoringV2Enabled()) return;
+    if (typeof scoringWriteAllowed === 'function' && !scoringWriteAllowed()) return;
+    const earned = detectEarnedProgressions(logPayload);
+    if (!earned.length) return;
+    const dayIso = String(logPayload?.performedAt || '').slice(0, 10) || new Date().toISOString().slice(0, 10);
+    const hasTimer = !!(logPayload?.timerStartedAt && logPayload?.timerEndedAt);
+    const gymVerified = hasTimer && await sessionGymVerified(userId, dayIso);
+    for (const p of earned) {
+      const provenance = p.implausible ? 'implausible' : (gymVerified ? 'device' : 'self_report');
+      const trust = EARNED_PROGRESSION_TRUST[provenance];
+      await db.query(
+        `INSERT INTO app_score_events (user_id, axis, delta, reason_code, provenance, trust_multiplier, source_ref, detail)
+         VALUES ($1, 'strength', $2, 'earned_lift_progression', $3, $4, $5, $6::jsonb);`,
+        [userId, Math.round(trust * 100) / 100, provenance, trust, String(planId || ''),
+          JSON.stringify({ exercise: p.name, baseId: p.baseId, weight: p.weight, reps: p.reps, topWeight: p.topWeight })]
+      ).catch(() => null);
+    }
+  } catch {
+    // A score event must never break workout logging.
+  }
+}
+
 async function applyProgressionFromLog({ userId, planId, logPayload }) {
   const planRow = await db.query(
     'SELECT id, version, plan FROM app_training_plans WHERE id = $1 AND user_id = $2 AND active = true LIMIT 1;',
@@ -10600,6 +10659,12 @@ async function applyProgressionFromLog({ userId, planId, logPayload }) {
     experience: plan?.meta?.experience
   });
   if (!updatedPlan) return null;
+
+  // Feed the spider graph: a verified earned progression is a real Strength
+  // signal. Skipped when the session was a readiness hold (no advance earned).
+  if (!updatedPlan?.meta?.lastReadinessHold) {
+    await emitEarnedProgressionEvents(userId, planId, logPayload);
+  }
 
   const updated = await db.query(
     `
@@ -13538,6 +13603,7 @@ trainingRoutes._private = {
   coerceClassicBodybuildingToOblueprintPayload,
   deriveLiftHistoryAnchors,
   getOblueprintBuildTelemetry,
+  detectEarnedProgressions,
   attachLiftHistoryAnchorsToPayload,
   assertBodybuildingPlanByEngine,
   assertPowerbuildingPlanByEngine,

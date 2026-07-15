@@ -268,3 +268,23 @@ Threaded `wantsCardio` through `normalizeUserInput` → attach point in
 passthrough. Onboarding: a "Add cardio / conditioning?" selector (Auto/Yes/No) on
 the profile step; Auto turns it on for a fat-loss goal. 3 tests. 104 pass / 21
 pre-existing fail.
+
+## Task 7 — Training feeds the spider graph ✅ (commit: `feat(engine): training feeds spider`)
+
+An earned progression is now an auditable Strength signal in the scoring ledger.
+`detectEarnedProgressions(logPayload)` (pure, tested) credits a lift only when
+enough sets hit the **top of the prescribed rep range at the prescribed weight**;
+a >50% single-session overshoot is flagged implausible. `emitEarnedProgressionEvents`
+writes one `earned_lift_progression` event per earned lift into `app_score_events`,
+tagged with the trust tier — **device** when the session is geofence-verified
+(gym_visit + a real timer window), else **self_report** (0.70), **implausible** (0.00)
+for gamed loads. Wired into `applyProgressionFromLog` and **skipped on a readiness
+hold** (no advance earned). Gated by `scoringV2Enabled()`/`scoringWriteAllowed()`,
+fully try/caught — a score event can never break workout logging.
+
+The axis score itself continues to recompute from the trust-weighted e1RM in
+`scoringEngine.computeStrength` (log → `app_training_lift_history` → e1RM), so this
+adds the auditable, anti-gameable ledger record without double-counting. 1 test.
+105 pass / 21 pre-existing fail. Server boots clean.
+
+**All 10 tasks are now complete.**
