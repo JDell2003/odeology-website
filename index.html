@@ -12496,10 +12496,17 @@ function formatWorkspaceLabel(workspace) {
           window.setTimeout(() => authEmailInput?.focus(), 120);
         };
         try {
-          const requestedMode = new URL(window.location.href).searchParams.get('authMode');
+          const _entryUrl = new URL(window.location.href);
+          const requestedMode = _entryUrl.searchParams.get('authMode');
           if (requestedMode === 'login' || requestedMode === 'signup') {
             state.authMode = requestedMode;
             renderEntryStage();
+          }
+          // Owner-invite deep link (/?authMode=login&u=<username>): prefill the
+          // identifier so the invited person only types their temp password.
+          const _inviteUser = String(_entryUrl.searchParams.get('u') || '').trim();
+          if (requestedMode === 'login' && _inviteUser && authEmailInput) {
+            authEmailInput.value = _inviteUser;
           }
         } catch {
           // ignore

@@ -179,15 +179,23 @@ async function recordMailerLiteEvent({
    tically so they don't pile up. The from-address must be a verified sender
    on the account (account.sender_email). */
 const TX_GROUP_PREFIX = 'RiseForIt TX';
+// Display name on the From line. The verified sender EMAIL stays whatever the
+// account has (jason.odell202@gmail.com), but recipients see this brand name.
+const BRAND_FROM_NAME = process.env.MAILERLITE_FROM_NAME || 'RiseForIt';
 let senderCache = null; // { email, name } cached from /account
 
 async function resolveVerifiedSender() {
+  // Once riseforit.com is authenticated in MailerLite, set MAILERLITE_FROM_EMAIL
+  // (e.g. noreply@riseforit.com) to send from the domain — this is what gets
+  // mail out of spam. Until then we fall back to the account's verified sender.
+  const override = String(process.env.MAILERLITE_FROM_EMAIL || '').trim();
+  if (override) return { email: override, name: BRAND_FROM_NAME };
   if (senderCache) return senderCache;
   const acct = await mlFetch('/account');
   const data = acct?.data || {};
   senderCache = {
     email: String(data.sender_email || '').trim(),
-    name: String(data.sender_name || 'RiseForIt').trim() || 'RiseForIt'
+    name: BRAND_FROM_NAME
   };
   return senderCache;
 }
@@ -237,7 +245,7 @@ async function sendCampaignEmail({ email, firstName = '', lastName = '', subject
       name: `RiseForIt ${clip(tag, 40)} ${new Date().toISOString()}`.slice(0, 250),
       type: 'regular',
       groups: [groupId],
-      emails: [{ subject: clip(subject, 250), from_name: sender.name, from: sender.email, content: String(html) }]
+      emails: [{ subject: clip(subject, 250), from_name: BRAND_FROM_NAME, from: sender.email, content: String(html) }]
     }
   });
   const campaignId = campaign?.data?.id;

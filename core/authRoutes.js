@@ -9132,7 +9132,12 @@ async function handleOwnerCreateTrainerAccount(req, res) {
   }
   if (!row?.id) return sendJson(res, 500, { ok: false, error: 'Could not create account' });
 
-  const loginUrl = `${resolveAppBaseUrl(req) || ''}/`;
+  const appBase = resolveAppBaseUrl(req) || '';
+  const loginUrl = `${appBase}/`;
+  // Deep-link straight to the sign-in form with the username prefilled, so the
+  // invited person just types their temp password. After login the onboarding
+  // gate routes them into the questions for the role they were created as.
+  const inviteCtaUrl = `${appBase}/?authMode=login&u=${encodeURIComponent(row.username)}`;
   const roleLabel = role === 'manager' ? 'manager' : role === 'client' ? 'client' : 'trainer';
   const greetingName = displayName.split(/\s+/)[0] || 'there';
   const introLine = customMessage
@@ -9146,7 +9151,7 @@ async function handleOwnerCreateTrainerAccount(req, res) {
       const result = await sendInviteEmail({
         email, displayName, roleLabel,
         username: row.username, tempPassword: password,
-        loginUrl, message: introLine
+        loginUrl: inviteCtaUrl, message: introLine
       });
       emailStatus.ok = Boolean(result?.ok);
       emailStatus.provider = result?.provider || null;
@@ -9205,7 +9210,7 @@ async function handleOwnerAccountTestEmail(req, res) {
   const roleLabel = role === 'manager' ? 'manager' : role === 'client' ? 'client' : 'trainer';
   const displayName = String(payload?.displayName || actor?.displayName || 'RiseForIt').trim() || 'RiseForIt';
   const greetingName = displayName.split(/\s+/)[0] || 'there';
-  const loginUrl = `${resolveAppBaseUrl(req) || ''}/`;
+  const loginUrl = `${resolveAppBaseUrl(req) || ''}/?authMode=login&u=sample_username`;
   const customMessage = cleanLongText(payload?.message || '', 1200);
   const introLine = customMessage
     || `Hey ${greetingName} - this is a TEST of the RiseForIt ${roleLabel} account invite email. If you can read this, invites are wired up.`;
