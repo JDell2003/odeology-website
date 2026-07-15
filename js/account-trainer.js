@@ -648,11 +648,16 @@
       linkedUserId: String(request.applicantUserId || '').trim() || null,
       clientName: request.applicantName || 'Client'
     }));
-    const healthActions = (Array.isArray(actions) ? actions : []).map((action) => ({
-      ...action,
-      linkedUserId: String(action?.linkedUserId || '').trim() || null,
-      clientName: action?.clientName || rosterByUserId.get(String(action?.linkedUserId || '').trim())?.name || 'Client'
-    }));
+    const healthActions = (Array.isArray(actions) ? actions : []).map((action) => {
+      const roster = rosterByUserId.get(String(action?.linkedUserId || '').trim());
+      return {
+        ...action,
+        linkedUserId: String(action?.linkedUserId || '').trim() || null,
+        clientName: action?.clientName || roster?.name || 'Client',
+        clientPhone: String(action?.clientPhone || roster?.phone || '').trim(),
+        clientEmail: String(action?.clientEmail || roster?.email || '').trim()
+      };
+    });
     const workoutActions = (Array.isArray(pendingWorkoutApprovals) ? pendingWorkoutApprovals : []).map((workout) => ({
       type: 'workout-approval',
       tone: 'needs-action',
@@ -682,6 +687,34 @@
       });
   }
 
+  // tel:/sms: need a clean number; keep a leading + but drop spaces/dashes.
+  function normalizePhoneForLink(phone) {
+    const raw = String(phone || '').trim();
+    if (!raw) return '';
+    const plus = raw.startsWith('+') ? '+' : '';
+    const digits = raw.replace(/[^0-9]/g, '');
+    return digits.length >= 7 ? plus + digits : '';
+  }
+
+  // Call / Message / Email buttons for an action's client. Call and Message
+  // need a phone on file (greyed out otherwise); Email is the always-on
+  // alternative when there's no number.
+  function renderActionContactButtons(item) {
+    const who = escapeHtml(item.clientName || 'client');
+    const tel = normalizePhoneForLink(item.clientPhone);
+    const email = String(item.clientEmail || '').trim();
+    const call = tel
+      ? `<a class="account-trainer-btn" href="tel:${escapeHtml(tel)}" title="Call ${who}">Call</a>`
+      : `<button type="button" class="account-trainer-btn is-disabled" disabled aria-disabled="true" title="No phone number on file">Call</button>`;
+    const message = tel
+      ? `<a class="account-trainer-btn" href="sms:${escapeHtml(tel)}" title="Text ${who}">Message</a>`
+      : `<button type="button" class="account-trainer-btn is-disabled" disabled aria-disabled="true" title="No phone number on file">Message</button>`;
+    const emailBtn = email
+      ? `<a class="account-trainer-btn ghost" href="mailto:${escapeHtml(email)}" title="Email ${who}">Email</a>`
+      : `<button type="button" class="account-trainer-btn ghost is-disabled" disabled aria-disabled="true" title="No email on file">Email</button>`;
+    return `${call}${message}${emailBtn}`;
+  }
+
   function renderTrainerActionFeed(items) {
     if (!Array.isArray(items) || !items.length) {
       return renderEmpty('No client actions right now.');
@@ -699,10 +732,13 @@
             </div>
             <div class="account-trainer-action-foot">
               <span class="account-trainer-roster-pill">${escapeHtml(item.clientName || 'Client')}</span>
-              ${item.actionKind === 'approve-client' && item.requestId ? `<button type="button" class="account-trainer-btn" data-training-request-action="approve" data-request-id="${escapeHtml(String(item.requestId || ''))}">Quick approve</button>` : ''}
-              ${item.actionKind === 'approve-workout' && item.workoutId ? `<button type="button" class="account-trainer-btn" data-workout-review-approve="${escapeHtml(String(item.workoutId || ''))}">Approve workout</button>` : ''}
-              ${item.actionKind === 'approve-workout' && item.workoutId ? `<button type="button" class="account-trainer-btn ghost" data-workout-review-pdf="${escapeHtml(String(item.workoutId || ''))}">View PDF</button>` : ''}
-              ${item.actionKind === 'view-client' && item.linkedUserId ? `<button type="button" class="account-trainer-btn ghost" data-view-client-account="${escapeHtml(String(item.linkedUserId || ''))}">Open account</button>` : ''}
+              <div class="account-trainer-action-btns">
+                ${item.actionKind === 'approve-client' && item.requestId ? `<button type="button" class="account-trainer-btn" data-training-request-action="approve" data-request-id="${escapeHtml(String(item.requestId || ''))}">Quick approve</button>` : ''}
+                ${item.actionKind === 'approve-workout' && item.workoutId ? `<button type="button" class="account-trainer-btn" data-workout-review-approve="${escapeHtml(String(item.workoutId || ''))}">Approve workout</button>` : ''}
+                ${item.actionKind === 'approve-workout' && item.workoutId ? `<button type="button" class="account-trainer-btn ghost" data-workout-review-pdf="${escapeHtml(String(item.workoutId || ''))}">View PDF</button>` : ''}
+                ${item.actionKind === 'view-client' ? renderActionContactButtons(item) : ''}
+                ${item.actionKind === 'view-client' && item.linkedUserId ? `<button type="button" class="account-trainer-btn ghost" data-view-client-account="${escapeHtml(String(item.linkedUserId || ''))}">Open account</button>` : ''}
+              </div>
             </div>
           </article>
         `).join('')}
@@ -2499,23 +2535,37 @@
         const cname = String(planTrigger.getAttribute('data-client-name') || 'this client').trim();
         const label = kind === 'nutrition' ? 'nutrition plan' : 'training plan';
         const editorPage = kind === 'nutrition' ? '/nutrition.html' : '/training.html';
-        const questionPage = kind === 'nutrition' ? '/meal-program.html' : '/training.html?from=intake';
         const goTo = (returnTo) => {
           const href = buildTrainerClientAccountHref(userId, returnTo);
           if (!href) { setStatus('This client has no attached account yet.'); return; }
           window.location.href = href;
+        };
+        // Open the fresh "questions" flow for the client.
+        //  • Nutrition uses the dedicated meal-program builder.
+        //  • Training must open the setup WIZARD for the trainer to fill in by
+        //    hand — NOT ?from=intake, which auto-builds from whatever intake is
+        //    in *this* browser (the trainer's), producing the wrong plan and a
+        //    180s "Loading…" hang while it polls. The wizard-only flag rides
+        //    through the impersonation redirect in the same tab's sessionStorage.
+        const goToQuestions = () => {
+          if (kind === 'training') {
+            try { sessionStorage.setItem('ode_training_open_wizard_only', '1'); } catch (err) { /* ignore */ }
+            goTo('/training.html');
+          } else {
+            goTo('/meal-program.html');
+          }
         };
         if (mode === 'modify') { goTo(editorPage); return; }
         // mode === 'add' (fresh build through the questions)
         if (hasPlan) {
           openPlanEraseConfirm({
             title: `Start ${cname}'s ${label} over?`,
-            body: `This erases ${cname}'s current ${label} and walks through the questions again to build a brand-new one. Their old ${label} can't be recovered.`,
-            confirmLabel: `Erase & rebuild`,
-            onConfirm: () => goTo(questionPage)
+            body: `This walks through the questions again to build ${cname} a brand-new ${label}. It replaces their current ${label} once you finish.`,
+            confirmLabel: `Start the questions`,
+            onConfirm: goToQuestions
           });
         } else {
-          goTo(questionPage);
+          goToQuestions();
         }
         return;
       }

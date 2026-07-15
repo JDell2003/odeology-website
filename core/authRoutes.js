@@ -2388,6 +2388,7 @@ async function getTrainerGrowthSnapshot(req, userLike, trainerProfile = null) {
             u.id,
             u.display_name,
             u.email,
+            u.phone,
             dc.day AS checkin_day,
             dc.data AS checkin_data,
             EXISTS (
@@ -2419,6 +2420,9 @@ async function getTrainerGrowthSnapshot(req, userLike, trainerProfile = null) {
         client.hasWorkoutPlan = !!(h && h.has_workout_plan);
         client.hasNutritionPlan = !!(h && h.has_nutrition_plan);
         client.workedOutToday = !!(h && h.worked_out_today);
+        // Contact info for the action to-do buttons (call / message / email).
+        client.phone = String(client.phone || (h && h.phone) || '').trim();
+        client.email = String(client.email || (h && h.email) || '').trim();
       });
 
       const warnings = roster.flatMap((client) => {
@@ -2476,6 +2480,8 @@ async function getTrainerGrowthSnapshot(req, userLike, trainerProfile = null) {
           occurredAt: action.occurredAt || new Date().toISOString(),
           linkedUserId: action.linkedUserId || null,
           clientName: action.clientName || 'Client',
+          clientPhone: String(action.clientPhone || '').trim(),
+          clientEmail: String(action.clientEmail || '').trim(),
           actionLabel: action.actionLabel || '',
           actionKind: action.actionKind || '',
           requestId: action.requestId || null
@@ -2513,6 +2519,8 @@ async function getTrainerGrowthSnapshot(req, userLike, trainerProfile = null) {
             occurredAt: health.checkin_day || client.joinedAt || new Date().toISOString(),
             linkedUserId: client.linkedUserId,
             clientName: client.name,
+            clientPhone: client.phone,
+            clientEmail: client.email,
             actionLabel: 'Check client account',
             actionKind: 'view-client'
           });
@@ -2527,6 +2535,8 @@ async function getTrainerGrowthSnapshot(req, userLike, trainerProfile = null) {
             occurredAt: client.joinedAt || new Date().toISOString(),
             linkedUserId: client.linkedUserId,
             clientName: client.name,
+            clientPhone: client.phone,
+            clientEmail: client.email,
             actionLabel: 'Check client account',
             actionKind: 'view-client'
           });
@@ -2541,6 +2551,8 @@ async function getTrainerGrowthSnapshot(req, userLike, trainerProfile = null) {
             occurredAt: health.checkin_day,
             linkedUserId: client.linkedUserId,
             clientName: client.name,
+            clientPhone: client.phone,
+            clientEmail: client.email,
             actionLabel: 'Check client account',
             actionKind: 'view-client'
           });

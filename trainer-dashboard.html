@@ -909,6 +909,19 @@
       color: #0f2435;
       box-shadow: none;
     }
+    .account-trainer-btn.is-disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+      pointer-events: none;
+      background: rgba(15, 36, 53, 0.06);
+      color: rgba(15, 36, 53, 0.5);
+      box-shadow: none;
+    }
+    .account-trainer-action-btns {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
     .account-trainer-btn-row {
       display: flex;
       flex-wrap: wrap;
@@ -1773,7 +1786,7 @@
   </div>
 
   <script src="js/main.js?v=2026-07-14-launchgate-3"></script>
-  <script src="js/account-trainer.js?v=2026-07-14-crm-31-pdfconfirm"></script>
+  <script src="js/account-trainer.js?v=2026-07-14-crm-32-contact"></script>
   <script>
     /* "Your Landing Page": trainers jump straight to their live coach site
        (builder if nothing is published yet); the owner instead gets the
