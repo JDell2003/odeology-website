@@ -42,6 +42,18 @@ module.exports = {
     progress:    { graceDays: 7,  perDay: 1.0 }    // DESIGN
   },
 
+  // Part C — consistency pairs with the training schedule (behind
+  // SCORING_CONSISTENCY_PAIRED). Per-day completion = done/expected of the
+  // day's expected actions. A completed SCHEDULED workout weighs heaviest, so
+  // "checked in but skipped a planned session" scores clearly lower than
+  // "checked in + trained". On a rest day only the check-in is expected, so a
+  // bare check-in is full (no "no-workout" penalty).
+  consistencyPairing: {
+    checkin: 1,   // a check-in (daily check-in OR the wake check-in)
+    workout: 3,   // heaviest — only expected on a scheduled training day
+    other:   0.5  // bonus per other completed action (cardio, meals, unplanned workout)
+  },
+
   // STRENGTH normalization.
   strength: {
     mainLifts: ['bench', 'squat', 'deadlift', 'ohp'],   // map exercise_key -> these

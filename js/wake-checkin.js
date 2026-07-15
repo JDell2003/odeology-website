@@ -28,6 +28,14 @@
     try { localStorage.setItem(CHECK_KEY, JSON.stringify(rec)); } catch (e) {}
     try { window.dispatchEvent(new CustomEvent('ode:wake-checkin', { detail: rec })); } catch (e) {}
     try { if (window.RiseActivity && window.RiseActivity.log) window.RiseActivity.log('checkins'); } catch (e) {}
+    // Persist server-side so the consistency scoring can see the check-in
+    // (sets app_health_daily.wake_at for today). Best-effort.
+    try {
+      fetch('/api/health/wake', {
+        method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ result: 'clean' })
+      }).catch(function () {});
+    } catch (e) {}
     return rec;
   }
 

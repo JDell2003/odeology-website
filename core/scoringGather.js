@@ -16,6 +16,13 @@ function scoringV2Enabled() {
   return String(process.env.SCORING_ENGINE_V2 || '').trim().toLowerCase() === 'true';
 }
 
+// Part C: pairs consistency with the actual training schedule. Kept behind its
+// OWN flag because SCORING_ENGINE_V2 is already ON in prod — when this is off,
+// the gather emits only the legacy binary `active` and scores are unchanged.
+function consistencyPairedEnabled() {
+  return String(process.env.SCORING_CONSISTENCY_PAIRED || '').trim().toLowerCase() === 'true';
+}
+
 // Task 11 — Railway parity: log (never throw) any scoring-relevant env var that
 // is missing or notable, so the owner can spot config drift in the Railway
 // deploy logs. All values are read from process.env (never hardcoded).
@@ -347,6 +354,29 @@ async function gatherUserScoringInputs(dbi, userId, sinceDate) {
   };
 
   // --- consistency (28d) ---
+  // Part C: the day's expected-vs-done set. Scheduled training days come from
+  // the user's REAL plan (the weekday-named days their active plan assigns). If
+  // the plan doesn't pin weekdays we never mark a "missed" workout — no guessing.
+  const paired = consistencyPairedEnabled();
+  const WEEKDAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  const scheduledWeekdays = new Set();
+  if (paired) {
+    try {
+      const planRes = await dbc.query(
+        `SELECT plan FROM app_training_plans WHERE user_id = $1 AND active = true LIMIT 1;`,
+        [userId]
+      );
+      const rawPlan = planRes.rows?.[0]?.plan;
+      const planObj = typeof rawPlan === 'string' ? JSON.parse(rawPlan) : rawPlan;
+      const planDays = (planObj && Array.isArray(planObj.weeks) && planObj.weeks[0] && Array.isArray(planObj.weeks[0].days)) ? planObj.weeks[0].days : [];
+      for (const pd of planDays) {
+        const name = String(pd?.day || pd?.label || '').trim();
+        if (WEEKDAYS.includes(name) && Array.isArray(pd?.exercises) && pd.exercises.length) scheduledWeekdays.add(name);
+      }
+    } catch { /* no readable schedule -> no missed-workout penalty */ }
+  }
+  const Wp = C.consistencyPairing || { checkin: 1, workout: 3, other: 0.5 };
+
   const consistencyDays = [];
   let lastActiveDay = null;
   for (let i = 0; i < C.windows.consistencyDays; i++) {
@@ -354,12 +384,32 @@ async function gatherUserScoringInputs(dbi, userId, sinceDate) {
     const h = healthByDay.get(day);
     const ck = checkinByDay.get(day);
     const worked = workoutDays.has(day);
-    const active = Boolean(worked || ck || (h && ((Number(h.active_minutes) || 0) >= 20 || (Number(h.steps) || 0) >= C.cardio.stepGoal || h.gym_visit === true)));
+    const cardioDone = Boolean(h && ((Number(h.active_minutes) || 0) >= 20 || (Number(h.distance_meters) || 0) > 0 || (Number(h.steps) || 0) >= C.cardio.stepGoal));
+    // A check-in is the daily check-in OR the wake check-in (Part B posts to
+    // /api/health/wake, which sets wake_at).
+    const checkedIn = Boolean(ck || (h && h.wake_at));
+    const active = Boolean(worked || checkedIn || cardioDone || (h && h.gym_visit === true));
     const provenance = worked || ck ? 'self_report' : h ? deviceOrSelf((h.sources || {}).activeMinutes || (h.sources || {}).steps) : 'self_report';
     // device-verified activity counts fully; a bare check-in is self-report
     const prov = (h && (h.gym_visit === true || deviceOrSelf((h.sources || {}).activeMinutes) === 'device')) ? 'device' : provenance;
-    consistencyDays.push({ daysAgo: i, active, provenance: prov });
-    if (active && (!lastActiveDay || day > lastActiveDay)) lastActiveDay = day;
+
+    const entry = { daysAgo: i, active, provenance: prov };
+    if (paired) {
+      const weekday = WEEKDAYS[new Date(day + 'T00:00:00Z').getUTCDay()];
+      const isScheduled = scheduledWeekdays.has(weekday);
+      const mealsLogged = Boolean(ck && ck.data && typeof ck.data === 'object'
+        && (Number(ck.data.macros?.calories) > 0 || ck.data.mealsOnPlan));
+      const expected = Wp.checkin + (isScheduled ? Wp.workout : 0);
+      let done = (checkedIn ? Wp.checkin : 0)
+        + (isScheduled && worked ? Wp.workout : 0)
+        + (cardioDone ? Wp.other : 0)
+        + (mealsLogged ? Wp.other : 0)
+        + (worked && !isScheduled ? Wp.other : 0); // unplanned workout = bonus, not required
+      entry.completion = expected > 0 ? Math.max(0, Math.min(1, done / expected)) : (checkedIn ? 1 : 0);
+    }
+    consistencyDays.push(entry);
+    const dayCounts = paired ? (entry.completion > 0) : active;
+    if (dayCounts && (!lastActiveDay || day > lastActiveDay)) lastActiveDay = day;
   }
   const consistency = {
     days: consistencyDays,

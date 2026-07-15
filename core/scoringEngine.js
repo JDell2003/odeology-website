@@ -209,8 +209,13 @@ function computeConsistency(inputs, prev, events) {
   for (const d of days) {
     const w = recencyWeight(d.daysAgo);
     possible += w;
-    if (d.active) {
-      const credit = w * trustMultiplier(d.provenance || 'self_report');
+    // Part C: when the gather supplies a weighted `completion` (0..1) it drives
+    // credit — a scheduled workout day where the workout was skipped scores a
+    // fraction. Falls back to the legacy binary `active` when absent, so scores
+    // are unchanged while SCORING_CONSISTENCY_PAIRED is off.
+    const completion = Number.isFinite(d.completion) ? clamp(d.completion, 0, 1) : (d.active ? 1 : 0);
+    if (completion > 0) {
+      const credit = w * completion * trustMultiplier(d.provenance || 'self_report');
       got += credit;
       if ((d.provenance || 'self_report') === 'device') deviceGot += credit;
     }
