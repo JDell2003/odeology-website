@@ -7135,6 +7135,10 @@ function formatWorkspaceLabel(workspace) {
           if (TEST_ONBOARDING_MODE) return;
           try {
             localStorage.setItem(ONBOARDING_DONE_KEY, '1');
+            // Stamp the current onboarding version so a future ODE_ONBOARDING_VERSION
+            // bump can force this account back through onboarding.
+            if (typeof window.odeStampOnboardingVersion === 'function') window.odeStampOnboardingVersion();
+            else localStorage.setItem('ode_onboarding_version', String(window.ODE_ONBOARDING_VERSION || 2));
             localStorage.removeItem(ONBOARDING_FORCE_KEY);
             localStorage.removeItem(ONBOARDING_DRAFT_KEY);
           } catch {}

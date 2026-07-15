@@ -13337,24 +13337,57 @@ function odeRequiresSignedInUser() {
 // 'ode_onboarding_done_v1' is set on completion, and trainer/manager accounts
 // whose server flags show a finished flow count as done.
 const ODE_ONBOARDING_DONE_KEY = 'ode_onboarding_done_v1';
+// Bump ODE_ONBOARDING_VERSION to force EVERY client/general account to redo
+// onboarding on next load — their stored version goes stale, and their locally
+// saved meal + workout plans are wiped so they regenerate fresh. Trainers and
+// managers keep their server-side onboarding state (running them through client
+// onboarding would corrupt their role flow), so they're not reset by a bump.
+const ODE_ONBOARDING_VERSION = 2;
+const ODE_ONBOARDING_VERSION_KEY = 'ode_onboarding_version';
+try { window.ODE_ONBOARDING_VERSION = ODE_ONBOARDING_VERSION; } catch {}
+// localStorage keys holding a user's workout / nutrition plan + onboarding
+// answers, cleared once when a stale account is reset.
+const ODE_RESET_PLAN_KEYS = [
+    'ode_meal_program_plan_v1', 'ode_meal_picks_v1', 'ode_meal_answers_v1',
+    'ode_training_intake_v2', 'ode_training_draft_v1', 'ode_training_builder_prefill_v1',
+    'ode_training_constructing_v1', 'ode_training_plan_nav_v1', 'ode_training_autobuild_v1'
+];
+function odeStampOnboardingVersion() {
+    try { localStorage.setItem(ODE_ONBOARDING_VERSION_KEY, String(ODE_ONBOARDING_VERSION)); } catch {}
+}
+try { window.odeStampOnboardingVersion = odeStampOnboardingVersion; } catch {}
+function odeOnboardingVersionCurrent() {
+    try { return Number(localStorage.getItem(ODE_ONBOARDING_VERSION_KEY) || 0) >= ODE_ONBOARDING_VERSION; } catch { return false; }
+}
+function odeResetLocalPlansOnce() {
+    try {
+        const guard = 'ode_reset_cleared_v' + ODE_ONBOARDING_VERSION;
+        if (localStorage.getItem(guard) === '1') return;
+        ODE_RESET_PLAN_KEYS.forEach((k) => { try { localStorage.removeItem(k); } catch {} });
+        try { localStorage.removeItem(ODE_ONBOARDING_DONE_KEY); } catch {}
+        localStorage.setItem(guard, '1');
+    } catch {}
+}
 
 function odeOnboardingComplete(user = null) {
-    try {
-        if (localStorage.getItem(ODE_ONBOARDING_DONE_KEY) === '1') return true;
-    } catch {}
     const u = user || window.__odeCurrentUser || readAuthUserHint() || null;
     if (!u) return true; // signed-out visitors are the auth gate's problem
     if (u.isDemo || u?.demo?.active) return true; // demo accounts skip onboarding
+    // Trainers/managers: keep their server-side onboarding state as-is.
     const trainerOnboarded = Boolean(u?.trainer?.onboarded || u?.trainer?.onboardingCompletedAt);
     let managerDone = false;
     try {
         const id = String(u.id || '').trim();
         managerDone = Boolean(id) && localStorage.getItem(`ode_manager_onboarding_done_v1:manager:user:${id}`) === '1';
     } catch {}
-    if (trainerOnboarded || managerDone) {
-        try { localStorage.setItem(ODE_ONBOARDING_DONE_KEY, '1'); } catch {}
-        return true;
-    }
+    if (trainerOnboarded || managerDone) return true;
+    // Client/general accounts: onboarding counts only when their stored version
+    // is current. A stale version means we bumped ODE_ONBOARDING_VERSION to
+    // reset everyone — wipe their old plans and send them back through it.
+    try {
+        if (localStorage.getItem(ODE_ONBOARDING_DONE_KEY) === '1' && odeOnboardingVersionCurrent()) return true;
+    } catch {}
+    if (!odeOnboardingVersionCurrent()) odeResetLocalPlansOnce();
     return false;
 }
 
