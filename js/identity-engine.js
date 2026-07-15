@@ -282,14 +282,24 @@
                 var prev = readJSON('ovIdentityStats');
                 var stats = {};
                 var serverSum = 0;
-                AXES.forEach(function (a) { stats[a] = round(Number(data.axes[a]) || 0); serverSum += stats[a]; });
+                var serverMax = 0;
+                AXES.forEach(function (a) {
+                    var v = round(Number(data.axes[a]) || 0);
+                    stats[a] = v;
+                    serverSum += v;
+                    if (v > serverMax) serverMax = v;
+                });
                 // GLITCH GUARD: a fresh user with no logged lifts gets a snapshot
-                // whose axes are all 0 the moment one is created (e.g. after a
-                // check-in). Writing that collapses the radar to nothing and buries
-                // the user's honest onboarding-seeded peasant graph. An all-zero
-                // snapshot carries no real signal, so keep the local graph until
-                // the server actually has something to say.
-                if (serverSum <= 0) return null;
+                // whose axes are ~0 the moment one is created (e.g. after a
+                // check-in bumps consistency by a single point). Writing that
+                // collapses the radar to nothing and buries the user's honest
+                // onboarding-seeded peasant graph. A snapshot with essentially no
+                // signal — total below a few points and no axis meaningfully off
+                // the floor — carries nothing real, so keep the local graph until
+                // the server actually has something to say. (The old guard only
+                // caught an EXACT all-zero sum, so a lone consistency=1 slipped
+                // through and flickered the radar to empty.)
+                if (serverSum < 8 || serverMax < 5) return null;
                 stats.__server = true;                       // authoritative marker
                 stats.__serverRank = data.rank || null;
                 stats.__serverCaste = data.caste || null;
