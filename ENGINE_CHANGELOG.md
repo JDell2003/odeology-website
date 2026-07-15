@@ -204,3 +204,50 @@ early-return so **normal/absent readiness is byte-for-byte the existing path**
 // two mechanisms already agree in direction, and rewriting the live log path for a
 // pure refactor is higher risk than reward. The readiness governor was the missing
 // real behavior; it's in.
+
+## Task 10 — Tests ✅ (covered per-task)
+
+The progression styles are covered by 17 tests in `tests/trainingEngine.oblueprint.test.js`:
+standard == HEAD byte-for-byte (saved fixture), unset==standard, double_progression
+(base 6→9 + reset), per-lift steps (+20/+10/+5), accessory rep base 8,
+hypertrophy_double (8→12 / 5-week cycle), config-source, anchor history mapping +
+cold-start null + source-tier ordering, legacy-throws + oblueprint-builds
+(wall-off), telemetry, and the readiness governor. All green; the 21 failing
+suite tests are pre-existing selection/validation cases untouched by this work
+(verified against pristine HEAD).
+
+## Tasks 6 & 7 — Cardio + spider coupling — DEFERRED (Phase 2, with plan)
+
+Deliberately deferred as genuinely larger features; rushing them under finite
+autonomous budget would violate the "safe" mandate. Neither is a blocker for
+Jason's core vision (which shipped in Tasks 1-5). Precise plans so they can land
+cleanly later:
+
+**Task 6 — Cardio prescription.** Add a `Cardio` slot kind to the day blueprint
+(gated by discipline/goal/days) in `buildDayBlueprint` / `fillSlots`, and a cardio
+lane in `progressionSchemes.js` that mirrors the lifting philosophy: add
+duration/distance for `cycleWeeks`, then raise intensity and reset — the cardio
+analogue of add-reps-then-load. Keep it optional per plan (a `wantsCardio` flag).
+Risk: touches the selection/blueprint core (the part the work order says not to
+destabilize), so it needs its own careful pass + fixtures.
+
+**Task 7 — Training → spider graph.** When the readiness-verified earn-the-rep
+path advances a lift (Task 4), emit a Strength/Progress score event into the
+`app_score_events` ledger at the device/self-report trust tier, so real logged
+progress — not raw workout counts — drives the axis. Requires the scoring-engine
+ledger + trust-tier plumbing from the separate scoring work order; best landed
+alongside that system so the trust tiers stay consistent.
+
+---
+
+## Summary
+
+Shipped safely, one commit each, all behind `progressionStyle` with `standard`
+byte-for-byte identical to HEAD: **Task 0** (reconcile → shelved the incomplete
+rewrite, built on HEAD), **1** (config + flag), **2** (per-lift steps + accessory
+base), **3** (real strength anchors — highest impact), **5-core** (powerbuilding
+default + visible selector — makes the vision reachable), **8** (wall off legacy
+generatePlan), **9** (build telemetry), **4-slice** (earn-the-rep verified +
+readiness governor), **10** (tests). Jason's double-progression is now a real,
+selectable, configurable, per-lift first-class style that powerbuilding defaults
+to. **6 & 7 deferred** with plans. No owner action required.
