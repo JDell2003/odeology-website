@@ -6,6 +6,21 @@
   // must never auto-build a plan from it while impersonating (that produced the
   // wrong plan and a long "Loading…" hang). Set from /api/auth/me.
   let sessionIsImpersonated = false;
+  // The signed-in (or viewed) client's coach, if any. Coach-managed clients get
+  // the "your coach is building your plan" experience instead of the self-setup
+  // prompt. Fetched once from /api/auth/my-coach.
+  let sessionCoach = null;
+  let sessionCoachFetched = false;
+  async function ensureSessionCoach() {
+    if (sessionCoachFetched) return sessionCoach;
+    sessionCoachFetched = true;
+    try {
+      const r = await fetch('/api/auth/my-coach', { credentials: 'include' });
+      const j = r && r.ok ? await r.json() : null;
+      sessionCoach = (j && j.coach && j.coach.name) ? j.coach : null;
+    } catch { sessionCoach = null; }
+    return sessionCoach;
+  }
   const trainingDebugCombo = window.TrainingDebugCombo || null;
   const evaluateTrainingDebugCombo = trainingDebugCombo?.evaluateGlutesLegsCoreDebugCombo || null;
 
@@ -9971,6 +9986,7 @@ function toggleSharePopover(force) {
 
     const meUser = me.ok ? (me.json?.user || null) : null;
     sessionIsImpersonated = !!(me.ok && me.json?.impersonation?.active);
+    if (meUser) { try { await ensureSessionCoach(); } catch { /* ignore */ } }
     if (!me.ok || !meUser) {
       if (silent && (state.auth.user || hadRenderablePlan)) return;
       state.auth.user = null;
@@ -12672,6 +12688,13 @@ function toggleSharePopover(force) {
     if (!plan || !Array.isArray(plan.weeks)) {
       if (isWorkoutBuildPending()) {
         return renderGenerating();
+      }
+      // Coach-managed clients don't do their own setup — their coach delivers
+      // the plan. Suppress the "No saved setup found / Complete setup" prompt
+      // entirely; the centered "your coach is building your plan" card (from
+      // coach-doc-card.js) is the only thing that should show here.
+      if (sessionCoach && sessionCoach.name) {
+        return el('div');
       }
       // While impersonating, the local intake is the trainer's — never offer to
       // build the client's plan from it (wrong data + a long build hang).

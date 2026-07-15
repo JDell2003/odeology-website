@@ -28,10 +28,12 @@
         var s = document.createElement('style');
         s.id = 'coach-doc-card-styles';
         s.textContent = [
-            '.coach-doc-card{display:flex;align-items:center;gap:16px;margin:0 0 22px;padding:18px 20px;',
+            '.coach-doc-card{display:flex;align-items:center;gap:16px;width:100%;max-width:640px;margin:8vh auto 22px;padding:20px 22px;',
             '  border-radius:16px;border:1px solid rgba(185,138,43,.32);',
             '  background:linear-gradient(135deg,rgba(212,175,55,.14),rgba(212,175,55,.05));',
             '  box-shadow:0 8px 24px rgba(90,60,10,.08);}',
+            '.coach-doc-card.is-pending{flex-direction:column;text-align:center;gap:10px;padding:30px 26px;}',
+            '.coach-doc-card.is-pending .cdc-body{text-align:center;}',
             '.coach-doc-card .cdc-icon{flex:0 0 auto;display:flex;align-items:center;justify-content:center;',
             '  width:48px;height:48px;border-radius:12px;color:#8a6414;',
             '  background:rgba(212,175,55,.2);border:1px solid rgba(185,138,43,.4);}',
@@ -95,7 +97,7 @@
         var label = kind === 'nutrition' ? 'nutrition' : 'training';
         var who = coachName || 'Your coach';
         var card = document.createElement('section');
-        card.className = 'coach-doc-card';
+        card.className = 'coach-doc-card is-pending';
         card.innerHTML =
             '<div class="cdc-icon" aria-hidden="true">' +
             '<svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 2"></path></svg>' +
