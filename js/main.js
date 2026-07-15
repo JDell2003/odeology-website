@@ -2426,9 +2426,9 @@ function ensureControlMobileFabNav() {
             <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="7" height="7" rx="1.5"></rect><rect x="13" y="4" width="7" height="4.5" rx="1.5"></rect><rect x="13" y="10.5" width="7" height="9.5" rx="1.5"></rect><rect x="4" y="13" width="7" height="7" rx="1.5"></rect></svg>
             <span class="control-mobile-fab-link-label">Dashboard</span>
         </a>
-        <a class="control-mobile-fab-link" href="alarm.html" aria-label="Rise Alarm" ${/\/alarm\.html$/i.test(path) ? 'aria-current="page"' : ''}>
-            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="13" r="7"></circle><path d="M12 9.5V13l2.4 1.9"></path><path d="M5.2 4.4 3.4 6.1M18.8 4.4l1.8 1.7"></path></svg>
-            <span class="control-mobile-fab-link-label">Alarm</span>
+        <a class="control-mobile-fab-link" href="overview.html#wake-checkin-mount" aria-label="Wake Check-In">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"></circle><path d="M8.5 12.2 11 14.7l4.5-5"></path></svg>
+            <span class="control-mobile-fab-link-label">Check In</span>
         </a>
         <button class="control-mobile-fab-link control-mobile-fab-action" id="control-mobile-fab-dash" type="button" aria-label="Dash">
             <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="7.6"></circle><path d="M8.3 12.45 10.75 14.9 15.85 9.65"></path></svg>
