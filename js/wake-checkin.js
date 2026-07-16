@@ -9,6 +9,9 @@
   var PREF_KEY = 'ode_tracking_prefs_v1';
   var CHECK_KEY = 'ode_wake_checkin_v1';
   var LATE_CAP_MIN = 20; // at +20 min the score hits 0; beyond that it's negative
+  var EARLY_WINDOW_MIN = 15; // the card only appears from 15 min BEFORE wake time
+  // ...to 20 min AFTER (LATE_CAP_MIN). Outside that window, or once checked off,
+  // the card is hidden entirely.
 
   function today() { return new Date().toISOString().slice(0, 10); }
   function wakeTime() {
@@ -20,6 +23,17 @@
     catch (e) { return null; }
   }
   function minutesOf(hhmm) { var m = /^(\d{1,2}):(\d{2})/.exec(String(hhmm || '')); return m ? (+m[1]) * 60 + (+m[2]) : 7 * 60; }
+
+  // True only inside [wake - 15 min, wake + 20 min]. Uses a signed minute delta
+  // that wraps around midnight so wake times near 00:00 behave correctly.
+  function withinWindow() {
+    var now = new Date();
+    var nowMin = now.getHours() * 60 + now.getMinutes();
+    var delta = nowMin - minutesOf(wakeTime());
+    if (delta > 720) delta -= 1440;      // wrapped past midnight forward
+    else if (delta < -720) delta += 1440; // wrapped past midnight backward
+    return delta >= -EARLY_WINDOW_MIN && delta <= LATE_CAP_MIN;
+  }
 
   // Graded progress from minutes-after-target: <=0 = 1.0 (full), linear down to
   // 0 at +LATE_CAP_MIN, then negative (to -1 at +2x the cap).
@@ -96,24 +110,22 @@
     return { cls: 'late', ic: '&#9888;', title: late + ' min late — past the ' + LATE_CAP_MIN + '-min window', sub: 'This one dings your Consistency. Aim within ' + LATE_CAP_MIN + ' min of ' + rec.wakeTime + ' tomorrow.', pct: 0, bar: '#dc2626' };
   }
 
+  var lastShown = null; // cache the shown/hidden decision to avoid re-render flicker
+
   function render(mount) {
-    var done = getToday();
+    // Show ONLY when not yet checked off today AND we're inside the wake window.
+    // Before -15 min, after +20 min, or once checked off -> the card goes away.
+    var show = !getToday() && withinWindow();
+    if (show === lastShown) return;
+    lastShown = show;
+    if (!show) { mount.innerHTML = ''; return; }
     var wt = wakeTime();
-    if (done) {
-      var f = feedback(done);
-      mount.innerHTML = '<div class="wc-card ' + f.cls + '"><div class="wc-ic">' + f.ic + '</div><div class="wc-body">'
-        + '<div class="wc-title">' + f.title + '</div>'
-        + '<div class="wc-sub">' + f.sub + '</div>'
-        + '<div class="wc-meter"><i style="width:' + f.pct + '%;background:' + f.bar + ';"></i></div>'
-        + '</div></div>';
-    } else {
-      mount.innerHTML = '<div class="wc-card"><div class="wc-body">'
-        + '<div class="wc-title">Good morning — up and at it?</div>'
-        + '<div class="wc-sub">Tap when you’re up. Target wake <b>' + wt + '</b>. On time = full progress; each minute after earns less, and past ' + LATE_CAP_MIN + ' min it goes negative.</div>'
-        + '</div><button class="wc-btn" id="wc-btn" type="button">I’m up — Check In</button></div>';
-      var btn = mount.querySelector('#wc-btn');
-      if (btn) btn.addEventListener('click', function () { record(); render(mount); });
-    }
+    mount.innerHTML = '<div class="wc-card"><div class="wc-body">'
+      + '<div class="wc-title">Good morning — up and at it?</div>'
+      + '<div class="wc-sub">Tap when you’re up. Target wake <b>' + wt + '</b>. On time = full progress; each minute after earns less, and past ' + LATE_CAP_MIN + ' min it goes negative.</div>'
+      + '</div><button class="wc-btn" id="wc-btn" type="button">I’m up — Check In</button></div>';
+    var btn = mount.querySelector('#wc-btn');
+    if (btn) btn.addEventListener('click', function () { record(); render(mount); });
   }
 
   function init() {
@@ -121,6 +133,9 @@
     if (!mount) return;
     styles();
     render(mount);
+    // Re-evaluate as time passes so the card appears when the window opens and
+    // disappears when it closes, without needing a page refresh.
+    setInterval(function () { render(mount); }, 30000);
   }
   if (document.readyState !== 'loading') init(); else document.addEventListener('DOMContentLoaded', init);
   window.RiseWakeCheckin = { record: record, getToday: getToday, grade: grade };
