@@ -5274,27 +5274,24 @@ a {
 }
 
 /* ---- Scene: dumbbell curls ---- */
+/* Forearm hinges at the elbow (280,120) while the upper arm stays fixed, so
+   the dumbbell tracks a real curl instead of orbiting empty space. */
 .db-arm {
-    transform-origin: 355px 150px;
+    transform-origin: 280px 120px;
     animation: dbCurl 2.75s ease-in-out both;
 }
 
 @keyframes dbCurl {
     0%, 8% { transform: rotate(0deg); }
-    20% { transform: rotate(68deg); }
-    32% { transform: rotate(4deg); }
-    44% { transform: rotate(68deg); }
-    56% { transform: rotate(4deg); }
-    66% { transform: rotate(26deg); }
-    72% { transform: rotate(38deg); }
-    76% { transform: rotate(34deg); }
-    82% { transform: rotate(52deg); }
-    87% { transform: rotate(49deg); }
-    94%, 100% { transform: rotate(70deg); filter: drop-shadow(0 10px 18px rgba(217, 161, 92, 0.3)); }
+    22% { transform: rotate(150deg); }
+    34% { transform: rotate(6deg); }
+    48% { transform: rotate(150deg); }
+    60% { transform: rotate(6deg); }
+    72% { transform: rotate(142deg); }
+    80% { transform: rotate(156deg); }
+    88% { transform: rotate(148deg); }
+    94%, 100% { transform: rotate(150deg); filter: drop-shadow(0 10px 18px rgba(217, 161, 92, 0.3)); }
 }
-
-.db-a1 { stroke-dasharray: 260; stroke-dashoffset: 260; animation: kbTrail 0.45s ease-out 2.4s forwards; }
-.db-a2 { stroke-dasharray: 220; stroke-dashoffset: 220; animation: kbTrail 0.45s ease-out 2.55s forwards; }
 
 /* ---- Scene: PR chart ---- */
 .ch-line {

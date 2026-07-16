@@ -21696,11 +21696,18 @@ function odePreloaderScenes() {
         ticker: [[650, '1', 'REP'], [1250, '2', 'REP'], [1900, '3', 'REP'], [2450, 'POWER', '']],
         svg: svg(`
             ${floor(120, 'kb-shadow')}
+            <g class="kb-mount">
+                <rect x="234" y="14" width="92" height="13" rx="6.5" fill="url(#plg-sleeve)" stroke="rgba(255,255,255,0.18)"/>
+                <rect x="238" y="16" width="84" height="3" rx="1.5" fill="rgba(255,255,255,0.32)"/>
+                <rect x="272" y="24" width="16" height="9" rx="3" fill="url(#plg-plate)" stroke="rgba(255,255,255,0.16)"/>
+            </g>
             <g class="kb-trails" fill="none" stroke="url(#plg-gold)" stroke-linecap="round">
                 <path class="kb-t1" d="M172 96 A150 150 0 0 1 388 96" stroke-width="3.5" opacity="0"/>
                 <path class="kb-t2" d="M196 120 A118 118 0 0 1 364 120" stroke-width="2.5" opacity="0"/>
             </g>
             <g class="kb-swing"><g>
+                <rect x="272" y="28" width="16" height="74" rx="6" fill="url(#plg-sleeve)" stroke="rgba(255,255,255,0.14)"/>
+                <rect x="274.5" y="31" width="4" height="66" rx="2" fill="rgba(255,255,255,0.26)"/>
                 <path d="M254 130 q 0 -36 26 -36 q 26 0 26 36" fill="none" stroke="url(#plg-bar)" stroke-width="13" stroke-linecap="round"/>
                 <path d="M247 130 q -12 46 12 61 q 21 12 42 0 q 24 -15 12 -61 Z" fill="url(#plg-plate)" stroke="rgba(255,255,255,0.14)"/>
                 <rect x="249" y="141" width="62" height="9" rx="4.5" fill="url(#plg-gold)" opacity="0.9"/>
@@ -21711,12 +21718,21 @@ function odePreloaderScenes() {
         id: 'dumbbell',
         ticker: [[600, '1', 'REP'], [1300, '2', 'REP'], [2300, '3', 'REP'], [2650, 'GRIND', '']],
         svg: svg(`
-            ${floor(150)}
-            <g class="db-arcs" fill="none" stroke="url(#plg-gold)" stroke-linecap="round">
-                <path class="db-a1" d="M150 168 A140 140 0 0 1 236 52" stroke-width="3" opacity="0"/>
-                <path class="db-a2" d="M175 185 A118 118 0 0 1 250 78" stroke-width="2" opacity="0"/>
+            ${floor(140)}
+            <g class="db-uparm">
+                <circle cx="280" cy="46" r="16" fill="url(#plg-plate)" stroke="rgba(255,255,255,0.16)"/>
+                <circle cx="280" cy="46" r="6" fill="rgba(255,255,255,0.14)"/>
+                <rect x="271" y="44" width="18" height="84" rx="9" fill="url(#plg-sleeve)" stroke="rgba(255,255,255,0.14)"/>
+                <rect x="274" y="48" width="4" height="74" rx="2" fill="rgba(255,255,255,0.18)"/>
             </g>
-            <g class="db-arm">${miniDumbbell(215, 150, 1.5)}</g>`)
+            <g class="db-arm">
+                <rect x="272" y="118" width="16" height="82" rx="8" fill="url(#plg-sleeve)" stroke="rgba(255,255,255,0.14)"/>
+                <rect x="275" y="122" width="4" height="72" rx="2" fill="rgba(255,255,255,0.18)"/>
+                <circle cx="280" cy="192" r="14" fill="url(#plg-plate)" stroke="rgba(255,255,255,0.16)"/>
+                ${miniDumbbell(280, 192, 1.5)}
+                <circle cx="280" cy="120" r="11" fill="url(#plg-bar)" stroke="rgba(0,0,0,0.3)"/>
+                <circle cx="280" cy="120" r="4" fill="rgba(3,6,10,0.5)"/>
+            </g>`)
     },
     {
         id: 'chart',
@@ -21758,21 +21774,29 @@ function odePreloaderScenes() {
         id: 'shaker',
         ticker: [[400, 'SHAKE', ''], [1500, 'SHAKE', 'HARDER'], [2450, 'SMOOTH', '']],
         svg: svg(`
-            ${floor(90)}
+            ${floor(96)}
             <g class="bt-shake">
-                <defs><clipPath id="bt-clip"><rect x="251" y="95" width="58" height="112" rx="13"/></clipPath></defs>
-                <rect x="248" y="92" width="64" height="118" rx="16" fill="rgba(255,255,255,0.06)" stroke="rgba(255,255,255,0.22)" stroke-width="1.5"/>
+                <defs><clipPath id="bt-clip"><rect x="245" y="94" width="70" height="114" rx="16"/></clipPath></defs>
+                <rect x="242" y="90" width="76" height="120" rx="20" fill="rgba(255,255,255,0.05)" stroke="rgba(255,255,255,0.22)" stroke-width="1.5"/>
                 <g clip-path="url(#bt-clip)">
-                    <path class="bt-liquid" d="M191 150 q 15 -9 30 0 t 30 0 t 30 0 t 30 0 t 30 0 t 30 0 t 30 0 V 210 H 191 Z" fill="url(#plg-gold)" opacity="0.75"/>
-                    <circle class="bt-b1" cx="268" cy="195" r="4" fill="rgba(255,255,255,0.35)"/>
-                    <circle class="bt-b2" cx="284" cy="200" r="3" fill="rgba(255,255,255,0.3)"/>
-                    <circle class="bt-b3" cx="296" cy="192" r="2.5" fill="rgba(255,255,255,0.3)"/>
+                    <path class="bt-liquid" d="M185 150 q 16 -9 32 0 t 32 0 t 32 0 t 32 0 t 32 0 t 32 0 t 32 0 V 212 H 185 Z" fill="url(#plg-gold)" opacity="0.82"/>
+                    <path class="bt-liquid" d="M185 150 q 16 -9 32 0 t 32 0 t 32 0 t 32 0 t 32 0 t 32 0 t 32 0" fill="none" stroke="rgba(255,247,230,0.5)" stroke-width="4"/>
+                    <circle class="bt-b1" cx="266" cy="196" r="4.5" fill="rgba(255,255,255,0.4)"/>
+                    <circle class="bt-b2" cx="288" cy="202" r="3.5" fill="rgba(255,255,255,0.32)"/>
+                    <circle class="bt-b3" cx="298" cy="190" r="3" fill="rgba(255,255,255,0.32)"/>
                 </g>
-                <g stroke="rgba(255,255,255,0.16)"><line x1="300" y1="130" x2="308" y2="130"/><line x1="300" y1="155" x2="308" y2="155"/><line x1="300" y1="180" x2="308" y2="180"/></g>
-                <rect x="246" y="74" width="68" height="22" rx="9" fill="url(#plg-plate)" stroke="rgba(255,255,255,0.18)"/>
-                <g class="bt-cap"><rect x="266" y="62" width="28" height="14" rx="6" fill="url(#plg-sleeve)"/><circle cx="280" cy="62" r="5" fill="url(#plg-gold)"/></g>
+                <rect x="249" y="98" width="9" height="104" rx="4.5" fill="rgba(255,255,255,0.07)"/>
+                <rect x="242" y="112" width="76" height="22" fill="rgba(9,13,22,0.4)"/>
+                <text x="280" y="128" text-anchor="middle" font-family="Space Grotesk, sans-serif" font-size="12" font-weight="800" fill="rgba(255,255,255,0.6)" letter-spacing="3">RISE</text>
+                <g stroke="rgba(255,255,255,0.18)" stroke-width="1.5"><line x1="305" y1="150" x2="313" y2="150"/><line x1="308" y1="168" x2="313" y2="168"/><line x1="305" y1="186" x2="313" y2="186"/></g>
+                <rect x="244" y="72" width="72" height="22" rx="9" fill="url(#plg-plate)" stroke="rgba(255,255,255,0.18)"/>
+                <rect x="248" y="76" width="64" height="3" rx="1.5" fill="rgba(255,255,255,0.16)"/>
+                <g class="bt-cap">
+                    <rect x="261" y="57" width="38" height="17" rx="7" fill="url(#plg-sleeve)" stroke="rgba(255,255,255,0.16)"/>
+                    <rect x="286" y="46" width="13" height="15" rx="4" fill="url(#plg-gold)"/>
+                </g>
             </g>
-            ${star(322, 74, 'bt-spark')}`)
+            ${star(326, 64, 'bt-spark')}`)
     },
     {
         id: 'treadmill',
@@ -21840,14 +21864,17 @@ function odePreloaderScenes() {
         ticker: [[600, 'DONUT', '?'], [1800, 'GAINS', '!'], [2500, 'DISCIPLINE', '']],
         svg: svg(`
             ${floor(120)}
-            <rect x="274" y="120" width="12" height="88" rx="5" fill="url(#plg-sleeve)"/>
-            <rect x="240" y="204" width="80" height="10" rx="5" fill="url(#plg-plate)" stroke="rgba(255,255,255,0.12)"/>
+            <path d="M280 116 L302 206 L258 206 Z" fill="url(#plg-sleeve)" stroke="rgba(255,255,255,0.12)"/>
+            <path d="M280 116 L290 206 L270 206 Z" fill="rgba(255,255,255,0.08)"/>
+            <rect x="236" y="204" width="88" height="11" rx="5.5" fill="url(#plg-plate)" stroke="rgba(255,255,255,0.12)"/>
+            <rect x="240" y="206" width="80" height="3" rx="1.5" fill="rgba(255,255,255,0.12)"/>
             <g class="bl-beam">
                 <rect x="150" y="112" width="260" height="9" rx="4.5" fill="url(#plg-bar)"/>
                 <circle cx="280" cy="116" r="9" fill="url(#plg-gold)"/>
+                <circle cx="280" cy="116" r="3.5" fill="rgba(3,6,10,0.4)"/>
                 <g class="bl-pan bl-pan-l">
-                    <line x1="165" y1="118" x2="150" y2="152" stroke="rgba(255,255,255,0.3)" stroke-width="1.5"/>
-                    <line x1="165" y1="118" x2="180" y2="152" stroke="rgba(255,255,255,0.3)" stroke-width="1.5"/>
+                    <line x1="165" y1="118" x2="150" y2="152" stroke="rgba(255,255,255,0.4)" stroke-width="2"/>
+                    <line x1="165" y1="118" x2="180" y2="152" stroke="rgba(255,255,255,0.4)" stroke-width="2"/>
                     <path d="M138 152 h54 q-4 14 -27 14 q-23 0 -27 -14 Z" fill="url(#plg-plate)" stroke="rgba(255,255,255,0.14)"/>
                     <g class="bl-donut">
                         <circle cx="165" cy="140" r="17" fill="#caa06a"/>
@@ -21859,8 +21886,8 @@ function odePreloaderScenes() {
                     </g>
                 </g>
                 <g class="bl-pan bl-pan-r">
-                    <line x1="395" y1="118" x2="380" y2="152" stroke="rgba(255,255,255,0.3)" stroke-width="1.5"/>
-                    <line x1="395" y1="118" x2="410" y2="152" stroke="rgba(255,255,255,0.3)" stroke-width="1.5"/>
+                    <line x1="395" y1="118" x2="380" y2="152" stroke="rgba(255,255,255,0.4)" stroke-width="2"/>
+                    <line x1="395" y1="118" x2="410" y2="152" stroke="rgba(255,255,255,0.4)" stroke-width="2"/>
                     <path d="M368 152 h54 q-4 14 -27 14 q-23 0 -27 -14 Z" fill="url(#plg-plate)" stroke="rgba(255,255,255,0.14)"/>
                     ${miniDumbbell(395, 142, 0.8)}
                 </g>

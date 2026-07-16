@@ -7,7 +7,7 @@
     <script src="js/theme-color.js?v=2026-07-13-themebar-1" defer></script>
     <meta name="google-site-verification" content="vRcaMhl7lrb1k1IWJHFo2IcW_z8qxfdFVHdSz1oPRoY" />
     <title>RiseForIt - Systems. Strength. Proof.</title>
-    <link rel="stylesheet" href="css/main.css?v=2026-07-15-beta-1">
+    <link rel="stylesheet" href="css/main.css?v=2026-07-15-hero-1">
     <link rel="stylesheet" href="css/client-quiz.css?v=2026-07-14-budget-1">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -2029,6 +2029,341 @@
         font-weight: 700;
         text-align: center;
       }
+      /* ===== Desktop-browser mock that sits behind the phone in the auth hero.
+         Hidden on mobile; the desktop media query positions the device cluster. ===== */
+      .hero-desktop { display: none; }
+      .hd-top {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 7px 10px;
+        background: #0f1521;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+      }
+      .hd-dots { display: flex; gap: 5px; flex: none; }
+      .hd-dots i { width: 8px; height: 8px; border-radius: 50%; }
+      .hd-dots i:nth-child(1) { background: #e5695f; }
+      .hd-dots i:nth-child(2) { background: #e5b463; }
+      .hd-dots i:nth-child(3) { background: #5fb87a; }
+      .hd-addr {
+        flex: 1;
+        margin-right: 40px;
+        text-align: center;
+        font-family: 'Space Grotesk', sans-serif;
+        font-size: 10px;
+        font-weight: 600;
+        color: rgba(255, 255, 255, 0.4);
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 999px;
+        padding: 3px 0;
+      }
+      .hd-win {
+        display: grid;
+        grid-template-columns: 44px 1fr;
+        min-height: 286px;
+        /* Match the real app stage: layered gold + steel glows over deep navy */
+        background:
+          radial-gradient(circle at 16% 10%, rgba(217, 161, 92, 0.14), transparent 44%),
+          radial-gradient(circle at 92% 4%, rgba(96, 120, 165, 0.16), transparent 42%),
+          radial-gradient(circle at 78% 100%, rgba(217, 161, 92, 0.08), transparent 46%),
+          linear-gradient(180deg, #0c1119 0%, #090d16 60%, #06090f 100%);
+      }
+      .hd-rail {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 12px;
+        padding: 13px 0;
+        border-right: 1px solid rgba(255, 255, 255, 0.05);
+      }
+      .hd-rail .hd-logo { width: 18px; height: 18px; border-radius: 6px; background: linear-gradient(135deg, #d9a15c, #8a5a24); }
+      .hd-rail i { width: 16px; height: 16px; border-radius: 5px; background: rgba(255, 255, 255, 0.1); }
+      .hd-rail i.on { background: rgba(217, 161, 92, 0.4); }
+      .hd-main {
+        padding: 13px 15px 15px;
+        display: grid;
+        align-content: start;
+        gap: 10px;
+        min-width: 0;
+        font-family: 'Space Grotesk', sans-serif;
+      }
+      .hd-head { display: flex; align-items: center; gap: 10px; }
+      .hd-head > div { flex: 1; min-width: 0; text-align: left; }
+      .hd-head b { display: block; color: #fff; font-size: 14px; font-weight: 800; line-height: 1.1; }
+      .hd-head small { color: rgba(255, 255, 255, 0.45); font-size: 10px; font-weight: 600; }
+      .hd-chip { flex: none; padding: 4px 10px; border-radius: 999px; background: rgba(255, 255, 255, 0.08); color: rgba(255, 255, 255, 0.75); font-size: 10px; font-weight: 700; }
+      .hd-chip.is-gold { background: rgba(217, 161, 92, 0.2); color: #e5b070; }
+      /* training rows */
+      .hd-ex { display: flex; align-items: center; gap: 10px; padding: 8px 11px; border-radius: 11px; background: #131b28; border: 1px solid rgba(255, 255, 255, 0.05); }
+      .hd-ex.is-now { border-color: rgba(217, 161, 92, 0.5); background: rgba(217, 161, 92, 0.09); }
+      .hd-ex-n { flex: 1; min-width: 0; text-align: left; color: #fff; font-size: 12px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+      .hd-ex.is-done .hd-ex-n { color: rgba(255, 255, 255, 0.5); }
+      .hd-sets { display: flex; gap: 4px; flex: none; }
+      .hd-sets i { width: 13px; height: 13px; border-radius: 4px; background: rgba(255, 255, 255, 0.1); }
+      .hd-sets i.on { background: #65c786; }
+      .hd-ex.is-now .hd-sets i.on { background: #d9a15c; }
+      .hd-ex-w { flex: none; width: 44px; text-align: right; color: rgba(255, 255, 255, 0.5); font-size: 10.5px; font-weight: 700; }
+      .hd-ex-c { flex: none; width: 16px; height: 16px; border-radius: 50%; background: rgba(101, 199, 134, 0.18); color: #65c786; text-align: center; line-height: 16px; font-size: 10px; font-weight: 800; }
+      .hd-now { flex: none; padding: 2px 8px; border-radius: 999px; background: #d9a15c; color: #0c1119; font-size: 8.5px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; }
+      /* macros */
+      .hd-macros { display: grid; grid-template-columns: auto 1fr; gap: 16px; align-items: center; }
+      .hd-ring { width: 92px; height: 92px; border-radius: 50%; background: conic-gradient(#d9a15c 0deg 250deg, rgba(255, 255, 255, 0.1) 250deg 360deg); display: grid; place-items: center; }
+      .hd-ring span { width: 72px; height: 72px; border-radius: 50%; background: #0c1119; display: grid; place-items: center; align-content: center; }
+      .hd-ring b { color: #fff; font-size: 16px; font-weight: 800; line-height: 1; }
+      .hd-ring small { color: rgba(255, 255, 255, 0.45); font-size: 9px; font-weight: 600; }
+      .hd-bars { display: grid; gap: 9px; }
+      .hd-bar { display: flex; align-items: center; gap: 8px; }
+      .hd-bar > span { flex: none; width: 46px; text-align: left; color: rgba(255, 255, 255, 0.72); font-size: 10px; font-weight: 700; }
+      .hd-bar em { flex: 1; height: 8px; border-radius: 4px; background: rgba(255, 255, 255, 0.08); overflow: hidden; }
+      .hd-bar em b { display: block; height: 100%; border-radius: 4px; background: rgba(255, 255, 255, 0.32); }
+      .hd-bar em b.is-gold { background: #d9a15c; }
+      .hd-bar u { flex: none; width: 34px; text-align: right; color: rgba(255, 255, 255, 0.5); font-size: 9.5px; font-weight: 700; text-decoration: none; }
+      .hd-daystrip { display: flex; justify-content: space-between; gap: 5px; }
+      .hd-daystrip i { flex: 1; height: 22px; border-radius: 6px; background: rgba(255, 255, 255, 0.06); display: grid; place-items: center; color: rgba(255, 255, 255, 0.4); font-size: 9px; font-weight: 700; font-style: normal; }
+      .hd-daystrip i.on { background: rgba(217, 161, 92, 0.25); color: #e5b070; }
+      /* coach grid */
+      .hd-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 9px; }
+      .hd-coach { display: grid; justify-items: center; gap: 4px; padding: 12px 8px; border-radius: 12px; background: #131b28; border: 1px solid rgba(255, 255, 255, 0.05); text-align: center; }
+      .hd-coach .hd-av { width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; color: #0c1119; font-size: 12px; font-weight: 800; }
+      .hd-coach b { color: #fff; font-size: 11px; font-weight: 700; }
+      .hd-coach small { color: rgba(255, 255, 255, 0.45); font-size: 9px; font-weight: 600; }
+      .hd-coach .hd-book { margin-top: 3px; padding: 4px 14px; border-radius: 999px; background: #d9a15c; color: #0c1119; font-size: 9.5px; font-weight: 800; }
+      /* progress chart */
+      .hd-chartwrap { display: grid; grid-template-columns: 1fr 116px; gap: 12px; align-items: stretch; }
+      .hd-chart { display: flex; align-items: flex-end; justify-content: space-between; gap: 6px; height: 118px; padding: 6px 2px 0; border-left: 1px solid rgba(255, 255, 255, 0.12); border-bottom: 1px solid rgba(255, 255, 255, 0.12); }
+      .hd-chart i { flex: 1; border-radius: 5px 5px 2px 2px; background: linear-gradient(180deg, rgba(255, 255, 255, 0.26), rgba(255, 255, 255, 0.09)); }
+      .hd-chart i.is-gold { background: linear-gradient(180deg, #e5b070, #b9782d); }
+      .hd-stats { display: grid; gap: 9px; align-content: start; }
+      .hd-tile { padding: 10px 11px; border-radius: 11px; background: #131b28; border: 1px solid rgba(255, 255, 255, 0.05); text-align: left; }
+      .hd-tile small { display: block; color: rgba(255, 255, 255, 0.45); font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 2px; }
+      .hd-tile b { color: #fff; font-size: 15px; font-weight: 800; }
+      .hd-tile b.is-gold { color: #e5b070; }
+      /* client roster */
+      .hd-clients { display: grid; gap: 7px; }
+      .hd-cli { display: flex; align-items: center; gap: 9px; padding: 8px 10px; border-radius: 11px; background: #131b28; border: 1px solid rgba(255, 255, 255, 0.05); }
+      .hd-cli .hd-av { width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; color: #0c1119; font-size: 10px; font-weight: 800; flex: none; }
+      .hd-cli-n { flex: 1; min-width: 0; text-align: left; color: #fff; font-size: 11px; font-weight: 700; }
+      .hd-cli-w { flex: none; width: 76px; text-align: left; color: rgba(255, 255, 255, 0.45); font-size: 9.5px; font-weight: 600; }
+      .hd-cli-s { flex: none; padding: 3px 9px; border-radius: 999px; font-size: 9px; font-weight: 700; background: rgba(255, 255, 255, 0.1); color: rgba(255, 255, 255, 0.7); }
+      .hd-cli-s.is-good { background: rgba(101, 199, 134, 0.16); color: #65c786; }
+      /* ---- real imagery inside the mock screens ---- */
+      .hd-ex-img { flex: none; width: 34px; height: 34px; border-radius: 9px; background-size: cover; background-position: center; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.09); }
+      .har-img { flex: none; width: 26px; height: 26px; border-radius: 7px; background-size: cover; background-position: center; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.09); }
+      /* coach cards with a photo header */
+      .hd-photo-card { position: relative; border-radius: 12px; overflow: hidden; background: #131b28; border: 1px solid rgba(255, 255, 255, 0.06); }
+      .hd-photo-card .hd-ph { height: 74px; background-size: cover; background-position: center 28%; }
+      .hd-photo-card .hd-meta { padding: 7px 9px 9px; text-align: left; }
+      .hd-photo-card .hd-meta b { display: block; color: #fff; font-size: 11px; font-weight: 800; line-height: 1.1; }
+      .hd-photo-card .hd-meta small { color: rgba(255, 255, 255, 0.5); font-size: 9px; font-weight: 600; }
+      .hd-photo-card .hd-book { display: inline-block; margin-top: 6px; padding: 4px 12px; border-radius: 999px; background: #d9a15c; color: #0c1119; font-size: 9.5px; font-weight: 800; }
+      .hd-star { color: #e5b070; }
+      /* video play badge */
+      .hd-play { position: absolute; top: 8px; right: 8px; width: 22px; height: 22px; border-radius: 50%; background: rgba(8, 12, 20, 0.62); display: grid; place-items: center; }
+      .hd-play::before { content: ""; width: 0; height: 0; border-left: 7px solid #fff; border-top: 5px solid transparent; border-bottom: 5px solid transparent; margin-left: 2px; }
+      /* nutrition food card */
+      .hd-food { border-radius: 12px; height: 92px; background-size: cover; background-position: center; border: 1px solid rgba(255, 255, 255, 0.06); position: relative; }
+      .hd-food::after { content: ""; position: absolute; inset: 0; border-radius: 12px; background: linear-gradient(180deg, transparent 40%, rgba(6, 9, 15, 0.55)); }
+      .hd-food span { position: absolute; left: 10px; bottom: 8px; z-index: 1; color: #fff; font-size: 10px; font-weight: 700; }
+      /* transformation / results */
+      .hd-transform { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+      .hd-transform figure { position: relative; margin: 0; border-radius: 10px; overflow: hidden; height: 116px; background-size: cover; background-position: center 22%; }
+      .hd-transform figcaption { position: absolute; left: 6px; bottom: 6px; padding: 2px 7px; border-radius: 999px; font-size: 8px; font-weight: 800; letter-spacing: 0.05em; text-transform: uppercase; }
+      .hd-transform .is-before figcaption { background: rgba(8, 12, 20, 0.72); color: rgba(255, 255, 255, 0.82); }
+      .hd-transform .is-after figcaption { background: #d9a15c; color: #0c1119; }
+      /* trainer promo banner */
+      .hd-promo { display: flex; align-items: center; gap: 10px; padding: 8px; border-radius: 12px; background: linear-gradient(120deg, rgba(217, 161, 92, 0.2), rgba(217, 161, 92, 0.03)); border: 1px solid rgba(217, 161, 92, 0.3); }
+      .hd-promo .hd-ph { position: relative; flex: none; width: 54px; height: 46px; border-radius: 9px; background-size: cover; background-position: center; }
+      .hd-promo-copy { flex: 1; min-width: 0; text-align: left; }
+      .hd-promo-copy b { display: block; color: #fff; font-size: 11.5px; font-weight: 800; }
+      .hd-promo-copy small { color: rgba(255, 255, 255, 0.6); font-size: 9.5px; font-weight: 600; }
+      .hd-promo .hd-pill { flex: none; padding: 5px 12px; border-radius: 999px; background: #d9a15c; color: #0c1119; font-size: 9.5px; font-weight: 800; }
+      /* ---- gamified identity radar (the real overview "spider graph") ---- */
+      .hd-identity { display: grid; grid-template-columns: 1.15fr 1fr; gap: 10px; align-items: center; }
+      .hd-radar-svg { width: 100%; height: auto; display: block; }
+      .hd-radar-ring { fill: none; stroke: rgba(255, 255, 255, 0.09); stroke-width: 1; }
+      .hd-radar-spoke { stroke: rgba(255, 255, 255, 0.07); stroke-width: 1; }
+      .hd-radar-shape { fill: rgba(217, 161, 92, 0.22); stroke: #e5b070; stroke-width: 2.5; stroke-linejoin: round; }
+      .hd-radar-dot { fill: #e5b070; }
+      .hd-radar-label { fill: rgba(255, 255, 255, 0.5); font-family: 'Space Grotesk', sans-serif; font-size: 12px; font-weight: 700; }
+      .hd-radar-value { fill: #fff; font-family: 'Space Grotesk', sans-serif; font-size: 13px; font-weight: 800; }
+      .hd-radar-value.is-high { fill: #e5b070; }
+      .hd-idpanel { text-align: left; min-width: 0; }
+      .hd-idpanel .hd-eye { color: rgba(217, 161, 92, 0.9); font-size: 9px; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; }
+      .hd-typerow { display: flex; align-items: center; gap: 9px; margin-top: 5px; }
+      .hd-emblem { flex: none; width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center; font-size: 18px; background: rgba(217, 161, 92, 0.16); color: #e5b070; }
+      .hd-type { color: #fff; font-size: 21px; font-weight: 800; line-height: 1; }
+      .hd-idtitle { color: rgba(255, 255, 255, 0.7); font-size: 11px; font-weight: 700; margin-top: 7px; }
+      .hd-rankrow { display: flex; align-items: baseline; gap: 6px; margin-top: 9px; }
+      .hd-rankrow b { color: #fff; font-size: 22px; font-weight: 800; }
+      .hd-rankrow small { color: rgba(255, 255, 255, 0.5); font-size: 10px; font-weight: 600; }
+      .hd-rankrow .up { color: #65c786; font-size: 10px; font-weight: 800; }
+      .hd-free { display: inline-flex; align-items: center; gap: 5px; margin-top: 11px; padding: 4px 11px; border-radius: 999px; background: rgba(101, 199, 134, 0.16); color: #65c786; font-size: 9.5px; font-weight: 800; }
+      /* phone radar (compact) */
+      .hero-radar { display: block; width: 82%; margin: 2px auto 0; }
+      .hero-idrow { display: flex; align-items: center; gap: 8px; padding: 2px 2px 0; }
+      .hero-idrow .hero-emblem { flex: none; width: 30px; height: 30px; border-radius: 9px; display: grid; place-items: center; font-size: 16px; background: rgba(217, 161, 92, 0.16); color: #e5b070; }
+      .hero-idrow b { color: #fff; font-size: 15px; font-weight: 800; display: block; line-height: 1.05; }
+      .hero-idrow small { color: rgba(255, 255, 255, 0.5); font-size: 10px; font-weight: 600; }
+      .hero-free { justify-self: start; display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 999px; background: rgba(101, 199, 134, 0.16); color: #65c786; font-size: 9.5px; font-weight: 800; }
+      /* ---- Arena castes + mini radar ---- */
+      .hd-arena { display: grid; gap: 7px; }
+      .hd-arena-row { display: flex; align-items: center; gap: 10px; padding: 7px 10px; border-radius: 11px; background: #131b28; border: 1px solid rgba(255, 255, 255, 0.05); }
+      .hd-arena-row.is-you { border-color: rgba(217, 161, 92, 0.5); background: rgba(217, 161, 92, 0.09); }
+      .hd-arena-rank { flex: none; width: 20px; text-align: center; color: rgba(255, 255, 255, 0.5); font-size: 11px; font-weight: 800; }
+      .hd-spider { flex: none; width: 34px; height: 34px; }
+      .hd-arena-n { flex: 1; min-width: 0; text-align: left; }
+      .hd-arena-n b { display: block; color: #fff; font-size: 11.5px; font-weight: 700; }
+      .hd-arena-n small { color: rgba(255, 255, 255, 0.45); font-size: 9px; font-weight: 600; }
+      .hd-caste { flex: none; display: inline-flex; align-items: center; gap: 4px; padding: 3px 9px; border-radius: 999px; font-size: 9px; font-weight: 800; }
+      .hd-caste.t-amber { background: rgba(217, 161, 92, 0.18); color: #e5b070; }
+      .hd-caste.t-indigo { background: rgba(120, 130, 220, 0.18); color: #97a0e6; }
+      .hd-caste.t-emerald { background: rgba(101, 199, 134, 0.16); color: #65c786; }
+      .hd-caste.t-violet { background: rgba(170, 120, 220, 0.18); color: #b79ae6; }
+      .hd-arena-pts { flex: none; color: #e5b070; font-size: 11px; font-weight: 800; }
+      .mini-ring { fill: none; stroke: rgba(255, 255, 255, 0.12); stroke-width: 2; }
+      .mini-shape { stroke-width: 2; stroke-linejoin: round; }
+      /* ---- control-panel rail (real labelled sidebar) ---- */
+      .hd-win.has-cp { grid-template-columns: 128px 1fr; }
+      .hd-cp { padding: 12px 10px; border-right: 1px solid rgba(255, 255, 255, 0.06); display: grid; align-content: start; gap: 11px; background: rgba(9, 13, 22, 0.4); }
+      .hd-cp-brand { display: flex; align-items: center; gap: 7px; padding: 0 2px 2px; }
+      .hd-cp-brand span { width: 18px; height: 18px; border-radius: 6px; background: linear-gradient(135deg, #d9a15c, #8a5a24); }
+      .hd-cp-brand b { color: #fff; font-size: 12px; font-weight: 800; }
+      .hd-cp-sec { display: grid; gap: 4px; }
+      .hd-cp-lab { color: rgba(255, 255, 255, 0.32); font-size: 7.5px; font-weight: 800; letter-spacing: 0.1em; padding: 0 4px; }
+      .hd-cp-link { display: flex; align-items: center; gap: 7px; padding: 5px 6px; border-radius: 8px; color: rgba(255, 255, 255, 0.7); font-size: 10px; font-weight: 600; text-align: left; }
+      .hd-cp-link i { width: 12px; height: 12px; border-radius: 4px; background: rgba(255, 255, 255, 0.14); flex: none; }
+      .hd-cp-link.on { background: rgba(217, 161, 92, 0.14); color: #fff; }
+      .hd-cp-link.on i { background: #d9a15c; }
+      /* ---- workout editor (program builder) ---- */
+      .hd-weekbar { display: flex; gap: 6px; }
+      .hd-weekbar i { flex: none; padding: 4px 10px; border-radius: 999px; background: rgba(255, 255, 255, 0.06); color: rgba(255, 255, 255, 0.5); font-size: 9px; font-weight: 700; font-style: normal; }
+      .hd-weekbar i.on { background: rgba(217, 161, 92, 0.2); color: #e5b070; }
+      .hd-daycol { display: grid; gap: 6px; }
+      .hd-dayhead { display: flex; align-items: center; gap: 8px; padding: 6px 10px; border-radius: 10px; background: rgba(217, 161, 92, 0.1); border: 1px solid rgba(217, 161, 92, 0.28); }
+      .hd-dayhead b { flex: 1; text-align: left; color: #fff; font-size: 11.5px; font-weight: 800; }
+      .hd-dayhead .hd-add { flex: none; width: 18px; height: 18px; border-radius: 6px; background: #d9a15c; color: #0c1119; font-size: 13px; font-weight: 800; display: grid; place-items: center; }
+      .hd-eb { display: flex; align-items: center; gap: 9px; padding: 6px 9px; border-radius: 9px; background: #131b28; border: 1px solid rgba(255, 255, 255, 0.05); }
+      .hd-eb .hd-drag { flex: none; color: rgba(255, 255, 255, 0.28); font-size: 12px; letter-spacing: -1px; }
+      .hd-eb-n { flex: 1; text-align: left; color: #fff; font-size: 11px; font-weight: 700; }
+      .hd-eb-sets { flex: none; display: flex; gap: 4px; }
+      .hd-eb-sets em { padding: 2px 6px; border-radius: 5px; background: rgba(255, 255, 255, 0.08); color: rgba(255, 255, 255, 0.6); font-size: 8.5px; font-weight: 700; font-style: normal; }
+      /* ---- onboarding ---- */
+      .hd-steps { display: flex; align-items: center; gap: 5px; }
+      .hd-steps i { height: 5px; border-radius: 999px; background: rgba(255, 255, 255, 0.12); flex: 1; font-style: normal; }
+      .hd-steps i.on { background: #d9a15c; }
+      .hd-goal { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 11px; background: #131b28; border: 1px solid rgba(255, 255, 255, 0.06); }
+      .hd-goal.sel { border-color: rgba(217, 161, 92, 0.5); background: rgba(217, 161, 92, 0.09); }
+      .hd-goal .hd-gi { flex: none; width: 30px; height: 30px; border-radius: 9px; display: grid; place-items: center; font-size: 15px; background: rgba(217, 161, 92, 0.14); }
+      .hd-goal b { flex: 1; text-align: left; color: #fff; font-size: 12px; font-weight: 700; }
+      .hd-goal .hd-radio { flex: none; width: 16px; height: 16px; border-radius: 50%; border: 2px solid rgba(255, 255, 255, 0.2); }
+      .hd-goal.sel .hd-radio { border-color: #d9a15c; background: radial-gradient(#d9a15c 40%, transparent 46%); }
+      .hd-cta { margin-top: 2px; padding: 9px; border-radius: 10px; background: linear-gradient(180deg, #e5b070, #c07f34); color: #0c1119; font-size: 11px; font-weight: 800; text-align: center; }
+      /* ---- Kingdom / arena world (medieval art + cutscene video) ---- */
+      .hd-world { position: relative; border-radius: 12px; height: 122px; background-size: cover; background-position: center; border: 1px solid rgba(255, 255, 255, 0.08); overflow: hidden; }
+      .hd-world::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(6, 9, 15, 0.05) 40%, rgba(6, 9, 15, 0.72)); }
+      .hd-world .hd-play { width: 36px; height: 36px; top: 46%; left: 50%; transform: translate(-50%, -50%); background: rgba(8, 12, 20, 0.5); }
+      .hd-world .hd-play::before { border-left-width: 11px; border-top-width: 7px; border-bottom-width: 7px; }
+      .hd-world .hd-wcap { position: absolute; left: 11px; bottom: 9px; z-index: 1; color: #fff; font-size: 11px; font-weight: 800; }
+      .hd-world .hd-wtag { position: absolute; top: 9px; left: 9px; z-index: 1; padding: 3px 8px; border-radius: 999px; background: rgba(217, 161, 92, 0.9); color: #0c1119; font-size: 8.5px; font-weight: 800; letter-spacing: 0.04em; }
+      .hd-tiers { display: grid; grid-template-columns: repeat(4, 1fr); gap: 7px; }
+      .hd-tier { position: relative; border-radius: 10px; overflow: hidden; height: 90px; background-size: cover; background-position: center 20%; border: 1px solid rgba(255, 255, 255, 0.06); }
+      .hd-tier::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, transparent 42%, rgba(6, 9, 15, 0.82)); }
+      .hd-tier figcaption { position: absolute; left: 0; right: 0; bottom: 6px; z-index: 1; text-align: center; color: rgba(255, 255, 255, 0.85); font-size: 9px; font-weight: 800; letter-spacing: 0.03em; }
+      .hd-tier.on { border-color: rgba(217, 161, 92, 0.7); box-shadow: inset 0 0 0 1px rgba(217, 161, 92, 0.5); }
+      .hd-tier.on figcaption { color: #e5b070; }
+      .hd-tier .hd-youdot { position: absolute; top: 5px; right: 5px; z-index: 1; padding: 2px 6px; border-radius: 999px; background: #d9a15c; color: #0c1119; font-size: 7.5px; font-weight: 800; }
+      .hero-world { position: relative; border-radius: 14px; height: 156px; background-size: cover; background-position: center; overflow: hidden; margin-top: 2px; }
+      .hero-world::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, transparent 40%, rgba(6, 9, 15, 0.72)); }
+      .hero-world .hd-play { width: 36px; height: 36px; top: 42%; left: 50%; transform: translate(-50%, -50%); background: rgba(8, 12, 20, 0.5); }
+      .hero-world .hd-play::before { border-left-width: 11px; border-top-width: 7px; border-bottom-width: 7px; }
+      .hero-world b { position: absolute; left: 13px; bottom: 11px; z-index: 1; color: #fff; font-size: 15px; font-weight: 800; }
+      .hero-tiers { display: flex; gap: 6px; }
+      .hero-tier { flex: 1; position: relative; border-radius: 9px; overflow: hidden; height: 58px; background-size: cover; background-position: center 20%; }
+      .hero-tier.on { box-shadow: inset 0 0 0 2px #d9a15c; }
+      /* ---- accurate workout (exercise media cards) ---- */
+      .hd-daytabs { display: flex; gap: 6px; }
+      .hd-daytabs i { flex: none; padding: 5px 11px; border-radius: 999px; background: rgba(255, 255, 255, 0.06); color: rgba(255, 255, 255, 0.55); font-size: 9.5px; font-weight: 700; font-style: normal; }
+      .hd-daytabs i.on { background: rgba(217, 161, 92, 0.2); color: #e5b070; }
+      .hd-exc { display: flex; align-items: center; gap: 11px; padding: 8px 10px 8px 8px; border-radius: 12px; background: #131b28; border: 1px solid rgba(255, 255, 255, 0.05); }
+      .hd-exc.is-now { border-color: rgba(217, 161, 92, 0.5); background: rgba(217, 161, 92, 0.09); }
+      .hd-exc-media { position: relative; flex: none; width: 54px; height: 46px; border-radius: 9px; background-size: cover; background-position: center; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.1); }
+      .hd-exc-media .hd-play { width: 18px; height: 18px; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(8, 12, 20, 0.5); }
+      .hd-exc-media .hd-play::before { border-left-width: 5px; border-top-width: 4px; border-bottom-width: 4px; margin-left: 1px; }
+      .hd-exc-body { flex: 1; min-width: 0; text-align: left; }
+      .hd-exc-body b { display: block; color: #fff; font-size: 12px; font-weight: 700; }
+      .hd-exc-body small { color: rgba(255, 255, 255, 0.45); font-size: 9.5px; font-weight: 600; }
+      .hd-exc-tag { flex: none; padding: 3px 9px; border-radius: 999px; font-size: 8.5px; font-weight: 800; }
+      .hd-exc-tag.done { background: rgba(101, 199, 134, 0.16); color: #65c786; }
+      .hd-exc-tag.now { background: #d9a15c; color: #0c1119; text-transform: uppercase; letter-spacing: 0.04em; }
+      .hd-exc-tag.rest { background: rgba(255, 255, 255, 0.08); color: rgba(255, 255, 255, 0.6); }
+      /* ---- accurate workout builder (two-pane: library + workout) ---- */
+      .hd-build { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+      .hd-lib { display: grid; align-content: start; gap: 7px; }
+      .hd-libsearch { display: flex; align-items: center; gap: 6px; padding: 6px 9px; border-radius: 9px; background: #0e1420; border: 1px solid rgba(255, 255, 255, 0.08); color: rgba(255, 255, 255, 0.4); font-size: 10px; font-weight: 600; }
+      .hd-libsearch::before { content: ""; width: 10px; height: 10px; border-radius: 50%; border: 2px solid rgba(255, 255, 255, 0.3); flex: none; }
+      .hd-libfilters { display: flex; gap: 5px; }
+      .hd-libfilters i { padding: 3px 8px; border-radius: 999px; background: rgba(255, 255, 255, 0.06); color: rgba(255, 255, 255, 0.55); font-size: 8px; font-weight: 700; font-style: normal; }
+      .hd-libfilters i.on { background: rgba(217, 161, 92, 0.2); color: #e5b070; }
+      .hd-libgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+      .hd-libcard { position: relative; border-radius: 9px; overflow: hidden; height: 58px; background-size: cover; background-position: center; border: 1px solid rgba(255, 255, 255, 0.06); }
+      .hd-libcard::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, transparent 42%, rgba(6, 9, 15, 0.85)); }
+      .hd-libcard span { position: absolute; left: 5px; bottom: 4px; right: 4px; z-index: 1; color: #fff; font-size: 8px; font-weight: 700; line-height: 1.05; }
+      .hd-libcard em { position: absolute; top: 4px; right: 4px; z-index: 1; width: 15px; height: 15px; border-radius: 6px; background: #d9a15c; color: #0c1119; font-style: normal; font-size: 12px; font-weight: 800; display: grid; place-items: center; }
+      .hd-wk { display: grid; align-content: start; gap: 6px; }
+      .hd-wk-day { display: flex; align-items: center; gap: 8px; padding: 6px 10px; border-radius: 9px; background: rgba(217, 161, 92, 0.1); border: 1px solid rgba(217, 161, 92, 0.28); }
+      .hd-wk-day b { flex: 1; text-align: left; color: #fff; font-size: 11px; font-weight: 800; }
+      .hd-wk-day .hd-add { flex: none; width: 17px; height: 17px; border-radius: 6px; background: #d9a15c; color: #0c1119; font-size: 12px; font-weight: 800; display: grid; place-items: center; }
+      .hd-wk-row { display: flex; align-items: center; gap: 7px; padding: 6px 8px; border-radius: 9px; background: #131b28; border: 1px solid rgba(255, 255, 255, 0.05); }
+      .hd-wk-row .hd-drag { color: rgba(255, 255, 255, 0.28); font-size: 11px; letter-spacing: -1px; flex: none; }
+      .hd-wk-row b { flex: 1; text-align: left; color: #fff; font-size: 10.5px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+      .hd-wk-row em { flex: none; padding: 2px 6px; border-radius: 5px; background: rgba(255, 255, 255, 0.08); color: rgba(255, 255, 255, 0.6); font-size: 8px; font-weight: 700; font-style: normal; }
+      /* ---- LIGHT training theme — accurate to the real training.html page ---- */
+      .hd-win.is-light { background: #ece3d3; }
+      .hd-win.is-light .hd-main { background: #ece3d3; color: #2c2720; gap: 9px; }
+      .wt-planhead { display: flex; align-items: center; gap: 10px; }
+      .wt-planhead > div { flex: 1; text-align: left; min-width: 0; }
+      .wt-planhead b { display: block; color: #2c2720; font-size: 15px; font-weight: 800; font-family: Georgia, 'Times New Roman', serif; }
+      .wt-planhead small { color: #8a8073; font-size: 10px; font-weight: 700; letter-spacing: 0.02em; }
+      .wt-startbtn { flex: none; padding: 6px 13px; border-radius: 999px; background: #fff; border: 1px solid rgba(0, 0, 0, 0.1); color: #2c2720; font-size: 10px; font-weight: 800; }
+      .wt-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+      .wt-actions i { padding: 5px 10px; border-radius: 8px; background: #fff; border: 1px solid rgba(0, 0, 0, 0.08); color: #5a5348; font-size: 9px; font-weight: 700; font-style: normal; }
+      .wt-actions i.on { background: #d9a15c; border-color: #d9a15c; color: #3a2b12; }
+      .wt-cols { display: grid; grid-template-columns: 148px 1fr; gap: 10px; }
+      .wt-daylist { background: #fbf7ee; border: 1px solid rgba(0, 0, 0, 0.07); border-radius: 12px; padding: 9px; display: grid; gap: 4px; align-content: start; }
+      .wt-dl-head { color: #2c2720; font-size: 11px; font-weight: 800; margin-bottom: 3px; }
+      .wt-dl-head small { display: block; color: #8a8073; font-size: 8.5px; font-weight: 600; }
+      .wt-day { text-align: left; padding: 6px 8px; border-radius: 8px; }
+      .wt-day b { display: block; color: #2c2720; font-size: 10.5px; font-weight: 700; }
+      .wt-day small { color: #8a8073; font-size: 8.5px; font-weight: 600; }
+      .wt-day.sel { background: #efe4d0; box-shadow: inset 0 0 0 1px rgba(217, 161, 92, 0.4); }
+      .wt-detail { display: grid; gap: 8px; align-content: start; min-width: 0; }
+      .wt-dhead b { color: #2c2720; font-size: 15px; font-weight: 800; font-family: Georgia, 'Times New Roman', serif; }
+      .wt-dhead small { display: block; color: #8a8073; font-size: 9.5px; font-weight: 700; }
+      .wt-goal { padding: 7px 10px; border-radius: 9px; background: #efe4d0; color: #5a5348; font-size: 9.5px; font-weight: 600; text-align: left; }
+      .wt-exc { background: #fbf7ee; border: 1px solid rgba(0, 0, 0, 0.07); border-radius: 12px; padding: 9px; display: grid; gap: 9px; }
+      .wt-exc-top { display: flex; gap: 10px; align-items: flex-start; }
+      .wt-exc-img { flex: none; width: 66px; height: 54px; border-radius: 9px; background-size: cover; background-position: center; }
+      .wt-exc-info { flex: 1; min-width: 0; text-align: left; }
+      .wt-exc-info b { display: block; color: #2c2720; font-size: 12px; font-weight: 800; }
+      .wt-exc-info small { display: block; color: #8a8073; font-size: 9px; font-weight: 600; margin-top: 1px; }
+      .wt-exc-btns { display: flex; gap: 5px; margin-top: 6px; }
+      .wt-exc-btns i { padding: 3px 8px; border-radius: 7px; background: #fff; border: 1px solid rgba(0, 0, 0, 0.1); color: #5a5348; font-size: 8px; font-weight: 700; font-style: normal; }
+      .wt-exc-btns i.gold { background: #d9a15c; border-color: #d9a15c; color: #3a2b12; }
+      .wt-sets { display: grid; gap: 4px; }
+      .wt-sethead, .wt-setrow { display: grid; grid-template-columns: 26px 1fr 1fr; gap: 6px; align-items: center; }
+      .wt-sethead span { color: #a49a89; font-size: 7.5px; font-weight: 800; letter-spacing: 0.08em; text-align: left; }
+      .wt-setrow > span { color: #2c2720; font-size: 10px; font-weight: 800; text-align: left; }
+      .wt-setrow em { height: 20px; border-radius: 6px; background: #efe9dd; border: 1px solid rgba(0, 0, 0, 0.06); color: #b0a794; font-size: 8px; font-weight: 600; font-style: normal; display: flex; align-items: center; padding: 0 7px; }
+      /* light phone screen for the training slide */
+      .entry-auth-hero-phone.is-lightscreen { background: #fbf7ee; border-color: #cbb48f; }
+      .entry-auth-hero-phone.is-lightscreen .hps-time { color: #2c2720; }
+      .entry-auth-hero-phone.is-lightscreen .hps-signal b { background: #2c2720; }
+      .entry-auth-hero-phone.is-lightscreen .hps-signal b:nth-child(4) { opacity: 0.4; }
+      .entry-auth-hero-phone.is-lightscreen .hps-batt { border-color: rgba(0, 0, 0, 0.6); }
+      .entry-auth-hero-phone.is-lightscreen .hps-batt b { background: #2c2720; }
+      .wt-ph-daystrip { display: flex; gap: 4px; }
+      .wt-ph-daystrip i { flex: 1; padding: 5px 0; border-radius: 8px; text-align: center; background: #efe9dd; color: #8a8073; font-size: 8px; font-weight: 700; font-style: normal; }
+      .wt-ph-daystrip i.sel { background: #efe4d0; color: #2c2720; box-shadow: inset 0 0 0 1px rgba(217, 161, 92, 0.5); }
       .entry-auth-hero-caption {
         margin: 0;
         max-width: 320px;
@@ -3162,8 +3497,34 @@
           min-height: calc(var(--hero-crop) + 96px);
           width: 100%;
         }
+        /* Device cluster: desktop-browser mock behind, phone in front / bottom-right.
+           Both sit fully inside the crop; only the very bottom softly fades. */
+        .entry-auth-hero-crop {
+          position: relative;
+          width: min(640px, 100%);
+          -webkit-mask-image: linear-gradient(180deg, #000 88%, transparent 100%);
+          mask-image: linear-gradient(180deg, #000 88%, transparent 100%);
+        }
+        .hero-desktop {
+          display: block;
+          position: absolute;
+          left: 3%;
+          top: 10%;
+          width: min(556px, 88%);
+          z-index: 1;
+          border-radius: 15px;
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          box-shadow: 0 40px 80px rgba(0, 0, 0, 0.62);
+          overflow: hidden;
+        }
         .entry-auth-hero-phone {
-          transform: scale(1);
+          position: absolute;
+          right: 1%;
+          bottom: 5%;
+          transform: scale(0.66);
+          transform-origin: bottom right;
+          z-index: 2;
+          box-shadow: 0 34px 80px rgba(0, 0, 0, 0.74);
         }
         .entry-auth-hero-caption {
           font-size: 1.65rem;
@@ -4197,19 +4558,61 @@
                             <div class="entry-auth-hero-carousel" id="entry-auth-hero-carousel">
                                 <div class="entry-auth-hero-slide is-active" data-hero-slide>
                                     <div class="entry-auth-hero-crop">
-                                        <div class="entry-auth-hero-phone">
+                                        <div class="entry-auth-hero-phone is-lightscreen">
                                             <div class="hero-phone-status"><span class="hps-time">9:41</span><span class="hero-phone-island"></span><span class="hps-icons"><i class="hps-signal"><b></b><b></b><b></b><b></b></i><i class="hps-batt"><b></b></i></span></div>
-                                            <div class="hero-app">
-                                                <div class="hero-app-head"><span class="hero-app-avatar">JO</span><div class="hero-app-head-copy"><b>Push Day A</b><small>Week 3 &middot; 6 exercises</small></div><span class="hero-app-chip">42:18</span></div>
-                                                <div class="hero-app-row is-done"><span class="har-name">Bench Press</span><span class="har-meta">4 &times; 8 &middot; 185 lb</span><span class="har-check">&#10003;</span></div>
-                                                <div class="hero-app-row is-done"><span class="har-name">Incline DB Press</span><span class="har-meta">3 &times; 10 &middot; 60 lb</span><span class="har-check">&#10003;</span></div>
-                                                <div class="hero-app-row is-now"><span class="har-name">Cable Fly</span><span class="har-meta">3 &times; 12 &middot; 45 lb</span><span class="har-now">Now</span></div>
-                                                <div class="hero-app-row"><span class="har-name">Lateral Raise</span><span class="har-meta">4 &times; 15 &middot; 20 lb</span></div>
-                                                <div class="hero-app-row"><span class="har-name">Triceps Pushdown</span><span class="har-meta">3 &times; 12 &middot; 55 lb</span></div>
+                                            <div class="hero-app" style="gap:8px">
+                                                <div class="wt-ph-daystrip"><i>M</i><i>Tu</i><i class="sel">W</i><i>Th</i><i>F</i><i>Sa</i><i>Su</i></div>
+                                                <div class="wt-dhead"><b>Push</b><small>Wednesday &middot; Week 1 &middot; 6 exercises</small></div>
+                                                <div class="wt-goal">Goal: beat last time &middot; main lift to RPE 9&ndash;10</div>
+                                                <div class="wt-exc">
+                                                    <div class="wt-exc-top"><span class="wt-exc-img" style="background-image:url(assets/images/hero-mock/ex-bench.jpg)"></span><div class="wt-exc-info"><b>Smith Machine Bench Press</b><small>4 sets &times; 6 reps &middot; rest 2m</small><small>Target weight 65 lb</small><div class="wt-exc-btns"><i>Swap</i><i>Report pain</i><i class="gold">Start rest</i></div></div></div>
+                                                    <div class="wt-sets">
+                                                        <div class="wt-sethead"><span>SET</span><span>WEIGHT</span><span>REPS</span></div>
+                                                        <div class="wt-setrow"><span>1</span><em>Weight</em><em>Reps</em></div>
+                                                        <div class="wt-setrow"><span>2</span><em>Weight</em><em>Reps</em></div>
+                                                        <div class="wt-setrow"><span>3</span><em>Weight</em><em>Reps</em></div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="hero-desktop">
+                                            <div class="hd-top"><span class="hd-dots"><i></i><i></i><i></i></span><span class="hd-addr">riseforit.com/training</span></div>
+                                            <div class="hd-win has-cp is-light">
+                                                <aside class="hd-cp">
+                                                    <div class="hd-cp-brand"><span></span><b>RiseForIt</b></div>
+                                                    <div class="hd-cp-sec"><p class="hd-cp-lab">TRAINING PORTAL</p><span class="hd-cp-link"><i></i>Overview</span><span class="hd-cp-link on"><i></i>Training Program</span><span class="hd-cp-link"><i></i>Nutrition</span><span class="hd-cp-link"><i></i>The Arena</span></div>
+                                                    <div class="hd-cp-sec"><p class="hd-cp-lab">TRAINER</p><span class="hd-cp-link"><i></i>Clients</span><span class="hd-cp-link"><i></i>Messages</span></div>
+                                                </aside>
+                                                <div class="hd-main">
+                                                    <div class="wt-planhead"><div><b>Your training plan</b><small>BODYBUILDING &middot; 6 days/week</small></div><span class="wt-startbtn">Start workout</span></div>
+                                                    <div class="wt-actions"><i>Make New Workout</i><i>Simple PDF</i><i class="on">Regenerate</i><i>Modify Current</i></div>
+                                                    <div class="wt-cols">
+                                                        <div class="wt-daylist">
+                                                            <div class="wt-dl-head">Workouts<small>Pick a day to view details</small></div>
+                                                            <div class="wt-day"><b>Monday</b><small>Day 5 &middot; 5 exercises</small></div>
+                                                            <div class="wt-day"><b>Tuesday</b><small>Day 6 &middot; 6 exercises</small></div>
+                                                            <div class="wt-day sel"><b>Wednesday</b><small>Day 1 &middot; 6 exercises</small></div>
+                                                            <div class="wt-day"><b>Friday</b><small>Day 3 &middot; 6 exercises</small></div>
+                                                        </div>
+                                                        <div class="wt-detail">
+                                                            <div class="wt-dhead"><b>Push</b><small>Wednesday &middot; Week 1 &middot; Day 1</small></div>
+                                                            <div class="wt-goal">Goal: beat last time (reps first, then load) &middot; main lift can push to RPE 9&ndash;10</div>
+                                                            <div class="wt-exc">
+                                                                <div class="wt-exc-top"><span class="wt-exc-img" style="background-image:url(assets/images/hero-mock/ex-bench.jpg)"></span><div class="wt-exc-info"><b>Smith Machine Bench Press</b><small>4 sets &times; 6 reps &middot; rest 2m &middot; Target 65 lb</small><div class="wt-exc-btns"><i>Swap exercise</i><i>Report pain</i><i class="gold">Start rest</i></div></div></div>
+                                                                <div class="wt-sets">
+                                                                    <div class="wt-sethead"><span>SET</span><span>WEIGHT</span><span>REPS</span></div>
+                                                                    <div class="wt-setrow"><span>1</span><em>Weight</em><em>Reps</em></div>
+                                                                    <div class="wt-setrow"><span>2</span><em>Weight</em><em>Reps</em></div>
+                                                                    <div class="wt-setrow"><span>3</span><em>Weight</em><em>Reps</em></div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
-                                    <p class="entry-auth-hero-caption">Build Your Plan and Log Every Session</p>
+                                    <p class="entry-auth-hero-caption">Every Set, Rep, and PR &mdash; Tracked</p>
                                 </div>
                                 <div class="entry-auth-hero-slide" data-hero-slide>
                                     <div class="entry-auth-hero-crop">
@@ -4223,36 +4626,146 @@
                                                 <div class="hero-macro-bar"><span class="hmb-label">Fat</span><span class="hmb-track"><b style="width:48%"></b></span><span class="hmb-val">70g</span></div>
                                             </div>
                                         </div>
+                                        <div class="hero-desktop">
+                                            <div class="hd-top"><span class="hd-dots"><i></i><i></i><i></i></span><span class="hd-addr">riseforit.com/nutrition</span></div>
+                                            <div class="hd-win">
+                                                <aside class="hd-rail"><span class="hd-logo"></span><i></i><i class="on"></i><i></i><i></i></aside>
+                                                <div class="hd-main">
+                                                    <div class="hd-head"><div><b>Daily Macros</b><small>Cutting &middot; Day 24</small></div><span class="hd-chip is-gold">2,450 kcal</span></div>
+                                                    <div class="hd-macros">
+                                                        <div class="hd-ring"><span><b>2,450</b><small>kcal</small></span></div>
+                                                        <div class="hd-bars">
+                                                            <div class="hd-bar"><span>Protein</span><em><b class="is-gold" style="width:82%"></b></em><u>190g</u></div>
+                                                            <div class="hd-bar"><span>Carbs</span><em><b style="width:64%"></b></em><u>240g</u></div>
+                                                            <div class="hd-bar"><span>Fat</span><em><b style="width:48%"></b></em><u>70g</u></div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="hd-food" style="background-image:url(assets/images/hero-mock/food.jpg)"><span>Logged &middot; Grilled chicken, rice &amp; greens</span></div>
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
-                                    <p class="entry-auth-hero-caption">Dial In Your Macros With the Calculator</p>
+                                    <p class="entry-auth-hero-caption">Macros and Meals, Built In &mdash; Free for Members</p>
                                 </div>
                                 <div class="entry-auth-hero-slide" data-hero-slide>
                                     <div class="entry-auth-hero-crop">
                                         <div class="entry-auth-hero-phone">
                                             <div class="hero-phone-status"><span class="hps-time">9:41</span><span class="hero-phone-island"></span><span class="hps-icons"><i class="hps-signal"><b></b><b></b><b></b><b></b></i><i class="hps-batt"><b></b></i></span></div>
                                             <div class="hero-app">
-                                                <div class="hero-app-head"><div class="hero-app-head-copy"><b>Find Your Coach</b><small>127 coaches available</small></div></div>
-                                                <div class="hero-coach-card"><span class="hcc-avatar" style="background:linear-gradient(135deg,#d9a15c,#8a5a24)">AS</span><div class="hcc-copy"><b>Avery Stone</b><small>Strength &middot; &#9733; 4.9</small></div><span class="hcc-btn">Book</span></div>
-                                                <div class="hero-coach-card"><span class="hcc-avatar" style="background:linear-gradient(135deg,#5c86d9,#24468a)">MC</span><div class="hcc-copy"><b>Maya Cruz</b><small>Nutrition &middot; &#9733; 4.8</small></div><span class="hcc-btn">Book</span></div>
-                                                <div class="hero-coach-card"><span class="hcc-avatar" style="background:linear-gradient(135deg,#6bd95c,#2c8a24)">DK</span><div class="hcc-copy"><b>Dre King</b><small>Powerbuilding &middot; &#9733; 5.0</small></div><span class="hcc-btn">Book</span></div>
+                                                <div class="hero-app-head"><span class="hero-app-avatar">JO</span><div class="hero-app-head-copy"><b>Athlete Identity</b><small>Knight &middot; Rank #38</small></div></div>
+                                                <svg class="hero-radar" viewBox="120 54 260 280" role="img" aria-label="Six-stat radar chart">
+                                                    <polygon class="hd-radar-ring" points="250,66 360.85,130 360.85,258 250,322 139.15,258 139.15,130"/>
+                                                    <polygon class="hd-radar-ring" points="250,98 333.10,146 333.10,242 250,290 166.90,242 166.90,146"/>
+                                                    <polygon class="hd-radar-ring" points="250,130 305.40,162 305.40,226 250,258 194.60,226 194.60,162"/>
+                                                    <line class="hd-radar-spoke" x1="250" y1="194" x2="250" y2="66"/><line class="hd-radar-spoke" x1="250" y1="194" x2="360.85" y2="130"/><line class="hd-radar-spoke" x1="250" y1="194" x2="360.85" y2="258"/><line class="hd-radar-spoke" x1="250" y1="194" x2="250" y2="322"/><line class="hd-radar-spoke" x1="250" y1="194" x2="139.15" y2="258"/><line class="hd-radar-spoke" x1="250" y1="194" x2="139.15" y2="130"/>
+                                                    <polygon class="hd-radar-shape" points="250,101.84 299.90,165.20 347.50,250.30 250,270.80 189.04,229.20 172.40,149.20"/>
+                                                    <circle class="hd-radar-dot" cx="250" cy="101.84" r="5"/><circle class="hd-radar-dot" cx="299.90" cy="165.20" r="5"/><circle class="hd-radar-dot" cx="347.50" cy="250.30" r="5"/><circle class="hd-radar-dot" cx="250" cy="270.80" r="5"/><circle class="hd-radar-dot" cx="189.04" cy="229.20" r="5"/><circle class="hd-radar-dot" cx="172.40" cy="149.20" r="5"/>
+                                                </svg>
+                                                <div class="hero-idrow"><span class="hero-emblem">&#9822;</span><div><b>Knight</b><small>Strong everywhere &middot; &#9650; 12 this week</small></div></div>
+                                                <span class="hero-free">&#10003; Free for members</span>
+                                            </div>
+                                        </div>
+                                        <div class="hero-desktop">
+                                            <div class="hd-top"><span class="hd-dots"><i></i><i></i><i></i></span><span class="hd-addr">riseforit.com/overview</span></div>
+                                            <div class="hd-win">
+                                                <aside class="hd-rail"><span class="hd-logo"></span><i class="on"></i><i></i><i></i><i></i></aside>
+                                                <div class="hd-main">
+                                                    <div class="hd-head"><div><b>Your Athlete Identity</b><small>Six stats &middot; live from your training</small></div><span class="hd-chip is-gold">&#9822; Knight</span></div>
+                                                    <div class="hd-identity">
+                                                        <svg class="hd-radar-svg" viewBox="0 0 500 380" role="img" aria-label="Six-stat radar chart">
+                                                            <polygon class="hd-radar-ring" points="250,66 360.85,130 360.85,258 250,322 139.15,258 139.15,130"/>
+                                                            <polygon class="hd-radar-ring" points="250,98 333.10,146 333.10,242 250,290 166.90,242 166.90,146"/>
+                                                            <polygon class="hd-radar-ring" points="250,130 305.40,162 305.40,226 250,258 194.60,226 194.60,162"/>
+                                                            <polygon class="hd-radar-ring" points="250,162 277.70,178 277.70,210 250,226 222.30,210 222.30,178"/>
+                                                            <line class="hd-radar-spoke" x1="250" y1="194" x2="250" y2="66"/><line class="hd-radar-spoke" x1="250" y1="194" x2="360.85" y2="130"/><line class="hd-radar-spoke" x1="250" y1="194" x2="360.85" y2="258"/><line class="hd-radar-spoke" x1="250" y1="194" x2="250" y2="322"/><line class="hd-radar-spoke" x1="250" y1="194" x2="139.15" y2="258"/><line class="hd-radar-spoke" x1="250" y1="194" x2="139.15" y2="130"/>
+                                                            <polygon class="hd-radar-shape" points="250,101.84 299.90,165.20 347.50,250.30 250,270.80 189.04,229.20 172.40,149.20"/>
+                                                            <circle class="hd-radar-dot" cx="250" cy="101.84" r="4.5"/><circle class="hd-radar-dot" cx="299.90" cy="165.20" r="4.5"/><circle class="hd-radar-dot" cx="347.50" cy="250.30" r="4.5"/><circle class="hd-radar-dot" cx="250" cy="270.80" r="4.5"/><circle class="hd-radar-dot" cx="189.04" cy="229.20" r="4.5"/><circle class="hd-radar-dot" cx="172.40" cy="149.20" r="4.5"/>
+                                                            <text class="hd-radar-label" x="250" y="40" text-anchor="middle">Strength</text><text class="hd-radar-value is-high" x="250" y="55" text-anchor="middle">72</text>
+                                                            <text class="hd-radar-label" x="384" y="118" text-anchor="start">Cardio</text><text class="hd-radar-value" x="384" y="133" text-anchor="start">45</text>
+                                                            <text class="hd-radar-label" x="384" y="270" text-anchor="start">Consistency</text><text class="hd-radar-value is-high" x="384" y="285" text-anchor="start">88</text>
+                                                            <text class="hd-radar-label" x="250" y="349" text-anchor="middle">Nutrition</text><text class="hd-radar-value" x="250" y="364" text-anchor="middle">60</text>
+                                                            <text class="hd-radar-label" x="116" y="270" text-anchor="end">Recovery</text><text class="hd-radar-value" x="116" y="285" text-anchor="end">55</text>
+                                                            <text class="hd-radar-label" x="116" y="118" text-anchor="end">Progress</text><text class="hd-radar-value is-high" x="116" y="133" text-anchor="end">70</text>
+                                                        </svg>
+                                                        <div class="hd-idpanel">
+                                                            <p class="hd-eye">Your athlete identity</p>
+                                                            <div class="hd-typerow"><span class="hd-emblem">&#9822;</span><span class="hd-type">Knight</span></div>
+                                                            <p class="hd-idtitle">Strong everywhere &mdash; and it shows.</p>
+                                                            <div class="hd-rankrow"><b>#38</b><small>of 512 Knights</small><span class="up">&#9650; 12</span></div>
+                                                            <span class="hd-free">&#10003; Free for members &mdash; always</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
-                                    <p class="entry-auth-hero-caption">Train With Real Coaches</p>
+                                    <p class="entry-auth-hero-caption">Your Six Stats Become a Character</p>
                                 </div>
                                 <div class="entry-auth-hero-slide" data-hero-slide>
                                     <div class="entry-auth-hero-crop">
                                         <div class="entry-auth-hero-phone">
                                             <div class="hero-phone-status"><span class="hps-time">9:41</span><span class="hero-phone-island"></span><span class="hps-icons"><i class="hps-signal"><b></b><b></b><b></b><b></b></i><i class="hps-batt"><b></b></i></span></div>
                                             <div class="hero-app">
-                                                <div class="hero-app-head"><div class="hero-app-head-copy"><b>Bench Press</b><small>Last 12 weeks</small></div><span class="hero-app-chip is-gold">+25 lb</span></div>
-                                                <div class="hero-chart"><span style="height:34%"></span><span style="height:42%"></span><span style="height:40%"></span><span style="height:52%"></span><span style="height:58%"></span><span style="height:66%"></span><span style="height:74%" class="is-gold"></span></div>
-                                                <div class="hero-chart-labels"><span>W1</span><span>W3</span><span>W5</span><span>W7</span><span>W9</span><span>W11</span><span>Now</span></div>
-                                                <div class="hero-app-row is-done"><span class="har-name">New PR logged</span><span class="har-meta">225 lb &times; 1</span><span class="har-check">&#10003;</span></div>
+                                                <div class="hero-app-head"><div class="hero-app-head-copy"><b>The Arena</b><small>Season 3 &middot; your caste: Knight</small></div></div>
+                                                <div class="hd-arena">
+                                                    <div class="hd-arena-row"><span class="hd-arena-rank">1</span><svg class="hd-spider" viewBox="0 0 40 40" aria-hidden="true"><polygon class="mini-ring" points="20,4 33.86,12 33.86,28 20,36 6.14,28 6.14,12"/><polygon class="mini-shape" points="20,5.92 32.19,12.96 32.19,27.04 20,34.08 7.81,27.04 7.81,12.96" style="stroke:#e5b070;fill:rgba(217,161,92,0.25)"/></svg><div class="hd-arena-n"><b>Dre King</b><small>Every stat 75+</small></div><span class="hd-arena-pts">1,240</span></div>
+                                                    <div class="hd-arena-row is-you"><span class="hd-arena-rank">38</span><svg class="hd-spider" viewBox="0 0 40 40" aria-hidden="true"><polygon class="mini-ring" points="20,4 33.86,12 33.86,28 20,36 6.14,28 6.14,12"/><polygon class="mini-shape" points="20,7.52 26.93,16 31.36,26.56 20,30.4 11.69,24.8 10.02,14.24" style="stroke:#97a0e6;fill:rgba(120,130,220,0.22)"/></svg><div class="hd-arena-n"><b>You</b><small>&#9650; 12 this week</small></div><span class="hd-arena-pts">610</span></div>
+                                                    <div class="hd-arena-row"><span class="hd-arena-rank">39</span><svg class="hd-spider" viewBox="0 0 40 40" aria-hidden="true"><polygon class="mini-ring" points="20,4 33.86,12 33.86,28 20,36 6.14,28 6.14,12"/><polygon class="mini-shape" points="20,12.8 31.36,13.44 28.31,24.8 20,29.28 8.91,26.4 13.07,16" style="stroke:#65c786;fill:rgba(101,199,134,0.2)"/></svg><div class="hd-arena-n"><b>Maya Cruz</b><small>Cardio &amp; recovery</small></div><span class="hd-arena-pts">598</span></div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="hero-desktop">
+                                            <div class="hd-top"><span class="hd-dots"><i></i><i></i><i></i></span><span class="hd-addr">riseforit.com/leaderboard</span></div>
+                                            <div class="hd-win">
+                                                <aside class="hd-rail"><span class="hd-logo"></span><i></i><i class="on"></i><i></i><i></i></aside>
+                                                <div class="hd-main">
+                                                    <div class="hd-head"><div><b>The Arena</b><small>Points from real actions &middot; rank decides your caste</small></div><span class="hd-chip is-gold">This month</span></div>
+                                                    <div class="hd-arena">
+                                                        <div class="hd-arena-row"><span class="hd-arena-rank">1</span><svg class="hd-spider" viewBox="0 0 40 40" aria-hidden="true"><polygon class="mini-ring" points="20,4 33.86,12 33.86,28 20,36 6.14,28 6.14,12"/><polygon class="mini-shape" points="20,5.92 32.19,12.96 32.19,27.04 20,34.08 7.81,27.04 7.81,12.96" style="stroke:#e5b070;fill:rgba(217,161,92,0.25)"/></svg><div class="hd-arena-n"><b>Dre King</b><small>Holds the crown &middot; every stat 75+</small></div><span class="hd-caste t-amber">&#9819; King</span><span class="hd-arena-pts">1,240</span></div>
+                                                        <div class="hd-arena-row is-you"><span class="hd-arena-rank">38</span><svg class="hd-spider" viewBox="0 0 40 40" aria-hidden="true"><polygon class="mini-ring" points="20,4 33.86,12 33.86,28 20,36 6.14,28 6.14,12"/><polygon class="mini-shape" points="20,7.52 26.93,16 31.36,26.56 20,30.4 11.69,24.8 10.02,14.24" style="stroke:#97a0e6;fill:rgba(120,130,220,0.22)"/></svg><div class="hd-arena-n"><b>You</b><small>Rank up next: Cardio 45 &rarr; 60</small></div><span class="hd-caste t-indigo">&#9822; Knight</span><span class="hd-arena-pts">610</span></div>
+                                                        <div class="hd-arena-row"><span class="hd-arena-rank">39</span><svg class="hd-spider" viewBox="0 0 40 40" aria-hidden="true"><polygon class="mini-ring" points="20,4 33.86,12 33.86,28 20,36 6.14,28 6.14,12"/><polygon class="mini-shape" points="20,12.8 31.36,13.44 28.31,24.8 20,29.28 8.91,26.4 13.07,16" style="stroke:#65c786;fill:rgba(101,199,134,0.2)"/></svg><div class="hd-arena-n"><b>Maya Cruz</b><small>Cardio &amp; recovery lead the way</small></div><span class="hd-caste t-emerald">&#10163; Ranger</span><span class="hd-arena-pts">598</span></div>
+                                                        <div class="hd-arena-row"><span class="hd-arena-rank">40</span><svg class="hd-spider" viewBox="0 0 40 40" aria-hidden="true"><polygon class="mini-ring" points="20,4 33.86,12 33.86,28 20,36 6.14,28 6.14,12"/><polygon class="mini-shape" points="20,10.4 28.31,15.2 28.31,24.8 20,29.6 11.69,24.8 11.69,15.2" style="stroke:#b79ae6;fill:rgba(170,120,220,0.2)"/></svg><div class="hd-arena-n"><b>Lena Park</b><small>Balanced &amp; disciplined build</small></div><span class="hd-caste t-violet">&#10022; Mage</span><span class="hd-arena-pts">574</span></div>
+                                                    </div>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
-                                    <p class="entry-auth-hero-caption">Watch Your Strength Trend Up</p>
+                                    <p class="entry-auth-hero-caption">Climb the Arena &mdash; Ranks Keep You Coming Back</p>
+                                </div>
+                                <div class="entry-auth-hero-slide" data-hero-slide>
+                                    <div class="entry-auth-hero-crop">
+                                        <div class="entry-auth-hero-phone">
+                                            <div class="hero-phone-status"><span class="hps-time">9:41</span><span class="hero-phone-island"></span><span class="hps-icons"><i class="hps-signal"><b></b><b></b><b></b><b></b></i><i class="hps-batt"><b></b></i></span></div>
+                                            <div class="hero-app">
+                                                <div class="hero-app-head"><span class="hero-app-avatar">JO</span><div class="hero-app-head-copy"><b>The Kingdom</b><small>Your rank: Knight</small></div></div>
+                                                <div class="hero-world" style="background-image:url(assets/images/hero-mock/world-knights.jpg)"><span class="hd-play"></span><b>Watch your promotion</b></div>
+                                                <div class="hero-tiers">
+                                                    <div class="hero-tier" style="background-image:url(assets/images/hero-mock/king-peasant.jpg)"></div>
+                                                    <div class="hero-tier" style="background-image:url(assets/images/hero-mock/king-squire.jpg)"></div>
+                                                    <div class="hero-tier on" style="background-image:url(assets/images/hero-mock/king-knight.jpg)"></div>
+                                                    <div class="hero-tier" style="background-image:url(assets/images/hero-mock/king-king.jpg)"></div>
+                                                </div>
+                                                <span class="hero-free">&#10003; Free for members</span>
+                                            </div>
+                                        </div>
+                                        <div class="hero-desktop">
+                                            <div class="hd-top"><span class="hd-dots"><i></i><i></i><i></i></span><span class="hd-addr">riseforit.com/kingdom</span></div>
+                                            <div class="hd-win">
+                                                <aside class="hd-rail"><span class="hd-logo"></span><i></i><i class="on"></i><i></i><i></i></aside>
+                                                <div class="hd-main">
+                                                    <div class="hd-head"><div><b>The Kingdom</b><small>Rank up your character &middot; free for members</small></div><span class="hd-chip is-gold">Season 3</span></div>
+                                                    <div class="hd-world" style="background-image:url(assets/images/hero-mock/world-village.jpg)"><span class="hd-wtag">Cutscene</span><span class="hd-play"></span><span class="hd-wcap">Your promotion to Knight &middot; 0:24</span></div>
+                                                    <div class="hd-tiers">
+                                                        <figure class="hd-tier" style="background-image:url(assets/images/hero-mock/king-peasant.jpg)"><figcaption>Peasant</figcaption></figure>
+                                                        <figure class="hd-tier" style="background-image:url(assets/images/hero-mock/king-squire.jpg)"><figcaption>Squire</figcaption></figure>
+                                                        <figure class="hd-tier on" style="background-image:url(assets/images/hero-mock/king-knight.jpg)"><span class="hd-youdot">You</span><figcaption>Knight</figcaption></figure>
+                                                        <figure class="hd-tier" style="background-image:url(assets/images/hero-mock/king-king.jpg)"><figcaption>King</figcaption></figure>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <p class="entry-auth-hero-caption">Rank Up From Peasant to King</p>
                                 </div>
                                 <div class="entry-auth-hero-slide" data-hero-slide>
                                     <div class="entry-auth-hero-crop">
@@ -4265,8 +4778,136 @@
                                                 <div class="hero-coach-card"><span class="hcc-avatar" style="background:linear-gradient(135deg,#c8d95c,#7d8a24)">LP</span><div class="hcc-copy"><b>Lena Park</b><small>Week 9 &middot; Hypertrophy</small></div><span class="hcc-status is-good">On track</span></div>
                                             </div>
                                         </div>
+                                        <div class="hero-desktop">
+                                            <div class="hd-top"><span class="hd-dots"><i></i><i></i><i></i></span><span class="hd-addr">riseforit.com/dashboard</span></div>
+                                            <div class="hd-win has-cp">
+                                                <aside class="hd-cp">
+                                                    <div class="hd-cp-brand"><span></span><b>RiseForIt</b></div>
+                                                    <div class="hd-cp-sec"><p class="hd-cp-lab">CLIENTS</p><span class="hd-cp-link on"><i></i>Roster</span><span class="hd-cp-link"><i></i>Programs</span><span class="hd-cp-link"><i></i>Check-ins</span></div>
+                                                    <div class="hd-cp-sec"><p class="hd-cp-lab">GROW</p><span class="hd-cp-link"><i></i>Promotions</span><span class="hd-cp-link"><i></i>Payments</span><span class="hd-cp-link"><i></i>Website</span></div>
+                                                    <div class="hd-cp-sec"><p class="hd-cp-lab">COMMUNITY</p><span class="hd-cp-link"><i></i>The Arena</span><span class="hd-cp-link"><i></i>Messages</span></div>
+                                                </aside>
+                                                <div class="hd-main">
+                                                    <div class="hd-head"><div><b>Client Roster</b><small>14 active clients</small></div><span class="hd-chip">This week</span></div>
+                                                    <div class="hd-promo"><span class="hd-ph" style="background-image:url(assets/images/hero-mock/promo-after.jpg)"><span class="hd-play"></span></span><div class="hd-promo-copy"><b>New Year Transformation</b><small>Promo live &middot; 20% off &middot; 42 signups</small></div><span class="hd-pill">Share</span></div>
+                                                    <div class="hd-clients">
+                                                        <div class="hd-cli"><span class="hd-av" style="background:linear-gradient(135deg,#d95c8a,#8a2446)">TB</span><span class="hd-cli-n">Tara Brooks</span><span class="hd-cli-w">Wk 6 &middot; Cut</span><span class="hd-cli-s is-good">On track</span></div>
+                                                        <div class="hd-cli"><span class="hd-av" style="background:linear-gradient(135deg,#5cd9c8,#248a7d)">RM</span><span class="hd-cli-n">Rio Marsh</span><span class="hd-cli-w">Wk 2 &middot; Str</span><span class="hd-cli-s">Check-in</span></div>
+                                                        <div class="hd-cli"><span class="hd-av" style="background:linear-gradient(135deg,#c8d95c,#7d8a24)">LP</span><span class="hd-cli-n">Lena Park</span><span class="hd-cli-w">Wk 9 &middot; Hyp</span><span class="hd-cli-s is-good">On track</span></div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
-                                    <p class="entry-auth-hero-caption">Manage Clients, Teams, and Gyms</p>
+                                    <p class="entry-auth-hero-caption">One Control Panel for Your Whole Roster</p>
+                                </div>
+                                <div class="entry-auth-hero-slide" data-hero-slide>
+                                    <div class="entry-auth-hero-crop">
+                                        <div class="entry-auth-hero-phone">
+                                            <div class="hero-phone-status"><span class="hps-time">9:41</span><span class="hero-phone-island"></span><span class="hps-icons"><i class="hps-signal"><b></b><b></b><b></b><b></b></i><i class="hps-batt"><b></b></i></span></div>
+                                            <div class="hero-app">
+                                                <div class="hero-app-head"><div class="hero-app-head-copy"><b>Program Builder</b><small>Push Day A &middot; Week 2</small></div></div>
+                                                <div class="hd-daycol">
+                                                    <div class="hd-dayhead"><b>Push Day A</b><span class="hd-add">+</span></div>
+                                                    <div class="hd-eb"><span class="hd-drag">&#8942;&#8942;</span><span class="hd-eb-n">Bench Press</span><span class="hd-eb-sets"><em>4&times;8</em></span></div>
+                                                    <div class="hd-eb"><span class="hd-drag">&#8942;&#8942;</span><span class="hd-eb-n">Incline DB Press</span><span class="hd-eb-sets"><em>3&times;10</em></span></div>
+                                                    <div class="hd-eb"><span class="hd-drag">&#8942;&#8942;</span><span class="hd-eb-n">Cable Fly</span><span class="hd-eb-sets"><em>3&times;12</em></span></div>
+                                                    <div class="hd-eb"><span class="hd-drag">&#8942;&#8942;</span><span class="hd-eb-n">Lateral Raise</span><span class="hd-eb-sets"><em>4&times;15</em></span></div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="hero-desktop">
+                                            <div class="hd-top"><span class="hd-dots"><i></i><i></i><i></i></span><span class="hd-addr">riseforit.com/builder</span></div>
+                                            <div class="hd-win">
+                                                <aside class="hd-rail"><span class="hd-logo"></span><i></i><i></i><i class="on"></i><i></i></aside>
+                                                <div class="hd-main">
+                                                    <div class="hd-head"><div><b>Program Builder</b><small>Hypertrophy &middot; drag exercises in</small></div><span class="hd-chip is-gold">Save</span></div>
+                                                    <div class="hd-build">
+                                                        <div class="hd-lib">
+                                                            <div class="hd-libsearch">Search 1,300+ exercises</div>
+                                                            <div class="hd-libfilters"><i class="on">Chest</i><i>Back</i><i>Legs</i></div>
+                                                            <div class="hd-libgrid">
+                                                                <div class="hd-libcard" style="background-image:url(assets/images/hero-mock/ex-bench.jpg)"><span>Bench Press</span><em>+</em></div>
+                                                                <div class="hd-libcard" style="background-image:url(assets/images/hero-mock/ex-incline.jpg)"><span>Incline DB Press</span><em>+</em></div>
+                                                                <div class="hd-libcard" style="background-image:url(assets/images/hero-mock/ex-fly.jpg)"><span>Cable Fly</span><em>+</em></div>
+                                                                <div class="hd-libcard" style="background-image:url(assets/images/hero-mock/ex-triceps.jpg)"><span>Triceps Pushdown</span><em>+</em></div>
+                                                            </div>
+                                                        </div>
+                                                        <div class="hd-wk">
+                                                            <div class="hd-wk-day"><b>Push Day A</b><span class="hd-add">+</span></div>
+                                                            <div class="hd-wk-row"><span class="hd-drag">&#8942;&#8942;</span><b>Bench Press</b><em>4&times;8</em></div>
+                                                            <div class="hd-wk-row"><span class="hd-drag">&#8942;&#8942;</span><b>Incline DB Press</b><em>3&times;10</em></div>
+                                                            <div class="hd-wk-row"><span class="hd-drag">&#8942;&#8942;</span><b>Cable Fly</b><em>3&times;12</em></div>
+                                                            <div class="hd-wk-row"><span class="hd-drag">&#8942;&#8942;</span><b>Lateral Raise</b><em>4&times;15</em></div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <p class="entry-auth-hero-caption">Build Programs in Minutes</p>
+                                </div>
+                                <div class="entry-auth-hero-slide" data-hero-slide>
+                                    <div class="entry-auth-hero-crop">
+                                        <div class="entry-auth-hero-phone">
+                                            <div class="hero-phone-status"><span class="hps-time">9:41</span><span class="hero-phone-island"></span><span class="hps-icons"><i class="hps-signal"><b></b><b></b><b></b><b></b></i><i class="hps-batt"><b></b></i></span></div>
+                                            <div class="hero-app">
+                                                <div class="hero-app-head"><div class="hero-app-head-copy"><b>Promotions</b><small>Live &middot; 42 signups</small></div></div>
+                                                <div class="hero-world" style="background-image:url(assets/images/hero-mock/coach-1.jpg)"><span class="hd-play"></span><b>New Year Transformation</b></div>
+                                                <div class="hd-grid">
+                                                    <div class="hd-tile"><small>Signups</small><b class="is-gold">42</b></div>
+                                                    <div class="hd-tile"><small>Revenue</small><b>$3,120</b></div>
+                                                    <div class="hd-tile"><small>Views</small><b>1,208</b></div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="hero-desktop">
+                                            <div class="hd-top"><span class="hd-dots"><i></i><i></i><i></i></span><span class="hd-addr">riseforit.com/promotions</span></div>
+                                            <div class="hd-win">
+                                                <aside class="hd-rail"><span class="hd-logo"></span><i></i><i></i><i class="on"></i><i></i></aside>
+                                                <div class="hd-main">
+                                                    <div class="hd-head"><div><b>Promotions</b><small>Turn client results into new signups</small></div><span class="hd-chip is-gold">+ New promo</span></div>
+                                                    <div class="hd-world" style="background-image:url(assets/images/hero-mock/coach-1.jpg)"><span class="hd-wtag">Promo video</span><span class="hd-play"></span><span class="hd-wcap">New Year Transformation &middot; 0:38</span></div>
+                                                    <div class="hd-grid">
+                                                        <div class="hd-tile"><small>Signups</small><b class="is-gold">42</b></div>
+                                                        <div class="hd-tile"><small>Views</small><b>1,208</b></div>
+                                                        <div class="hd-tile"><small>Revenue</small><b>$3,120</b></div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <p class="entry-auth-hero-caption">Turn Client Results Into Signups</p>
+                                </div>
+                                <div class="entry-auth-hero-slide" data-hero-slide>
+                                    <div class="entry-auth-hero-crop">
+                                        <div class="entry-auth-hero-phone">
+                                            <div class="hero-phone-status"><span class="hps-time">9:41</span><span class="hero-phone-island"></span><span class="hps-icons"><i class="hps-signal"><b></b><b></b><b></b><b></b></i><i class="hps-batt"><b></b></i></span></div>
+                                            <div class="hero-app">
+                                                <div class="hero-app-head"><div class="hero-app-head-copy"><b>What&rsquo;s your goal?</b><small>Step 2 of 6 &middot; about 5 min</small></div></div>
+                                                <div class="hd-steps"><i class="on"></i><i class="on"></i><i></i><i></i><i></i><i></i></div>
+                                                <div class="hd-goal sel"><span class="hd-gi">&#128170;</span><b>Build muscle</b><span class="hd-radio"></span></div>
+                                                <div class="hd-goal"><span class="hd-gi">&#128293;</span><b>Lose fat</b><span class="hd-radio"></span></div>
+                                                <div class="hd-goal"><span class="hd-gi">&#127947;</span><b>Get stronger</b><span class="hd-radio"></span></div>
+                                                <div class="hd-cta">Continue &mdash; free</div>
+                                            </div>
+                                        </div>
+                                        <div class="hero-desktop">
+                                            <div class="hd-top"><span class="hd-dots"><i></i><i></i><i></i></span><span class="hd-addr">riseforit.com/start</span></div>
+                                            <div class="hd-win">
+                                                <aside class="hd-rail"><span class="hd-logo"></span><i class="on"></i><i></i><i></i><i></i></aside>
+                                                <div class="hd-main">
+                                                    <div class="hd-head"><div><b>Welcome &mdash; let&rsquo;s set you up</b><small>Step 2 of 6 &middot; takes about 5 minutes</small></div><span class="hd-chip is-gold">Free</span></div>
+                                                    <div class="hd-steps"><i class="on"></i><i class="on"></i><i></i><i></i><i></i><i></i></div>
+                                                    <div class="hd-goal sel"><span class="hd-gi">&#128170;</span><b>Build muscle</b><span class="hd-radio"></span></div>
+                                                    <div class="hd-goal"><span class="hd-gi">&#128293;</span><b>Lose fat</b><span class="hd-radio"></span></div>
+                                                    <div class="hd-goal"><span class="hd-gi">&#127947;</span><b>Get stronger &amp; build a habit</b><span class="hd-radio"></span></div>
+                                                    <div class="hd-cta">Build my plan &mdash; free</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <p class="entry-auth-hero-caption">A 5-Minute Onboarding &mdash; Free for Members</p>
                                 </div>
                             </div>
                             <div class="entry-auth-hero-dots" id="entry-auth-hero-dots">
@@ -4275,6 +4916,10 @@
                                 <button type="button" data-hero-dot="2" tabindex="-1"></button>
                                 <button type="button" data-hero-dot="3" tabindex="-1"></button>
                                 <button type="button" data-hero-dot="4" tabindex="-1"></button>
+                                <button type="button" data-hero-dot="5" tabindex="-1"></button>
+                                <button type="button" data-hero-dot="6" tabindex="-1"></button>
+                                <button type="button" data-hero-dot="7" tabindex="-1"></button>
+                                <button type="button" data-hero-dot="8" tabindex="-1"></button>
                             </div>
                         </div>
                         <div class="entry-auth-shell">
@@ -5170,7 +5815,7 @@
 
     <script type="module" src="js/usda.js"></script>
     <script src="data/dri-targets.js?v=2026-02-24-micros-1"></script>
-    <script src="js/main.js?v=2026-07-14-launchgate-3"></script>
+    <script src="js/main.js?v=2026-07-15-hero-1"></script>
     <script src="js/identity-activity.js?v=2026-07-12-dash-1"></script>
     <script src="js/identity-engine.js?v=2026-07-15-glitchguard-1"></script>
     <script src="js/daily-recap.js?v=2026-07-13-recap-4"></script>
