@@ -14049,6 +14049,24 @@ function formatWorkspaceLabel(workspace) {
           openPath(TEST_ONBOARDING_PATH);
         }
         syncIndexView();
+
+        // A fresh OAuth (Google) login lands here with a valid server session but
+        // no client-side auth hint yet — the synchronous render above wrongly
+        // shows the sign-in screen (bouncing the user back to "Sign in with
+        // Google"). Confirm the session against /api/auth/me and, if we're on the
+        // auth stage but actually authenticated, re-render so the user is routed
+        // into roles/onboarding instead of the login screen.
+        void (async () => {
+          try {
+            const user = await ensureEntryAuthUser();
+            if (!user) return;
+            const renderedStage = entryHome?.getAttribute('data-entry-stage');
+            if (renderedStage === 'auth' && !state.selectedPath) {
+              renderPanel();
+              syncIndexView();
+            }
+          } catch {}
+        })();
       })();
     </script>
 </body>
