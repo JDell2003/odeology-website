@@ -12717,11 +12717,18 @@ function toggleSharePopover(force) {
         return renderGenerating();
       }
       // Coach-managed clients don't do their own setup — their coach delivers
-      // the plan. Suppress the "No saved setup found / Complete setup" prompt
-      // entirely; the centered "your coach is building your plan" card (from
-      // coach-doc-card.js) is the only thing that should show here.
+      // the plan. Show the "your coach is building your plan" pending card
+      // directly instead of the "No saved setup / Complete setup" prompt.
+      // (The old path returned an empty div and relied on coach-doc-card.js
+      // mounting the card into a [data-coach-doc] element, but no page renders
+      // one — so invited clients were left staring at a blank page.)
       if (sessionCoach && sessionCoach.name) {
-        return el('div');
+        const coachName = String(sessionCoach.name || '').trim() || 'Your coach';
+        return el('div', { class: 'training-card training-center' },
+          el('div', { class: 'training-muted', style: 'font-weight:800;letter-spacing:.08em;text-transform:uppercase;font-size:11px;opacity:.75' }, 'From your coach'),
+          el('div', { style: 'font-weight:800;font-size:1.15rem;margin-top:6px' }, coachName + ' is building your plan'),
+          el('div', { class: 'training-muted', style: 'margin-top:8px' }, 'Your plan will show up here within 48 hours — as a PDF or right on this page. Message ' + coachName + ' with any questions.')
+        );
       }
       // While impersonating, the local intake is the trainer's — never offer to
       // build the client's plan from it (wrong data + a long build hang).
