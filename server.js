@@ -38,6 +38,7 @@ const groceriesRoutes = require('./core/groceriesRoutes');
 const leaderboardRoutes = require('./core/leaderboardRoutes');
 const profileRoutes = require('./core/profileRoutes');
 const healthRoutes = require('./core/healthRoutes');
+const stravaRoutes = require('./core/stravaRoutes');
 const studiesRoutes = require('./core/studiesRoutes');
 const scoringGather = require('./core/scoringGather');
 const scoringRoutes = require('./core/scoringRoutes');
@@ -1828,6 +1829,10 @@ const server = http.createServer(async (req, res) => {
     }
 
     if (await healthRoutes(req, res, url)) {
+      return;
+    }
+
+    if (await stravaRoutes(req, res, url)) {
       return;
     }
 

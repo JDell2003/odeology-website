@@ -200,7 +200,7 @@ const PROVIDERS = {
         redirect_uri: redirectUri,
         response_type: 'code',
         approval_prompt: 'auto',
-        scope: 'read,activity:read',
+        scope: 'read,activity:read_all',
         state
       });
       return `https://www.strava.com/oauth/authorize?${params.toString()}`;
@@ -227,7 +227,7 @@ const PROVIDERS = {
         expiresAt: data.expires_at ? new Date(data.expires_at * 1000) : null,
         externalId: athlete.id ? String(athlete.id) : null,
         externalName: [athlete.firstname, athlete.lastname].filter(Boolean).join(' ') || null,
-        scopes: 'read,activity:read'
+        scopes: 'read,activity:read_all'
       };
     },
     async refresh(conn) {
@@ -259,32 +259,7 @@ const PROVIDERS = {
       if (resp.status === 401) throw Object.assign(new Error('unauthorized'), { needsRefresh: true });
       if (!resp.ok) throw new Error(`Strava activities fetch failed (${resp.status})`);
       const activities = await resp.json().catch(() => []);
-      const byDay = new Map();
-      // Task 8 — cardio v2: keep distance, type and HR (previously discarded)
-      // and split minutes into moderate vs vigorous so the scoring engine can
-      // grade intensity instead of just counting minutes.
-      (Array.isArray(activities) ? activities : []).forEach((activity) => {
-        const start = String(activity.start_date_local || activity.start_date || '').slice(0, 10);
-        if (!start) return;
-        const minutes = Math.max(0, Math.round(Number(activity.moving_time || 0) / 60));
-        const distance = Math.max(0, Math.round(Number(activity.distance || 0)));
-        const type = String(activity.type || activity.sport_type || '').toLowerCase();
-        const avgHr = Number(activity.average_heartrate) || null;
-        const maxHr = Number(activity.max_heartrate) || null;
-        // Vigorous when average HR reaches ~77% of an age-agnostic 190 max
-        // (~146 bpm) OR the activity type is inherently high-intensity. This is
-        // a conservative default; a per-user HR-zone upgrade can refine it.
-        const vigorousType = /run|race|virtualrun|swim|rowing|hiit|workout|crossfit/.test(type);
-        const isVigorous = (avgHr && avgHr >= 146) || (maxHr && maxHr >= 165) || vigorousType;
-        const entry = byDay.get(start) || { activeMinutes: 0, vigorousMinutes: 0, distanceMeters: 0, providerActivityIds: [] };
-        entry.activeMinutes += minutes;
-        if (isVigorous) entry.vigorousMinutes += minutes;
-        entry.distanceMeters += distance;
-        if (avgHr) entry.avgHr = avgHr;
-        if (activity.id != null) entry.providerActivityIds.push(String(activity.id));
-        byDay.set(start, entry);
-      });
-      return byDay;
+      return mapStravaActivitiesByDay(activities);
     }
   },
   fitbit: {
@@ -474,6 +449,33 @@ async function resolveUserDayKey(userId) {
   } catch {
     return dayKey(new Date());
   }
+}
+
+// Map Strava activities into per-day cardio metrics (extracted + exported
+// for testing). Vigorous when avg HR ~>=146 / max >=165, or a high-intensity
+// sport type. Same activity id is de-duplicated by the app_health_activities
+// (user, provider, external_id) unique index on insert.
+function mapStravaActivitiesByDay(activities) {
+  const byDay = new Map();
+  (Array.isArray(activities) ? activities : []).forEach((activity) => {
+    const start = String(activity.start_date_local || activity.start_date || '').slice(0, 10);
+    if (!start) return;
+    const minutes = Math.max(0, Math.round(Number(activity.moving_time || 0) / 60));
+    const distance = Math.max(0, Math.round(Number(activity.distance || 0)));
+    const type = String(activity.type || activity.sport_type || '').toLowerCase();
+    const avgHr = Number(activity.average_heartrate) || null;
+    const maxHr = Number(activity.max_heartrate) || null;
+    const vigorousType = /run|race|virtualrun|swim|rowing|hiit|workout|crossfit/.test(type);
+    const isVigorous = (avgHr && avgHr >= 146) || (maxHr && maxHr >= 165) || vigorousType;
+    const entry = byDay.get(start) || { activeMinutes: 0, vigorousMinutes: 0, distanceMeters: 0, providerActivityIds: [] };
+    entry.activeMinutes += minutes;
+    if (isVigorous) entry.vigorousMinutes += minutes;
+    entry.distanceMeters += distance;
+    if (avgHr) entry.avgHr = avgHr;
+    if (activity.id != null) entry.providerActivityIds.push(String(activity.id));
+    byDay.set(start, entry);
+  });
+  return byDay;
 }
 
 async function upsertDaily(userId, day, metrics, source) {
@@ -935,3 +937,7 @@ module.exports = async function healthRoutes(req, res, url) {
 // v2 scoring (SCORING_ENGINE_V2): let server.js run the additive migrations at
 // boot (they otherwise only run lazily on the first /api/health request).
 module.exports.ensureSchema = ensureSchema;
+module.exports.syncProvider = syncProvider;
+module.exports.mapStravaActivitiesByDay = mapStravaActivitiesByDay;
+module.exports.loadConnections = loadConnections;
+module.exports.saveConnectionTokens = saveConnectionTokens;
