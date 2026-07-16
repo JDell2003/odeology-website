@@ -2270,8 +2270,10 @@ function syncNavbarDashboardLink(user = null) {
 
 // Cardio entry behavior, decided by the onboarding cardioSource pref:
 //  • 'builtin' (default) → open the in-app GPS tracker (cardio.html).
-//  • 'strava' → deep-link OUT to the Strava app (nothing tracks in-app);
-//    fall back to strava.com if the app isn't installed.
+//  • 'strava' → the OFFICIAL data path is the OAuth connect. Until they've
+//    linked their account we send them through /api/strava/connect (the Strava
+//    authorize screen) so their runs actually import; once linked, tapping it
+//    just re-syncs. (Recording still happens in the Strava app itself.)
 function odeOpenCardio() {
     let src = 'builtin';
     try {
@@ -2279,11 +2281,8 @@ function odeOpenCardio() {
         if (p && (p.cardioSource === 'strava' || p.cardioSource === 'builtin' || p.cardioSource === 'none')) src = p.cardioSource;
     } catch { /* default builtin */ }
     if (src === 'strava') {
-        const started = Date.now();
-        // If the Strava app opens, the page is backgrounded and the timeout is
-        // throttled; if not, we bounce to the website.
-        window.setTimeout(() => { if (Date.now() - started < 1600) window.location.href = 'https://www.strava.com/'; }, 1200);
-        window.location.href = 'strava://';
+        // Start the official Strava OAuth so RiseForIt can read + import runs.
+        window.location.href = '/api/strava/connect';
         return;
     }
     window.location.href = 'cardio.html';
