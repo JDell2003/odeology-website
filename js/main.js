@@ -2445,27 +2445,27 @@ function ensureControlMobileFabNav() {
     const isOverviewPage = /\/overview\.html$/i.test(window.location.pathname || '');
     nav.innerHTML = `
         <a class="control-mobile-fab-link" href="training.html" aria-label="Training" ${isTrainingPage ? 'aria-current="page"' : ''}>
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10v4"></path><path d="M6 8v8"></path><path d="M9 9h6"></path><path d="M15 8v8"></path><path d="M18 10v4"></path><path d="M6 12h12"></path></svg>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 10v4"></path><path d="M5 7v10"></path><path d="M8 12h8"></path><path d="M16 7v10"></path><path d="M19 10v4"></path></svg>
             <span class="control-mobile-fab-link-label">Training</span>
         </a>
         <a class="control-mobile-fab-link" href="macro-calculator.html" aria-label="Macro Calculator">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="3.5" width="14" height="17" rx="2"></rect><path d="M8 7.5h8"></path><path d="M8 12h2"></path><path d="M12 12h2"></path><path d="M16 12h0"></path><path d="M8 16h2"></path><path d="M12 16h2"></path><path d="M16 16h0"></path></svg>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4.5" y="2.5" width="15" height="19" rx="2.5"></rect><rect x="7.5" y="5.5" width="9" height="3.5" rx="1"></rect><path d="M8 13h.01"></path><path d="M12 13h.01"></path><path d="M16 13h.01"></path><path d="M8 17h.01"></path><path d="M12 17h.01"></path><path d="M16 17h.01"></path></svg>
             <span class="control-mobile-fab-link-label">Macro Calculator</span>
         </a>
         <a class="control-mobile-fab-link" id="control-mobile-fab-dashboard" href="${getDashboardNavHref()}" aria-label="Dashboard" ${isOverviewPage ? 'aria-current="page"' : ''}>
-            <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="7" height="7" rx="1.5"></rect><rect x="13" y="4" width="7" height="4.5" rx="1.5"></rect><rect x="13" y="10.5" width="7" height="9.5" rx="1.5"></rect><rect x="4" y="13" width="7" height="7" rx="1.5"></rect></svg>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="7.5" height="9.5" rx="1.5"></rect><rect x="13.5" y="3" width="7.5" height="5.5" rx="1.5"></rect><rect x="13.5" y="11.5" width="7.5" height="9.5" rx="1.5"></rect><rect x="3" y="15.5" width="7.5" height="5.5" rx="1.5"></rect></svg>
             <span class="control-mobile-fab-link-label">Dashboard</span>
         </a>
         <button class="control-mobile-fab-link control-mobile-fab-action" id="control-mobile-fab-cardio" type="button" aria-label="Cardio">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="14" cy="5" r="1.6"></circle><path d="M6.5 20l2.5-5 3-2 1-4 3 3h3"></path><path d="M9 10l2-2 3 1"></path></svg>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M22 12h-3.5l-2.5 7-4-16-2.5 9H3"></path></svg>
             <span class="control-mobile-fab-link-label">Cardio</span>
         </button>
         <a class="control-mobile-fab-link" href="overview.html#wake-checkin-mount" aria-label="Wake Check-In">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"></circle><path d="M8.5 12.2 11 14.7l4.5-5"></path></svg>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v4"></path><path d="m5.6 10.6 1.4 1.4"></path><path d="M2.5 18h2"></path><path d="M19.5 18h2"></path><path d="m17 12 1.4-1.4"></path><path d="M22 22H2"></path><path d="m8.5 6.5 3.5-3.5 3.5 3.5"></path><path d="M16.5 18a4.5 4.5 0 0 0-9 0"></path></svg>
             <span class="control-mobile-fab-link-label">Check In</span>
         </a>
         <button class="control-mobile-fab-link control-mobile-fab-action" id="control-mobile-fab-dash" type="button" aria-label="Dash">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="7.6"></circle><path d="M8.3 12.45 10.75 14.9 15.85 9.65"></path></svg>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 4H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-2"></path><rect x="8" y="2.5" width="8" height="4" rx="1.2"></rect><path d="m9 13.5 2 2 4-4.5"></path></svg>
             <span class="control-mobile-fab-link-label">Dash</span>
         </button>
     `.trim();
