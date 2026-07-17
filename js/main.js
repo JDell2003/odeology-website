@@ -2266,6 +2266,25 @@ function syncNavbarDashboardLink(user = null) {
         navMenu.appendChild(li);
     }
     link.href = href;
+
+    // Signed-in users never get routed to the legacy macro landing page from
+    // inside the app: swap the "Macro Calculator" tab for "Nutrition"
+    // (nutrition.html shows the generated meal plan, and itself routes
+    // un-onboarded users into onboarding). Signed-out visitors keep the
+    // public macro calculator — that page stays live for SEO.
+    if (user) {
+        const macro = Array.from(navMenu.querySelectorAll('a')).find((a) => {
+            if (a.dataset.navNutrition === '1') return true;
+            const label = String(a.textContent || '').trim().toLowerCase();
+            return label === 'macro calculator';
+        });
+        if (macro) {
+            macro.textContent = 'Nutrition';
+            macro.setAttribute('href', 'nutrition.html');
+            macro.dataset.navNutrition = '1';
+            delete macro.dataset.macroNav;
+        }
+    }
 }
 
 // Cardio entry behavior, decided by the onboarding cardioSource pref:
@@ -2288,6 +2307,94 @@ function odeOpenCardio() {
     window.location.href = 'cardio.html';
 }
 try { window.odeOpenCardio = odeOpenCardio; } catch { /* ignore */ }
+
+// Wake-up time editor. The bottom-nav "Check In" button opens this modal so
+// users can ALWAYS see and adjust their wake target — the check-in card
+// itself only renders on Overview inside the [-15 min, +20 min] window around
+// the wake time, so linking straight there showed nothing most of the day.
+function odeOpenWakeModal() {
+    const PREF_KEY = 'ode_tracking_prefs_v1';
+    const CHECK_KEY = 'ode_wake_checkin_v1';
+    let prefs = {};
+    try { prefs = JSON.parse(localStorage.getItem(PREF_KEY) || '{}') || {}; } catch { prefs = {}; }
+    const current = /^\d{1,2}:\d{2}$/.test(String(prefs.wakeTime || '')) ? String(prefs.wakeTime) : '07:00';
+    let checkedIn = false;
+    try {
+        const c = JSON.parse(localStorage.getItem(CHECK_KEY) || 'null');
+        checkedIn = !!(c && c.date === new Date().toISOString().slice(0, 10));
+    } catch { /* ignore */ }
+    const minutesOf = (hhmm) => { const m = /^(\d{1,2}):(\d{2})/.exec(String(hhmm || '')); return m ? (+m[1]) * 60 + (+m[2]) : 420; };
+    const withinWindow = (wt) => {
+        const now = new Date();
+        let d = now.getHours() * 60 + now.getMinutes() - minutesOf(wt);
+        if (d > 720) d -= 1440; else if (d < -720) d += 1440;
+        return d >= -15 && d <= 20;
+    };
+
+    if (!document.getElementById('ode-wake-modal-styles')) {
+        const s = document.createElement('style');
+        s.id = 'ode-wake-modal-styles';
+        s.textContent = [
+            '#ode-wake-modal{position:fixed;inset:0;z-index:1000;display:grid;place-items:center;padding:18px;background:rgba(4,8,16,.72);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);}',
+            '#ode-wake-modal .owm-card{width:min(420px,100%);background:#16233b;color:#f6f8fc;border:1px solid rgba(255,255,255,.12);border-radius:20px;padding:22px;font-family:system-ui,-apple-system,"Segoe UI",sans-serif;box-shadow:0 22px 60px rgba(0,0,0,.45);}',
+            '#ode-wake-modal h2{margin:0 0 4px;font:800 19px/1.2 system-ui;}',
+            '#ode-wake-modal .owm-sub{margin:0 0 16px;font:500 13px/1.5 system-ui;color:rgba(246,248,252,.62);}',
+            '#ode-wake-modal .owm-time{width:100%;box-sizing:border-box;border:1px solid rgba(255,255,255,.16);border-radius:12px;background:#0e1626;color:#f6f8fc;font:800 26px/1.2 "Space Grotesk",ui-monospace,monospace;padding:12px 14px;text-align:center;}',
+            '#ode-wake-modal .owm-status{margin:12px 0 0;font:600 12.5px/1.5 system-ui;color:rgba(246,248,252,.62);}',
+            '#ode-wake-modal .owm-status.is-open{color:#4ade80;}',
+            '#ode-wake-modal .owm-actions{display:flex;gap:10px;margin-top:16px;}',
+            '#ode-wake-modal .owm-btn{flex:1;border:0;border-radius:12px;padding:14px;font:800 15px/1 system-ui;cursor:pointer;}',
+            '#ode-wake-modal .owm-save{background:linear-gradient(135deg,#d4a537,#b98a2b);color:#1a1206;}',
+            '#ode-wake-modal .owm-cancel{background:transparent;border:1px solid rgba(255,255,255,.16);color:rgba(246,248,252,.62);}',
+            '#ode-wake-modal .owm-goto{display:block;margin-top:12px;text-align:center;font:800 13.5px/1 system-ui;color:#f0d089;text-decoration:none;border:1px solid rgba(212,165,55,.45);border-radius:12px;padding:13px;}'
+        ].join('\n');
+        document.head.appendChild(s);
+    }
+
+    const prev = document.getElementById('ode-wake-modal');
+    if (prev) prev.remove();
+    const overlay = document.createElement('div');
+    overlay.id = 'ode-wake-modal';
+    overlay.setAttribute('role', 'dialog');
+    overlay.setAttribute('aria-modal', 'true');
+    overlay.setAttribute('aria-label', 'Wake-up time');
+
+    const windowOpen = !checkedIn && withinWindow(current);
+    const statusText = checkedIn
+        ? 'You already checked in today — this time applies from tomorrow.'
+        : (windowOpen
+            ? 'Your check-in window is open right now.'
+            : 'The check-in card appears on your Overview from 15 min before to 20 min after this time.');
+    const onOverview = /\/overview\.html$/i.test(window.location.pathname || '');
+    overlay.innerHTML = `
+        <div class="owm-card">
+            <h2>Wake-up time</h2>
+            <p class="owm-sub">Your morning check-in is graded against this target. Adjust it any time.</p>
+            <input class="owm-time" id="owm-time" type="time" value="${current}" step="300">
+            <p class="owm-status ${windowOpen ? 'is-open' : ''}" id="owm-status">${statusText}</p>
+            ${windowOpen && !onOverview ? '<a class="owm-goto" href="overview.html#wake-checkin-mount">Open the check-in card →</a>' : ''}
+            <div class="owm-actions">
+                <button class="owm-btn owm-cancel" id="owm-cancel" type="button">Cancel</button>
+                <button class="owm-btn owm-save" id="owm-save" type="button">Save</button>
+            </div>
+        </div>`.trim();
+    document.body.appendChild(overlay);
+
+    const close = () => overlay.remove();
+    overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
+    overlay.querySelector('#owm-cancel')?.addEventListener('click', close);
+    overlay.querySelector('#owm-save')?.addEventListener('click', () => {
+        const input = overlay.querySelector('#owm-time');
+        const val = String(input?.value || '');
+        if (/^\d{1,2}:\d{2}$/.test(val)) {
+            prefs.wakeTime = val;
+            try { localStorage.setItem(PREF_KEY, JSON.stringify(prefs)); } catch { /* ignore */ }
+            try { window.dispatchEvent(new CustomEvent('ode:wake-prefs-changed', { detail: { wakeTime: val } })); } catch { /* ignore */ }
+        }
+        close();
+    });
+}
+try { window.odeOpenWakeModal = odeOpenWakeModal; } catch { /* ignore */ }
 
 function setupNav() {
     const hamburger = document.getElementById('hamburger');
@@ -2448,9 +2555,9 @@ function ensureControlMobileFabNav() {
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 10v4"></path><path d="M5 7v10"></path><path d="M8 12h8"></path><path d="M16 7v10"></path><path d="M19 10v4"></path></svg>
             <span class="control-mobile-fab-link-label">Training</span>
         </a>
-        <a class="control-mobile-fab-link" href="macro-calculator.html" aria-label="Macro Calculator">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4.5" y="2.5" width="15" height="19" rx="2.5"></rect><rect x="7.5" y="5.5" width="9" height="3.5" rx="1"></rect><path d="M8 13h.01"></path><path d="M12 13h.01"></path><path d="M16 13h.01"></path><path d="M8 17h.01"></path><path d="M12 17h.01"></path><path d="M16 17h.01"></path></svg>
-            <span class="control-mobile-fab-link-label">Macro Calculator</span>
+        <a class="control-mobile-fab-link" href="nutrition.html" aria-label="Nutrition">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"></path><path d="M7 2v20"></path><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Z"></path><path d="M21 15v7"></path></svg>
+            <span class="control-mobile-fab-link-label">Nutrition</span>
         </a>
         <a class="control-mobile-fab-link" id="control-mobile-fab-dashboard" href="${getDashboardNavHref()}" aria-label="Dashboard" ${isOverviewPage ? 'aria-current="page"' : ''}>
             <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="7.5" height="9.5" rx="1.5"></rect><rect x="13.5" y="3" width="7.5" height="5.5" rx="1.5"></rect><rect x="13.5" y="11.5" width="7.5" height="9.5" rx="1.5"></rect><rect x="3" y="15.5" width="7.5" height="5.5" rx="1.5"></rect></svg>
@@ -2460,10 +2567,10 @@ function ensureControlMobileFabNav() {
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M22 12h-3.5l-2.5 7-4-16-2.5 9H3"></path></svg>
             <span class="control-mobile-fab-link-label">Cardio</span>
         </button>
-        <a class="control-mobile-fab-link" href="overview.html#wake-checkin-mount" aria-label="Wake Check-In">
+        <button class="control-mobile-fab-link control-mobile-fab-action" id="control-mobile-fab-wake" type="button" aria-label="Wake Check-In">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v4"></path><path d="m5.6 10.6 1.4 1.4"></path><path d="M2.5 18h2"></path><path d="M19.5 18h2"></path><path d="m17 12 1.4-1.4"></path><path d="M22 22H2"></path><path d="m8.5 6.5 3.5-3.5 3.5 3.5"></path><path d="M16.5 18a4.5 4.5 0 0 0-9 0"></path></svg>
             <span class="control-mobile-fab-link-label">Check In</span>
-        </a>
+        </button>
         <button class="control-mobile-fab-link control-mobile-fab-action" id="control-mobile-fab-dash" type="button" aria-label="Dash">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 4H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-2"></path><rect x="8" y="2.5" width="8" height="4" rx="1.2"></rect><path d="m9 13.5 2 2 4-4.5"></path></svg>
             <span class="control-mobile-fab-link-label">Dash</span>
@@ -2475,6 +2582,14 @@ function ensureControlMobileFabNav() {
         cardioBtn.addEventListener('click', (e) => {
             e.preventDefault();
             try { odeOpenCardio(); } catch { window.location.href = 'cardio.html'; }
+        });
+    }
+    const wakeBtn = nav.querySelector('#control-mobile-fab-wake');
+    if (wakeBtn && wakeBtn.dataset.bound !== '1') {
+        wakeBtn.dataset.bound = '1';
+        wakeBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            try { odeOpenWakeModal(); } catch { window.location.href = 'overview.html#wake-checkin-mount'; }
         });
     }
     const dashBtn = nav.querySelector('#control-mobile-fab-dash');
@@ -22652,7 +22767,7 @@ function setupOnboardingTour() {
                 url: 'overview.html',
                 selector: '#overview-mini-nav',
                 title: 'Overview tabs',
-                body: 'Use these tabs to jump directly to Meals, Restock, Training, Photos, and Community sections.'
+                body: 'Use these tabs to jump directly to Meals, Training, Photos, and Community sections.'
             },
             {
                 key: 'overviewGrocery',

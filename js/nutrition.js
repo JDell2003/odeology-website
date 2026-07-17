@@ -326,16 +326,51 @@
     answers = readJSON(K.answers, {});
     excluded = readJSON(EXCL_KEY, {}) || {};
     var emptyEl = $('nutrition-empty'), planEl = $('nutrition-plan');
-    if (!plan || !plan.days) { if (emptyEl) { emptyEl.hidden = false; emptyEl.style.display = ''; } if (planEl) planEl.style.display = 'none'; return; }
-    if (emptyEl) emptyEl.style.display = 'none';
-    if (planEl) { planEl.hidden = false; planEl.style.display = 'block'; }
-    picks = { breakfast: (plan.picks.breakfast || []).slice(), lunch: (plan.picks.lunch || []).slice(), dinner: (plan.picks.dinner || []).slice() };
-    defaultPicks = { breakfast: picks.breakfast.slice(), lunch: picks.lunch.slice(), dinner: picks.dinner.slice() };
-    activeStore = plan.store;
-    wire();
-    if (!data) { render(); return; }
-    data.load().then(function (ds) {
-        dataset = ds; mealsById = {}; ds.meals.forEach(function (m) { mealsById[m.id] = m; });
-        render();
-    }).catch(function () { render(); });
+
+    function showEmpty() {
+        if (emptyEl) { emptyEl.hidden = false; emptyEl.style.display = ''; }
+        if (planEl) planEl.style.display = 'none';
+    }
+    function showPlan() {
+        if (emptyEl) emptyEl.style.display = 'none';
+        if (planEl) { planEl.hidden = false; planEl.style.display = 'block'; }
+        picks = { breakfast: (plan.picks.breakfast || []).slice(), lunch: (plan.picks.lunch || []).slice(), dinner: (plan.picks.dinner || []).slice() };
+        defaultPicks = { breakfast: picks.breakfast.slice(), lunch: picks.lunch.slice(), dinner: picks.dinner.slice() };
+        activeStore = plan.store;
+        wire();
+        if (!data) { render(); return; }
+        data.load().then(function (ds) {
+            dataset = ds; mealsById = {}; ds.meals.forEach(function (m) { mealsById[m.id] = m; });
+            render();
+        }).catch(function () { render(); });
+    }
+
+    if (plan && plan.days) { showPlan(); return; }
+
+    // No local plan. Users who haven't finished onboarding never see this page
+    // (or any legacy nutrition page) — they go straight into onboarding.
+    var onboarded = false;
+    try { onboarded = localStorage.getItem('ode_onboarding_done_v1') === '1'; } catch (e) {}
+    if (!onboarded) { window.location.replace('index.html'); return; }
+
+    // Onboarded but the plan is missing locally (new device / cleared storage):
+    // rebuild it from the answers saved at onboarding via the meal engine.
+    var savedPicks = readJSON(K.picks, null);
+    if (answers && engine && data) {
+        picks = {
+            breakfast: ((savedPicks && savedPicks.breakfast) || []).slice(),
+            lunch: ((savedPicks && savedPicks.lunch) || []).slice(),
+            dinner: ((savedPicks && savedPicks.dinner) || []).slice()
+        };
+        data.load().then(function (ds) {
+            dataset = ds; mealsById = {}; ds.meals.forEach(function (m) { mealsById[m.id] = m; });
+            try { plan = engine.generatePlan(engineInput()); } catch (e) { plan = null; }
+            if (!plan || !plan.days) { showEmpty(); return; }
+            writeJSON(K.plan, plan);
+            writeJSON(K.picks, plan.picks);
+            showPlan();
+        }).catch(function () { showEmpty(); });
+        return;
+    }
+    showEmpty();
 })();

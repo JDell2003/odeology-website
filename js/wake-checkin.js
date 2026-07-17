@@ -136,6 +136,12 @@
     // Re-evaluate as time passes so the card appears when the window opens and
     // disappears when it closes, without needing a page refresh.
     setInterval(function () { render(mount); }, 30000);
+    // Re-render immediately when the wake time is changed from the bottom-nav
+    // wake modal (main.js odeOpenWakeModal) so the card reacts right away.
+    window.addEventListener('ode:wake-prefs-changed', function () {
+      lastShown = null;
+      render(mount);
+    });
   }
   if (document.readyState !== 'loading') init(); else document.addEventListener('DOMContentLoaded', init);
   window.RiseWakeCheckin = { record: record, getToday: getToday, grade: grade };
