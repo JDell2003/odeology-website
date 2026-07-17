@@ -5545,6 +5545,11 @@ function buildAuthUserFromRow(row) {
     manager: { active: isManager },
     isClient,
     client: { active: isClient },
+    // Account-level onboarding completion. When the column isn't selected on a
+    // given query this is undefined -> false, which is the safe default (treated
+    // as not-yet-onboarded, same as before this field existed).
+    onboarded: Boolean(row.onboarding_completed_at),
+    onboardingCompletedAt: row.onboarding_completed_at || null,
     // Invited accounts (auto-generated username/temp password) must pick their
     // real username + password on first login before onboarding.
     needsLoginClaim: notesHasFlag(adminNotes, 'needs_login_claim')
@@ -8867,6 +8872,7 @@ async function getUserFromSessionToken(token) {
   const result = await db.query(
     `
       SELECT u.id, u.username, u.email, u.display_name, COALESCE(u.admin_notes, '') AS admin_notes
+           , u.onboarding_completed_at
       FROM app_sessions s
       JOIN app_users u ON u.id = s.user_id
       WHERE s.session_token_hash = $1
@@ -9809,6 +9815,10 @@ async function ensureSchema(options = {}) {
     );
   `,
     'ALTER TABLE app_users ADD COLUMN IF NOT EXISTS phone text;',
+    // Account-level onboarding completion (client/general accounts). Persisted
+    // here so a returning user with an account is never re-prompted to onboard
+    // just because their localStorage was cleared or they're on a new device.
+    'ALTER TABLE app_users ADD COLUMN IF NOT EXISTS onboarding_completed_at timestamptz;',
     'ALTER TABLE app_users ADD COLUMN IF NOT EXISTS last_seen timestamptz;',
     'ALTER TABLE app_users ADD COLUMN IF NOT EXISTS last_login timestamptz;',
     "ALTER TABLE app_users ADD COLUMN IF NOT EXISTS updated_at timestamptz NOT NULL DEFAULT now();",
@@ -10286,6 +10296,7 @@ async function getUserFromRequest(req) {
     `
       SELECT u.id, u.username, u.email, u.display_name
            , COALESCE(u.admin_notes, '') AS admin_notes
+           , u.onboarding_completed_at
       FROM app_sessions s
       JOIN app_users u ON u.id = s.user_id
       WHERE s.session_token_hash = $1
@@ -10901,6 +10912,45 @@ const authRoutes = async function authRoutes(req, res, url) {
         throw err;
       }
       return true;
+    }
+
+    // Persist account-level onboarding completion so a returning user (cleared
+    // storage / new device) is never re-prompted to onboard.
+    if (url.pathname === '/api/auth/onboarding/complete' && req.method === 'POST') {
+      try {
+        const user = await getUserFromRequest(req);
+        if (!user) return sendJson(res, 401, { ok: false, error: 'UNAUTHORIZED' });
+        await ensureSchema();
+        await db.query(
+          'UPDATE app_users SET onboarding_completed_at = COALESCE(onboarding_completed_at, now()) WHERE id = $1;',
+          [user.id]
+        );
+        return sendJson(res, 200, { ok: true });
+      } catch (err) {
+        if (err instanceof DbUnavailableError || isTransientPgError(err)) {
+          logTransientDbError(err, `authRoutes:${req.method}:${url.pathname}`);
+          return sendJson(res, 200, { ok: false, dbUnavailable: true });
+        }
+        throw err;
+      }
+    }
+
+    // Clear it so a deliberate "Redo onboarding" actually runs onboarding again
+    // instead of being skipped by the persisted flag.
+    if (url.pathname === '/api/auth/onboarding/reset' && req.method === 'POST') {
+      try {
+        const user = await getUserFromRequest(req);
+        if (!user) return sendJson(res, 401, { ok: false, error: 'UNAUTHORIZED' });
+        await ensureSchema();
+        await db.query('UPDATE app_users SET onboarding_completed_at = NULL WHERE id = $1;', [user.id]);
+        return sendJson(res, 200, { ok: true });
+      } catch (err) {
+        if (err instanceof DbUnavailableError || isTransientPgError(err)) {
+          logTransientDbError(err, `authRoutes:${req.method}:${url.pathname}`);
+          return sendJson(res, 200, { ok: false, dbUnavailable: true });
+        }
+        throw err;
+      }
     }
 
     if (url.pathname === '/api/auth/access' && req.method === 'GET') {

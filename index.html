@@ -7787,7 +7787,20 @@ function formatWorkspaceLabel(workspace) {
 
         function isOnboardingDone() {
           try {
-            return localStorage.getItem(ONBOARDING_DONE_KEY) === '1';
+            if (localStorage.getItem(ONBOARDING_DONE_KEY) === '1') return true;
+            // Trust the account-level server flag so a returning user with an
+            // existing account is routed to their app, not back through
+            // onboarding, when localStorage was cleared or wiped by a version
+            // bump. Mirror it locally so downstream local-flag reads agree.
+            const u = window.__odeCurrentUser || (typeof readAuthUserHint === 'function' ? readAuthUserHint() : null) || null;
+            if (u && u.onboarded) {
+              try {
+                localStorage.setItem(ONBOARDING_DONE_KEY, '1');
+                if (typeof window.odeStampOnboardingVersion === 'function') window.odeStampOnboardingVersion();
+              } catch {}
+              return true;
+            }
+            return false;
           } catch {
             return false;
           }
@@ -7833,6 +7846,14 @@ function formatWorkspaceLabel(workspace) {
             else localStorage.setItem('ode_onboarding_version', String(window.ODE_ONBOARDING_VERSION || 2));
             localStorage.removeItem(ONBOARDING_FORCE_KEY);
             localStorage.removeItem(ONBOARDING_DRAFT_KEY);
+          } catch {}
+          // Persist completion on the account so future logins / other devices
+          // skip onboarding. Fire-and-forget; the local flag already covers now.
+          try {
+            localStorage.removeItem('ode_onboarding_synced_v1');
+            fetch('/api/auth/onboarding/complete', { method: 'POST', credentials: 'include' })
+              .then((r) => { if (r && r.ok) { try { localStorage.setItem('ode_onboarding_synced_v1', '1'); } catch {} } })
+              .catch(() => {});
           } catch {}
           // Anyone who finishes onboarding without answering the stat quiz
           // (trainers, managers, clients who applied via the request form)

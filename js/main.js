@@ -13544,6 +13544,14 @@ function odeOnboardingComplete(user = null) {
     const u = user || window.__odeCurrentUser || readAuthUserHint() || null;
     if (!u) return true; // signed-out visitors are the auth gate's problem
     if (u.isDemo || u?.demo?.active) return true; // demo accounts skip onboarding
+    // Server-side account flag wins: a returning user whose ACCOUNT already
+    // finished onboarding is never re-prompted, even with cleared localStorage
+    // or a bumped onboarding version. Mirror it locally so the rest of the app
+    // (which still reads the local flag) stays consistent.
+    if (u.onboarded) {
+        try { localStorage.setItem(ODE_ONBOARDING_DONE_KEY, '1'); odeStampOnboardingVersion(); } catch {}
+        return true;
+    }
     // Trainers/managers: keep their server-side onboarding state as-is.
     const trainerOnboarded = Boolean(u?.trainer?.onboarded || u?.trainer?.onboardingCompletedAt);
     let managerDone = false;
@@ -13562,11 +13570,27 @@ function odeOnboardingComplete(user = null) {
     return false;
 }
 
+// Backfill the server flag once for accounts that finished onboarding before
+// it was tracked server-side (their completion only lived in localStorage).
+// Idempotent + guarded so it fires at most once per device.
+function odeSyncOnboardingServerOnce(user = null) {
+    try {
+        const u = user || window.__odeCurrentUser || readAuthUserHint() || null;
+        if (!u || u.isDemo || u?.demo?.active || u.onboarded) return;
+        if (localStorage.getItem(ODE_ONBOARDING_DONE_KEY) !== '1') return;
+        if (localStorage.getItem('ode_onboarding_synced_v1') === '1') return;
+        fetch('/api/auth/onboarding/complete', { method: 'POST', credentials: 'include' })
+            .then((r) => { if (r && r.ok) { try { localStorage.setItem('ode_onboarding_synced_v1', '1'); } catch {} } })
+            .catch(() => {});
+    } catch {}
+}
+try { window.odeSyncOnboardingServerOnce = odeSyncOnboardingServerOnce; } catch {}
+
 // Returns true when it navigated away (caller should stop rendering signed-in UI).
 function enforceOnboardingCompletionGate(user = null) {
     const needsOnboarding = !odeOnboardingComplete(user);
     document.body.classList.toggle('ode-needs-onboarding', needsOnboarding);
-    if (!needsOnboarding) return false;
+    if (!needsOnboarding) { odeSyncOnboardingServerOnce(user); return false; }
     if (!odeRequiresSignedInUser()) return false;
     window.location.replace('/');
     return true;

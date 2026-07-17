@@ -457,9 +457,13 @@
       try {
         localStorage.setItem(ONBOARDING_FORCE_KEY, '1');
         localStorage.removeItem(ONBOARDING_DONE_KEY);
+        localStorage.removeItem('ode_onboarding_synced_v1');
       } catch {
         // ignore
       }
+      // Clear the account-level onboarding flag too, so this deliberate redo
+      // actually runs onboarding again instead of being auto-skipped by it.
+      try { await api('/api/auth/onboarding/reset', { method: 'POST', body: JSON.stringify({}) }); } catch {}
       window.location.href = 'index.html';
     };
 
