@@ -5,6 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#0e1626">
   <title>Cardio · RiseForIt</title>
+  <!-- main.css first so the injected control panel + mobile nav are styled;
+       the page's own :root / .cd-* overrides below still win for the tracker. -->
+  <link rel="stylesheet" href="css/main.css?v=2026-07-16-fabnav-2">
   <!--
     Built-in GPS cardio tracker (the default; onboarding cardioSource='builtin').
     Reuses the watchPosition distance logic from activity.html, wrapped in a
