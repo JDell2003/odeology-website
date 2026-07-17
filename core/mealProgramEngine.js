@@ -327,8 +327,8 @@
             var master = priceIdx[key];
             var category = (master && master.category) || 'Other';
             var spc = spcTable[category] || spcTable['default'];
-            // Monthly-first: containers bought over the 28-day month, amortized by yield.
-            var monthlyServings = u.servings * C.pricing.weeksPerMonth;
+            // Monthly-first: meal-servings consumed over the 30-day plan month.
+            var monthlyServings = u.servings * (C.pricing.daysPerMonth / 7);
             var stores = (master && master.stores) || (u.row && u.row.stores) || {};
             var item = {
                 canonical: u.canonical,
@@ -341,7 +341,13 @@
                 if (!entry || typeof entry.price !== 'number') return;
                 var yieldServings = spc * (C.pricing.bulkFactorByStore[s] || 1);
                 var containers = Math.max(1, Math.ceil(monthlyServings / yieldServings));
-                var cost = round2(entry.price * containers * mult);
+                // AMORTIZED monthly cost: the month consumes monthlyServings/yield
+                // of a container — NOT always whole containers. Charging full
+                // containers every month over-billed long-lived staples (oil,
+                // spices, rice, whey) badly and stacked ~40 ceil() round-ups per
+                // plan, which is how totals hit $600+ for one person.
+                // `containers` still says what to BUY this month (restock UI).
+                var cost = round2(entry.price * (monthlyServings / yieldServings) * mult);
                 var estimated = entry.price_confidence && entry.price_confidence !== 'listed';
                 if (estimated) estimatedAny = true;
                 item.stores[s] = {
@@ -357,7 +363,7 @@
         var byStore = {};
         C.pricing.stores.forEach(function (s) {
             var monthly = round2(totals[s]);
-            byStore[s] = { monthly: monthly, weekly: round2(monthly / C.pricing.weeksPerMonth) };
+            byStore[s] = { monthly: monthly, weekly: round2(monthly / (C.pricing.daysPerMonth / 7)) };
         });
 
         // An ingredient can be free in one recipe but priced in another — priced wins.
@@ -383,7 +389,9 @@
 
     // ------------------------------------------------------ budget ladder
     // Q28 ⚠️ ranking: (1) reduce variety -> (2) swap cheaper same-slot meals ->
-    // (3) drop protein tier -> (4) report the gap. Deterministic throughout.
+    // (3) drop protein tier -> (3b) last resort: swap even locked picks, then
+    // blander repeats down to 1 pick/slot -> (4) report the gap.
+    // Deterministic throughout.
     function fitToBudget(args) {
         var dataset = args.dataset;
         var mealsById = args.mealsById;
@@ -504,6 +512,67 @@
             }
             messages.push(tier === 'MINIMUM' ? C.budget.tierDropCopy :
                 'Budget is tight: protein tier lowered to ' + C.budget.tierLabels[tier] + '.');
+        }
+
+        // (3b) Last resort before admitting a gap (never touches plans the user
+        // hand-edited on the Nutrition page): first allow swapping even the
+        // user's own picks for cheaper same-slot meals, then allow blander
+        // repeats by dropping variety all the way to 1 pick per slot.
+        guard = 0;
+        while (!args.respectPicks && overBudget() && guard++ < 24) {
+            var swappedLocked = false;
+            var slotsL = C.week.slots.slice();
+            for (var sl = 0; sl < slotsL.length && !swappedLocked; sl++) {
+                var slotL = slotsL[sl];
+                var poolL = slotPool(dataset.meals, slotL, stats.goal, pref, allergies);
+                var currentL = picks[slotL].slice().sort(function (a, b) { return costOfPick(b) - costOfPick(a); });
+                for (var pl = 0; pl < currentL.length && !swappedLocked; pl++) {
+                    var expL = currentL[pl];
+                    for (var ql = 0; ql < poolL.length; ql++) {
+                        var candL = poolL[ql];
+                        if (picks[slotL].indexOf(candL.id) >= 0) continue;
+                        if (cheapestCartTotal(candL) < costOfPick(expL)) {
+                            var beforeL = { picks: picks[slotL].slice(), sol: sol };
+                            picks[slotL][picks[slotL].indexOf(expL)] = candL.id;
+                            sol = solve();
+                            if (sol.monthly > beforeL.sol.monthly) {
+                                picks[slotL] = beforeL.picks;   // pricier — revert
+                                sol = beforeL.sol;
+                                continue;
+                            }
+                            messages.push('Budget fit: replaced your pick “' + mealsById[expL].name +
+                                '” with the cheaper “' + candL.name + '” in ' + slotL +
+                                ' so the plan fits your budget.');
+                            swappedLocked = true;
+                            break;
+                        }
+                    }
+                }
+            }
+            if (!swappedLocked) break;
+        }
+
+        guard = 0;
+        while (!args.respectPicks && overBudget() && guard++ < 24) {
+            var slotMaxL = null, idMaxL = null, costMaxL = -1;
+            C.week.slots.forEach(function (slot) {
+                if (picks[slot].length <= C.budget.lastResortFloorPerSlot) return;
+                picks[slot].forEach(function (id) {
+                    var c = costOfPick(id);
+                    if (c > costMaxL) { costMaxL = c; idMaxL = id; slotMaxL = slot; }
+                });
+            });
+            if (!idMaxL) break;
+            var beforeRL = { picks: picks[slotMaxL].slice(), sol: sol };
+            picks[slotMaxL] = picks[slotMaxL].filter(function (id) { return id !== idMaxL; });
+            sol = solve();
+            if (sol.monthly > beforeRL.sol.monthly) {
+                picks[slotMaxL] = beforeRL.picks;
+                sol = beforeRL.sol;
+                break;
+            }
+            messages.push('Budget fit: dropped “' + mealsById[idMaxL].name + '” from ' + slotMaxL +
+                ' and repeat the cheaper pick more often — blander, but it keeps you inside your budget.');
         }
 
         // (4) Still over: report the gap, plan is still returned.

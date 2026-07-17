@@ -145,17 +145,22 @@
         pricing: {
             stores: ['walmart', 'sams', 'target'],
             storeLabels: { walmart: 'Walmart', sams: "Sam's Club", target: 'Target' },
-            // DESIGN / TODO(owner): v1 container model — meal-servings one container yields,
-            // by ingredient_prices.category. Refine with per-unit amortization
-            // (main.js calculateInventoryCosts pattern) in v2.
+            // DESIGN — v2 container model: how many MEAL-SERVING USES one retail
+            // container yields, by ingredient_prices.category. Costs are
+            // amortized against this yield (engine priceWeek), so these are the
+            // main realism lever. v1 values (Spices 40, Pantry 16, Dairy 10,
+            // Produce 6, Meat 4, Frozen 6) plus whole-container ceil() billing
+            // over-counted one person's month to $600+ — a pinch of pepper was
+            // billed as 1/40 of a jar and every item rounded UP to full jars.
             servingsPerContainerByCategory: {
-                'Spices': 40, 'Pantry': 16, 'Dairy & Eggs': 10, 'Produce': 6,
-                'Meat & Seafood': 4, 'Frozen': 6, 'Other': 8, 'default': 8
+                'Spices': 150, 'Pantry': 36, 'Dairy & Eggs': 16, 'Produce': 10,
+                'Meat & Seafood': 6, 'Frozen': 10, 'Other': 12, 'default': 12
             },
             // DESIGN / TODO(owner): Sam's containers are bulk-sized (~3× retail: eggs 24 vs 12,
             // cheese 5 lb vs 16 oz) — yield scales, so compare on plan-total (discovery Q29 ⚠️).
             bulkFactorByStore: { walmart: 1, sams: 3, target: 1 },
-            weeksPerMonth: 4,              // DESIGN — matches legacy "Avg month (28d)"
+            daysPerMonth: 30,              // DESIGN — the plan budgets exactly 30 days
+            weeksPerMonth: 30 / 7,         // derived — weekly figures come off the 30-day month
             samsMembershipBadge: true,     // DESIGN (discovery Q29 ⚠️)
             missingPriceFallbackStore: 'walmart'  // DESIGN — item missing at a store
         },
@@ -171,7 +176,8 @@
                 BALANCED: 'Balanced Results',
                 BEST: 'Best Performance'
             },
-            varietyFloorPerSlot: 2,        // DESIGN — budget ladder never drops below 2 picks/slot
+            varietyFloorPerSlot: 2,        // DESIGN — normal budget ladder floor (picks/slot)
+            lastResortFloorPerSlot: 1,     // DESIGN — final "blander repeats" stage may go to 1
             tierDropCopy: 'Tight budget: protein set to the minimum that still builds muscle.' // DESIGN (Q28)
         },
 

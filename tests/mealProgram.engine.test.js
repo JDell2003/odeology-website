@@ -220,9 +220,57 @@ test('budget ladder order: variety reduction / swaps come before any tier drop',
         assert.ok(reduceIdx < tierIdx,
             `expected variety/swap (${reduceIdx}) before tier drop (${tierIdx}): ${JSON.stringify(plan.messages)}`);
     }
-    // Variety floor is respected even under an impossible budget.
+    // Even the last-resort "blander repeats" stage keeps at least 1 pick/slot.
     for (const slot of C.week.slots) {
-        assert.ok(plan.picks[slot].length >= C.budget.varietyFloorPerSlot);
+        assert.ok(plan.picks[slot].length >= C.budget.lastResortFloorPerSlot);
+    }
+});
+
+// ------------------------------------------------- 30-day budget realism
+
+test('realistic solo budget: $350/mo bulk fits WITHIN budget', () => {
+    const plan = engine.generatePlan(pickInput({ budgetMonthly: 350 }));
+    assert.equal(plan.underBudget, true, `monthly ${plan.monthlyCost} over 350`);
+    assert.ok(plan.monthlyCost <= 350);
+});
+
+test('realistic solo budget: $300/mo cut fits, store totals plausible for 30 days', () => {
+    const stats = Object.assign({}, STATS, { goal: 'cut' });
+    const plan = engine.generatePlan(pickInput({ budgetMonthly: 300, stats }));
+    assert.equal(plan.underBudget, true, `monthly ${plan.monthlyCost} over 300`);
+    assert.ok(plan.monthlyCost <= 300);
+    for (const s of C.pricing.stores) {
+        assert.ok(plan.costs[s].monthly >= 100 && plan.costs[s].monthly <= 700,
+            `${s} monthly ${plan.costs[s].monthly} implausible for one person / 30 days`);
+    }
+});
+
+test('tight-but-possible budget: ladder (incl. locked-pick swaps + repeats) forces a fit', () => {
+    const stats = Object.assign({}, STATS, { goal: 'maintain' });
+    const plan = engine.generatePlan(pickInput({ budgetMonthly: 300, stats }));
+    assert.equal(plan.underBudget, true,
+        `monthly ${plan.monthlyCost} over 300: ${JSON.stringify(plan.messages)}`);
+});
+
+test('pricing is scaled to a 30-day month; weekly derives from it', () => {
+    assert.equal(C.pricing.daysPerMonth, 30);
+    const plan = engine.generatePlan(pickInput());
+    for (const s of C.pricing.stores) {
+        const c = plan.costs[s];
+        assert.ok(Math.abs(c.weekly - c.monthly / (C.pricing.daysPerMonth / 7)) <= 0.02,
+            `${s} weekly ${c.weekly} vs monthly ${c.monthly}`);
+    }
+});
+
+test('amortization: an item month-cost never exceeds the full price of its containers', () => {
+    const plan = engine.generatePlan(pickInput());
+    for (const item of plan.groceryList) {
+        for (const s of Object.keys(item.stores)) {
+            const e = item.stores[s];
+            assert.ok(e.monthlyCost <= e.unitPrice * e.containers * plan.stateMultiplier + 0.01,
+                `${item.canonical}@${s}: ${e.monthlyCost} > ${e.containers} × ${e.unitPrice}`);
+            assert.ok(e.containers >= 1);
+        }
     }
 });
 
