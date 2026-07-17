@@ -209,6 +209,30 @@ body.client-quiz-active .entry-hero {
     border-color: rgba(197, 141, 79, 0.55);
 }
 .bm-option-label { flex: 1; }
+/* Disabled option (e.g. Strava "Coming soon"): visible but non-interactive. */
+.bm-option.is-disabled,
+.bm-option.is-disabled:hover {
+    opacity: 0.55;
+    cursor: not-allowed;
+    transform: none;
+    border-color: var(--bm-line);
+    box-shadow: none;
+}
+.bm-option.is-disabled .bm-radio { visibility: hidden; }
+.bm-option-tag {
+    display: inline-block;
+    margin-left: 8px;
+    padding: 3px 8px;
+    border-radius: 999px;
+    font-size: 10.5px;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    vertical-align: middle;
+    color: #7a5b1e;
+    background: rgba(212, 165, 55, 0.18);
+    border: 1px solid rgba(212, 165, 55, 0.45);
+}
 /* Options with an explainer line sit taller and align to the top. */
 .bm-option.has-desc { align-items: flex-start; min-height: 0; }
 .bm-option-desc {

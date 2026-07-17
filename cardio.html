@@ -26,13 +26,18 @@
     :root { --bg:#0e1626; --card:#16233b; --line:rgba(255,255,255,.1); --gold:#d4a537; --ink:#f6f8fc; --muted:rgba(246,248,252,.62); }
     html,body { margin:0; height:100%; background:var(--bg); color:var(--ink); font-family:system-ui,-apple-system,"Segoe UI",sans-serif; }
     .cd-wrap { max-width:560px; margin:0 auto; min-height:100dvh; display:flex; flex-direction:column; padding:20px 18px 28px; }
+    /* When main.js injects the fixed bottom dock (Control Panel pill + nav,
+       z-index 180), reserve room for it so nothing renders underneath it. */
+    body.has-control-panel .cd-wrap { min-height:0; padding-bottom:calc(170px + env(safe-area-inset-bottom, 0px)); }
     .cd-top { display:flex; align-items:center; justify-content:space-between; gap:12px; }
     .cd-brand { font:800 16px/1 "Space Grotesk",system-ui,sans-serif; letter-spacing:.02em; }
     .cd-back { color:var(--muted); text-decoration:none; font:700 13px/1 system-ui; border:1px solid var(--line); border-radius:9px; padding:8px 12px; }
     .cd-gps { font:700 11px/1 system-ui; color:var(--muted); display:flex; align-items:center; gap:6px; }
     .cd-gps .dot { width:8px; height:8px; border-radius:99px; background:#64748b; }
     .cd-gps.is-good .dot { background:#4ade80; } .cd-gps.is-poor .dot { background:#f59e0b; }
-    .cd-stats { flex:1 1 auto; display:flex; flex-direction:column; justify-content:center; align-items:center; gap:8px; padding:20px 0; }
+    /* Stats block no longer greedily fills the viewport (flex:1) — that pushed
+       the Start button below the fold on phones. Compact block, actions follow. */
+    .cd-stats { flex:0 1 auto; display:flex; flex-direction:column; justify-content:flex-start; align-items:center; gap:8px; padding:34px 0 26px; }
     .cd-time { font:800 68px/1 "Space Grotesk",ui-monospace,monospace; letter-spacing:-.01em; }
     .cd-row { display:flex; gap:34px; margin-top:8px; }
     .cd-metric { text-align:center; }
@@ -41,7 +46,9 @@
     .cd-note { text-align:center; font:600 12px/1.5 system-ui; color:var(--muted); margin:8px 20px 0; }
     .cd-status { text-align:center; font:700 13px/1.4 system-ui; min-height:20px; margin-top:10px; }
     .cd-status.bad { color:#f87171; } .cd-status.good { color:#4ade80; }
-    .cd-actions { display:grid; gap:12px; }
+    /* Keep the action buttons above the injected dock (z-index 180) so taps
+       always land on Start/Pause/Stop, never on the dock behind them. */
+    .cd-actions { display:grid; gap:12px; position:relative; z-index:210; }
     .cd-btn { border:0; border-radius:14px; padding:18px; font:800 17px/1 system-ui; cursor:pointer; }
     .cd-start { background:linear-gradient(135deg,#d4a537,#b98a2b); color:#1a1206; }
     .cd-start:disabled { background:#2a3550; color:#64748b; cursor:not-allowed; }
@@ -49,7 +56,7 @@
     .cd-pause { background:transparent; border:1px solid var(--line); color:var(--ink); }
     .hidden { display:none !important; }
     /* checklist gate */
-    .cd-modal { position:fixed; inset:0; z-index:50; display:grid; place-items:center; padding:18px; background:rgba(4,8,16,.82); }
+    .cd-modal { position:fixed; inset:0; z-index:400; display:grid; place-items:center; padding:18px; background:rgba(4,8,16,.82); }
     .cd-modal[hidden] { display:none; }
     .cd-modal-card { width:min(440px,100%); background:var(--card); border:1px solid var(--line); border-radius:20px; padding:22px; }
     .cd-modal-card h2 { margin:0 0 4px; font:800 19px/1.2 system-ui; }
@@ -60,7 +67,7 @@
     .cd-modal-actions .cd-btn { flex:1; padding:14px; font-size:15px; }
     .cd-cancel { background:transparent; border:1px solid var(--line); color:var(--muted); }
     /* countdown */
-    .cd-count { position:fixed; inset:0; z-index:60; display:grid; place-items:center; background:rgba(4,8,16,.9); }
+    .cd-count { position:fixed; inset:0; z-index:410; display:grid; place-items:center; background:rgba(4,8,16,.9); }
     .cd-count[hidden] { display:none; }
     .cd-count b { font:800 140px/1 "Space Grotesk",monospace; color:var(--gold); animation:cdpop .9s ease; }
     @keyframes cdpop { from{transform:scale(.5);opacity:0} 40%{transform:scale(1);opacity:1} to{transform:scale(1.15);opacity:0} }

@@ -256,7 +256,10 @@
             'Yes — track my steps', 'Not right now'
         ] },
         { id: 'cardioSource', section: 'tracking', type: 'choice', title: 'Want us to track your runs & cardio?', subtitle: 'Pick how cardio gets logged — it feeds your Cardio stat at the device-verified tier.', options: [
-            'Use RiseForIt’s built-in tracker', 'Connect Strava (beta)', 'Not now'
+            'Use RiseForIt’s built-in tracker',
+            // Strava import isn't live yet — show it, but non-clickable.
+            { value: 'Connect Strava (beta)', label: 'Connect Strava', tag: 'Coming soon', disabled: true },
+            'Not now'
         ] },
         { id: 'permSleep', section: 'tracking', type: 'choice', title: 'Sync sleep from your sleep app?', subtitle: 'Sleep hours feed your Recovery stat while you do nothing at all.', options: [
             'Yes — sync my sleep', 'Not right now'
@@ -512,14 +515,17 @@
         }
 
         // Options are plain strings, or { value, desc } to show a short line
-        // under the label explaining what that choice means.
+        // under the label explaining what that choice means. { disabled, tag }
+        // renders a non-clickable option with a small badge (e.g. "Coming soon").
         const choiceRow = (screen, opt, extra = '') => {
             const value = typeof opt === 'object' ? opt.value : opt;
             const label = typeof opt === 'object' ? (opt.label || opt.value) : opt;
             const desc = typeof opt === 'object' ? (opt.desc || '') : '';
+            const tag = typeof opt === 'object' ? (opt.tag || '') : '';
+            const disabled = typeof opt === 'object' && !!opt.disabled;
             return `
-            <button type="button" class="bm-option ${desc ? 'has-desc' : ''} ${answers[screen.id] === value ? 'is-selected' : ''}" data-bm-choice="${esc(value)}">
-                <span class="bm-option-label">${esc(label)}${desc ? `<span class="bm-option-desc">${esc(desc)}</span>` : ''}</span>
+            <button type="button" class="bm-option ${desc ? 'has-desc' : ''} ${disabled ? 'is-disabled' : ''} ${answers[screen.id] === value ? 'is-selected' : ''}" data-bm-choice="${esc(value)}"${disabled ? ' disabled aria-disabled="true" tabindex="-1"' : ''}>
+                <span class="bm-option-label">${esc(label)}${tag ? `<span class="bm-option-tag">${esc(tag)}</span>` : ''}${desc ? `<span class="bm-option-desc">${esc(desc)}</span>` : ''}</span>
                 ${extra}
                 <span class="bm-radio" aria-hidden="true"></span>
             </button>`;
@@ -1085,6 +1091,8 @@
 
             const choiceBtn = target.closest('[data-bm-choice]');
             if (choiceBtn) {
+                // Disabled options (e.g. "Coming soon") never select or advance.
+                if (choiceBtn.disabled || choiceBtn.classList.contains('is-disabled')) return;
                 const value = choiceBtn.getAttribute('data-bm-choice');
                 choiceBtn.classList.add('is-selected');
                 window.setTimeout(() => answerAndAdvance(screen, value), reduceMotion ? 0 : 180);
