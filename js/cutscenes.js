@@ -1755,6 +1755,15 @@
         document.body.insertBefore(layer, document.body.firstChild);
         document.body.classList.add('rf-has-bg-video');
         var video = layer.querySelector('video');
+        // Mobile browsers often ignore the `muted` ATTRIBUTE on a <video> that
+        // was injected via innerHTML, so they treat autoplay as unmuted and
+        // block it — the loop then sits paused behind a native play button
+        // that can't even be tapped (this layer is pointer-events:none). Force
+        // the muted PROPERTY on so the ambient loop autoplays + loops silently.
+        video.muted = true;
+        video.defaultMuted = true;
+        video.playsInline = true;
+        video.setAttribute('muted', '');
         video.addEventListener('error', function () {
             layer.remove();
             document.body.classList.remove('rf-has-bg-video');
@@ -1766,7 +1775,12 @@
             if (m) applyEditLayer(video, layer, { segments: m.segments, texts: m.texts, audio: [], masks: m.masks, trackers: m.trackers, comments: m.comments, position: m.position }, { avoidChrome: true });
             if (!m || !m.position) autoPositionVideo(video);
         });
-        video.play().catch(function () { /* muted autoplay is normally allowed */ });
+        // Kick playback now and again once it's buffered — a muted loop is
+        // allowed to autoplay, but the first call can race the metadata load.
+        var kick = function () { try { var pr = video.play(); if (pr && pr.catch) pr.catch(function () {}); } catch (e) {} };
+        kick();
+        video.addEventListener('canplay', kick, { once: true });
+        video.addEventListener('loadeddata', kick, { once: true });
     }
 
     function runAutoTriggers() {
