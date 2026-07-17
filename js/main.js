@@ -2336,10 +2336,13 @@ function odeOpenWakeModal() {
         s.id = 'ode-wake-modal-styles';
         s.textContent = [
             '#ode-wake-modal{position:fixed;inset:0;z-index:1000;display:grid;place-items:center;padding:18px;background:rgba(4,8,16,.72);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);}',
-            '#ode-wake-modal .owm-card{width:min(420px,100%);background:#16233b;color:#f6f8fc;border:1px solid rgba(255,255,255,.12);border-radius:20px;padding:22px;font-family:system-ui,-apple-system,"Segoe UI",sans-serif;box-shadow:0 22px 60px rgba(0,0,0,.45);}',
+            '#ode-wake-modal .owm-card{box-sizing:border-box;width:min(420px,100%);max-width:100%;overflow:hidden;background:#16233b;color:#f6f8fc;border:1px solid rgba(255,255,255,.12);border-radius:20px;padding:22px;font-family:system-ui,-apple-system,"Segoe UI",sans-serif;box-shadow:0 22px 60px rgba(0,0,0,.45);}',
             '#ode-wake-modal h2{margin:0 0 4px;font:800 19px/1.2 system-ui;}',
             '#ode-wake-modal .owm-sub{margin:0 0 16px;font:500 13px/1.5 system-ui;color:rgba(246,248,252,.62);}',
-            '#ode-wake-modal .owm-time{width:100%;box-sizing:border-box;border:1px solid rgba(255,255,255,.16);border-radius:12px;background:#0e1626;color:#f6f8fc;font:800 26px/1.2 "Space Grotesk",ui-monospace,monospace;padding:12px 14px;text-align:center;}',
+            // -webkit-appearance:none is load-bearing: iOS Safari gives
+            // input[type=time] an intrinsic width and ignores width:100%
+            // without it, so the box hung off the right edge of the phone.
+            '#ode-wake-modal .owm-time{-webkit-appearance:none;appearance:none;display:block;width:100%;min-width:0;max-width:100%;margin:0;box-sizing:border-box;border:1px solid rgba(255,255,255,.16);border-radius:12px;background:#0e1626;color:#f6f8fc;font:800 26px/1.2 "Space Grotesk",ui-monospace,monospace;padding:12px 14px;text-align:center;}',
             '#ode-wake-modal .owm-status{margin:12px 0 0;font:600 12.5px/1.5 system-ui;color:rgba(246,248,252,.62);}',
             '#ode-wake-modal .owm-status.is-open{color:#4ade80;}',
             '#ode-wake-modal .owm-actions{display:flex;gap:10px;margin-top:16px;}',
@@ -2395,6 +2398,17 @@ function odeOpenWakeModal() {
     });
 }
 try { window.odeOpenWakeModal = odeOpenWakeModal; } catch { /* ignore */ }
+
+// One-tap rule: ANY wake-check-in link anywhere in the app opens the
+// time-adjust popup in place instead of bouncing through Overview and
+// needing a second tap there. (The modal's own "Open the check-in card"
+// link is the one deliberate navigation and is excluded.)
+document.addEventListener('click', (e) => {
+    const el = e.target instanceof Element ? e.target.closest('a[href$="#wake-checkin-mount"]') : null;
+    if (!el || el.classList.contains('owm-goto')) return;
+    e.preventDefault();
+    try { odeOpenWakeModal(); } catch { window.location.href = el.getAttribute('href'); }
+});
 
 function setupNav() {
     const hamburger = document.getElementById('hamburger');
