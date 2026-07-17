@@ -134,27 +134,32 @@
     .pt-final::after {
       content: '';
       position: absolute; z-index: 0; pointer-events: none;
-      left: 50%; top: 8%;
-      width: min(820px, 100%); height: 520px;
+      left: 50%; top: 2%;
+      width: min(1000px, 120%); height: 620px;
       transform: translateX(-50%);
-      background: radial-gradient(ellipse at center, rgba(255, 143, 31, 0.30), rgba(255, 143, 31, 0.07) 44%, transparent 70%);
     }
+    /* left-aligned hero → glow sits behind the headline mass; centered final → centered glow */
+    .pt-hero::after { background: radial-gradient(ellipse 60% 58% at 38% 44%, rgba(255, 143, 31, 0.30), rgba(255, 143, 31, 0.06) 46%, transparent 72%); }
+    .pt-final::after { background: radial-gradient(ellipse 60% 60% at 50% 42%, rgba(255, 143, 31, 0.30), rgba(255, 143, 31, 0.07) 46%, transparent 72%); }
     .pt-hero-h1 {
       font-family: var(--font-display);
       font-weight: 900;
-      font-size: clamp(2.7rem, 11.5vw, 6.2rem);
-      line-height: 0.94;
+      font-size: clamp(2.5rem, 10vw, 5.6rem);
+      line-height: 0.98;
       letter-spacing: -0.035em;
       margin: 20px 0 0;
+      max-width: 16ch;
+      text-wrap: balance;
       color: var(--pt-dark-ink);
     }
     .pt-hero-h1 .pt-vanish { color: var(--pt-accent); }
     .pt-hero-sub {
-      margin: 20px 0 0;
-      max-width: 42ch;
+      margin: 22px 0 0;
+      max-width: 40ch;
       color: var(--pt-dark-soft);
       font-size: clamp(1rem, 2.9vw, 1.22rem);
       line-height: 1.55; font-weight: 500;
+      text-wrap: balance;
     }
     .pt-hero-sub b { color: var(--pt-dark-ink); font-weight: 700; }
 
@@ -490,7 +495,7 @@
       <div class="pt-inner">
         <div class="pt-reveal in">
           <span class="pt-kicker">For personal trainers</span>
-          <h1 class="pt-hero-h1" id="pt-hero-h1">You post it. They watch it.<br>Then they <span class="pt-vanish">vanish.</span></h1>
+          <h1 class="pt-hero-h1" id="pt-hero-h1">You post it.<br>They watch it.<br>Then they <span class="pt-vanish">vanish.</span></h1>
           <p class="pt-hero-sub">I fix the leak and close your leads for you — <b>you don't pay unless I sell.</b></p>
         </div>
         <div class="pt-stats pt-reveal">
