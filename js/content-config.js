@@ -71,13 +71,70 @@
       { id: 'days', section: 'reality', path: 'quick', type: 'days', label: 'How many days a week can you post?', sub: 'Start at 3 — you’ll add days later.', required: true }
     ],
 
-    // ---- plate levels ----
+    // ---- plate levels (posts = weekly posting volume the level requires) ----
     levels: [
-      { plates: 1, weight: 135, name: 'Bar work', unlockDays: 0, desc: '3 posts/wk + 5 stories daily. Building the habit.' },
-      { plates: 2, weight: 225, name: 'Working sets', unlockDays: 30, desc: 'You’re consistent now, so we add volume — 5 posts/wk + stories.' },
-      { plates: 3, weight: 315, name: 'Heavy', unlockDays: 60, desc: '5 posts + stories + one long-form video a week. Long form is where trust gets built.' },
-      { plates: 4, weight: 405, name: 'Max effort', unlockDays: 90, desc: 'Everything above, plus a weekly review: what’s working gets more, what isn’t gets cut.' }
+      { plates: 1, weight: 135, name: 'Bar work', unlockDays: 0, posts: 3, desc: '3 posts/wk + 5 stories daily. Building the habit.' },
+      { plates: 2, weight: 225, name: 'Working sets', unlockDays: 30, posts: 5, desc: 'You’re consistent now, so we add volume — 5 posts/wk + stories.' },
+      { plates: 3, weight: 315, name: 'Heavy', unlockDays: 60, posts: 5, desc: '5 posts + stories + one long-form video a week. Long form is where trust gets built.' },
+      { plates: 4, weight: 405, name: 'Max effort', unlockDays: 90, posts: 5, desc: 'Everything above, plus a weekly review: what’s working gets more, what isn’t gets cut.' }
     ],
+
+    // ---- "Suggest for me" pools: templates with the same {variable} slots.
+    // Hidden unless the composing answers in suggestNeeds exist (no generic filler). ----
+    suggestNeeds: {
+      outcome: ['audience'], support1: ['core'], support2: ['core'], contrarian: ['audience', 'core'],
+      turning_point: [], before: [], old_belief: [], why: ['audience'], proofResult: [], proofBelief: [], selfResult: [], catchphrase: []
+    },
+    suggestions: {
+      outcome: [
+        'help {audience} finally {outcome}', 'get {audience} strong without living in the gym', 'help {audience} lose the fat and keep it off', 'get {audience} results without giving up the food they like',
+        'help {audience} build a body they’re proud of, on a real schedule', 'get {audience} out of the start-and-stop cycle for good', 'help {audience} feel like themselves again', 'get {audience} their energy and confidence back',
+        'help {audience} train around a busy life, not against it', 'get {audience} the first real progress they’ve had in years'
+      ],
+      core: [
+        'eating enough protein', 'training with intent, not just sweating', 'getting stronger before doing more cardio', 'sleep and recovery being non-negotiable', 'consistency beating intensity',
+        'lifting heavy and eating enough', 'building the habit before chasing the goal', 'progress over perfection', 'doing less, but doing it every week', 'strength as the foundation for everything else'
+      ],
+      support1: [
+        '{core} is the one lever that actually moves the needle', 'nothing else works until {core} is handled', '{core} is what keeps the results after the diet ends', 'skip {core} and you’re just spinning your wheels',
+        'every client who wins does {core} first', '{core} is boring, which is exactly why it works', 'the people stuck for years are the ones ignoring {core}'
+      ],
+      support2: [
+        'it’s the piece the influencers never mention', 'it’s free and most people still skip it', 'it’s what separates the ones who keep it off', 'it works at any age and any starting point', 'it’s simple, not easy — that’s the point'
+      ],
+      contrarian: [
+        '{audience} don’t need a new program, they need to nail {core}', 'most {audience} are training completely backwards', 'cardio is the least important thing {audience} can do', '{audience} don’t have a discipline problem, they have a {core} problem',
+        'more workouts won’t save {audience} — {core} will', 'the fitness industry keeps {audience} busy so they never fix {core}', '{audience} are one honest habit away, and it’s {core}', 'motivation is a myth {audience} keep waiting on'
+      ],
+      turning_point: [
+        'I stopped chasing motivation and built a system I could keep', 'I quit program-hopping and finally committed to one thing', 'I got honest about what I was actually eating', 'I stopped training for soreness and started training for progress',
+        'I realized consistency beat every perfect week I ever had', 'I stopped hiding from the camera and started showing up', 'I fixed my sleep and everything else followed', 'I stopped doing what looked good and did what worked'
+      ],
+      before: [
+        'skinny-fat, tried every diet, quit by February every year', 'strong in the gym but soft everywhere else', 'exhausted, out of shape, avoiding photos', 'in decent shape once, then life happened',
+        'training hard and going nowhere for years', 'stuck in the start-over-every-Monday loop'
+      ],
+      old_belief: [
+        'that I just needed more willpower', 'that cardio was the answer', 'that I had to be perfect or it didn’t count', 'that I didn’t have the genetics',
+        'that being busy meant I couldn’t', 'that I’d already left it too late'
+      ],
+      why: [
+        'I don’t want {audience} wasting the years I wasted', 'I know what it’s like to be where {audience} are, and I know the way out', 'someone did this for me and it changed my life', 'watching {audience} get their confidence back never gets old',
+        'I’m tired of {audience} getting sold garbage that doesn’t work'
+      ],
+      proofResult: [
+        'down 24 lbs in 12 weeks', 'lost 30 lbs and kept it off for a year', 'first pull-up at 45', 'off two medications after six months', 'down four pant sizes without a crash diet', 'stronger at 50 than they were at 30'
+      ],
+      proofBelief: [
+        'that they’d have to give up bread forever', 'that they were too old to change', 'that they’d tried everything already', 'that they had no willpower', 'that it would take hours a day'
+      ],
+      selfResult: [
+        'down 30 lbs and I’ve kept it off', 'stronger and leaner than I’ve ever been', 'off the blood-pressure meds', 'finally training in a way I can keep forever', 'more energy than I had in my twenties'
+      ],
+      catchphrase: [
+        'discipline is a love language', 'boring works', 'you don’t need more, you need consistent', 'strong is the goal, lean is the byproduct', 'show up before you feel like it'
+      ]
+    },
 
     // ---- Day Zero launch tasks + pinned-video scripts ----
     dayZero: {

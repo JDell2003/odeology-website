@@ -30,11 +30,12 @@
       v: 2, path: null, setupDone: false, answered: {},
       startDate: null, dayZeroDone: false, dzTasks: {},
       appWeekday: 5, overrides: {}, checkins: {}, storiesDone: {},
-      editLog: [], postStats: {}, reminderTime: '18:00', lastPack: 0
+      editLog: [], postStats: {}, reminderTime: '18:00', lastPack: 0, levelIdx: 0
     };
   }
   function loadLocal() {
-    try { var raw = JSON.parse(localStorage.getItem(LS_KEY) || 'null'); if (raw && raw.answered) return raw; } catch (e) {}
+    try { var raw = JSON.parse(localStorage.getItem(lsKey()) || 'null'); if (raw && raw.answered) return raw; } catch (e) {}
+    try { var raw2 = JSON.parse(localStorage.getItem(LS_KEY) || 'null'); if (raw2 && raw2.answered) return raw2; } catch (e) {}
     // migrate a v1 program if present
     try {
       var old = JSON.parse(localStorage.getItem(LS_OLD) || 'null');
@@ -54,7 +55,14 @@
     return null;
   }
   var saveTimer = 0;
-  function persist() { try { localStorage.setItem(LS_KEY, JSON.stringify(state)); } catch (e) {} if (saveTimer) clearTimeout(saveTimer); saveTimer = setTimeout(saveToProfile, 900); }
+  function lsKey() { try { var u = window.__odeCurrentUser; if (u && (u.id || u.username)) return LS_KEY + ':' + (u.id || u.username); } catch (e) {} return LS_KEY; }
+  function persist() {
+    state.updatedAt = Date.now();
+    // Save every answer immediately to localStorage (user-keyed mirror + legacy
+    // key), and debounce the server write so nothing is lost on a mid-flow reload.
+    try { var s = JSON.stringify(state); localStorage.setItem(lsKey(), s); localStorage.setItem(LS_KEY, s); } catch (e) {}
+    if (saveTimer) clearTimeout(saveTimer); saveTimer = setTimeout(saveToProfile, 400);
+  }
   function saveToProfile() { try { fetch('/api/profile', { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ profile: { content_program_v2: state } }) }).catch(function () {}); } catch (e) {} }
   function loadFromProfile() {
     return fetch('/api/profile', { credentials: 'include' })
@@ -70,8 +78,20 @@
     (a.extraMistakes || []).forEach(function (m) { arr.push(m); });
     return arr.filter(function (m) { return String(m || '').trim(); });
   }
-  function postDays() { return (state.answered.days && state.answered.days.days) || [1, 3, 5]; }
-  function daysCount() { return (state.answered.days && state.answered.days.count) || 3; }
+  // Volume comes from the LEVEL (135→3 posts, 225+→5), not the trainer. They
+  // pick which days they're available; we take an even spread up to what the
+  // level needs, capped at what they selected.
+  // Reads the STORED level (refreshed by the dashboard) — never levelIndex()
+  // live, or postDays↔levelIndex would recurse forever.
+  function levelRequiredPosts() { var lv = CFG.levels[state.levelIdx || 0] || CFG.levels[0]; return (lv && lv.posts) || 3; }
+  function availableDays() { var a = state.answered.days; if (a && a.days && a.days.length) return a.days.slice().sort(function (x, y) { return x - y; }); if (a && a.count) return (a.days || [1, 3, 5]); return [1, 3, 5]; }
+  function daysCount() { return Math.min(levelRequiredPosts(), availableDays().length || 3); }
+  function postDays() {
+    var avail = availableDays(); var need = daysCount();
+    if (avail.length <= need) return avail.slice();
+    var out = []; for (var k = 0; k < need; k++) { out.push(avail[Math.round(k * (avail.length - 1) / (need - 1 || 1))]); }
+    return out.filter(function (v, i, arr) { return arr.indexOf(v) === i; });
+  }
   function proofLead() {
     var a = state.answered;
     if (a.has_proof === 'self') return (a.old_belief ? 'I used to believe ' + a.old_belief + '.' : 'I’ve been exactly where you are.');
@@ -166,23 +186,26 @@
   function openModal(node) { modalEl.innerHTML = ''; var card = el('div', 'cp-modal-card'); card.appendChild(node); modalEl.appendChild(card); modalEl.hidden = false; modalEl.onclick = function (e) { if (e.target === modalEl) closeModal(); }; }
   function closeModal() { modalEl.hidden = true; modalEl.innerHTML = ''; }
 
-  // ================= PATH CHOOSER =================
+  // ================= PATH CHOOSER (full-bleed title screen) =================
   function renderPathChooser() {
-    root.className = 'cp-wrap';
-    root.innerHTML = '';
-    root.appendChild(el('span', 'cp-kicker', 'Content Program'));
-    root.appendChild(el('h1', 'cp-h1', 'Two ways to start'));
-    root.appendChild(el('p', 'cp-sub', 'Same tool either way. Pick the one you’ll actually finish.'));
+    root.className = 'cp-wrap'; root.innerHTML = '';
+    root.appendChild(el('div', 'cp-ambient'));
+    var wrap = el('div', 'cp-pathwrap');
+    var eyebrow = el('span', 'cp-seclabel cp-kicker', 'Content Program'); staggerRise(eyebrow, 0); wrap.appendChild(eyebrow);
+    var h = el('h1', 'cp-h1', 'Two ways to start'); h.style.marginTop = '12px'; staggerRise(h, 1); wrap.appendChild(h);
+    var sub = el('p', 'cp-sub', 'Same tool either way. Pick the one you’ll actually finish.'); staggerRise(sub, 2); wrap.appendChild(sub);
 
-    [CFG.paths.detailed, CFG.paths.quick].forEach(function (pth) {
-      var card = el('div', 'cp-pathcard' + (pth.id === 'detailed' ? ' reco' : ''));
-      var h = el('h3', null, esc(pth.name)); h.appendChild(el('span', 'meta', pth.count + ' questions · ' + pth.mins)); card.appendChild(h);
-      card.appendChild(el('p', null, esc(pth.pitch)));
-      var go = el('button', 'cp-btn ' + (pth.id === 'detailed' ? 'cp-btn-primary' : 'cp-btn-ghost'), 'Start ' + pth.name); go.type = 'button'; go.style.marginTop = '12px';
-      go.onclick = function () { state.path = pth.id; persist(); startQuestionnaire(); };
-      card.appendChild(go);
-      root.appendChild(card);
+    // Detailed = the visual default (heavier, filled button). Quick = quiet.
+    [CFG.paths.detailed, CFG.paths.quick].forEach(function (pth, i) {
+      var opt = el('div', 'cp-pathopt ' + (pth.id === 'detailed' ? 'primary' : 'secondary')); staggerRise(opt, 3 + i);
+      var hh = el('h3', null, esc(pth.name)); hh.appendChild(el('span', 'meta', pth.count + ' questions · ' + pth.mins)); opt.appendChild(hh);
+      opt.appendChild(el('p', null, esc(pth.pitch)));
+      var go = el('button', 'cp-btn ' + (pth.id === 'detailed' ? 'cp-btn-primary' : 'cp-btn-ghost'), pth.id === 'detailed' ? 'Start the detailed setup' : 'Start quick instead'); go.type = 'button'; go.style.marginTop = '12px';
+      go.onclick = function () { state.path = pth.id; state.lastStepIndex = 0; persist(); startQuestionnaire(); };
+      opt.appendChild(go); wrap.appendChild(opt);
     });
+    var re = el('p', 'cp-reassure', 'You can switch later without losing anything.'); staggerRise(re, 5); wrap.appendChild(re);
+    root.appendChild(wrap);
   }
 
   // ================= QUESTIONNAIRE (schema-driven) =================
@@ -193,14 +216,34 @@
   function showIfOk(q) { if (!q.showIf) return true; return Object.keys(q.showIf).every(function (k) { return state.answered[k] === q.showIf[k]; }); }
   function buildSteps() {
     var steps = []; var lastSection = null;
-    activeQuestions().forEach(function (q) { if (q.section !== lastSection) { steps.push({ kind: 'intro', section: q.section }); lastSection = q.section; } steps.push({ kind: 'q', q: q }); });
+    activeQuestions().forEach(function (q) {
+      if (q.section !== lastSection) { steps.push({ kind: 'intro', section: q.section }); lastSection = q.section; }
+      steps.push({ kind: 'q', q: q });
+      if (q.id === 'mistake3') steps.push({ kind: 'hookmoment' }); // 1.5: the "first hook" beat
+    });
     return steps;
   }
-  function startQuestionnaire(resumeFromDetailedUpgrade) {
-    flow = { steps: buildSteps(), i: 0, shownIntros: {} };
-    // upgrade path: skip questions already answered, land on first unanswered
-    if (resumeFromDetailedUpgrade) { while (flow.i < flow.steps.length) { var st = flow.steps[flow.i]; if (st.kind === 'q' && showIfOk(st.q) && (state.answered[st.q.id] == null || state.answered[st.q.id] === '')) break; flow.i++; } }
+  var pendingResume = false;
+  function startQuestionnaire(opts) {
+    opts = opts || {};
+    flow = { steps: buildSteps(), i: 0 };
+    if (opts.upgrade) { // detailed upgrade: land on first unanswered
+      while (flow.i < flow.steps.length) { var st = flow.steps[flow.i]; if (st.kind === 'q' && showIfOk(st.q) && (state.answered[st.q.id] == null || state.answered[st.q.id] === '')) break; flow.i++; }
+    } else if (opts.resume && typeof state.lastStepIndex === 'number') {
+      flow.i = Math.min(Math.max(0, state.lastStepIndex), flow.steps.length - 1);
+      while (flow.i > 0 && stepIsSkippable(flow.steps[flow.i])) flow.i--;
+      pendingResume = flow.i > 0;
+    }
     drawStep();
+  }
+  function resumeBannerNode() {
+    var bar = el('div'); bar.style.cssText = 'display:flex;align-items:center;justify-content:space-between;gap:8px;margin:6px 0 2px;padding:8px 12px;border-radius:10px;background:var(--accent-soft);border:1px solid rgba(197,141,79,.3);font-size:.82rem;font-weight:700;color:var(--ink);';
+    bar.appendChild(el('span', null, 'Picked up where you left off.'));
+    var actions = el('span'); actions.style.cssText = 'display:flex;gap:8px;';
+    var over = el('button', null, 'Start over'); over.type = 'button'; over.style.cssText = 'background:none;border:0;color:var(--accent);font-weight:800;cursor:pointer;font-size:.82rem;'; over.onclick = function () { if (confirm('Start the questionnaire over? Your current answers will be cleared.')) { state.answered = {}; state.lastStepIndex = 0; persist(); renderPathChooser(); } };
+    var x = el('button', null, '✕'); x.type = 'button'; x.style.cssText = 'background:none;border:0;color:var(--muted);cursor:pointer;font-size:.9rem;'; x.onclick = function () { bar.remove(); };
+    actions.appendChild(over); actions.appendChild(x); bar.appendChild(actions);
+    return bar;
   }
   function stepIsSkippable(st) { return st.kind === 'q' && !showIfOk(st.q); }
   function nextStep() { do { flow.i++; } while (flow.i < flow.steps.length && stepIsSkippable(flow.steps[flow.i])); if (flow.i >= flow.steps.length) return finishQuestionnaire(); drawStep(); }
@@ -208,13 +251,39 @@
   function answerableProgress() { var qs = flow.steps.filter(function (s) { return s.kind === 'q' && showIfOk(s.q); }); var doneCount = 0; for (var j = 0; j <= flow.i && j < flow.steps.length; j++) { var s = flow.steps[j]; if (s.kind === 'q' && showIfOk(s.q)) doneCount++; } return { total: qs.length, done: Math.max(1, doneCount) }; }
 
   function drawStep() {
+    state.lastStepIndex = flow.i; persist();
     root.className = 'cp-wrap flow'; root.innerHTML = '';
     var st = flow.steps[flow.i];
-    if (st.kind === 'intro') return drawIntro(st.section);
-    drawQuestion(st.q);
+    if (st.kind === 'intro') { drawIntro(st.section); maybeShowResume(); return; }
+    if (st.kind === 'hookmoment') { drawHookMoment(); return; }
+    drawQuestion(st.q); maybeShowResume();
     window.scrollTo(0, 0);
   }
+  function maybeShowResume() { if (pendingResume) { pendingResume = false; try { root.insertBefore(resumeBannerNode(), root.firstChild); } catch (e) {} } }
 
+  // 1.5 — the "first hook" moment: assemble hook word-by-word from their answers.
+  function drawHookMoment() {
+    var screen = el('div', 'cp-screen');
+    var top = el('div', 'cp-screen-top'); var bar = el('div', 'cp-flowbar');
+    var back = el('button', 'cp-back', '‹ Back'); back.type = 'button'; back.onclick = prevStep; bar.appendChild(back);
+    var prog = answerableProgress(); var barEl = el('div', 'cp-bar'); barEl.appendChild(el('i')); barEl.firstChild.style.width = Math.round(prog.done / prog.total * 100) + '%'; bar.appendChild(barEl);
+    top.appendChild(bar); screen.appendChild(top);
+    var body = el('div', 'cp-screen-body'); body.style.justifyContent = 'center';
+    body.appendChild(el('span', 'cp-seclabel', 'Watch this'));
+    body.appendChild(el('h2', 'cp-qh', 'Here’s your first hook.'));
+    var m = mistakesList();
+    var hook = fill(pick(LIB.hooks, 0), m[0]);
+    var out = el('div', 'cp-script'); out.style.cssText = 'margin-top:16px;font-size:1.15rem;min-height:3.4em;'; body.appendChild(out);
+    var words = hook.split(' '); var i = 0;
+    function step() { if (i > words.length) return; out.textContent = words.slice(0, i).join(' '); i++; if (i <= words.length) setTimeout(step, reduced ? 0 : 60); }
+    step();
+    var note = el('p', 'cp-qsub'); note.style.marginTop = '14px'; note.textContent = 'You just wrote that. Every post you get works the same way.'; body.appendChild(note);
+    screen.appendChild(body);
+    var sticky = el('div', 'cp-sticky'); var go = el('button', 'cp-btn cp-btn-primary', 'Continue'); go.type = 'button'; go.onclick = nextStep; sticky.appendChild(go); screen.appendChild(sticky);
+    root.appendChild(screen);
+  }
+
+  function staggerRise(node, order) { if (reduced) { node.style.opacity = '1'; return; } node.classList.add('cp-rise'); node.style.animationDelay = (order * 0.08) + 's'; }
   function drawIntro(section) {
     var sec = CFG.sections[section] || { title: '', body: '' };
     var screen = el('div', 'cp-screen');
@@ -222,12 +291,13 @@
     var back = el('button', 'cp-back', '‹ Back'); back.type = 'button'; back.onclick = prevStep; bar.appendChild(back);
     var prog = answerableProgress(); var barEl = el('div', 'cp-bar'); barEl.appendChild(el('i')); barEl.firstChild.style.width = Math.round((prog.done - 1) / prog.total * 100) + '%'; bar.appendChild(barEl);
     top.appendChild(bar); screen.appendChild(top);
-    var intro = el('div', 'cp-intro');
-    intro.appendChild(el('span', 'cp-seclabel', 'What’s next'));
-    intro.appendChild(el('h2', null, esc(sec.title)));
-    intro.appendChild(el('p', null, esc(sec.body)));
+    root.appendChild(el('div', 'cp-ambient'));
+    var intro = el('div', 'cp-title');
+    var eyebrow = el('span', 'cp-seclabel', 'What’s next'); var h = el('h2', null, esc(sec.title)); var p = el('p', null, esc(sec.body));
+    staggerRise(eyebrow, 0); staggerRise(h, 1); staggerRise(p, 2);
+    intro.appendChild(eyebrow); intro.appendChild(h); intro.appendChild(p);
     screen.appendChild(intro);
-    var sticky = el('div', 'cp-sticky'); var go = el('button', 'cp-btn cp-btn-primary', 'Continue'); go.type = 'button'; go.onclick = nextStep; sticky.appendChild(go); screen.appendChild(sticky);
+    var sticky = el('div', 'cp-sticky'); var go = el('button', 'cp-btn cp-btn-primary', 'Continue'); staggerRise(go, 3.25); go.type = 'button'; go.onclick = nextStep; sticky.appendChild(go); screen.appendChild(sticky);
     root.appendChild(screen);
   }
 
@@ -261,35 +331,34 @@
       var inWrap = el('div', 'cp-qinput');
       var input = q.type === 'textarea' ? el('textarea', 'cp-textarea') : el('input', 'cp-input');
       input.value = state.answered[q.id] || '';
-      if (q.type !== 'textarea') { input.type = 'text'; input.inputMode = q.inputmode || 'text'; input.setAttribute('enterkeyhint', 'next'); }
+      // 1.4 — write-friendly inputs
+      input.spellcheck = true; input.setAttribute('autocorrect', 'on'); input.setAttribute('autocapitalize', 'sentences'); input.setAttribute('autocomplete', 'off');
+      if (q.type !== 'textarea') { input.type = 'text'; input.inputMode = q.inputmode || 'text'; input.setAttribute('enterkeyhint', 'next'); input.addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); next.click(); } }); }
+      else { input.setAttribute('enterkeyhint', 'done'); }
       input.setAttribute('aria-label', q.label);
       input.addEventListener('focus', function () { setTimeout(function () { try { input.scrollIntoView({ block: 'center', behavior: reduced ? 'auto' : 'smooth' }); } catch (e) {} }, 150); });
       if (q.type === 'textarea') { var grow = function () { input.style.height = 'auto'; input.style.height = Math.min(260, input.scrollHeight) + 'px'; }; input.addEventListener('input', grow); setTimeout(grow, 0); }
-      input.addEventListener('input', function () { errEl.textContent = ''; refreshHook(); });
+      input.addEventListener('input', function () { errEl.textContent = ''; });
       inWrap.appendChild(input); body.appendChild(inWrap);
       // chips that fill the field
-      if (q.chips && q.chips.length) { var cw = el('div', 'cp-chipwrap'); q.chips.forEach(function (c) { var b = el('button', 'cp-chip2', esc(c)); b.type = 'button'; b.onclick = function () { input.value = c; errEl.textContent = ''; refreshHook(); input.focus(); }; cw.appendChild(b); }); body.appendChild(cw); }
-      // suggest-for-me
-      if (q.type === 'text' || q.type === 'textarea') { var sg = suggestFor(q); if (sg) { var sb = el('button', 'cp-btn cp-btn-ghost sm cp-suggest', 'Suggest for me'); sb.type = 'button'; sb.onclick = function () { input.value = sg; errEl.textContent = ''; refreshHook(); }; body.appendChild(sb); } }
+      if (q.chips && q.chips.length) { var cw = el('div', 'cp-chipwrap'); q.chips.forEach(function (c) { var b = el('button', 'cp-chip2', esc(c)); b.type = 'button'; b.onclick = function () { input.value = c; errEl.textContent = ''; input.focus(); }; cw.appendChild(b); }); body.appendChild(cw); }
+      // 1.3 — Suggest for me: composed pool, 3 fresh chips at a time, cycling
+      var pool = suggestPool(q);
+      if (pool && pool.length) {
+        var sgWrap = el('div', 'cp-suggest');
+        var sb = el('button', 'cp-btn cp-btn-ghost sm', 'Suggest for me'); sb.type = 'button';
+        var chipHost = el('div', 'cp-chipwrap'); chipHost.style.display = 'none';
+        var more = el('button', null, 'Show me others'); more.type = 'button'; more.style.cssText = 'background:none;border:0;color:var(--accent);font-weight:700;font-size:.85rem;cursor:pointer;margin-top:6px;display:none;';
+        sb.onclick = function () { sb.style.display = 'none'; chipHost.style.display = 'flex'; more.style.display = 'inline-block'; swapSuggestions(q, chipHost, input, errEl); };
+        more.onclick = function () { swapSuggestions(q, chipHost, input, errEl); };
+        sgWrap.appendChild(sb); sgWrap.appendChild(chipHost); sgWrap.appendChild(more); body.appendChild(sgWrap);
+      }
       getVal = function () { return input.value.trim(); };
     }
 
     // why sheet
     if (q.why) { var wb = el('button', 'cp-why-open', 'Why we’re asking →'); wb.type = 'button'; wb.onclick = function () { openWhy(q); }; body.appendChild(wb); }
     body.appendChild(errEl);
-
-    // live hook preview (for chip/text fields that feed hooks)
-    var hookCard = null;
-    function refreshHook() {
-      if (['audience', 'mistake1', 'mistake2', 'mistake3', 'outcome', 'core'].indexOf(q.id) === -1) return;
-      var tmp = JSON.parse(JSON.stringify(state.answered)); tmp[q.id] = getVal();
-      var save = state.answered; state.answered = tmp;
-      var m = mistakesList(); var line = fill(pick(LIB.hooks, 0), m[0]);
-      state.answered = save;
-      if (!hookCard) { hookCard = el('div', 'cp-hookprev'); hookCard.appendChild(el('div', 'cp-label', 'Your hook, live')); hookCard.appendChild(el('div', 'cp-hookprev-line')); hookCard.onclick = function () { toast('This is what a post opens with.'); }; body.appendChild(hookCard); }
-      hookCard.lastChild.textContent = line;
-    }
-    refreshHook();
 
     screen.appendChild(body);
 
@@ -298,7 +367,7 @@
     var next = el('button', 'cp-btn cp-btn-primary', flow.i >= flow.steps.length - 1 ? 'Finish →' : 'Next'); next.type = 'button';
     next.onclick = function () {
       var val = getVal();
-      if (q.required && (val == null || val === '' || (typeof val === 'object' && val.days && val.days.length !== val.count))) { errEl.textContent = 'This one’s required.'; return; }
+      if (q.required && (val == null || val === '' || (typeof val === 'object' && val.days && val.days.length === 0))) { errEl.textContent = (q.type === 'days') ? 'Pick at least one day.' : 'This one’s required.'; return; }
       if (q.validate === 'audience' && isSingularOrVague(val)) { errEl.textContent = 'Make it a plural group — not “you”, “people”, or one person.'; return; }
       state.answered[q.id] = val; persist(); nextStep();
     };
@@ -306,45 +375,76 @@
     root.appendChild(screen);
   }
 
+  // 1.6 — no volume selector. Just: which days can you post? (multi-select).
   function buildDaysPicker() {
-    var count = (state.answered.days && state.answered.days.count) || 3;
     var picked = (state.answered.days && state.answered.days.days && state.answered.days.days.slice()) || [1, 3, 5];
     var node = el('div');
-    var seg = el('div', 'cp-seg'); var segBtns = {};
-    [3, 4, 5].forEach(function (n) { var b = el('button', count === n ? 'on' : ''); b.type = 'button'; b.textContent = n; b.onclick = function () { count = n; Object.keys(segBtns).forEach(function (k) { segBtns[k].classList.toggle('on', +k === n); }); trim(); }; seg.appendChild(b); segBtns[n] = b; });
-    node.appendChild(el('p', 'cp-qsub', 'Then pick which days:')).style.marginTop = '14px';
-    node.insertBefore(seg, node.firstChild);
     var daySel = el('div', 'cp-daysel'); var dayBtns = [];
-    for (var i = 0; i < 7; i++) (function (i) { var b = el('button', 'cp-day' + (picked.indexOf(i) !== -1 ? ' on' : '')); b.type = 'button'; b.textContent = DOW[i]; b.onclick = function () { var at = picked.indexOf(i); if (at !== -1) picked.splice(at, 1); else picked.push(i); trim(); }; daySel.appendChild(b); dayBtns.push(b); })(i);
+    for (var i = 0; i < 7; i++) (function (i) { var b = el('button', 'cp-day' + (picked.indexOf(i) !== -1 ? ' on' : '')); b.type = 'button'; b.textContent = DOW[i]; b.onclick = function () { var at = picked.indexOf(i); if (at !== -1) picked.splice(at, 1); else picked.push(i); draw(); }; daySel.appendChild(b); dayBtns.push(b); })(i);
     node.appendChild(daySel);
-    var note = el('p', 'cp-err'); node.appendChild(note);
-    function draw() { for (var i = 0; i < 7; i++) dayBtns[i].classList.toggle('on', picked.indexOf(i) !== -1); note.textContent = picked.length !== count ? ('Pick ' + count + ' day' + (count > 1 ? 's' : '') + ' — ' + picked.length + ' selected.') : ''; }
-    function trim() { if (picked.length > count) picked = picked.slice(0, count); draw(); }
+    var note = el('p', 'cp-note'); node.appendChild(note);
+    function draw() { for (var i = 0; i < 7; i++) dayBtns[i].classList.toggle('on', picked.indexOf(i) !== -1); note.textContent = picked.length ? (picked.length + ' day' + (picked.length === 1 ? '' : 's') + ' selected. We’ll set your volume from your level — you don’t pick that.') : ''; }
     draw();
-    return { node: node, get: function () { picked.sort(function (a, b) { return a - b; }); return { count: count, days: picked.slice() }; } };
+    return { node: node, get: function () { picked.sort(function (a, b) { return a - b; }); return { days: picked.slice() }; } };
   }
 
   function openWhy(q) { var node = el('div'); node.appendChild(el('h3', null, 'Why we’re asking')); node.appendChild(el('p', 'cp-sub', esc(q.why))); var c = el('button', 'cp-btn cp-btn-primary', 'Got it'); c.type = 'button'; c.style.marginTop = '14px'; c.onclick = closeModal; node.appendChild(c); openModal(node); }
 
-  function suggestFor(q) {
-    var a = state.answered;
-    if (q.id === 'outcome' && a.core) return 'get real results with ' + a.core + ', without the burnout';
-    if (q.id === 'turning_point') return 'I stopped chasing motivation and built a system I could keep';
-    if (q.id === 'contrarian' && a.core) return a.core + ' matters more than anything else you’re doing';
-    if (q.id === 'why') return 'I don’t want anyone to waste the years I wasted figuring this out';
-    if (q.id === 'catchphrase') return 'discipline is a love language';
-    if (q.id === 'selfResult') return 'down 30 lbs and I’ve kept it off';
-    if (q.id === 'support1' && a.core) return a.core + ' is the one lever that actually moves the needle';
-    return null;
+  // 1.3 — Suggest for me: a composed pool per question (templates with the same
+  // {variable} slots), cycled without repeating in a session, 3 at a time.
+  var suggestShown = {}; // questionId -> array of indices already shown this session
+  function suggestPool(q) {
+    var raw = (CFG.suggestions && CFG.suggestions[q.id]) || null;
+    if (!raw) return null;
+    // hide entirely if it can only compose generic filler with no prior context
+    var needs = (CFG.suggestNeeds && CFG.suggestNeeds[q.id]) || [];
+    if (needs.some(function (k) { return !state.answered[k]; })) return null;
+    return raw.map(function (t) { return fill(t); });
+  }
+  function swapSuggestions(q, host, input, errEl) {
+    var pool = suggestPool(q); if (!pool || !pool.length) return;
+    suggestShown[q.id] = suggestShown[q.id] || [];
+    if (suggestShown[q.id].length >= pool.length) suggestShown[q.id] = []; // exhausted → reshuffle
+    // fade old out
+    var old = Array.prototype.slice.call(host.children);
+    old.forEach(function (c) { c.style.transition = 'opacity .12s ease'; c.style.opacity = '0'; });
+    setTimeout(function () {
+      host.innerHTML = '';
+      var picks = [];
+      for (var n = 0; n < 3 && suggestShown[q.id].length < pool.length; n++) {
+        var idx; var guard = 0;
+        do { idx = Math.floor(Math.random() * pool.length); guard++; } while (suggestShown[q.id].indexOf(idx) !== -1 && guard < 40);
+        if (suggestShown[q.id].indexOf(idx) !== -1) break;
+        suggestShown[q.id].push(idx); picks.push(pool[idx]);
+      }
+      picks.forEach(function (txt, k) {
+        var b = el('button', 'cp-chip2', esc(txt)); b.type = 'button'; b.style.cssText = 'opacity:0;transform:translateY(8px);transition:opacity .18s ease,transform .18s ease;transition-delay:' + (k * 0.04) + 's;text-align:left;';
+        b.onclick = function () { input.value = txt; errEl.textContent = ''; input.focus(); };
+        host.appendChild(b); setTimeout(function () { b.style.opacity = '1'; b.style.transform = 'none'; }, 20);
+      });
+    }, 120);
   }
 
   function isSingularOrVague(text) { var t = String(text || '').trim().toLowerCase(); if (!t) return true; if (/^(you|people|everyone|anyone|someone|clients?|person|him|her|them|me|i)$/.test(t)) return true; if (/^you\b/.test(t)) return true; var plural = /(s|men|women|folks|guys|moms|dads|people|lifters|athletes|beginners|workers)\b/.test(t); return !plural; }
 
   function finishQuestionnaire() {
     state.answered.name = trainerName(); state.answered.link = state.answered.link || autoLink();
-    if (state.answered.days && state.answered.days.days) { state.appWeekday = state.answered.days.days[state.answered.days.days.length - 1]; }
+    var pd = postDays(); if (pd.length) state.appWeekday = pd[pd.length - 1];
     state.setupDone = true; persist();
     renderResults();
+  }
+  // The reveal "why" line, composed from their Section 6 reality answers.
+  function whyLine() {
+    var a = state.answered; var bits = [];
+    if (a.consistency === 'never') bits.push('you’re just starting to post');
+    else if (a.consistency === 'onoff') bits.push('you’ve tried posting and stopped before');
+    else if (a.consistency === 'regular') bits.push('you already post fairly regularly');
+    if (a.time === '10') bits.push('you’ve got about an hour a week');
+    else if (a.time === '20') bits.push('you’ve got a couple hours a week');
+    else if (a.time === '30') bits.push('you can give it real time each day');
+    if (a.camera === 'hate') bits.push('camera still feels rough');
+    var lead = bits.length ? ('You told us ' + bits.join(', and ') + '.') : 'Based on what you told us.';
+    return lead + ' This is what sticks.';
   }
 
   // ================= RESULTS + PLATE BADGE REVEAL =================
@@ -372,6 +472,7 @@
 
   function renderResults() {
     root.className = 'cp-wrap'; root.innerHTML = '';
+    root.appendChild(el('div', 'cp-ambient'));
     root.appendChild(el('span', 'cp-kicker', 'You’re set'));
     root.appendChild(el('h1', 'cp-h1', 'Your program’s built'));
     var lv = CFG.levels[0];
@@ -379,13 +480,35 @@
     var badge = plateSvg(1, { w: 140, h: 84, animate: true }); badge.style.margin = '4px auto 0'; card.appendChild(badge);
     var num = el('div'); num.style.cssText = 'font-family:var(--font-display);font-weight:900;font-size:2.4rem;margin-top:6px;color:var(--accent);'; num.textContent = '0'; card.appendChild(num);
     var lvl = el('div', 'cp-label', lv.weight + ' · ' + lv.name); card.appendChild(lvl);
-    card.appendChild(el('p', 'cp-sub', esc(lv.desc)));
     root.appendChild(card);
-    // count-up
     if (!reduced) { var start = performance.now(); (function tick(t) { var k = Math.min(1, (t - start) / 700); num.textContent = String(Math.round(k * lv.weight)); if (k < 1) requestAnimationFrame(tick); })(start); } else num.textContent = String(lv.weight);
 
-    root.appendChild(el('p', 'cp-sub', 'One question left — when do you want to start? That day becomes your launch day.'));
-    var go = el('button', 'cp-btn cp-btn-primary', 'Pick my start day'); go.type = 'button'; go.style.marginTop = '10px'; go.onclick = renderStartDate; root.appendChild(go);
+    // program lines (compose from their answers) — appear one at a time
+    var prog = el('div', 'cp-card');
+    var pd = postDays(); var dayNames = pd.map(function (i) { return DOW[i]; }).join(', ');
+    var lines = [
+      lv.weight + ' · ' + lv.name,
+      daysCount() + ' posts a week — ' + (dayNames || 'days you pick'),
+      '5 stories a day'
+    ];
+    var avail = availableDays();
+    if (avail.length < levelRequiredPosts()) lines.push('You picked ' + avail.length + ' day' + (avail.length === 1 ? '' : 's') + ', so we’re starting there.');
+    lines.forEach(function (t, i) { var row = el('div'); row.style.cssText = 'font-weight:700;padding:8px 0;border-bottom:1px solid var(--line);opacity:0;transform:translateY(8px);transition:opacity .3s ease,transform .3s ease;transition-delay:' + (0.2 + i * 0.12) + 's;'; row.textContent = t; prog.appendChild(row); if (reduced) { row.style.opacity = '1'; row.style.transform = 'none'; } else setTimeout(function () { row.style.opacity = '1'; row.style.transform = 'none'; }, 30); });
+    var why = el('p', 'cp-note'); why.style.marginTop = '10px'; why.textContent = 'Why: ' + whyLine(); prog.appendChild(why);
+    root.appendChild(prog);
+
+    // Beat 2 — where you're going (all four levels, theirs lit)
+    root.appendChild(el('h3', 'cp-section-title', 'Where you’re going'));
+    CFG.levels.forEach(function (L, i) {
+      var row = el('div', 'cp-level-row' + (i === 0 ? '' : ' locked'));
+      var svg = plateSvg(L.plates, { w: 76, h: 48 }); svg.classList.add('lr-svg'); row.appendChild(svg);
+      var meta = el('div'); meta.appendChild(el('h4', null, L.weight + ' · ' + esc(L.name)));
+      meta.appendChild(el('div', 'lr-req', i === 0 ? 'You’re here' : (L.unlockDays + ' days on program without a miss')));
+      meta.appendChild(el('p', null, esc(L.desc))); row.appendChild(meta); root.appendChild(row);
+    });
+    root.appendChild(el('p', 'cp-note', 'Your level never goes down. Miss a day and the streak resets, that’s all.'));
+
+    var go = el('button', 'cp-btn cp-btn-primary', 'Pick my start day'); go.type = 'button'; go.style.marginTop = '14px'; go.onclick = renderStartDate; root.appendChild(go);
   }
 
   function renderStartDate() {
@@ -463,6 +586,9 @@
 
   // ================= DASHBOARD =================
   function renderDashboard() {
+    // Refresh the stored level once per render (safe: levelIndex() reads the
+    // *previous* stored value through postDays, so there's no recursion).
+    try { state.levelIdx = levelIndex(); } catch (e) {}
     root.className = 'cp-wrap'; root.innerHTML = '';
     // header + badge
     var head = el('div'); head.appendChild(el('span', 'cp-kicker', 'Content Program'));
@@ -517,7 +643,7 @@
     card.appendChild(el('div', 'cp-label', 'Level up your posts'));
     card.appendChild(el('p', 'cp-sub', remaining + ' more answers unlocks the story posts and your voice — so your posts sound like you, not a good trainer in general.'));
     var b = el('button', 'cp-btn cp-btn-primary', 'Add more detail to my program'); b.type = 'button'; b.style.marginTop = '8px';
-    b.onclick = function () { state.path = 'detailed'; persist(); startQuestionnaire(true); }; card.appendChild(b);
+    b.onclick = function () { state.path = 'detailed'; persist(); startQuestionnaire({ upgrade: true }); }; card.appendChild(b);
     root.appendChild(card);
   }
 
@@ -750,7 +876,7 @@
 
   // ================= boot / router =================
   function route() {
-    if (!state.path || !state.setupDone) return state.path && !state.setupDone ? startQuestionnaire() : renderPathChooser();
+    if (!state.path || !state.setupDone) { if (state.path && !state.setupDone) return startQuestionnaire({ resume: true }); return renderPathChooser(); }
     if (!state.startDate) return renderStartDate();
     if (!state.dayZeroDone) return renderDayZero();
     renderDashboard(); maybeEveningNudge(); scheduleReminder();
@@ -758,11 +884,13 @@
   function boot() {
     state = loadLocal() || defaultState();
     route();
+    // Reconcile with the server draft by freshness (newest wins) — never let an
+    // older/empty profile clobber in-progress answers (that was the wipe bug).
     loadFromProfile().then(function (cp) {
-      if (cp && cp.answered) {
-        var sw = Object.keys(cp.checkins || {}).length + (cp.editLog || []).length + (cp.setupDone ? 1 : 0);
-        var lw = Object.keys(state.checkins || {}).length + (state.editLog || []).length + (state.setupDone ? 1 : 0);
-        if (sw >= lw) { state = Object.assign(defaultState(), cp); try { localStorage.setItem(LS_KEY, JSON.stringify(state)); } catch (e) {} route(); }
+      if (cp && cp.answered && (cp.updatedAt || 0) > (state.updatedAt || 0)) {
+        state = Object.assign(defaultState(), cp);
+        try { localStorage.setItem(lsKey(), JSON.stringify(state)); localStorage.setItem(LS_KEY, JSON.stringify(state)); } catch (e) {}
+        route();
       }
     });
   }
