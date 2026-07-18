@@ -30,7 +30,8 @@
       v: 2, path: null, setupDone: false, answered: {},
       startDate: null, dayZeroDone: false, dzTasks: {},
       appWeekday: 5, overrides: {}, checkins: {}, storiesDone: {},
-      editLog: [], postStats: {}, personalTakes: {}, reminderTime: '18:00', lastPack: 0, levelIdx: 0
+      editLog: [], postStats: {}, personalTakes: {}, reminderTime: '18:00', lastPack: 0, levelIdx: 0,
+      redoing: false
     };
   }
   function loadLocal() {
@@ -126,12 +127,15 @@
       '{selfResult}': a.selfResult || 'I’m proof it works', '{own_result}': a.selfResult || 'I’m proof it works',
       '{proofLead}': proofLead(), '{proofResultLine}': proofResultLine(),
       '{objection}': a.objection || 'they don’t think they have time', '{objection2}': a.objection2 || '', '{fear}': a.fear || 'that this is just who they are now',
-      '{catchphrase}': a.catchphrase || '', '{name}': trainerName(), '{link}': a.link || 'the link in my bio'
+      '{catchphrase}': a.catchphrase || '', '{name}': trainerName(), '{link}': autoLink()
     };
     return String(str || '').replace(/\{[a-zA-Z0-9_]+\}/g, function (mm) { return (mm in map) ? map[mm] : mm; });
   }
   function ctaText() { var c = LIB.cta || {}; var vk = voiceKey(); return fill((c.voices && c.voices[vk]) || c.master || ''); }
-  function autoLink() { try { var u = window.__odeCurrentUser; var h = u && (u.username || u.id); if (h) return location.origin + '/coach/' + h; } catch (e) {} return location.origin + '/coach'; }
+  // SINGLE source of truth for the trainer's public link — derived only from
+  // the current session user, never a cached/seeded/stored slug (v8 0.1).
+  function coachSlug() { try { var u = window.__odeCurrentUser || (typeof readAuthUserHint === 'function' ? readAuthUserHint() : null); return u && (u.username || u.id) ? String(u.username || u.id) : ''; } catch (e) {} return ''; }
+  function autoLink() { var s = coachSlug(); return location.origin + '/coach' + (s ? '/' + s : ''); }
 
   // Voice: questionnaire values → library voice keys (beats stay constant).
   function voiceKey() { return ({ direct: 'blunt', warm: 'warm', blunt: 'funny', technical: 'technical' })[state.answered.voice] || 'blunt'; }
@@ -277,6 +281,11 @@
   var pendingResume = false;
   function startQuestionnaire(opts) {
     opts = opts || {};
+    // Redoing a finished program: mark it so a mid-redo reload RESUMES the
+    // questionnaire instead of dumping back to the dashboard (v8 0.3). Snapshot
+    // the current answers so the old program stays intact until the new one is
+    // finished.
+    if (state.setupDone && !state.redoing) { state.redoing = true; try { state.redoBackup = JSON.parse(JSON.stringify(state.answered)); } catch (e) {} persist(); }
     flow = { steps: buildSteps(), i: 0 };
     if (opts.upgrade) { // detailed upgrade: land on first unanswered
       while (flow.i < flow.steps.length) { var st = flow.steps[flow.i]; if (st.kind === 'q' && showIfOk(st.q) && (state.answered[st.q.id] == null || state.answered[st.q.id] === '')) break; flow.i++; }
@@ -419,7 +428,10 @@
     next.onclick = function () {
       var val = getVal();
       if (q.required && (val == null || val === '' || (typeof val === 'object' && val.days && val.days.length === 0))) { errEl.textContent = (q.type === 'days') ? 'Pick at least one day.' : 'This one’s required.'; return; }
-      if (q.validate === 'audience' && isSingularOrVague(val)) { errEl.textContent = 'Make it a plural group — not “you”, “people”, or one person.'; return; }
+      if (q.validate === 'audience') {
+        if (String(val).trim().length < 4) { errEl.textContent = 'Give me a bit more — who are they?'; return; }
+        if (isSingularOrVague(val)) { errEl.textContent = 'Name a group, not “you” — try “men over 35” or “people who’ve tried every diet.”'; return; }
+      }
       state.answered[q.id] = val; persist(); nextStep();
     };
     sticky.appendChild(next); screen.appendChild(sticky);
@@ -479,7 +491,8 @@
   function isSingularOrVague(text) { var t = String(text || '').trim().toLowerCase(); if (!t) return true; if (/^(you|people|everyone|anyone|someone|clients?|person|him|her|them|me|i)$/.test(t)) return true; if (/^you\b/.test(t)) return true; var plural = /(s|men|women|folks|guys|moms|dads|people|lifters|athletes|beginners|workers)\b/.test(t); return !plural; }
 
   function finishQuestionnaire() {
-    state.answered.name = trainerName(); state.answered.link = state.answered.link || autoLink();
+    state.answered.name = trainerName(); delete state.answered.link; // link is always derived, never stored
+    state.redoing = false; delete state.redoBackup;
     var pd = postDays(); if (pd.length) state.appWeekday = pd[pd.length - 1];
     state.setupDone = true; persist();
     renderResults();
@@ -795,10 +808,19 @@
   }
 
   function renderCompliance() {
-    var p7 = compliancePct(7); var p30 = compliancePct(30); var streak = currentStreak();
     root.appendChild(el('h3', 'cp-section-title', 'Compliance'));
+    // Before day one — no percentage, no band, no shame (v7 1.7 / v8 P2).
+    var elapsed = daysBetween(ymd(programStart()), ymd(today()));
+    if (elapsed < 1 && Object.keys(state.checkins).length === 0) {
+      var start = programStart(); var card0 = el('div', 'cp-card');
+      card0.appendChild(el('span', 'cp-score-num', 'Starts')); card0.lastChild.style.fontSize = '1.6rem';
+      card0.appendChild(el('div', 'cp-score-30', DOW_FULL[start.getDay()] + ' ' + (start.getMonth() + 1) + '/' + start.getDate()));
+      card0.appendChild(el('p', 'cp-note', 'Your score kicks in once you’re rolling. Nobody’s failing before day one.'));
+      root.appendChild(card0); return;
+    }
+    var p7 = compliancePct(7); var p30 = compliancePct(30); var streak = currentStreak();
     var band = (p7 == null) ? 'amber' : (p7 >= 85 ? 'green' : p7 >= 60 ? 'amber' : 'red');
-    var lbl = (p7 == null) ? 'No data yet' : (p7 >= 85 ? 'On program' : p7 >= 60 ? 'Slipping' : 'Off program');
+    var lbl = (p7 == null) ? 'Getting going' : (p7 >= 85 ? 'On program' : p7 >= 60 ? 'Slipping' : 'Off program');
     var card = el('div', 'cp-card cp-score ' + band);
     var main = el('div'); main.appendChild(el('span', 'cp-score-num', (p7 == null ? '—' : p7 + '%'))); main.appendChild(el('span', 'cp-band', lbl));
     card.appendChild(main);
@@ -833,8 +855,8 @@
   function renderLinkRow() {
     root.appendChild(el('h3', 'cp-section-title', 'Your landing page link'));
     var card = el('div', 'cp-card'); var row = el('div', 'cp-linkrow');
-    var inp = el('input', 'cp-input'); inp.value = state.answered.link || autoLink(); inp.setAttribute('aria-label', 'Landing page link'); inp.onchange = function () { state.answered.link = inp.value.trim(); persist(); };
-    var copy = el('button', 'cp-btn cp-btn-primary sm', 'Copy'); copy.type = 'button'; copy.onclick = function () { copyText(inp.value.trim(), 'Link copied'); };
+    var inp = el('input', 'cp-input'); inp.value = autoLink(); inp.readOnly = true; inp.setAttribute('aria-label', 'Landing page link');
+    var copy = el('button', 'cp-btn cp-btn-primary sm', 'Copy'); copy.type = 'button'; copy.onclick = function () { copyText(autoLink(), 'Link copied'); };
     row.appendChild(inp); row.appendChild(copy); card.appendChild(row); root.appendChild(card);
   }
   function renderReminderRow() {
@@ -985,6 +1007,9 @@
 
   // ================= boot / router =================
   function route() {
+    // A redo in progress resumes the questionnaire even though the old program
+    // is still marked complete (v8 0.3).
+    if (state.redoing && state.setupDone) return startQuestionnaire({ resume: true });
     if (!state.path || !state.setupDone) { if (state.path && !state.setupDone) return startQuestionnaire({ resume: true }); return renderPathChooser(); }
     if (!state.startDate) return renderStartDate();
     if (!state.dayZeroDone) return renderDayZero();
@@ -992,6 +1017,7 @@
   }
   function boot() {
     state = loadLocal() || defaultState();
+    if (state.answered && state.answered.link) delete state.answered.link; // purge any stale seeded slug (v8 0.1)
     route();
     // Reconcile with the server draft by freshness (newest wins) — never let an
     // older/empty profile clobber in-progress answers (that was the wipe bug).

@@ -9,13 +9,13 @@
     // ---- path chooser ----
     paths: {
       quick: { id: 'quick', name: 'Quick', count: 14, mins: '4 min', pitch: 'Gets you a working program today. Your posts will be solid but more general — they’ll sound like a good trainer, not specifically like you. You can upgrade anytime and everything regenerates.' },
-      detailed: { id: 'detailed', name: 'Detailed', count: 40, mins: '15 min', pitch: 'Your posts come out sounding like you actually talk, built on your story and what you believe. This is the one that works. Most people who skip it end up doing it later anyway.' }
+      detailed: { id: 'detailed', name: 'Detailed', count: 28, mins: 'about 20 min', pitch: 'Your posts come out sounding like you actually talk, built on your story and what you believe. This is the one that works. Most people who skip it end up doing it later anyway.' }
     },
 
     // ---- section intro cards (shown before each section's questions) ----
     sections: {
       who: { title: 'Who you train', body: 'Speak to everyone and you connect with no one. The trainers who fill their calendar are the ones a specific person feels seen by.' },
-      stand: { title: 'What you stand for', body: 'You’ll say the same few things for years. That’s not repetitive — that’s how anyone becomes known for anything. Jordan didn’t wear Nikes one night.' },
+      stand: { title: 'What you stand for', body: 'You’ll say the same few things for years. That’s not repetitive — that’s how anyone becomes known for anything. Nike didn’t become a basketball brand because Jordan wore them once. He wore them every night for years. Same with what you post.' },
       story: { title: 'Your story', body: 'Nobody buys the plan. They buy the person who already walked it. The part you’re hesitant to share is usually the part that lands.' },
       proof: { title: 'Proof', body: 'The result isn’t what makes a testimonial work. What makes it work is what they believed that turned out to be wrong.' },
       reality: { title: 'Your reality', body: 'We’re not giving you a program you’ll quit in three weeks. Answer these honestly and we’ll start you where you actually are.' },
