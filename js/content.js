@@ -30,7 +30,7 @@
       v: 2, path: null, setupDone: false, answered: {},
       startDate: null, dayZeroDone: false, dzTasks: {},
       appWeekday: 5, overrides: {}, checkins: {}, storiesDone: {},
-      editLog: [], postStats: {}, reminderTime: '18:00', lastPack: 0, levelIdx: 0
+      editLog: [], postStats: {}, personalTakes: {}, reminderTime: '18:00', lastPack: 0, levelIdx: 0
     };
   }
   function loadLocal() {
@@ -116,56 +116,104 @@
       '{story}': a.turning_point || 'I found what actually works',
       '{turning_point}': a.turning_point || 'I found what actually works',
       '{before}': a.before || 'stuck and frustrated', '{old_belief}': a.old_belief || 'I needed more willpower', '{why}': a.why || 'I don’t want anyone to waste the time I wasted',
-      '{proofName}': a.proofName || 'a client of mine', '{proofResult}': a.proofResult || 'a result they were proud of', '{selfResult}': a.selfResult || 'I’m proof it works',
+      // both camelCase (questionnaire) and snake_case (library) proof slots
+      '{proofName}': a.proofName || 'a client of mine', '{proof_name}': a.proofName || 'a client of mine',
+      '{proofResult}': a.proofResult || 'a result they were proud of', '{proof_result}': a.proofResult || 'a result they were proud of',
+      '{proof_belief}': a.proofBelief || 'they’d already tried everything',
+      '{selfResult}': a.selfResult || 'I’m proof it works', '{own_result}': a.selfResult || 'I’m proof it works',
       '{proofLead}': proofLead(), '{proofResultLine}': proofResultLine(),
       '{objection}': a.objection || 'they don’t think they have time', '{objection2}': a.objection2 || '', '{fear}': a.fear || 'that this is just who they are now',
       '{catchphrase}': a.catchphrase || '', '{name}': trainerName(), '{link}': a.link || 'the link in my bio'
     };
-    return String(str || '').replace(/\{[a-zA-Z0-9]+\}/g, function (mm) { return (mm in map) ? map[mm] : mm; });
+    return String(str || '').replace(/\{[a-zA-Z0-9_]+\}/g, function (mm) { return (mm in map) ? map[mm] : mm; });
   }
-  function ctaText() { return fill(LIB.cta || ''); }
+  function ctaText() { var c = LIB.cta || {}; var vk = voiceKey(); return fill((c.voices && c.voices[vk]) || c.master || ''); }
   function autoLink() { try { var u = window.__odeCurrentUser; var h = u && (u.username || u.id); if (h) return location.origin + '/coach/' + h; } catch (e) {} return location.origin + '/coach'; }
 
-  // ---------- schedule / jobs (reuse v3 logic on derived vars) ----------
+  // Voice: questionnaire values → library voice keys (beats stay constant).
+  function voiceKey() { return ({ direct: 'blunt', warm: 'warm', blunt: 'funny', technical: 'technical' })[state.answered.voice] || 'blunt'; }
+  function hookLine(idx, mistakeForCycle) { var hs = LIB.hooks || []; if (!hs.length) return ''; var h = hs[idx % hs.length]; var pat = (h.voices && h.voices[voiceKey()]) || h.pattern; return fill(pat, mistakeForCycle); }
+  function slugify(s) { return String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 60); }
+  function personalCount() { return Object.keys(state.personalTakes || {}).length; }
+
+  // ---------- schedule / jobs — 4-week rotation, app day fixed ----------
+  var ROTATION = [['win', 'mistake'], ['mistake', 'myth'], ['win', 'objection'], ['mistake', 'reframe']];
   function isPostDay(d) { return postDays().indexOf(d.getDay()) !== -1; }
   function baseJob(d) {
     if (!isPostDay(d)) return 'stories';
     if (d.getDay() === state.appWeekday) return 'app';
-    var start = parseYmd(state.startDate || ymd(today())); if (d < start) start = d;
-    var n = 0; for (var c = new Date(start); c <= d; c = addDays(c, 1)) { if (isPostDay(c) && c.getDay() !== state.appWeekday) n++; }
-    return (n % 2 === 1) ? 'win' : 'mistake';
+    var start = parseYmd(state.startDate || ymd(today())); if (d < start) return 'win';
+    var week = Math.floor(daysBetween(ymd(start), ymd(d)) / 7);
+    var blockStart = addDays(start, week * 7); var pos = 0;
+    for (var c = new Date(blockStart); c <= d; c = addDays(c, 1)) { if (isPostDay(c) && c.getDay() !== state.appWeekday) pos++; }
+    var row = ROTATION[week % ROTATION.length];
+    return row[(Math.max(1, pos) - 1) % row.length] || 'mistake';
   }
   function jobFor(d) { var k = ymd(d); if (state.overrides[k] && state.overrides[k].type) return state.overrides[k].type; return baseJob(d); }
   function occurrenceIndex(d, type) { var start = parseYmd(state.startDate || ymd(today())); if (d < start) return 0; var n = 0; for (var c = new Date(start); c <= d; c = addDays(c, 1)) { if (jobFor(c) === type) n++; } return Math.max(0, n - 1); }
   function pick(arr, i) { return (arr && arr.length) ? arr[i % arr.length] : ''; }
 
+  // Shared pools (myth/objection/mistake seeds) are rendered as PROMPTS, not
+  // finished copy — so two trainers never post the same video. The trainer's
+  // take is captured, saved to their personal pool keyed by topic, and reused.
+  function sharedPool(type) {
+    var pt = LIB.post_types || {};
+    if (type === 'myth') return (pt.myth.library || []).map(function (x) { return { key: slugify(x.myth), topic: x.myth, why: 'It feels true — effort and tradition both point that way.', ref: x.truth + ' ' + x.kicker, prompt: 'Your take — what’s actually wrong with it? Say it your way.' }; });
+    if (type === 'objection') return (pt.objection.library || []).map(function (x) { return { key: slugify(x.objection), topic: x.objection, why: 'People say it because it feels safe and true in the moment.', ref: x.counter, prompt: 'Your counter — how do you take it apart? Your words.' }; });
+    if (type === 'mistake') return (pt.mistake.seeds || []).map(function (x) { return { key: slugify(x), topic: x, why: 'Effort feels like progress, so nobody questions it.', ref: '', prompt: 'Your take — name the fix in your words (don’t explain how to do it).' }; });
+    return [];
+  }
+  function angleFor(type, idx) {
+    var pool = sharedPool(type); if (!pool.length) return null;
+    var takes = state.personalTakes || {};
+    if (personalCount() >= 10) { var owned = pool.filter(function (p) { return takes[p.key]; }); if (owned.length) { var it = owned[idx % owned.length]; return { item: it, take: takes[it.key], needsTake: false }; } }
+    var item = pool[idx % pool.length];
+    return { item: item, take: takes[item.key] || null, needsTake: !takes[item.key] };
+  }
+  function savePersonalTake(key, text) { state.personalTakes = state.personalTakes || {}; state.personalTakes[key] = String(text || '').trim(); persist(); }
+
+  // Returns a structured post: hook + angle (their take / prompt / proof) +
+  // beats (t · job, never a word-for-word middle) + CTA.
   function scriptFor(d) {
-    var type = jobFor(d); var key = ymd(d);
-    if (type === 'rest') return { type: type, title: 'Rest', script: '', prompt: '', hookNote: '' };
-    if (type === 'stories') return { type: type, title: 'Stories only', script: '', prompt: (LIB.prompts && LIB.prompts.stories) || '', hookNote: '' };
-    var idx = occurrenceIndex(d, type); var cta = ctaText();
+    var type = jobFor(d);
+    if (type === 'rest') return { type: type, title: 'Rest', beats: [] };
+    if (type === 'stories') return { type: type, title: 'Stories only', beats: [], coachingNote: (LIB.stories_daily || {}).coaching_note || '' };
+    var idx = occurrenceIndex(d, type); var pt = (LIB.post_types || {})[type] || {};
+    var base = { type: type, title: pt.label || type, beats: (pt.beats || []).map(function (b) { return { t: b.t, job: fill(b.job) }; }), cta: ctaText(), coachingNote: pt.coaching_note || '', length: pt.length || '' };
+
     if (type === 'win') {
-      var self = state.answered.has_proof === 'self';
-      var body = self ? fill(pick(LIB.selfWin && LIB.selfWin.length ? LIB.selfWin : LIB.win, idx)) : fill(pick(LIB.win, idx));
-      return { type: type, title: self ? 'Your progress' : 'The win', script: body + '\n\n' + cta, prompt: LIB.prompts.win, hookNote: '' };
+      if (state.answered.has_proof === 'self') { var nv = pt.no_client_variant || {}; base.title = nv.label || 'Your progress'; base.beats = (nv.beats || []).map(function (b) { return { t: b.t, job: fill(b.job) }; }); base.framing = nv.framing; base.hook = fill('What I used to believe that was wrong: {old_belief}.'); }
+      else { base.hook = fill('When {proof_name} started, they were sure {proof_belief}.'); base.angle = { kind: 'proof', text: fill('{proof_name} — {proof_result}') }; }
+      return base;
     }
-    if (type === 'app') { return { type: type, title: 'Free-app post', script: fill(pick(LIB.app, idx)) + '\n\n' + cta, prompt: LIB.prompts.app, hookNote: '' }; }
-    var m = mistakesList();
-    var mIndex = (state.overrides[key] && typeof state.overrides[key].mistakeIndex === 'number') ? state.overrides[key].mistakeIndex : (idx % Math.max(1, m.length));
-    var mistake = m[mIndex] || m[0] || '';
-    var hook = fill(pick(LIB.hooks, idx), mistake);
-    return { type: type, title: 'The mistake', script: hook + '\n\n' + fill(pick(LIB.mistake, idx), mistake) + '\n\n' + cta, prompt: LIB.prompts.mistake, hookNote: LIB.prompts.hook };
+    if (type === 'app') { base.hook = fill(pick(pt.hook_variants, idx)); return base; }
+    if (type === 'reframe') { base.hook = fill(pick(pt.variants, idx)); return base; }
+
+    // shared-pool types: mistake / myth / objection
+    var a = angleFor(type, idx);
+    if (type === 'mistake') { var mt = mistakesList(); base.hook = hookLine(idx, mt.length ? mt[idx % mt.length] : (a && a.item.topic)); }
+    else if (type === 'myth') { base.hook = a ? ('Most people believe: “' + a.item.topic + '” — here’s why that’s wrong.') : hookLine(idx); }
+    else { base.hook = a ? ('“' + a.item.topic + '”') : hookLine(idx); }
+    if (a) { base.angle = { kind: a.needsTake ? 'prompt' : 'personal', topicKey: a.item.key, topic: a.item.topic, why: a.item.why, ref: a.item.ref, prompt: a.item.prompt, take: a.take }; base.needsTake = a.needsTake; }
+    return base;
   }
   function storiesFor(d) {
-    var idx = daysBetween(state.startDate || ymd(today()), ymd(d)); if (idx < 0) idx = 0; var s = LIB.stories || {};
-    return [
-      { slot: 'Lead — morning', line: fill(pick(s.lead_morning, idx)) },
-      { slot: 'Lead + Relate — a thought', line: fill(pick(s.lead_thought, idx)) },
-      { slot: 'Relate — progress', line: fill(pick(s.relate_progress, idx)) },
-      { slot: 'Relate — right now', line: fill(pick(s.relate_now, idx)) },
-      { slot: 'Attack — the ask', line: fill(pick(s.attack_ask, idx)) }
-    ];
+    var idx = daysBetween(ymd(programStart()), ymd(d)); if (idx < 0) idx = 0;
+    var slots = (LIB.stories_daily && LIB.stories_daily.slots) || [];
+    return slots.map(function (s) { return { slot: s.type, line: fill(pick(s.examples, idx)) }; });
   }
+  // Assemble a copyable filming plan (hook + take + beats + CTA) — never a
+  // word-for-word caption; the middle is theirs to say.
+  function filmingPlan(s) {
+    var out = [];
+    if (s.hook) out.push('HOOK: ' + s.hook);
+    if (s.angle) { if (s.angle.kind === 'personal' || s.angle.kind === 'prompt') out.push('YOUR TAKE: ' + (s.angle.take || '[' + s.angle.topic + ' — say it your way]')); else if (s.angle.kind === 'proof') out.push('PROOF: ' + s.angle.text); }
+    out.push(''); out.push('BEATS:');
+    (s.beats || []).forEach(function (b) { out.push(b.t + ' — ' + b.job); });
+    out.push(''); out.push('CTA: ' + s.cta);
+    return out.join('\n');
+  }
+  function postsAvailable() { var pt = LIB.post_types || {}; return ((pt.mistake && pt.mistake.seeds) || []).length + ((pt.myth && pt.myth.library) || []).length + ((pt.objection && pt.objection.library) || []).length + ((pt.app && pt.app.hook_variants) || []).length; }
 
   // ---------- compliance / streak / level ----------
   function assignedTasks(d) { var job = jobFor(d); return { post: (job === 'win' || job === 'mistake' || job === 'app'), stories: (job !== 'rest') }; }
@@ -547,6 +595,7 @@
       head.appendChild(el('div', 'cp-dz-title', esc(task.title)));
       box.appendChild(head);
       var b = el('div', 'cp-dz-body'); b.appendChild(el('p', null, esc(task.body)));
+      if (task.id === 'guide') { var gl = el('a', 'cp-btn cp-btn-ghost sm', 'Open the guide (downloadable)'); gl.href = '/content/filming-guide'; gl.target = '_blank'; gl.rel = 'noopener'; gl.style.cssText = 'display:inline-flex;margin-top:8px;text-decoration:none;'; gl.onclick = function (e) { e.stopPropagation(); }; b.appendChild(gl); }
 
       if (task.bioLine) { var bio = 'I help ' + (state.answered.audience || 'people') + ' ' + (state.answered.outcome || 'reach their goals'); var bl = el('div', 'cp-dz-pin'); bl.appendChild(el('div', 'cp-label', 'Your bio line')); bl.appendChild(el('p', 'cp-cta-text', esc(bio))); var cpy = el('button', 'cp-btn cp-btn-ghost sm', 'Copy bio'); cpy.type = 'button'; cpy.style.marginTop = '8px'; cpy.onclick = function (e) { e.stopPropagation(); copyText(bio, 'Bio copied'); }; bl.appendChild(cpy); b.appendChild(bl); }
 
@@ -604,6 +653,7 @@
     renderStrip();
     renderCompliance();
     renderLinkRow();
+    var dm = el('button', 'cp-btn cp-btn-ghost', 'Someone DM’d me — what do I say?'); dm.type = 'button'; dm.style.marginTop = '10px'; dm.onclick = openDmResponse; root.appendChild(dm);
     renderReminderRow();
   }
 
@@ -648,7 +698,6 @@
   }
 
   function postsMadeCount() { var n = 0; var end = today(); for (var c = new Date(programStart()); c <= end; c = addDays(c, 1)) { var a = assignedTasks(c); var ci = state.checkins[ymd(c)] || {}; if (a.post && ci.posted) n++; } return n; }
-  function postsAvailable() { return (LIB.win || []).length + (LIB.mistake || []).length + (LIB.app || []).length; }
 
   function renderTodayCard() {
     var d = today(); var key = ymd(d); var s = scriptFor(d);
@@ -662,14 +711,44 @@
     if (s.type === 'stories') body.appendChild(el('p', 'cp-sub', 'No feed post today — just your 5 stories. That’s where the trust is built.'));
     else if (s.type === 'rest') body.appendChild(el('p', 'cp-sub', 'Rest day. Still get your stories up if you can.'));
     else {
-      if (s.prompt) { var p = el('div', 'cp-prompt'); p.innerHTML = '<b>Why this post:</b> ' + esc(s.prompt); body.appendChild(p); }
-      var script = el('div', 'cp-script'); script.textContent = s.script; body.appendChild(script);
-      if (s.hookNote) body.appendChild(el('p', 'cp-hooknote', s.hookNote));
+      if (s.coachingNote) { var p = el('div', 'cp-prompt'); p.innerHTML = '<b>Why this post:</b> ' + esc(s.coachingNote); body.appendChild(p); }
+      // hook
+      if (s.hook) { var hk = el('div', 'cp-script'); hk.style.cssText = 'font-weight:700;font-size:1.06rem;'; hk.textContent = s.hook; body.appendChild(hk); }
+      // angle: prompt (capture their take), their saved take, or proof
+      if (s.angle && (s.angle.kind === 'prompt' || s.angle.kind === 'personal')) {
+        if (s.angle.kind === 'prompt') {
+          var pw = el('div', 'cp-cta-box'); pw.style.cssText = 'border-style:solid;';
+          pw.appendChild(el('div', 'cp-label', 'Today: the ' + jobLabel(s.type).toLowerCase()));
+          pw.appendChild(el('p', 'cp-cta-text', 'Topic: “' + esc(s.angle.topic) + '”'));
+          pw.appendChild(el('p', 'cp-cta-why', 'Why people believe it: ' + esc(s.angle.why)));
+          if (s.angle.ref) { var refP = el('p', 'cp-cta-why'); refP.style.marginTop = '4px'; refP.textContent = 'For reference (don’t read it): ' + s.angle.ref; pw.appendChild(refP); }
+          pw.appendChild(el('p', 'cp-ask', s.angle.prompt)).style.marginTop = '10px';
+          var ta = el('textarea', 'cp-textarea'); ta.placeholder = 'Say it your way…'; ta.setAttribute('aria-label', 'Your take'); pw.appendChild(ta);
+          var save = el('button', 'cp-btn cp-btn-primary sm', 'Save my take'); save.type = 'button'; save.style.marginTop = '8px';
+          save.onclick = function () { var v = ta.value.trim(); if (v.length < 3) { toast('Say a little more'); return; } savePersonalTake(s.angle.topicKey, v); toast('Saved — that’s yours now'); renderDashboard(); };
+          pw.appendChild(save);
+          pw.appendChild(el('p', 'cp-cta-why', 'The topic is the prompt. The video is yours — and you only answer it once.'));
+          body.appendChild(pw);
+        } else {
+          var yt = el('div', 'cp-cta-box'); yt.style.cssText = 'border-style:solid;';
+          yt.appendChild(el('div', 'cp-label', 'Your take on: “' + esc(s.angle.topic) + '”'));
+          yt.appendChild(el('p', 'cp-cta-text', esc(s.angle.take)));
+          var edit = el('button', 'cp-btn cp-btn-ghost sm', 'Edit'); edit.type = 'button'; edit.style.marginTop = '8px'; edit.onclick = function () { delete state.personalTakes[s.angle.topicKey]; persist(); renderDashboard(); };
+          yt.appendChild(edit); body.appendChild(yt);
+        }
+      } else if (s.angle && s.angle.kind === 'proof') {
+        var pf = el('div', 'cp-cta-box'); pf.style.cssText = 'border-style:solid;'; pf.appendChild(el('div', 'cp-label', 'Your proof')); pf.appendChild(el('p', 'cp-cta-text', esc(s.angle.text))); body.appendChild(pf);
+      }
+      if (s.framing) body.appendChild(el('p', 'cp-hooknote', s.framing));
+      // beats — the script is the beat list (never a word-for-word middle)
+      var beatsWrap = el('div', 'cp-card'); beatsWrap.style.marginTop = '12px'; beatsWrap.appendChild(el('div', 'cp-label', 'Your beats' + (s.length ? ' · ' + s.length : '')));
+      (s.beats || []).forEach(function (b) { var row = el('div'); row.style.cssText = 'display:grid;grid-template-columns:auto 1fr;gap:10px;padding:8px 0;border-top:1px solid var(--line);font-size:.92rem;'; var t = el('span'); t.style.cssText = 'font-weight:800;color:var(--accent);white-space:nowrap;'; t.textContent = b.t; row.appendChild(t); row.appendChild(el('span', null, esc(b.job))); beatsWrap.appendChild(row); });
+      body.appendChild(beatsWrap);
       // never-repeat counter
       var made = postsMadeCount(); var avail = postsAvailable();
       if (made <= avail) body.appendChild(el('p', 'cp-hooknote', 'Post ' + (made + 1) + ' of ' + avail + ' — you haven’t repeated yet.'));
-      var copyRow = el('div', 'cp-copyrow'); var copyScript = el('button', 'cp-btn cp-btn-primary', 'Copy caption'); copyScript.type = 'button'; copyScript.onclick = function () { copyText(s.script, 'Caption copied'); }; copyRow.appendChild(copyScript); body.appendChild(copyRow);
-      var ctaBox = el('div', 'cp-cta-box'); ctaBox.appendChild(el('div', 'cp-label', 'Your locked CTA')); ctaBox.appendChild(el('p', 'cp-cta-text', esc(ctaText()))); ctaBox.appendChild(el('p', 'cp-cta-why', (LIB.prompts && LIB.prompts.cta) || 'Same words every time.'));
+      var copyRow = el('div', 'cp-copyrow'); var copyScript = el('button', 'cp-btn cp-btn-primary', 'Copy filming plan'); copyScript.type = 'button'; copyScript.onclick = function () { copyText(filmingPlan(s), 'Filming plan copied'); }; copyRow.appendChild(copyScript); body.appendChild(copyRow);
+      var ctaBox = el('div', 'cp-cta-box'); ctaBox.appendChild(el('div', 'cp-label', 'Your locked CTA')); ctaBox.appendChild(el('p', 'cp-cta-text', esc(ctaText()))); ctaBox.appendChild(el('p', 'cp-cta-why', (LIB.cta && LIB.cta.note) || 'Same words every time.'));
       var copyCta = el('button', 'cp-btn cp-btn-ghost sm', 'Copy CTA'); copyCta.type = 'button'; copyCta.style.marginTop = '8px'; copyCta.onclick = function () { copyText(ctaText(), 'CTA copied'); }; ctaBox.appendChild(copyCta); body.appendChild(ctaBox);
     }
     body.appendChild(renderStories(d));
@@ -694,7 +773,7 @@
       var cp = el('button', 'cp-story-check', '⧉'); cp.type = 'button'; cp.style.fontSize = '0.9rem'; cp.setAttribute('aria-label', 'Copy story ' + (i + 1)); cp.onclick = function () { copyText(slot.line, 'Story ' + (i + 1) + ' copied'); };
       actions.appendChild(chk); actions.appendChild(cp); row.appendChild(txt); row.appendChild(actions); wrap.appendChild(row);
     });
-    wrap.appendChild(el('p', 'cp-hooknote', (LIB.prompts && LIB.prompts.stories) || '')); return wrap;
+    wrap.appendChild(el('p', 'cp-hooknote', (LIB.stories_daily && LIB.stories_daily.coaching_note) || '')); return wrap;
   }
 
   function renderStrip() {
@@ -794,17 +873,43 @@
     var cIn = el('input', 'cp-input'); cIn.type = 'text'; cIn.inputMode = 'numeric'; cIn.placeholder = 'clicks'; cIn.value = ps.clicks || '';
     statRow.appendChild(vIn); statRow.appendChild(dIn); statRow.appendChild(cIn); statWrap.appendChild(statRow);
     var isPost = assignedTasks(d).post;
-    function syncExtra() { reasonWrap.style.display = needReason() ? 'block' : 'none'; statWrap.style.display = (isPost && postVal === 'yes') ? 'block' : 'none'; }
-    if (isPost) node.appendChild(statWrap);
+    // Quality floor — all five must be ticked before a post counts (v5 §2.8).
+    var qcWrap = el('div'); qcWrap.style.marginTop = '14px';
+    qcWrap.appendChild(el('p', 'cp-ask', 'Quick quality check'));
+    qcWrap.appendChild(el('p', 'cp-hooknote', 'Ten seconds. This catches most of what goes wrong.'));
+    var qcItems = (LIB.quality_check || []); var qcState = (ci.quality || []).slice();
+    qcItems.forEach(function (label, qi) {
+      var row = el('label', 'cp-story'); row.style.cursor = 'pointer';
+      var box = el('span', 'cp-story-check' + (qcState[qi] ? ' done' : ''), qcState[qi] ? '✓' : ''); box.style.cssText = 'width:26px;height:26px;';
+      row.appendChild(box); var txt = el('div', 'cp-story-txt'); txt.appendChild(el('div', 'cp-story-line', esc(label))); row.appendChild(txt);
+      row.onclick = function () { qcState[qi] = !qcState[qi]; box.className = 'cp-story-check' + (qcState[qi] ? ' done' : ''); box.textContent = qcState[qi] ? '✓' : ''; };
+      qcWrap.appendChild(row);
+    });
+    function qcAllTicked() { return qcItems.length > 0 && qcItems.every(function (_, qi) { return qcState[qi]; }); }
+    function syncExtra() { reasonWrap.style.display = needReason() ? 'block' : 'none'; var showPost = (isPost && postVal === 'yes'); statWrap.style.display = showPost ? 'block' : 'none'; qcWrap.style.display = showPost ? 'block' : 'none'; }
+    if (isPost) { node.appendChild(qcWrap); node.appendChild(statWrap); }
     syncExtra();
     var save = el('button', 'cp-btn cp-btn-primary', 'Save check-in'); save.type = 'button'; save.style.marginTop = '16px';
+    var qcErr = el('p', 'cp-err');
     save.onclick = function () {
-      state.checkins[key] = { posted: postVal === 'yes', stories: stVal || 'no', reason: needReason() ? (reasonVal || '') : '' };
+      if (isPost && postVal === 'yes' && !qcAllTicked()) { qcErr.textContent = 'Tick all five — a post that skips these usually underperforms.'; return; }
+      state.checkins[key] = { posted: postVal === 'yes', stories: stVal || 'no', reason: needReason() ? (reasonVal || '') : '', quality: (isPost && postVal === 'yes') ? qcState.slice() : [] };
       if (isPost && postVal === 'yes') { var num = function (x) { x = String(x || '').replace(/[^0-9]/g, ''); return x ? +x : undefined; }; var st = { views: num(vIn.value), dms: num(dIn.value), clicks: num(cIn.value) }; if (st.views != null || st.dms != null || st.clicks != null) state.postStats[key] = st; }
       persist(); closeModal(); toast('Logged'); renderDashboard();
     };
-    node.appendChild(save);
+    node.appendChild(qcErr); node.appendChild(save);
     var cancel = el('button', 'cp-btn cp-btn-ghost', 'Cancel'); cancel.type = 'button'; cancel.style.marginTop = '8px'; cancel.onclick = closeModal; node.appendChild(cancel);
+    openModal(node);
+  }
+
+  // DM handling — the copy button that gets a lead to the link (don't sell in DMs).
+  function openDmResponse() {
+    var node = el('div'); node.appendChild(el('h3', null, 'When someone DMs you'));
+    node.appendChild(el('p', 'cp-sub', (LIB.dm_response && LIB.dm_response.note) || 'Get them to the link.'));
+    var txt = fill((LIB.dm_response && LIB.dm_response.text) || '');
+    var box = el('div', 'cp-script'); box.textContent = txt; box.style.marginTop = '10px'; node.appendChild(box);
+    var copy = el('button', 'cp-btn cp-btn-primary', 'Copy this reply'); copy.type = 'button'; copy.style.marginTop = '12px'; copy.onclick = function () { copyText(txt, 'Reply copied'); }; node.appendChild(copy);
+    var done = el('button', 'cp-btn cp-btn-ghost', 'Close'); done.type = 'button'; done.style.marginTop = '8px'; done.onclick = closeModal; node.appendChild(done);
     openModal(node);
   }
 
@@ -849,16 +954,17 @@
 
   // ================= IDEA PACK =================
   function showIdeaPack(milestone) {
-    var node = el('div'); node.appendChild(el('h3', null, milestone + '-day idea pack')); node.appendChild(el('p', 'cp-sub', '5 pre-filled posts from templates you haven’t used yet.'));
-    for (var i = 0; i < 5; i++) {
-      var type = ['mistake', 'win', 'app', 'mistake', 'win'][i]; var idx = milestone + i * 3; var script;
-      if (type === 'win') script = fill(pick(LIB.win, idx)) + '\n\n' + ctaText();
-      else if (type === 'app') script = fill(pick(LIB.app, idx)) + '\n\n' + ctaText();
-      else { var m = mistakesList(); var mk = m[idx % Math.max(1, m.length)]; script = fill(pick(LIB.hooks, idx), mk) + '\n\n' + fill(pick(LIB.mistake, idx), mk) + '\n\n' + ctaText(); }
-      var c = el('div', 'cp-card'); c.appendChild(el('div', 'cp-label', jobLabel(type))); var sc = el('div', 'cp-script'); sc.textContent = script; sc.style.marginTop = '8px'; c.appendChild(sc);
-      (function (script) { var b = el('button', 'cp-btn cp-btn-ghost sm', 'Copy'); b.type = 'button'; b.style.marginTop = '8px'; b.onclick = function () { copyText(script, 'Copied'); }; c.appendChild(b); })(script);
+    var node = el('div'); node.appendChild(el('h3', null, milestone + '-day idea pack')); node.appendChild(el('p', 'cp-sub', '5 filming plans from angles you haven’t used yet. Bank them for a busy week.'));
+    var types = ['mistake', 'myth', 'win', 'objection', 'app'];
+    types.forEach(function (type, i) {
+      var idx = milestone + i * 3;
+      // reuse scriptFor's shape by faking an occurrence via a synthetic date offset
+      var pt = (LIB.post_types || {})[type] || {}; var beats = ((type === 'win' && state.answered.has_proof === 'self') ? (pt.no_client_variant || {}).beats : pt.beats) || [];
+      var plan = filmingPlan({ type: type, hook: (type === 'app') ? fill(pick(pt.hook_variants, idx)) : (type === 'win' ? fill('When {proof_name} started, they were sure {proof_belief}.') : hookLine(idx, (mistakesList()[idx % Math.max(1, mistakesList().length)]))), angle: null, beats: beats.map(function (b) { return { t: b.t, job: fill(b.job) }; }), cta: ctaText() });
+      var c = el('div', 'cp-card'); c.appendChild(el('div', 'cp-label', jobLabel(type))); var sc = el('div', 'cp-script'); sc.textContent = plan; sc.style.marginTop = '8px'; c.appendChild(sc);
+      var b = el('button', 'cp-btn cp-btn-ghost sm', 'Copy'); b.type = 'button'; b.style.marginTop = '8px'; b.onclick = function () { copyText(plan, 'Copied'); }; c.appendChild(b);
       node.appendChild(c);
-    }
+    });
     var done = el('button', 'cp-btn cp-btn-primary', 'Done'); done.type = 'button'; done.style.marginTop = '14px'; done.onclick = closeModal; node.appendChild(done); openModal(node);
   }
 

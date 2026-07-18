@@ -1,174 +1,229 @@
-/* RiseForIt — Content Program template library.
-   NO AI. Every line is a fixed template with {variables} slotted in from the
-   trainer's questionnaire answers. Add/edit templates here freely — nothing in
-   the engine is hard-coded to a specific template, it just cycles these arrays.
-
-   Slots available in templates:
-     {audience} {outcome} {core} {support1} {support2}
-     {mistake1} {mistake2} {mistake3} {mistake}  (cycling mistake)
-     {story} {proofName} {proofResult} {objection} {name} {link}
-
-   RULES baked into the copy:
-   - Hooks name the GROUP ({audience}), never "you".
-   - Win posts lead with the wrong belief, not the number.
-   - Mistake posts reveal the problem, hint the fix, never hand it over.
-   - The CTA is the same every time (see CTA below) — that repetition is the point.
-*/
+/* RiseForIt — Content Program template library (riseforit_content_templates_v1).
+   Skeleton + BEATS, never a word-for-word middle. Variables fill from the
+   questionnaire. Voice variants apply to hook + CTA phrasing only; beats stay
+   constant across voices. Edit freely — the generator reads whatever is here. */
 (function () {
   'use strict';
-
   var LIB = {
-    // ---- HOOKS (≥15). Always name the group. Used to open Mistake posts and
-    // shown in the UI to teach the rule. {mistake} cycles mistake1/2/3/4+. ----
+    version: '1.0',
+
     hooks: [
-      'Most {audience} are stuck because {mistake}.',
-      'Three mistakes I see {audience} make every single week.',
-      '{audience} think {mistake} is helping. It’s doing the opposite.',
-      'Nobody tells {audience} this, but {mistake} is why nothing’s changing.',
-      'If {audience} want to {outcome}, this is the part everyone skips.',
-      'The reason most {audience} quit at week three.',
-      '{audience} don’t need more discipline. They need to stop {mistake}.',
-      'Every week I watch {audience} do {mistake} and wonder why it’s not working.',
-      'The hardest truth for {audience}: {mistake} is the whole problem.',
-      '{audience} keep chasing the wrong thing. It’s {mistake}.',
-      'This is why {audience} stay exactly where they are for years.',
-      '{audience} were never taught this, so they keep doing {mistake}.',
-      'If you train {audience}, you’ve seen {mistake} a hundred times.',
-      'The one habit quietly holding {audience} back: {mistake}.',
-      '{audience} think they need more. They actually need to fix {mistake}.',
-      'What no one says out loud to {audience} about {mistake}.',
-      '{audience} could {outcome} a lot faster if they stopped {mistake}.'
+      { id: 'h_group_stuck', pattern: 'Most {audience} are stuck because {mistake}.', voices: {
+        blunt: 'Most {audience} are stuck because {mistake}.',
+        warm: 'If you’re one of the {audience} who’s been stuck, it’s usually this: {mistake}.',
+        funny: '{audience} have a favorite way to waste a year, and it’s {mistake}.',
+        technical: 'There’s one reason most {audience} plateau, and it’s {mistake}.'
+      } },
+      { id: 'h_three_mistakes', pattern: 'Three mistakes I see {audience} make every week.' },
+      { id: 'h_nobody_tells', pattern: 'Nobody tells {audience} this, but {mistake} is why nothing’s changing.' },
+      { id: 'h_backwards', pattern: '{audience} are doing this completely backwards.' },
+      { id: 'h_year', pattern: 'If you’ve been the same weight for a year, this is usually why.' },
+      { id: 'h_not_lazy', pattern: '{audience} aren’t lazy. Their plan is wrong. Here’s the difference.' },
+      { id: 'h_everyone_says', pattern: 'Everyone tells {audience} the usual advice. That’s wrong, and here’s what it’s costing them.' },
+      { id: 'h_skip', pattern: 'If {audience} want to {outcome}, this is the part everyone skips.' },
+      { id: 'h_week_three', pattern: 'The reason most {audience} quit at week three.' },
+      { id: 'h_dont_need', pattern: '{audience} don’t need another program. They need to stop {mistake}.' },
+      { id: 'h_paid_for', pattern: '{audience} are paying for results they’ll never see. Here’s where the money’s going.' },
+      { id: 'h_hardest', pattern: 'The hardest thing to tell {audience} is that {mistake} isn’t discipline. It’s the wrong target.' },
+      { id: 'h_watched', pattern: 'I’ve watched hundreds of {audience} do this exact thing and get nowhere.' },
+      { id: 'h_scale', pattern: '{audience} keep chasing a number on the scale. That was never the goal.' },
+      { id: 'h_looks_like', pattern: 'This is what {mistake} actually looks like six months in.' },
+      { id: 'h_two_types', pattern: 'There are two kinds of {audience}. One gets results. Here’s the difference.' },
+      { id: 'h_used_to', pattern: 'I used to be one of the {audience} who {old_belief}. Here’s what changed.' },
+      { id: 'h_honest', pattern: 'Here’s something most trainers won’t say to {audience}: {contrarian}.' },
+      { id: 'h_cost', pattern: '{mistake} isn’t a small thing. Here’s what it’s actually costing {audience}.' },
+      { id: 'h_worked_for', pattern: 'The thing that worked for your friend probably won’t work for you. Here’s why.' },
+      { id: 'h_afford', pattern: '{audience} say they can’t afford a trainer. Let’s do the math out loud.' },
+      { id: 'h_myself', pattern: 'Every one of the {audience} who says they’ll do it themselves has already been doing it themselves. For years.' }
     ],
 
-    // ---- WIN posts (≥15). Belief-first. Full script bodies; the engine adds
-    // the CTA. Lead with what {proofName} believed that was wrong. ----
-    win: [
-      '{proofName} was sure they’d tried everything.\nThey hadn’t — they’d just never fixed {mistake1}.\nOnce that clicked, the work finally started paying off.\nThe result: {proofResult}.',
-      'When {proofName} started, they thought {mistake2} was normal.\nIt wasn’t. It was the thing quietly stalling them.\nWe changed one habit, not ten.\n{proofResult}. That’s it. That’s the whole story.',
-      '{proofName} told me they “just didn’t have the genetics.”\nWhat they didn’t have was a plan built around {core}.\nWe fixed that first.\n{proofResult}.',
-      '{proofName} believed they had to be perfect or it didn’t count.\nThat belief was the problem.\nWe traded perfect for consistent.\n{proofResult}.',
-      'Everyone told {proofName} to do more.\nI told them to do less, but do it around {core}.\n{proofResult} — and they’re not burnt out.',
-      '{proofName} thought the scale was the scoreboard.\nIt never was.\nWhen they started measuring the right things, everything moved.\n{proofResult}.',
-      '{proofName} was one bad week from quitting for good.\nThe fix wasn’t motivation. It was removing {mistake3}.\n{proofResult}.',
-      'For years {proofName} assumed {outcome} wasn’t for people like them.\nIt is. It always was.\nThey just needed the right first step.\n{proofResult}.',
-      '{proofName} kept restarting every Monday.\nThe restart was the trap.\nWe built something they didn’t need to restart.\n{proofResult}.',
-      '{proofName} thought discipline was the missing piece.\nIt wasn’t. Their plan was fighting them.\nWe made the plan fit their life instead.\n{proofResult}.',
-      'The day {proofName} stopped chasing {mistake1}, things finally changed.\nNot overnight. But steadily, and for good.\n{proofResult}.',
-      '{proofName} came to me exhausted from trying.\nThe answer was fewer moving parts, built on {support1}.\n{proofResult}.',
-      '{proofName} didn’t believe me at first.\nSix weeks in, the mirror did the convincing.\n{proofResult}.',
-      'What changed for {proofName} wasn’t effort — they always had effort.\nIt was direction. We pointed it at {core}.\n{proofResult}.',
-      '{proofName} was doing everything “right” and going nowhere.\nTurns out “right” online and right for them were two different things.\n{proofResult}.',
-      '{proofName} thought they’d left it too late.\nThey hadn’t. The body responds at any age when the plan is honest.\n{proofResult}.'
-    ],
+    post_types: {
+      mistake: {
+        label: 'The mistake', length: '45–60 sec',
+        coaching_note: 'If they can fix it from your video, they don’t need you. Reveal the problem, name the fix, stop there.',
+        beats: [
+          { t: '0:00–0:05', job: 'Hook — name the group and the mistake' },
+          { t: '0:05–0:20', job: 'What it’s costing them. Be specific — time, money, results.' },
+          { t: '0:20–0:40', job: 'Why they’re stuck. It’s not effort. Nobody told them {core}.' },
+          { t: '0:40–0:50', job: 'Hint the fix. Name what the fix IS. Do not explain how.' },
+          { t: '0:50–1:00', job: 'CTA' }
+        ],
+        seeds: [
+          'Doing endless cardio thinking it burns fat, when all it leaves you with is loose skin and no shape.',
+          'Four hours on the stairmaster because it feels like work. Effort isn’t the same as stimulus.',
+          'Copying a friend who got results, not realizing their results came from nutrition or a coach — so you’re getting second-hand info filtered through someone else’s body.',
+          'Refusing to count calories while tracking every dollar in the bank. Same skill, one goal apparently doesn’t deserve it.',
+          'Losing 40 lbs and looking exactly the same, because the goal was never the weight.',
+          'Fasting and drinking water to drop weight fast, building no muscle, and having nothing to keep it off with.',
+          'Trying it yourself for two years, then quitting in week two of trying it yourself again.',
+          'Pulling a workout off the internet and doing close-grip bench for triceps for six months.',
+          'Program hopping every three weeks to “confuse the muscle.”',
+          'Training seven days a week on five hours of sleep and calling it discipline.',
+          'Eating clean and gaining fat, because chicken and almonds have calories too.',
+          'Chasing soreness as the signal that it worked.'
+        ]
+      },
+      myth: {
+        label: 'What I believe', length: '45–60 sec', cadence: 'Roughly monthly, plus their own {contrarian}',
+        beats: [
+          { t: '0:00–0:05', job: 'Say the thing most people won’t. State the myth, then reject it.' },
+          { t: '0:05–0:20', job: 'Why everyone believes it. Be fair to it — that’s what makes you credible.' },
+          { t: '0:20–0:40', job: 'What’s actually true, and the mechanism. Your take, your words.' },
+          { t: '0:40–0:55', job: 'What changes for them if they get this right.' },
+          { t: '0:55–1:00', job: 'CTA' }
+        ],
+        library: [
+          { myth: 'Soreness means it worked.', truth: 'Soreness means you did something unfamiliar, not something effective. Beginners are wrecked every session and grow slowly. Advanced lifters are rarely sore and grow steadily.', kicker: 'If soreness were the signal, the most sore people in the gym would look the best. Walk in and check.' },
+          { myth: 'Women shouldn’t lift heavy, they’ll get bulky.', truth: 'The look they’re describing — toned, tight, defined — is muscle. There’s nothing else it could be.', kicker: 'You can’t have definition without something underneath to define.' },
+          { myth: 'Eat clean and the results follow.', truth: 'You can get fat on chicken, rice and almonds. Clean eating is a moral category, not a physiological one.', kicker: 'It lets people feel disciplined while making zero progress.' },
+          { myth: 'Switch it up to confuse the muscle.', truth: 'Muscles don’t get confused. They get stronger or they don’t.', kicker: 'Program hopping is how people spend three years being mediocre at twelve exercises instead of strong at six.' },
+          { myth: 'Train harder, rest days are for beginners.', truth: 'You don’t grow in the gym, you grow between sessions. Training is the stimulus, recovery is the adaptation.', kicker: 'Seven days a week on five hours of sleep isn’t discipline. It’s damage with a good attitude.' },
+          { myth: 'Abs are made in the kitchen.', truth: 'Half true, and that half ruins people. You can diet down to visible ribs and still have no abs, because there’s no muscle there to see.', kicker: 'Abs are made in the gym and revealed in the kitchen. Everyone repeating this line skipped the first half.' },
+          { myth: 'You just need motivation.', truth: 'Motivation is a feeling. Feelings are weather. Nobody builds a body on weather.', kicker: 'If your plan requires you to feel good, you don’t have a plan.' },
+          { myth: 'Do what works for you.', truth: 'What “works for you” is usually what you’re willing to tolerate, not what produces results.', kicker: 'The individualization is in the details — your leverages, injuries, schedule. Not in whether progressive overload applies to you.' },
+          { myth: 'Weight loss is the goal.', truth: 'Nobody’s goal is a number. People chase weight because it’s the only thing they know how to measure.', kicker: 'Then they get there and wonder why nothing feels different.' },
+          { myth: 'Toning.', truth: 'Not a thing. There’s building muscle and there’s losing fat. Every toning program is one of those two, badly disguised.', kicker: 'Usually light weights and high reps that do neither well.' },
+          { myth: 'Fasted cardio burns more fat.', truth: 'It oxidizes more fat during the session and changes nothing over 24 hours. Total energy balance decides what you lose.', kicker: 'You woke up an hour early, felt virtuous, and got the same result — with less energy to train hard.' },
+          { myth: 'Machines are for beginners.', truth: 'Machines are stable, let you push closer to failure safely, and isolate what you’re trying to grow.', kicker: 'Free-weight purism is gym culture, not science. Nobody’s leg press is holding back their physique.' },
+          { myth: 'You can’t out-train a bad diet.', truth: 'Repeated by people who then out-train a bad diet for a decade. Diet drives fat loss — but the phrasing convinces beginners that training doesn’t matter until nutrition is perfect.', kicker: 'So they wait. And nutrition is never perfect. And they never start.' },
+          { myth: 'Get lean first, then build muscle.', truth: 'Backwards for most people. Getting lean with no muscle underneath is exactly the skinny-fat outcome they’re afraid of.', kicker: 'Build the thing first. Then take the covers off.' },
+          { myth: 'All you need is a calorie deficit.', truth: 'You’ll lose the weight and wonder why you look like a stick figure. A deficit plus the wrong training gives you a smaller version of the body you didn’t want.', kicker: 'Two people say “I want to lose weight” and mean completely different bodies.' }
+        ]
+      },
+      reframe: {
+        label: 'The question', length: '45–60 sec', cadence: 'Every ~3 weeks',
+        beats: [
+          { t: '0:00–0:05', job: 'Ask the question cold. “If you weighed exactly the same, but looked like the person you want to look like — would you be happy?”' },
+          { t: '0:05–0:15', job: 'The answer is always yes. Say so.' },
+          { t: '0:15–0:35', job: 'So the scale was never the goal. The goal is reshape. Weight is just the only thing they know how to measure.' },
+          { t: '0:35–0:50', job: 'What actually produces reshape — and why the treadmill is a helping hand, not the main event.' },
+          { t: '0:50–1:00', job: 'CTA' }
+        ],
+        variants: [
+          'The mirror question — would you be happy at the same weight, different shape?',
+          '“I lost 40 lbs and I look exactly the same.” Congratulations. What was the goal?',
+          'You’re not chasing a number, you’re chasing a feeling in the mirror. Those need different plans.',
+          'Weight is a measurement, not a goal. Here’s the difference and why it matters.'
+        ]
+      },
+      objection: {
+        label: 'The reason people don’t start', length: '45–60 sec',
+        beats: [
+          { t: '0:00–0:05', job: 'Say the objection out loud as the hook. Quote it.' },
+          { t: '0:05–0:20', job: 'Be fair to it. Why people say it and why it feels true.' },
+          { t: '0:20–0:45', job: 'Take it apart. Use the specific math or pattern.' },
+          { t: '0:45–0:55', job: 'What it actually is underneath.' },
+          { t: '0:55–1:00', job: 'CTA' }
+        ],
+        library: [
+          { objection: 'I’ll do it myself.', counter: 'You’ve been doing it yourself. For years. That’s the plan that produced where you are now. What people call self-belief here is usually motivation wearing discipline’s clothes.' },
+          { objection: 'I’ll just get a workout off the internet.', counter: 'You can, and you’ll get some results. You’ll also do close-grip bench for triceps for six months and wonder why nothing’s moved. You don’t hire a coach for the workout. You hire one so the workout fits you.' },
+          { objection: 'I can’t afford it.', counter: 'A bowl out is twenty bucks. Three times a week is sixty. That’s two hundred and forty a month, already leaving your account. The money exists — it’s allocated to the thing keeping you where you are.' },
+          { objection: 'Let me think about it.', counter: 'Almost always a money question in a timing costume. The honest version: if it were free, would you start tomorrow? If yes, it’s a budget problem — and budgets can be worked with.' },
+          { objection: 'My friend got great results on her own.', counter: 'Maybe. Or her results came from nutrition, a coach, or genetics — and what you’re getting is second-hand info, filtered through a body that isn’t yours.' },
+          { objection: 'I need to focus on school / work right now.', counter: 'You should. I also think you deserve to look in the mirror and see the person you want to be. Those aren’t competing — one of them takes four hours a week.' },
+          { objection: 'I already lost the weight on my own.', counter: 'You did, and it took real work. But if you fasted and starved your way there, you built no muscle and no system. The second you stop — and you will — it all comes back.' },
+          { objection: 'I don’t want to count calories.', counter: 'Do you know what’s in your bank account? Then you already do this. You track the thing you’re serious about. So which goal doesn’t deserve it?' }
+        ]
+      },
+      win: {
+        label: 'The win', length: '45–60 sec',
+        coaching_note: 'Nobody cares that they lost 30 lbs. They care that someone exactly like them believed the same wrong thing and got past it.',
+        beats: [
+          { t: '0:00–0:05', job: 'Hook — lead with what they believed, not what they achieved. “When {proof_name} started, they were sure {proof_belief}.”' },
+          { t: '0:05–0:25', job: 'Where they were. What they’d tried and why it hadn’t worked.' },
+          { t: '0:25–0:45', job: 'What changed in their head. This is the whole post.' },
+          { t: '0:45–0:55', job: 'Then the result. Say it last, keep it short — {proof_result}.' },
+          { t: '0:55–1:00', job: 'CTA' }
+        ],
+        no_client_variant: {
+          label: 'Your own progress',
+          framing: 'You’re not the expert yet, you’re the one in the arena. “I’m figuring this out, come with me” builds more trust than pretending, and nobody can copy it off you.',
+          beats: [
+            { t: '0:00–0:05', job: 'What you believed back then that was wrong — {old_belief}.' },
+            { t: '0:05–0:25', job: 'What that cost you. Be honest about the {before}.' },
+            { t: '0:25–0:45', job: 'The moment it changed — {turning_point}.' },
+            { t: '0:45–0:55', job: 'Where you are now, briefly — {own_result}. Not a flex, evidence.' },
+            { t: '0:55–1:00', job: 'CTA' }
+          ]
+        }
+      },
+      app: {
+        label: 'The free tool', length: '45–60 sec', pinned: true,
+        beats: [
+          { t: '0:00–0:05', job: 'Hook aimed at people not ready to hire anyone. “Not everyone’s ready for a coach. That doesn’t mean you start with nothing.”' },
+          { t: '0:05–0:30', job: 'What it does: a free workout with the equipment you have, a nutrition plan, a grocery list in your budget, and it gamifies progress so you level up.' },
+          { t: '0:30–0:45', job: 'Honest framing — a coach is still best. This is second best, and it’s free. Only catch is the onboarding takes a minute.' },
+          { t: '0:45–1:00', job: 'CTA to the link' }
+        ],
+        hook_variants: [
+          'Not everyone’s ready to hire a coach. Here’s what I’d do instead.',
+          'If you can’t afford a trainer right now, don’t do nothing. Do this.',
+          'I built something free for {audience} who aren’t ready to work with me yet.',
+          'Second best option for {audience}, and it costs nothing.',
+          'You don’t need me to start. You do need a plan. Here’s a free one.',
+          'Everyone asks me what to do if they can’t afford coaching. This is my honest answer.'
+        ]
+      },
+      story: {
+        label: 'Your story', length: '45–75 sec',
+        beats: [
+          { t: '0:00–0:05', job: 'Start inside the moment, not with context. Put them in the room.' },
+          { t: '0:05–0:30', job: 'What was going on and what you believed then.' },
+          { t: '0:30–0:50', job: 'What broke that belief.' },
+          { t: '0:50–1:05', job: 'How it shows up in how you coach now.' },
+          { t: '1:05–1:15', job: 'CTA' }
+        ],
+        seeds: ['{turning_point}', '{before}', '{old_belief}', '{why}']
+      }
+    },
 
-    // ---- MISTAKE posts (≥15). Body after the hook. Reveal → cost → why stuck
-    // (tie to {core}) → HINT the fix, never give it. Engine adds hook + CTA. ----
-    mistake: [
-      'Here’s what it’s actually costing: months of effort with nothing to show.\nThey stay stuck because no one connected it to {core}.\nThe fix is simpler than they think — and it’s the first thing I change.',
-      'It feels productive, which is exactly why it’s dangerous.\nThe real issue ties straight back to {core}.\nOnce you see it, you can’t unsee it — and it takes about a week to fix.',
-      'This one quietly wastes the effort they’re already putting in.\nThey’re stuck because they’re solving the wrong problem.\nThe fix starts with {core}, not with doing more.',
-      'It’s the reason the scale won’t move even when they’re “being good.”\nThe missing piece is {core}.\nSmall change, big difference — but you have to know where to look.',
-      'Every week they do this, they set themselves back without noticing.\nThe root of it is {core}.\nThe fix isn’t harder work. It’s the opposite.',
-      'This is why they plateau and blame themselves.\nIt’s not them. It’s that nobody built their plan around {core}.\nThat’s the first thing worth fixing.',
-      'It looks like the healthy choice. It’s the one holding them back.\nThe reason is {core}.\nThere’s a cleaner way — and it’s not what the internet told them.',
-      'They think this is the part that’s working. It’s the part that isn’t.\nStuck comes down to {core}.\nThe fix is one adjustment, not a whole overhaul.',
-      'This costs them the one thing they can’t get back: time.\nAnd it all traces to {core}.\nThe good news — it’s fixable fast once you name it.',
-      'It’s the habit that feels like discipline but acts like a brake.\nThe real lever is {core}.\nThat’s where I’d start, not where most people do.',
-      'Doing this is why “eating clean” still isn’t working for them.\nThe answer is {core}.\nThere’s a smarter first move — and it’s not another diet.',
-      'This keeps them busy and gets them nowhere.\nThe thing they’re missing is {core}.\nOnce that’s in place, the rest gets a lot easier.',
-      'It’s the reason motivation keeps running out on them.\nMotivation was never the problem — {core} was.\nFix that and you stop needing willpower.',
-      'They’ve been told this is what serious people do. It isn’t.\nThe real work is {core}.\nStart there and the results start showing up.',
-      'This is the quiet reason they keep starting over.\nThe pattern breaks when you build around {core}.\nThat’s the shift — and it’s not complicated.',
-      'It drains their week and leaves them frustrated by Friday.\nUnderneath it all is {core}.\nThe fix is the first thing I’d hand them — in the right order.'
-    ],
-
-    // ---- SELF-WIN posts (no clients yet — the trainer is the case study).
-    // "I'm figuring this out, come with me" beats pretending. Engine adds CTA. ----
-    selfWin: [
-      'I’m not going to pretend I’ve always had this figured out.\nI used to believe {old_belief}. I was {before}.\nWhat changed was {turning_point}.\n{selfResult}. I’m in the arena — come with me.',
-      'Before you follow me for {outcome}, know this: I’ve been {before}.\nThe thing that flipped it wasn’t willpower. It was {core}.\n{selfResult}. Still going. Come do it with me.',
-      'I’m my own first client.\nI stopped {mistake1} and started building around {core}.\n{selfResult}.\nI’m not the finished product — I’m proof it’s working.',
-      'Real talk: I used to think {old_belief}.\nThen {turning_point}.\nNow {selfResult}. If you’re where I was, follow along — I’ll show you exactly what I’m doing.',
-      'No before-and-after empire here yet. Just me, {before}, deciding to change it.\n{turning_point}.\n{selfResult}. Watch me do it and take what works.',
-      'The most honest thing I can tell {audience}: I’m walking this myself.\nI fixed {mistake2}, leaned into {core}, and {selfResult}.\nNobody can copy that off me — because it’s real.',
-      'I could fake a highlight reel. I’d rather show you the work.\nI was {before}. I believed {old_belief}. Both wrong.\n{selfResult} — and I’m still going.',
-      'This is day-by-day for me too.\nWhat’s carried me: {core}, and refusing to {mistake3}.\n{selfResult}. If you want a coach who’s in it with you, that’s me.'
-    ],
-
-    // ---- APP posts (≥12). Lead magnet, one day/week. Full script bodies.
-    // Point at the free app + {link}. Engine adds CTA. ----
-    app: [
-      'If {audience} want to {outcome}, start here — for free.\nI put my people on this app before they ever pay me a dollar.\nIt builds them a plan, tracks the basics, and keeps them honest.\nGrab it at the link. No card, no catch.',
-      'The fastest way for {audience} to {outcome} without guessing?\nThe free app I give every one of my clients.\nIt handles the plan so they can just show up.\nLink’s below — it’s genuinely free.',
-      'Before {audience} spend a cent, I want them on this.\nIt’s the free app that gets them moving toward {outcome} today.\nWorkouts, food, progress — in one place.\nTap the link and start.',
-      'Most {audience} overcomplicate the start. This removes that.\nThe free app I use with clients gives them the first plan instantly.\nNo more “where do I even begin.”\nIt’s free at the link.',
-      '{audience} don’t need me to begin. They need a starting point.\nThat’s exactly what this free app is.\nIt maps out {outcome} step by step.\nGrab it below.',
-      'I’d rather {audience} start free and win small than pay and quit.\nSo here’s the app I put everyone on first.\nIt does the planning for them.\nLink’s in bio — free.',
-      'If you’re one of the {audience} who keeps meaning to start, this is your nudge.\nThe free app builds your first week for you.\n{outcome} starts with one tap.\nIt’s at the link.',
-      'The free tool I give {audience} to {outcome}:\nA plan, a tracker, and a reason to show up daily.\nNo cost, no pitch.\nStart at the link.',
-      'Every client of mine starts on this app. Now {audience} can too, free.\nIt takes the thinking out of week one.\nThat’s usually the week people quit.\nLink below.',
-      '{audience} ask me where to start. This is the honest answer.\nThe free app that’s built for exactly this.\nIt points them straight at {outcome}.\nTap the link.',
-      'No budget yet? Good — {audience} can still start today.\nThis free app gives them the plan I’d hand a paying client.\nUse it as long as you want.\nIt’s at the link.',
-      'The lowest-risk first step for {audience} to {outcome}:\nDownload the free app, let it build your plan, show up.\nThat’s the whole ask.\nLink’s below.',
-      'I built my coaching around this free app for a reason.\nIt gets {audience} results before we ever talk money.\nStart there.\nLink in bio.'
-    ],
-
-    // ---- STORY slots. 5 a day: Lead / Relate / Attack. Each slot cycles its
-    // variants. {audience} {core} {story} {outcome} {link} slot in. ----
-    stories: {
-      // 1 — Morning: up and moving (Lead)
-      lead_morning: [
-        'Up. Moving. Before the day gets a vote.',
-        'Alarm went off, feet hit the floor. That’s the whole win before 6am.',
-        'Nobody’s watching this early. That’s exactly why it counts.',
-        'First thing done. Everything after this is easier.',
-        'Morning. Coffee. Work. In that order.'
-      ],
-      // 2 — A thought, tied to {core} (Lead + Relate)
-      lead_thought: [
-        'The thing I’m known for — {core} — isn’t a trick. It’s just the part most people skip.',
-        'If you only fixed one thing this month, make it {core}. Everything else follows.',
-        'Most {audience} chase the flashy stuff. The boring answer is {core}.',
-        'I keep coming back to {core} because it’s the piece that actually moves people.',
-        'You don’t need more information. You need {core}, done consistently.'
-      ],
-      // 3 — A client or your own progress (Relate)
-      relate_progress: [
-        'Watched a client hit a number today they didn’t think was possible. Reminder: it usually is.',
-        'What changed for me: {story}. Now I help {audience} do the same.',
-        'One of my people just strung together their best week. Not perfect — consistent.',
-        'Progress from someone I coach this week. Quiet, steady, real.',
-        '{story}. That’s the whole reason I do this.'
-      ],
-      // 4 — What you're literally doing right now (Relate)
-      relate_now: [
-        'Right now: doing the exact thing I tell {audience} to do. Leading from the front.',
-        'Mid-session. This is the work. No shortcut version of it.',
-        'This is what “show up” actually looks like on a normal Tuesday.',
-        'Not motivated today. Doing it anyway. That’s the skill.',
-        'Filming this between sets because {audience} deserve to see the boring reps too.'
-      ],
-      // 5 — The ask (Attack)
-      attack_ask: [
-        'If you’re one of the {audience} who’s ready to {outcome} — link’s in my bio. Drop your name.',
-        'Done watching from the sidelines? Link’s in my bio. I’ll build you a plan.',
-        'You’ve seen me show up. Your move. Link in bio.',
-        'Most {audience} won’t tap the link. If you’re not most, it’s in my bio.',
-        'Want me in your corner? Link’s in my bio. Name + go.'
+    stories_daily: {
+      count: 5, framework: 'Lead / Relate / Attack',
+      coaching_note: 'Stories are where the money is and they’re free. Nobody buys off one post — they buy after watching you show up for weeks.',
+      slots: [
+        { n: 1, type: 'LEAD — morning', job: 'You’re up and moving. No speech.', examples: ['Up. Moving. Before the day gets a vote.', '5:40. Nobody’s watching. That’s the point.', 'First one in again.'] },
+        { n: 2, type: 'LEAD + RELATE — a thought', job: 'One thought tied to {core}. This is where {catchphrase} lives.', examples: ['The thing I’m known for — {core} — isn’t a trick. It’s the part most people skip.', 'Everyone wants the result. Almost nobody wants the boring version of it.'] },
+        { n: 3, type: 'RELATE — progress', job: 'A client’s or your own. Show, don’t announce.', examples: ['Watched a client hit a number today they didn’t think was possible. Reminder: it usually is.', 'Six weeks ago this was their warm-up weight.'] },
+        { n: 4, type: 'RELATE — right now', job: 'What you’re literally doing. Proof you live it.', examples: ['Right now: doing the exact thing I tell {audience} to do. Leading from the front.', 'Meal I’d tell a client to eat, eaten by me, in a car, like always.'] },
+        { n: 5, type: 'ATTACK — the ask', job: 'The CTA. Same energy every day.', examples: ['If you’re one of the {audience} ready to {outcome} — link’s in my bio. Drop your name.', 'Two spots this month. Link in bio.'] }
       ]
     },
 
-    // ---- The CTA. LOCKED. Same words every post. Not editable by the trainer. ----
-    cta: 'I’m {name}. I help {audience} {outcome}. Drop your name at the link in my bio and I’ll build you a plan.',
+    cta: {
+      locked: true, note: 'Same words every time. That’s what makes it stick.',
+      master: 'I’m {name}. I help {audience} {outcome}. Drop your name at the link in my bio and I’ll build you a plan.',
+      voices: {
+        blunt: 'I’m {name}. I help {audience} {outcome}. Link’s in my bio — drop your name and I’ll build you a plan.',
+        warm: 'I’m {name}, and I help {audience} {outcome}. If that’s you, drop your name at the link in my bio and I’ll put a plan together for you.',
+        funny: 'I’m {name}. I help {audience} {outcome}, mostly by telling them things they don’t want to hear. Link’s in my bio.',
+        technical: 'I’m {name}. I help {audience} {outcome}. If you want the plan built around your situation, the link’s in my bio.'
+      }
+    },
 
-    // Coaching prompts shown above each generated script (why it's built this way).
-    prompts: {
-      win: 'Don’t lead with the number. Lead with what they believed that was wrong. The number is the last thing you say.',
-      mistake: 'Reveal the problem. Don’t solve it. If they can fix it from your video, they don’t need you.',
-      app: 'This is the free door. You’re not selling — you’re giving people who aren’t ready to pay a way to start.',
-      hook: 'This works because it names a group, not a person. “Men over 30 are getting fat” gets watched. “You’re fat” gets scrolled.',
-      stories: 'Stories are where the money is and they’re free. Nobody buys off one post — they buy after watching you show up for weeks.',
-      cta: 'Same words every time. That’s what makes it stick.'
+    pins: {
+      pin1: { label: 'Who I am', length: '60–75 sec', beats: [
+        { t: '0:00–0:08', job: 'Who you are and who you help. Plain.' },
+        { t: '0:08–0:30', job: 'Why you do this — {why}, {turning_point}. One line, not a memoir.' },
+        { t: '0:30–0:50', job: 'What you believe about {core}.' },
+        { t: '0:50–1:05', job: 'What you’ll be posting and why they should follow.' },
+        { t: '1:05–1:15', job: 'CTA' }
+      ] },
+      pin2: { label: 'What I believe', length: '45–60 sec', useType: 'myth', note: 'Use the myth structure with their own {contrarian}. This is the one people remember. Don’t soften it.' },
+      pin3: { label: 'Proof', length: '45–60 sec', useType: 'win', note: 'Use the win structure, or the no-client variant.' }
+    },
+
+    quality_check: [
+      'My hook names a group, not “you”',
+      'One idea only',
+      'I said the CTA out loud',
+      'Under 60 seconds',
+      'My link is in the caption and bio'
+    ],
+
+    dm_response: {
+      note: 'Don’t sell in the DMs. Get them to the link.',
+      text: 'Appreciate you reaching out. Drop your name and number at {link} and I’ll get you on a quick call to see if I can help.'
     }
   };
 
