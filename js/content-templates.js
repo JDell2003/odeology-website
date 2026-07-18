@@ -14,19 +14,19 @@
         funny: '{audience} have a favorite way to waste a year, and it’s {mistake}.',
         technical: 'There’s one reason most {audience} plateau, and it’s {mistake}.'
       } },
-      { id: 'h_three_mistakes', pattern: 'Three mistakes I see {audience} make every week.' },
+      { id: 'h_three_mistakes', pattern: 'Three mistakes I see {audience} make every week.', voices: { blunt: 'Three mistakes. Every {audience} I meet makes them. Here they are.', warm: 'There are three little things I see {audience} trip over — and every one is fixable.', funny: 'I could set my watch by the three mistakes {audience} make. Let’s ruin that.', technical: 'Three recurring errors explain most stalled progress in {audience}. In order:' } },
       { id: 'h_nobody_tells', pattern: 'Nobody tells {audience} this, but {mistake} is why nothing’s changing.' },
       { id: 'h_backwards', pattern: '{audience} are doing this completely backwards.' },
       { id: 'h_year', pattern: 'If you’ve been the same weight for a year, this is usually why.' },
-      { id: 'h_not_lazy', pattern: '{audience} aren’t lazy. Their plan is wrong. Here’s the difference.' },
+      { id: 'h_not_lazy', pattern: '{audience} aren’t lazy. Their plan is wrong.', voices: { blunt: '{audience} aren’t lazy. The plan’s wrong. Big difference.', warm: 'You’re not lazy. I promise. The plan you were handed just wasn’t built for you.', funny: 'Nobody’s ever accused {audience} of being lazy at work. Funny how the gym gets blamed on willpower.', technical: 'Effort isn’t the limiting variable for most {audience}. Program design is. The distinction matters.' } },
       { id: 'h_everyone_says', pattern: 'Everyone tells {audience} the usual advice. That’s wrong, and here’s what it’s costing them.' },
       { id: 'h_skip', pattern: 'If {audience} want to {outcome}, this is the part everyone skips.' },
-      { id: 'h_week_three', pattern: 'The reason most {audience} quit at week three.' },
+      { id: 'h_week_three', pattern: 'The reason most {audience} quit at week three.', voices: { blunt: 'Most {audience} quit at week three. One reason. Here it is.', warm: 'If you’ve quit around week three before, it wasn’t you — it was this.', funny: 'Week three is where {audience} go to break up with the gym. Predictably.', technical: 'There’s a specific point — around week three — where adherence collapses in {audience}. The cause is knowable.' } },
       { id: 'h_dont_need', pattern: '{audience} don’t need another program. They need to stop {mistake}.' },
       { id: 'h_paid_for', pattern: '{audience} are paying for results they’ll never see. Here’s where the money’s going.' },
       { id: 'h_hardest', pattern: 'The hardest thing to tell {audience} is that {mistake} isn’t discipline. It’s the wrong target.' },
       { id: 'h_watched', pattern: 'I’ve watched hundreds of {audience} do this exact thing and get nowhere.' },
-      { id: 'h_scale', pattern: '{audience} keep chasing a number on the scale. That was never the goal.' },
+      { id: 'h_scale', pattern: '{audience} keep chasing a number on the scale. That was never the goal.', voices: { blunt: '{audience} chase the scale. Wrong number. Never was the goal.', warm: 'If you’re a {audience} watching the scale like a hawk — I get it. But that number was never really the goal.', funny: '{audience} and their bathroom scale: the most toxic relationship in fitness.', technical: 'Bodyweight is a poor proxy for the outcome {audience} actually want. Here’s the better metric.' } },
       { id: 'h_looks_like', pattern: 'This is what {mistake} actually looks like six months in.' },
       { id: 'h_two_types', pattern: 'There are two kinds of {audience}. One gets results. Here’s the difference.' },
       { id: 'h_used_to', pattern: 'I used to be one of the {audience} who {old_belief}. Here’s what changed.' },
@@ -211,6 +211,25 @@
       ] },
       pin2: { label: 'What I believe', length: '45–60 sec', useType: 'myth', note: 'Use the myth structure with their own {contrarian}. This is the one people remember. Don’t soften it.' },
       pin3: { label: 'Proof', length: '45–60 sec', useType: 'win', note: 'Use the win structure, or the no-client variant.' }
+    },
+
+    // §1 thinking-brief content: the goal (what a stranger feels) + a bank of
+    // "think about" questions per post type (cycled 3–4 at a time).
+    briefs: {
+      mistake: { job: 'Show them something is wrong that they didn’t know was wrong.', goal: '“Wait — I’ve been doing that for a year.”',
+        think: ['What is this actually costing them — time, money, or results?', 'Why are they stuck? (It’s almost never that they’re lazy.)', 'What’s the fix — and can you name it without teaching the whole thing?', 'Who’s one client this describes exactly?', 'How does this tie back to what you stand for?', 'What would they swear they’re already doing right?'] },
+      myth: { job: 'Say the thing most trainers won’t. Make them remember you for it.', goal: '“Huh. I never thought about it that way.”',
+        think: ['Why does everyone believe this? (Be fair to it.)', 'What’s actually true, and what’s the mechanism?', 'What changes for them if they get this right?', 'Where did you first realize the common advice was wrong?', 'Who profits from them believing the myth?', 'What’s the one-line version they’ll repeat to a friend?'] },
+      reframe: { job: 'Shift the goal from a number to a feeling in the mirror.', goal: '“Oh. The scale was never the point.”',
+        think: ['Ask the question cold — would they be happy at the same weight, different shape?', 'Why is the answer always yes?', 'What actually produces reshape?', 'Where does the treadmill fit — helper, not main event?', 'What number have they been chasing that never mattered?'] },
+      objection: { job: 'Handle the reason they don’t start — in public, before it’s ever said on a call.', goal: '“…he’s right, that is why I haven’t started.”',
+        think: ['Say it out loud — quote the objection.', 'Why does it feel true? Be fair to it.', 'What’s the specific math or pattern that takes it apart?', 'What is it actually — underneath the excuse?', 'Which client almost didn’t sign up for this exact reason?'] },
+      win: { job: 'Proof. Not the result — the belief that changed.', goal: '“Someone exactly like me thought that too, and got past it.”',
+        think: ['What did they believe that turned out to be wrong?', 'Where were they, and what had they already tried?', 'What changed in their head? (This is the whole post.)', 'Say the result last — keep it short.', 'Whose story is this, in one honest line?'] },
+      app: { job: 'Catch the people who want results but aren’t ready to pay. Still leads.', goal: '“I can start today, for free, no excuse left.”',
+        think: ['Who isn’t ready for a coach yet — and what would you tell them to do?', 'What does the free app actually give them?', 'Why is a coach still better — and why say so honestly?', 'What’s the one-tap next step?'] },
+      story: { job: 'Connection. Let them see the person before the plan.', goal: '“He’s been where I am.”',
+        think: ['Start inside the moment — where were you, what were you feeling?', 'What did you believe then?', 'What broke that belief?', 'How does it show up in how you coach now?'] }
     },
 
     quality_check: [

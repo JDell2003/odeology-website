@@ -31,7 +31,7 @@
       startDate: null, dayZeroDone: false, dzTasks: {},
       appWeekday: 5, overrides: {}, checkins: {}, storiesDone: {},
       editLog: [], postStats: {}, personalTakes: {}, reminderTime: '18:00', lastPack: 0, levelIdx: 0,
-      redoing: false
+      redoing: false, answered_meta: {}
     };
   }
   function loadLocal() {
@@ -131,7 +131,15 @@
     };
     return String(str || '').replace(/\{[a-zA-Z0-9_]+\}/g, function (mm) { return (mm in map) ? map[mm] : mm; });
   }
-  function ctaText() { var c = LIB.cta || {}; var vk = voiceKey(); return fill((c.voices && c.voices[vk]) || c.master || ''); }
+  function ctaText() {
+    var c = LIB.cta || {}; var out = fill((c.voices && c.voices[voiceKey()]) || c.master || '');
+    // §1/§5 — if a long audience/outcome splices the CTA into nonsense, use a
+    // safe layout with each answer at the end of its own short line.
+    if (!grammarGuard(out) || tooLongInline('audience') || tooLongInline('outcome')) {
+      return fill('I’m {name}.\nI train {audience}.\nWhat you get: {outcome}.\nDrop your name at the link in my bio and I’ll build you a plan.');
+    }
+    return out;
+  }
   // SINGLE source of truth for the trainer's public link — derived only from
   // the current session user, never a cached/seeded/stored slug (v8 0.1).
   function coachSlug() { try { var u = window.__odeCurrentUser || (typeof readAuthUserHint === 'function' ? readAuthUserHint() : null); return u && (u.username || u.id) ? String(u.username || u.id) : ''; } catch (e) {} return ''; }
@@ -139,7 +147,45 @@
 
   // Voice: questionnaire values → library voice keys (beats stay constant).
   function voiceKey() { return ({ direct: 'blunt', warm: 'warm', blunt: 'funny', technical: 'technical' })[state.answered.voice] || 'blunt'; }
-  function hookLine(idx, mistakeForCycle) { var hs = LIB.hooks || []; if (!hs.length) return ''; var h = hs[idx % hs.length]; var pat = (h.voices && h.voices[voiceKey()]) || h.pattern; return fill(pat, mistakeForCycle); }
+
+  // §2 — classify an answer so the generator knows where it may appear.
+  function wordCount(s) { s = String(s || '').trim(); return s ? s.split(/\s+/).length : 0; }
+  function classifyAnswer(text) {
+    var t = String(text || '').trim(); var w = wordCount(t);
+    var comma = /,/.test(t); var conj = /\b(and|but|or|so|because|then|while|who|that)\b/i.test(t);
+    var startsVerb = /^(get|build|lose|gain|stop|start|feel|look|train|eat|drop|add|fix|keep|make|finally)\b/i.test(t);
+    var type = (w > 8 || comma) ? 'SENTENCE' : conj ? 'FRAGMENT' : startsVerb ? 'SHORT_VERB' : 'NOUN_PHRASE';
+    return { type: type, words: w };
+  }
+  function answerType(id) { var m = state.answered_meta && state.answered_meta[id]; return m ? m.type : classifyAnswer(state.answered[id]).type; }
+  function tooLongInline(id) { var t = answerType(id); return t === 'SENTENCE' || t === 'FRAGMENT'; }
+
+  // §5 — grammar guard. Returns false if a composed sentence is broken.
+  function grammarGuard(sentence) {
+    var s = ' ' + String(sentence || '').toLowerCase().replace(/[.,!?;:—-]/g, ' ').replace(/\s+/g, ' ') + ' ';
+    if (/ (to they|to i|to you|ready to they|is are|are is|to to|the the|a a|an an|of of|for for) /.test(s)) return false;
+    // a verb immediately following "to" that's actually a pronoun+verb splice
+    if (/ (ready|going|about|able) to (they|you|i|he|she|we) /.test(s)) return false;
+    return true;
+  }
+
+  // §1 — hook composed safely. If the voiced pattern trips the guard, or it
+  // splices a long/sentence answer mid-clause, fall back to a layout that puts
+  // the answer at the END of a short sentence (reads fine at any length).
+  function hookLine(idx, mistakeForCycle) {
+    var hs = LIB.hooks || []; if (!hs.length) return '';
+    var h = hs[idx % hs.length]; var pat = (h.voices && h.voices[voiceKey()]) || h.pattern;
+    var usesMistakeMid = /\{mistake\}/.test(pat) && String(mistakeForCycle || '').trim() && wordCount(mistakeForCycle) > 8;
+    var audienceMid = /\{audience\}[^.!?]*\{|\{audience\}\s+\w+\s+\w/.test(pat) && tooLongInline('audience');
+    var out = fill(pat, mistakeForCycle);
+    if (!grammarGuard(out) || usesMistakeMid || audienceMid) {
+      // safe fallback: one variable, at the end of a short sentence
+      if (String(mistakeForCycle || '').trim()) return fill('Here’s what I keep seeing: ' + fillSafe(mistakeForCycle) + '.');
+      return fill('This one’s for {audience}.');
+    }
+    return out;
+  }
+  function fillSafe(v) { return String(v || '').replace(/\.$/, ''); }
   function slugify(s) { return String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 60); }
   function personalCount() { return Object.keys(state.personalTakes || {}).length; }
 
@@ -204,10 +250,24 @@
     if (a) { base.angle = { kind: a.needsTake ? 'prompt' : 'personal', topicKey: a.item.key, topic: a.item.topic, why: a.item.why, ref: a.item.ref, prompt: a.item.prompt, take: a.take }; base.needsTake = a.needsTake; }
     return base;
   }
+  // Safe per-slot fallbacks — variables at the end of short lines (or none), so
+  // a long/comma-heavy answer can never break a story.
+  var STORY_SAFE = {
+    1: function () { return 'Up. Moving. Before the day gets a vote.'; },
+    2: function () { return fill('The thing I’m known for: {core}.'); },
+    3: function () { return 'Watched a client hit a number today they didn’t think was possible. It usually is.'; },
+    4: function () { return fill('Right now: doing the exact thing I tell my people to do.'); },
+    5: function () { return 'Link’s in my bio. Drop your name and I’ll build you a plan.'; }
+  };
   function storiesFor(d) {
     var idx = daysBetween(ymd(programStart()), ymd(d)); if (idx < 0) idx = 0;
     var slots = (LIB.stories_daily && LIB.stories_daily.slots) || [];
-    return slots.map(function (s) { return { slot: s.type, line: fill(pick(s.examples, idx)) }; });
+    return slots.map(function (s) {
+      var tpl = pick(s.examples, idx); var line = fill(tpl);
+      var risky = (/\{audience\}/.test(tpl) && tooLongInline('audience')) || (/\{outcome\}/.test(tpl) && tooLongInline('outcome')) || (/\{core\}/.test(tpl) && tooLongInline('core'));
+      if (!grammarGuard(line) || risky) line = (STORY_SAFE[s.n] ? STORY_SAFE[s.n]() : line);
+      return { slot: s.type, line: line };
+    });
   }
   // Assemble a copyable filming plan (hook + take + beats + CTA) — never a
   // word-for-word caption; the middle is theirs to say.
@@ -221,6 +281,23 @@
     return out.join('\n');
   }
   function postsAvailable() { var pt = LIB.post_types || {}; return ((pt.mistake && pt.mistake.seeds) || []).length + ((pt.myth && pt.myth.library) || []).length + ((pt.objection && pt.objection.library) || []).length + ((pt.app && pt.app.hook_variants) || []).length; }
+  function labelForAngle(type) { return { mistake: 'The mistake', myth: 'The myth', objection: 'The objection', reframe: 'The question' }[type] || 'The angle'; }
+  function thinkQuestions(brief, idx) { var arr = (brief && brief.think) || []; if (!arr.length) return []; var out = []; var n = Math.min(4, arr.length); for (var k = 0; k < n; k++) out.push(arr[(idx * 2 + k) % arr.length]); return out; }
+  function briefText(s, brief, qs, hookText) {
+    var o = [];
+    o.push('TODAY: ' + (s.title || s.type).toUpperCase());
+    if (brief && brief.job) o.push('Job: ' + brief.job);
+    if (brief && brief.goal) o.push('If it works, they think: ' + brief.goal);
+    o.push(''); o.push('YOUR MATERIAL');
+    if (state.answered.audience) o.push('· Who: ' + state.answered.audience);
+    if (s.angle && s.angle.topic) o.push('· ' + labelForAngle(s.type) + ': ' + (s.angle.take || s.angle.topic));
+    if (state.answered.core) o.push('· Stand for: ' + state.answered.core);
+    if (qs && qs.length) { o.push(''); o.push('THINK ABOUT'); qs.forEach(function (q) { o.push('- ' + q); }); }
+    o.push(''); o.push('THE SHAPE'); (s.beats || []).forEach(function (b) { o.push(b.t + '  ' + b.job); });
+    o.push(''); o.push('HOOK: ' + (hookText || s.hook || ''));
+    o.push('CTA: ' + ctaText());
+    return o.join('\n');
+  }
 
   // ---------- compliance / streak / level ----------
   function assignedTasks(d) { var job = jobFor(d); return { post: (job === 'win' || job === 'mistake' || job === 'app'), stories: (job !== 'rest') }; }
@@ -388,9 +465,13 @@
       var pickWrap = buildDaysPicker(); body.appendChild(pickWrap.node); getVal = pickWrap.get;
     } else {
       if (q.example) body.appendChild(el('p', 'cp-example', 'e.g. <b>' + esc(q.example) + '</b>'));
+      // §3 — fill-in-the-blank framing: greyed prompt sentence above the input.
+      var blankHalves = null;
+      if (q.blank) { var idxBlank = q.blank.indexOf('___'); blankHalves = idxBlank === -1 ? [q.blank + ' ', ''] : [q.blank.slice(0, idxBlank), q.blank.slice(idxBlank + 3)]; body.appendChild(el('p', 'cp-blank', esc(blankHalves[0]) + '<span class="cp-blank-slot">' + '&nbsp;____&nbsp;' + '</span>' + esc(blankHalves[1]))); }
       var inWrap = el('div', 'cp-qinput');
       var input = q.type === 'textarea' ? el('textarea', 'cp-textarea') : el('input', 'cp-input');
       input.value = state.answered[q.id] || '';
+      if (q.blank && !input.value) input.placeholder = (blankHalves[0] || '').trim() + ' …';
       // 1.4 — write-friendly inputs
       input.spellcheck = true; input.setAttribute('autocorrect', 'on'); input.setAttribute('autocapitalize', 'sentences'); input.setAttribute('autocomplete', 'off');
       if (q.type !== 'textarea') { input.type = 'text'; input.inputMode = q.inputmode || 'text'; input.setAttribute('enterkeyhint', 'next'); input.addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); next.click(); } }); }
@@ -398,8 +479,22 @@
       input.setAttribute('aria-label', q.label);
       input.addEventListener('focus', function () { setTimeout(function () { try { input.scrollIntoView({ block: 'center', behavior: reduced ? 'auto' : 'smooth' }); } catch (e) {} }, 150); });
       if (q.type === 'textarea') { var grow = function () { input.style.height = 'auto'; input.style.height = Math.min(260, input.scrollHeight) + 'px'; }; input.addEventListener('input', grow); setTimeout(grow, 0); }
-      input.addEventListener('input', function () { errEl.textContent = ''; });
       inWrap.appendChild(input); body.appendChild(inWrap);
+      // §3 — live preview of the completed sentence + soft 8-word counter.
+      var preview = null, counter = null;
+      if (q.blank) {
+        preview = el('p', 'cp-preview'); body.appendChild(preview);
+        counter = el('p', 'cp-hooknote'); body.appendChild(counter);
+      }
+      function syncBlank() {
+        if (!q.blank) return; var v = input.value.trim();
+        preview.textContent = v ? (blankHalves[0] + v + (blankHalves[1] || '') + (/[.!?]$/.test(v) ? '' : '.')).replace(/\s+/g, ' ').trim() : '';
+        var w = wordCount(v); var cap = q.softCap || 8;
+        counter.textContent = v ? (w + ' word' + (w === 1 ? '' : 's') + (w > cap ? ' · shorter is better here — you can add detail in the next question' : '')) : '';
+        counter.style.color = w > cap ? 'var(--accent)' : 'var(--muted)';
+      }
+      input.addEventListener('input', function () { errEl.textContent = ''; syncBlank(); });
+      setTimeout(syncBlank, 0);
       // chips that fill the field
       if (q.chips && q.chips.length) { var cw = el('div', 'cp-chipwrap'); q.chips.forEach(function (c) { var b = el('button', 'cp-chip2', esc(c)); b.type = 'button'; b.onclick = function () { input.value = c; errEl.textContent = ''; input.focus(); }; cw.appendChild(b); }); body.appendChild(cw); }
       // 1.3 — Suggest for me: composed pool, 3 fresh chips at a time, cycling
@@ -432,7 +527,9 @@
         if (String(val).trim().length < 4) { errEl.textContent = 'Give me a bit more — who are they?'; return; }
         if (isSingularOrVague(val)) { errEl.textContent = 'Name a group, not “you” — try “men over 35” or “people who’ve tried every diet.”'; return; }
       }
-      state.answered[q.id] = val; persist(); nextStep();
+      state.answered[q.id] = val;
+      if (typeof val === 'string') { state.answered_meta = state.answered_meta || {}; state.answered_meta[q.id] = classifyAnswer(val); }
+      persist(); nextStep();
     };
     sticky.appendChild(next); screen.appendChild(sticky);
     root.appendChild(screen);
@@ -727,45 +824,69 @@
     if (s.type === 'stories') body.appendChild(el('p', 'cp-sub', 'No feed post today — just your 5 stories. That’s where the trust is built.'));
     else if (s.type === 'rest') body.appendChild(el('p', 'cp-sub', 'Rest day. Still get your stories up if you can.'));
     else {
-      if (s.coachingNote) { var p = el('div', 'cp-prompt'); p.innerHTML = '<b>Why this post:</b> ' + esc(s.coachingNote); body.appendChild(p); }
-      // hook
-      if (s.hook) { var hk = el('div', 'cp-script'); hk.style.cssText = 'font-weight:700;font-size:1.06rem;'; hk.textContent = s.hook; body.appendChild(hk); }
-      // angle: prompt (capture their take), their saved take, or proof
-      if (s.angle && (s.angle.kind === 'prompt' || s.angle.kind === 'personal')) {
-        if (s.angle.kind === 'prompt') {
-          var pw = el('div', 'cp-cta-box'); pw.style.cssText = 'border-style:solid;';
-          pw.appendChild(el('div', 'cp-label', 'Today: the ' + jobLabel(s.type).toLowerCase()));
-          pw.appendChild(el('p', 'cp-cta-text', 'Topic: “' + esc(s.angle.topic) + '”'));
-          pw.appendChild(el('p', 'cp-cta-why', 'Why people believe it: ' + esc(s.angle.why)));
-          if (s.angle.ref) { var refP = el('p', 'cp-cta-why'); refP.style.marginTop = '4px'; refP.textContent = 'For reference (don’t read it): ' + s.angle.ref; pw.appendChild(refP); }
-          pw.appendChild(el('p', 'cp-ask', s.angle.prompt)).style.marginTop = '10px';
-          var ta = el('textarea', 'cp-textarea'); ta.placeholder = 'Say it your way…'; ta.setAttribute('aria-label', 'Your take'); pw.appendChild(ta);
-          var save = el('button', 'cp-btn cp-btn-primary sm', 'Save my take'); save.type = 'button'; save.style.marginTop = '8px';
-          save.onclick = function () { var v = ta.value.trim(); if (v.length < 3) { toast('Say a little more'); return; } savePersonalTake(s.angle.topicKey, v); toast('Saved — that’s yours now'); renderDashboard(); };
-          pw.appendChild(save);
-          pw.appendChild(el('p', 'cp-cta-why', 'The topic is the prompt. The video is yours — and you only answer it once.'));
-          body.appendChild(pw);
-        } else {
-          var yt = el('div', 'cp-cta-box'); yt.style.cssText = 'border-style:solid;';
-          yt.appendChild(el('div', 'cp-label', 'Your take on: “' + esc(s.angle.topic) + '”'));
-          yt.appendChild(el('p', 'cp-cta-text', esc(s.angle.take)));
-          var edit = el('button', 'cp-btn cp-btn-ghost sm', 'Edit'); edit.type = 'button'; edit.style.marginTop = '8px'; edit.onclick = function () { delete state.personalTakes[s.angle.topicKey]; persist(); renderDashboard(); };
-          yt.appendChild(edit); body.appendChild(yt);
-        }
-      } else if (s.angle && s.angle.kind === 'proof') {
-        var pf = el('div', 'cp-cta-box'); pf.style.cssText = 'border-style:solid;'; pf.appendChild(el('div', 'cp-label', 'Your proof')); pf.appendChild(el('p', 'cp-cta-text', esc(s.angle.text))); body.appendChild(pf);
+      var brief = (LIB.briefs || {})[s.type] || {};
+      var idx = occurrenceIndex(d, s.type);
+      // ── 1 · The job
+      if (brief.job) { var jb = el('div', 'cp-prompt'); jb.innerHTML = '<b>Job:</b> ' + esc(brief.job); body.appendChild(jb); }
+      // ── 2 · The goal (what a stranger feels)
+      if (brief.goal) { var gl = el('div', 'cp-card'); gl.style.marginTop = '10px'; gl.appendChild(el('div', 'cp-label', 'If it works, they think')); gl.appendChild(el('p', 'cp-cta-text', esc(brief.goal))); body.appendChild(gl); }
+      // ── 3 · Your material (their own answers, verbatim, labelled — never spliced)
+      var mat = el('div', 'cp-card'); mat.style.marginTop = '10px'; mat.appendChild(el('div', 'cp-label', 'Your material'));
+      function matRow(label, val) { if (!String(val || '').trim()) return; var r = el('div'); r.style.cssText = 'padding:7px 0;border-top:1px solid var(--line);'; r.appendChild(el('div', 'cp-hooknote', label)); var v = el('div'); v.style.cssText = 'font-weight:600;font-size:.96rem;line-height:1.4;'; v.textContent = val; r.appendChild(v); mat.appendChild(r); }
+      matRow('Who you’re talking to', state.answered.audience);
+      if (s.angle && s.angle.topic) matRow(labelForAngle(s.type) + ' this week', s.angle.take || s.angle.topic);
+      else if (s.angle && s.angle.kind === 'proof') matRow('The proof', s.angle.text);
+      matRow('What you stand for', state.answered.core);
+      body.appendChild(mat);
+      // shared-pool prompt: capture their take (still their material)
+      if (s.angle && s.angle.kind === 'prompt') {
+        var pw = el('div', 'cp-cta-box'); pw.style.cssText = 'border-style:solid;margin-top:10px;';
+        pw.appendChild(el('div', 'cp-label', 'Make it yours (once)'));
+        pw.appendChild(el('p', 'cp-cta-why', esc(s.angle.prompt)));
+        var ta = el('textarea', 'cp-textarea'); ta.placeholder = 'Your take, your words…'; ta.setAttribute('aria-label', 'Your take'); pw.appendChild(ta);
+        var save = el('button', 'cp-btn cp-btn-primary sm', 'Save my take'); save.type = 'button'; save.style.marginTop = '8px';
+        save.onclick = function () { var v = ta.value.trim(); if (v.length < 3) { toast('Say a little more'); return; } savePersonalTake(s.angle.topicKey, v); toast('Saved — that’s yours now'); renderDashboard(); };
+        pw.appendChild(save); body.appendChild(pw);
       }
-      if (s.framing) body.appendChild(el('p', 'cp-hooknote', s.framing));
-      // beats — the script is the beat list (never a word-for-word middle)
-      var beatsWrap = el('div', 'cp-card'); beatsWrap.style.marginTop = '12px'; beatsWrap.appendChild(el('div', 'cp-label', 'Your beats' + (s.length ? ' · ' + s.length : '')));
+      // ── 4 · Think about (the heart — questions, cycled)
+      var qs = thinkQuestions(brief, idx);
+      if (qs.length) { var tk = el('div', 'cp-card'); tk.style.marginTop = '10px'; tk.appendChild(el('div', 'cp-label', 'Think about — before you film')); qs.forEach(function (q) { var r = el('div'); r.style.cssText = 'display:flex;gap:8px;padding:7px 0;border-top:1px solid var(--line);font-size:.95rem;line-height:1.4;'; r.appendChild(el('span', null, '→')).style.color = 'var(--accent)'; r.appendChild(el('span', null, esc(q))); tk.appendChild(r); }); body.appendChild(tk); }
+      // ── 6 · Think-it-through field
+      var savedBul = (state.personalTakes && state.personalTakes['bullets:' + s.type]) || '';
+      var tif = el('div', 'cp-card'); tif.style.marginTop = '10px'; tif.appendChild(el('div', 'cp-label', 'Jot your bullets before you film'));
+      tif.appendChild(el('p', 'cp-hooknote', 'Thirty seconds writing this saves you four takes.'));
+      if (savedBul) tif.appendChild(el('p', 'cp-hooknote', 'What you said last time: ' + savedBul));
+      var bulTa = el('textarea', 'cp-textarea'); bulTa.placeholder = '• …'; bulTa.value = ''; tif.appendChild(bulTa);
+      var bulSave = el('button', 'cp-btn cp-btn-ghost sm', 'Save my bullets'); bulSave.type = 'button'; bulSave.style.marginTop = '8px'; bulSave.onclick = function () { if (bulTa.value.trim()) { savePersonalTake('bullets:' + s.type, bulTa.value.trim()); toast('Saved'); } }; tif.appendChild(bulSave);
+      body.appendChild(tif);
+      // ── 5 · The shape (beats)
+      var beatsWrap = el('div', 'cp-card'); beatsWrap.style.marginTop = '10px'; beatsWrap.appendChild(el('div', 'cp-label', 'The shape' + (s.length ? ' · ' + s.length : '')));
       (s.beats || []).forEach(function (b) { var row = el('div'); row.style.cssText = 'display:grid;grid-template-columns:auto 1fr;gap:10px;padding:8px 0;border-top:1px solid var(--line);font-size:.92rem;'; var t = el('span'); t.style.cssText = 'font-weight:800;color:var(--accent);white-space:nowrap;'; t.textContent = b.t; row.appendChild(t); row.appendChild(el('span', null, esc(b.job))); beatsWrap.appendChild(row); });
       body.appendChild(beatsWrap);
-      // never-repeat counter
+      // ── 6 · The two written lines: hook + CTA
+      var hookKey = 'hook:' + s.type + ':' + (idx % 6);
+      var hookText = (state.personalTakes && state.personalTakes[hookKey]) || s.hook || '';
+      var written = el('div', 'cp-card'); written.style.marginTop = '10px'; written.appendChild(el('div', 'cp-label', 'The two lines you write out'));
+      var hookBox = el('div'); hookBox.style.cssText = 'padding:8px 0;border-top:1px solid var(--line);';
+      hookBox.appendChild(el('div', 'cp-hooknote', 'HOOK — say this first')); var hookLineEl = el('div'); hookLineEl.style.cssText = 'font-weight:700;font-size:1.04rem;line-height:1.35;'; hookLineEl.textContent = hookText; hookBox.appendChild(hookLineEl);
+      written.appendChild(hookBox);
+      // §7 read-aloud check
+      var ra = el('div'); ra.style.cssText = 'display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;';
+      var ok = el('button', 'cp-btn cp-btn-ghost sm', 'Sounds right'); ok.type = 'button'; ok.onclick = function () { toast('Good — film it.'); };
+      var fix = el('button', 'cp-btn cp-btn-ghost sm', 'Let me fix it'); fix.type = 'button';
+      fix.onclick = function () {
+        var ed = el('textarea', 'cp-textarea'); ed.value = hookText; ed.style.marginTop = '8px'; hookBox.appendChild(ed); ra.style.display = 'none';
+        var sv = el('button', 'cp-btn cp-btn-primary sm', 'Save my hook'); sv.type = 'button'; sv.style.marginTop = '6px'; sv.onclick = function () { if (ed.value.trim()) { savePersonalTake(hookKey, ed.value.trim()); toast('Saved — that’s your hook now'); renderDashboard(); } }; hookBox.appendChild(sv);
+      };
+      ra.appendChild(el('span', 'cp-hooknote', 'Read your hook out loud — sound like you?')); ra.appendChild(ok); ra.appendChild(fix); written.appendChild(ra);
+      var ctaBox2 = el('div'); ctaBox2.style.cssText = 'padding:8px 0;border-top:1px solid var(--line);margin-top:8px;';
+      ctaBox2.appendChild(el('div', 'cp-hooknote', 'CTA — say this last (same every time)')); var ctaLineEl = el('div'); ctaLineEl.style.cssText = 'font-weight:600;font-size:.96rem;line-height:1.4;white-space:pre-wrap;'; ctaLineEl.textContent = ctaText(); ctaBox2.appendChild(ctaLineEl);
+      written.appendChild(ctaBox2);
+      body.appendChild(written);
+      if (s.framing) body.appendChild(el('p', 'cp-hooknote', s.framing));
       var made = postsMadeCount(); var avail = postsAvailable();
       if (made <= avail) body.appendChild(el('p', 'cp-hooknote', 'Post ' + (made + 1) + ' of ' + avail + ' — you haven’t repeated yet.'));
-      var copyRow = el('div', 'cp-copyrow'); var copyScript = el('button', 'cp-btn cp-btn-primary', 'Copy filming plan'); copyScript.type = 'button'; copyScript.onclick = function () { copyText(filmingPlan(s), 'Filming plan copied'); }; copyRow.appendChild(copyScript); body.appendChild(copyRow);
-      var ctaBox = el('div', 'cp-cta-box'); ctaBox.appendChild(el('div', 'cp-label', 'Your locked CTA')); ctaBox.appendChild(el('p', 'cp-cta-text', esc(ctaText()))); ctaBox.appendChild(el('p', 'cp-cta-why', (LIB.cta && LIB.cta.note) || 'Same words every time.'));
-      var copyCta = el('button', 'cp-btn cp-btn-ghost sm', 'Copy CTA'); copyCta.type = 'button'; copyCta.style.marginTop = '8px'; copyCta.onclick = function () { copyText(ctaText(), 'CTA copied'); }; ctaBox.appendChild(copyCta); body.appendChild(ctaBox);
+      var copyRow = el('div', 'cp-copyrow'); var copyScript = el('button', 'cp-btn cp-btn-primary', 'Copy the brief'); copyScript.type = 'button'; copyScript.onclick = function () { copyText(briefText(s, brief, qs, hookText), 'Brief copied'); }; copyRow.appendChild(copyScript); body.appendChild(copyRow);
     }
     body.appendChild(renderStories(d));
     var ci = state.checkins[key] || {};
@@ -1030,4 +1151,17 @@
     });
   }
   if (document.readyState !== 'loading') boot(); else document.addEventListener('DOMContentLoaded', boot);
+
+  // §7 — test hook so the QA harness can drive the generator directly.
+  try {
+    window.__cpTest = {
+      setProfile: function (p) { state = Object.assign(defaultState(), p); if (!state.startDate) state.startDate = ymd(today()); },
+      setVoice: function (v) { state.answered.voice = v; },
+      scriptFor: function (d) { return scriptFor(parseYmd(d)); },
+      storiesFor: function (d) { return storiesFor(parseYmd(d)); },
+      ctaText: ctaText, hookLine: hookLine, grammarGuard: grammarGuard, classifyAnswer: classifyAnswer,
+      jobFor: function (d) { return jobFor(parseYmd(d)); }, wordCount: wordCount,
+      today: function () { return ymd(today()); }, addDays: function (d, n) { return ymd(addDays(parseYmd(d), n)); }
+    };
+  } catch (e) {}
 })();
