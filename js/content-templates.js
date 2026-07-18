@@ -82,6 +82,19 @@
       'It drains their week and leaves them frustrated by Friday.\nUnderneath it all is {core}.\nThe fix is the first thing I’d hand them — in the right order.'
     ],
 
+    // ---- SELF-WIN posts (no clients yet — the trainer is the case study).
+    // "I'm figuring this out, come with me" beats pretending. Engine adds CTA. ----
+    selfWin: [
+      'I’m not going to pretend I’ve always had this figured out.\nI used to believe {old_belief}. I was {before}.\nWhat changed was {turning_point}.\n{selfResult}. I’m in the arena — come with me.',
+      'Before you follow me for {outcome}, know this: I’ve been {before}.\nThe thing that flipped it wasn’t willpower. It was {core}.\n{selfResult}. Still going. Come do it with me.',
+      'I’m my own first client.\nI stopped {mistake1} and started building around {core}.\n{selfResult}.\nI’m not the finished product — I’m proof it’s working.',
+      'Real talk: I used to think {old_belief}.\nThen {turning_point}.\nNow {selfResult}. If you’re where I was, follow along — I’ll show you exactly what I’m doing.',
+      'No before-and-after empire here yet. Just me, {before}, deciding to change it.\n{turning_point}.\n{selfResult}. Watch me do it and take what works.',
+      'The most honest thing I can tell {audience}: I’m walking this myself.\nI fixed {mistake2}, leaned into {core}, and {selfResult}.\nNobody can copy that off me — because it’s real.',
+      'I could fake a highlight reel. I’d rather show you the work.\nI was {before}. I believed {old_belief}. Both wrong.\n{selfResult} — and I’m still going.',
+      'This is day-by-day for me too.\nWhat’s carried me: {core}, and refusing to {mistake3}.\n{selfResult}. If you want a coach who’s in it with you, that’s me.'
+    ],
+
     // ---- APP posts (≥12). Lead magnet, one day/week. Full script bodies.
     // Point at the free app + {link}. Engine adds CTA. ----
     app: [

@@ -14632,7 +14632,8 @@ function initAuthUi() {
             trainerMessagesLink.insertAdjacentElement('afterend', trainerWebsiteLink);
         }
 
-        // Content Program (the posting engine) sits right under Website.
+        // Content Program (the posting engine) is the 2nd trainer tab —
+        // right under Clients, above Messages.
         let trainerContentLink = panel.querySelector('#control-trainer-content-link');
         if (!trainerContentLink) {
             trainerContentLink = document.createElement('a');
@@ -14641,8 +14642,9 @@ function initAuthUi() {
             trainerContentLink.href = 'content.html';
             trainerContentLink.innerHTML = '<span class="icon"><svg><use href="#icon-book"></use></svg></span><span class="text">Content</span>';
         }
-        if (trainerWebsiteLink.nextElementSibling !== trainerContentLink) {
-            trainerWebsiteLink.insertAdjacentElement('afterend', trainerContentLink);
+        trainerContentLink.classList.remove('hidden');
+        if (trainerClientsLink.nextElementSibling !== trainerContentLink) {
+            trainerClientsLink.insertAdjacentElement('afterend', trainerContentLink);
         }
 
         let trainerAnalyticsLink = panel.querySelector('#control-trainer-analytics-link');
