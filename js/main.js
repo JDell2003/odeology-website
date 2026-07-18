@@ -14631,6 +14631,20 @@ function initAuthUi() {
         if (trainerMessagesLink.nextElementSibling !== trainerWebsiteLink) {
             trainerMessagesLink.insertAdjacentElement('afterend', trainerWebsiteLink);
         }
+
+        // Content Program (the posting engine) sits right under Website.
+        let trainerContentLink = panel.querySelector('#control-trainer-content-link');
+        if (!trainerContentLink) {
+            trainerContentLink = document.createElement('a');
+            trainerContentLink.className = 'control-link';
+            trainerContentLink.id = 'control-trainer-content-link';
+            trainerContentLink.href = 'content.html';
+            trainerContentLink.innerHTML = '<span class="icon"><svg><use href="#icon-book"></use></svg></span><span class="text">Content</span>';
+        }
+        if (trainerWebsiteLink.nextElementSibling !== trainerContentLink) {
+            trainerWebsiteLink.insertAdjacentElement('afterend', trainerContentLink);
+        }
+
         let trainerAnalyticsLink = panel.querySelector('#control-trainer-analytics-link');
         if (!trainerAnalyticsLink) {
             trainerAnalyticsLink = document.createElement('a');

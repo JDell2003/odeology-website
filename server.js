@@ -1967,6 +1967,10 @@ const server = http.createServer(async (req, res) => {
         return serveStatic(req, res, '/partner.html');
     }
 
+    if ((url.pathname === '/content' || url.pathname === '/content.html') && req.method === 'GET') {
+        return serveStatic(req, res, '/content.html');
+    }
+
     if (/^\/coach\/[a-z0-9-]+(?:\/[a-z0-9-]+)?$/i.test(url.pathname) && req.method === 'GET') {
         return serveStatic(req, res, '/trainer-profile.html');
     }
