@@ -104,6 +104,9 @@
   }
 
   function fill(str, mistakeForCycle) {
+    // Guard: if a hook/template OBJECT ({pattern, voices}) reaches fill, resolve
+    // it to a string instead of rendering "[object Object]".
+    if (str && typeof str === 'object') { str = (str.voices && str.voices[voiceKey()]) || str.pattern || str.text || ''; }
     var a = state.answered; var m = mistakesList();
     var map = {
       '{audience}': a.audience || 'the people you train',
@@ -320,7 +323,7 @@
     body.appendChild(el('span', 'cp-seclabel', 'Watch this'));
     body.appendChild(el('h2', 'cp-qh', 'Here’s your first hook.'));
     var m = mistakesList();
-    var hook = fill(pick(LIB.hooks, 0), m[0]);
+    var hook = hookLine(0, m[0]);
     var out = el('div', 'cp-script'); out.style.cssText = 'margin-top:16px;font-size:1.15rem;min-height:3.4em;'; body.appendChild(out);
     var words = hook.split(' '); var i = 0;
     function step() { if (i > words.length) return; out.textContent = words.slice(0, i).join(' '); i++; if (i <= words.length) setTimeout(step, reduced ? 0 : 60); }
