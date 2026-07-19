@@ -4740,8 +4740,7 @@ async function syncTrainerManagerAssignmentOnApproval(request = {}) {
       VALUES ($1, $2, $3, $4::jsonb, now())
       ON CONFLICT (user_id) DO UPDATE SET
         full_name = CASE
-          WHEN COALESCE(app_trainer_profiles.full_name, '') = '' AND EXCLUDED.full_name <> ''
-          THEN EXCLUDED.full_name
+          WHEN EXCLUDED.full_name <> '' THEN EXCLUDED.full_name
           ELSE app_trainer_profiles.full_name
         END,
         contact_email = CASE
@@ -4754,6 +4753,12 @@ async function syncTrainerManagerAssignmentOnApproval(request = {}) {
     `,
     [trainerUserId, fullName, contactEmail, JSON.stringify(nextMeta)]
   );
+  // v10 0.4 — if a trainer types their name, that's their name. Mirror it onto
+  // app_users.display_name so the account chip (and everything reading
+  // /api/auth/me) shows it, instead of the raw signup handle.
+  if (fullName) {
+    try { await db.query('UPDATE app_users SET display_name = $2, updated_at = now() WHERE id = $1;', [trainerUserId, fullName]); } catch {}
+  }
   return nextMeta;
 }
 
@@ -5582,6 +5587,7 @@ async function buildAuthUserFromRowAsync(row) {
     const managerResult = await db.query(
       `
         SELECT onboarding_completed_at,
+               COALESCE(full_name, '') AS full_name,
                COALESCE(meta->>'managerCode', '') AS manager_code,
                COALESCE(meta->>'workspaceId', '') AS workspace_id,
                COALESCE(meta->>'locationId', '') AS location_id
@@ -5603,7 +5609,10 @@ async function buildAuthUserFromRowAsync(row) {
       ...(user.trainer || {}),
       active: Boolean(user.isTrainer),
       onboarded: Boolean(managerRow.onboarding_completed_at),
-      onboardingCompletedAt: managerRow.onboarding_completed_at || null
+      onboardingCompletedAt: managerRow.onboarding_completed_at || null,
+      // v10 0.4 — the one name everything resolves through:
+      // full_name → display_name → username
+      fullName: managerRow.full_name || ''
     };
     const trainerState = await getTrainerReviewState(user.id);
     user.trainer = {
