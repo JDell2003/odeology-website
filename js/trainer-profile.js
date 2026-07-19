@@ -3301,6 +3301,10 @@
               event.stopImmediatePropagation?.();
               return;
             }
+            // Resource load failures (404'd script/img/video in the trainer's code)
+            // fire capture-phase error events with a target element and no message —
+            // they are NOT JavaScript errors and the site still runs. Never banner those.
+            if (event && !event.message && event.target && event.target !== window && event.target.tagName) return;
             showRuntimeError(event && event.message ? event.message : 'JavaScript error');
             event.preventDefault?.();
             event.stopImmediatePropagation?.();
@@ -5910,6 +5914,10 @@
                 event.stopImmediatePropagation?.();
                 return;
               }
+              // Resource load failures (404'd script/img/video in the trainer's code)
+              // fire capture-phase error events with a target element and no message —
+              // they are NOT JavaScript errors and the site still runs. Never banner those.
+              if (event && !event.message && event.target && event.target !== window && event.target.tagName) return;
               const message = event && event.message ? event.message : 'JavaScript error';
               showRuntimeError(message);
               event.preventDefault?.();
