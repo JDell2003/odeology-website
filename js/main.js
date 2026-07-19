@@ -13869,6 +13869,9 @@ function writeAuthUserHint(user) {
                 demo: { active: Boolean(user?.isDemo || user?.demo?.active) },
                 trainer: {
                     active: Boolean(user?.isTrainer || user?.trainer?.active),
+                    // v12 3 — the hint must carry the resolved name, or early renders
+                    // fall back to the signup handle while later ones use full_name.
+                    fullName: String(user?.trainer?.fullName || '').trim(),
                     onboarded: Boolean(user?.trainer?.onboarded || user?.trainerOnboardingComplete || user?.trainerOnboardingCompletedAt),
                     onboardingCompletedAt: user?.trainer?.onboardingCompletedAt || user?.trainerOnboardingCompletedAt || null
                 },
