@@ -173,6 +173,38 @@ async function mkPage(b, user, profileStore) {
     await p.close();
   }
 
+
+  // ============ TEST 5 (v11): Hook Day gating + validation + rotation ============
+  {
+    const store={data:{}}; const user={id:'hk1',username:'hooktrainer',displayName:'Hook T',isTrainer:true,trainer:{active:true}};
+    const p=await mkPage(b,user,store);
+    await p.goto(URL,{waitUntil:'networkidle2'}); await p.evaluate(()=>localStorage.clear());
+    await p.reload({waitUntil:'networkidle2'}); await new Promise(r=>setTimeout(r,700));
+    const hk=await p.evaluate(()=>{
+      const T=window.__cpTest; const today=T.today();
+      const dow=new Date().getDay(); // local, matches parseYmd semantics
+      T.setProfile({ answered:{audience:'men over 35',voice:'blunt',mistake1:'do endless cardio',days:{days:[dow]}}, setupDone:true, dayZeroDone:true, levelIdx:0, hookDay:dow });
+      const at135=T.isHookDay(today,'mistake');
+      T.setProfile({ answered:{audience:'men over 35',voice:'blunt',mistake1:'do endless cardio',days:{days:[dow]}}, setupDone:true, dayZeroDone:true, levelIdx:1, hookDay:dow, appWeekday:(dow+3)%7 });
+      const at225=T.isHookDay(today,'mistake');
+      const rejYou=T.validTrainerHook('you are doing cardio wrong');
+      const rejNoGroup=T.validTrainerHook('most people are stuck on cardio forever');
+      const okHook=T.validTrainerHook('men over 35 are stuck because they do endless cardio');
+      const st=window.__cpTest.getState();
+      st.overrides={}; st.overrides[today]={type:'mistake',reason:'t'};
+      st.hookChoices={}; st.hookChoices[today]={source:'trainer',text:'men over 35: the cardio trap',trainerHookId:7};
+      const sc=T.scriptFor(today);
+      return {at135,at225,rejYou:!!rejYou,rejNoGroup:!!rejNoGroup,okHook:okHook===''||okHook===undefined,choiceUsed:sc.hook==='men over 35: the cardio trap',src:sc.hookSource,hid:sc.trainerHookId};
+    });
+    ok('v11 Hook Day locked at 135', !hk.at135);
+    ok('v11 Hook Day unlocked at 225+', hk.at225);
+    ok('v11 "you" hook rejected', hk.rejYou);
+    ok('v11 no-group hook rejected', hk.rejNoGroup);
+    ok('v11 valid group hook accepted', hk.okHook);
+    ok('v11 chosen trainer hook overrides + stamps source', hk.choiceUsed && hk.src==='trainer' && hk.hid===7, JSON.stringify({src:hk.src}));
+    await p.close();
+  }
+
   console.log(results.join('\n'));
   const fails = results.filter(r => r.startsWith('FAIL')).length;
   console.log('\n' + (fails ? fails + ' FAILURES' : 'ALL PASS'));
