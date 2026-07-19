@@ -159,6 +159,7 @@
       '{mistake1}': m[0] || 'the same old mistake', '{mistake2}': m[1] || m[0] || 'the same old mistake', '{mistake3}': m[2] || m[0] || 'the same old mistake',
       '{mistake}': mistakeForCycle || m[0] || 'the same old mistake',
       '{story}': a.turning_point || 'I found what actually works',
+      '{story_line}': a.turning_point || a.why || 'I found what actually works',
       '{turning_point}': a.turning_point || 'I found what actually works',
       '{before}': a.before || 'stuck and frustrated', '{old_belief}': a.old_belief || 'I needed more willpower', '{why}': a.why || 'I don’t want anyone to waste the time I wasted',
       // both camelCase (questionnaire) and snake_case (library) proof slots
@@ -167,6 +168,10 @@
       '{proof_belief}': a.proofBelief || 'they’d already tried everything',
       '{selfResult}': a.selfResult || 'I’m proof it works', '{own_result}': a.selfResult || 'I’m proof it works',
       '{proofLead}': proofLead(), '{proofResultLine}': proofResultLine(),
+      '{p_they}': ({ he: 'he', she: 'she' })[a.proof_pronoun] || 'they',
+      '{p_were}': (a.proof_pronoun === 'he' || a.proof_pronoun === 'she') ? 'was' : 'were',
+      '{p_their}': ({ he: 'his', she: 'her' })[a.proof_pronoun] || 'their',
+      '{p_them}': ({ he: 'him', she: 'her' })[a.proof_pronoun] || 'them',
       '{objection}': a.objection || 'they don’t think they have time', '{objection2}': a.objection2 || '', '{fear}': a.fear || 'that this is just who they are now',
       '{catchphrase}': a.catchphrase || '', '{name}': trainerName(), '{link}': autoLink()
     };
@@ -545,7 +550,10 @@
   function prevStep() { do { flow.i--; } while (flow.i > 0 && stepIsSkippable(flow.steps[flow.i])); if (flow.i < 0) { flow.i = 0; return renderPathChooser(); } drawStep(); }
   function answerableProgress() { var qs = flow.steps.filter(function (s) { return s.kind === 'q' && showIfOk(s.q); }); var doneCount = 0; for (var j = 0; j <= flow.i && j < flow.steps.length; j++) { var s = flow.steps[j]; if (s.kind === 'q' && showIfOk(s.q)) doneCount++; } return { total: qs.length, done: Math.max(1, doneCount) }; }
 
+  var screenCleanup = [];
+  function runScreenCleanup() { screenCleanup.forEach(function (fn) { try { fn(); } catch (e) {} }); screenCleanup = []; }
   function drawStep() {
+    runScreenCleanup(); // v12 — stale timers from the previous question can never write again
     if (state.draft) { state.draft.i = flow.i; } state.lastStepIndex = flow.i; persist();
     root.className = 'cp-wrap flow'; root.innerHTML = '';
     var st = flow.steps[flow.i];
@@ -638,6 +646,10 @@
       input.addEventListener('focus', function () { setTimeout(function () { try { input.scrollIntoView({ block: 'center', behavior: reduced ? 'auto' : 'smooth' }); } catch (e) {} }, 150); });
       if (q.type === 'textarea') { var grow = function () { input.style.height = 'auto'; input.style.height = Math.min(260, input.scrollHeight) + 'px'; }; input.addEventListener('input', grow); setTimeout(grow, 0); }
       inWrap.appendChild(input); body.appendChild(inWrap);
+      // v12 1 — the invariant: what the field displays IS what the draft holds.
+      // Re-assert after paint so no browser restore/race can desync them.
+      var expected = input.value;
+      requestAnimationFrame(function () { if (input.isConnected && input.value !== expected && !input.matches(':focus')) input.value = expected; });
       // §3 — live preview of the completed sentence + soft 8-word counter.
       var preview = null, counter = null;
       if (q.blank) {
@@ -652,8 +664,9 @@
         counter.style.color = w > cap ? 'var(--accent)' : 'var(--muted)';
       }
       var typeTimer = 0;
+      screenCleanup.push(function () { clearTimeout(typeTimer); });
       input.addEventListener('input', function () {
-        errEl.textContent = ''; syncBlank();
+        expected = input.value; errEl.textContent = ''; syncBlank();
         // v10 2.6 — the answer being typed survives a reload: debounce it into
         // the draft (validation still runs on Next before it counts).
         clearTimeout(typeTimer); typeTimer = setTimeout(function () { qa()[q.id] = input.value; persist(); }, 600);
@@ -919,8 +932,11 @@
         dz.pins.forEach(function (pin, pi) {
           var pinBox = el('div', 'cp-dz-pin');
           var ph = el('div'); ph.style.cssText = 'display:flex;align-items:center;gap:8px;';
-          var pchk = el('button', 'cp-dz-check', state.dzTasks['pin' + (pi + 1)] ? '✓' : ''); pchk.style.cssText = 'width:26px;height:26px;' + (state.dzTasks['pin' + (pi + 1)] ? 'background:#16a34a;border-color:#16a34a;color:#fff;' : '');
-          pchk.type = 'button'; pchk.onclick = function (e) { e.stopPropagation(); state.dzTasks['pin' + (pi + 1)] = !state.dzTasks['pin' + (pi + 1)]; persist(); renderDayZero(); };
+          var pinKey = 'pin' + (pi + 1);
+          var pchk = el('button', 'cp-dz-check', state.dzTasks[pinKey] ? '✓' : ''); pchk.style.cssText = 'width:26px;height:26px;' + (state.dzTasks[pinKey] ? 'background:#16a34a;border-color:#16a34a;color:#fff;' : '');
+          // v12 6 — each checkbox binds to its OWN key and updates in place;
+          // no full re-render between taps, so one tap can never eat another.
+          pchk.type = 'button'; pchk.onclick = function (e) { e.stopPropagation(); state.dzTasks[pinKey] = !state.dzTasks[pinKey]; persist(); pchk.textContent = state.dzTasks[pinKey] ? '✓' : ''; pchk.style.cssText = 'width:26px;height:26px;' + (state.dzTasks[pinKey] ? 'background:#16a34a;border-color:#16a34a;color:#fff;' : ''); syncDzGate(); };
           ph.appendChild(pchk);
           ph.appendChild(el('h4', null, 'Pin ' + (pi + 1) + ' — ' + esc(pin.title) + ' <span style="color:var(--muted);font-weight:600;font-size:.8rem;">(' + pin.len + ')</span>'));
           pinBox.appendChild(ph);
@@ -932,19 +948,22 @@
           b.appendChild(pinBox);
         });
         var allRow = el('div', 'cp-dz-head'); allRow.style.paddingTop = '6px';
-        var allChk = el('div', 'cp-dz-check' + (state.dzTasks.pinsAll ? '' : ''), state.dzTasks.pinsAll ? '✓' : ''); if (state.dzTasks.pinsAll) allChk.style.cssText = 'background:#16a34a;border-color:#16a34a;color:#fff;';
+        var allChk = el('div', 'cp-dz-check', state.dzTasks.pinsAll ? '✓' : ''); if (state.dzTasks.pinsAll) allChk.style.cssText = 'background:#16a34a;border-color:#16a34a;color:#fff;';
         allRow.appendChild(allChk); allRow.appendChild(el('div', 'cp-dz-title', 'All three pinned to the top of my profile'));
-        allRow.onclick = function () { state.dzTasks.pinsAll = !state.dzTasks.pinsAll; persist(); renderDayZero(); };
+        allRow.onclick = function () { state.dzTasks.pinsAll = !state.dzTasks.pinsAll; persist(); allChk.textContent = state.dzTasks.pinsAll ? '✓' : ''; allChk.style.cssText = state.dzTasks.pinsAll ? 'background:#16a34a;border-color:#16a34a;color:#fff;' : ''; syncDzGate(); };
         b.appendChild(allRow);
       }
       box.appendChild(b);
       // toggle for simple tasks (link, profile, guide)
-      if (!task.pins) head.onclick = function () { state.dzTasks[task.id] = !state.dzTasks[task.id]; persist(); renderDayZero(); };
+      if (!task.pins) head.onclick = function () { state.dzTasks[task.id] = !state.dzTasks[task.id]; persist(); chk.textContent = '✓'; box.classList.toggle('done', !!state.dzTasks[task.id]); syncDzGate(); };
       root.appendChild(box);
     });
 
     var allDone = dz.tasks.every(isTaskDone);
     var unlock = el('button', 'cp-btn cp-btn-primary', allDone ? 'Start day one →' : 'Finish the tasks to unlock'); unlock.type = 'button'; unlock.style.marginTop = '16px'; unlock.disabled = !allDone;
+    // v12 6 — the gate is computed from the individual keys, in any tap order.
+    function syncDzGate() { var ok2 = dz.tasks.every(isTaskDone); unlock.disabled = !ok2; unlock.textContent = ok2 ? 'Start day one →' : 'Finish the tasks to unlock'; }
+    renderDayZero._sync = syncDzGate;
     unlock.onclick = function () { state.dayZeroDone = true; persist(); toast('You’re live'); renderDashboard(); };
     root.appendChild(unlock);
     if (!allDone) root.appendChild(el('p', 'cp-note', 'Your program’s ready. Three videos between you and day one. Day Zero doesn’t count against your compliance — the streak starts at day one.'));
@@ -953,6 +972,7 @@
 
   // ================= DASHBOARD =================
   function renderDashboard() {
+    try { lastRenderedName = trainerName(); } catch (e) {}
     // Refresh the stored level once per render (safe: levelIndex() reads the
     // *previous* stored value through postDays, so there's no recursion).
     try { state.levelIdx = levelIndex(); } catch (e) {}
@@ -1434,7 +1454,14 @@
   if (document.readyState !== 'loading') boot(); else document.addEventListener('DOMContentLoaded', boot);
   // If auth resolves (or switches accounts) after first paint, re-boot against
   // the right per-user key so we never keep another account's state on screen.
-  try { window.addEventListener('odeauth', function () { if (currentUid() !== bootedUid) boot(); }); } catch (e) {}
+  var lastRenderedName = null;
+  try { window.addEventListener('odeauth', function () {
+    if (currentUid() !== bootedUid) { boot(); return; }
+    // Same account, richer user object (trainer.fullName arrives with the full
+    // /api/auth/me): if the resolved name changed, re-render so the CTA and
+    // pins never disagree (v12 3).
+    if (state && state.setupDone && trainerName() !== lastRenderedName) route();
+  }); } catch (e) {}
 
   // §7 — test hook so the QA harness can drive the generator directly.
   try {
