@@ -8,7 +8,7 @@
 const puppeteer = require('../node_modules/puppeteer');
 const fs = require('fs');
 const path = require('path');
-const URL = process.env.CONTENT_URL || 'http://localhost:4615/content';
+const URL = process.env.CONTENT_URL || 'http://localhost:4619/content';
 
 // Three trainers with deliberately different answer styles.
 const PROFILES = {
@@ -21,6 +21,7 @@ const PROFILES = {
   },
   'sentence-writer': {
     audience: 'men over 35, mostly desk-job guys who used to be athletes and want to feel like themselves again',
+    audience_short: 'men over 35',
     outcome: 'finally get strong again without wrecking their knees or living in the gym',
     core: 'the thing I care about most is helping them eat enough protein and train with actual intent',
     mistake1: 'they train really hard in the gym and then eat like they didn’t do anything at all',
@@ -31,6 +32,7 @@ const PROFILES = {
   },
   'comma-rambler': {
     audience: 'busy moms, mostly in their 40s, who used to be active',
+    audience_short: 'busy moms over 40',
     outcome: 'lose the weight, keep their energy, and not hate the process',
     core: 'consistency, not intensity, and eating enough',
     mistake1: 'they starve all day, then binge at night, and blame themselves',
