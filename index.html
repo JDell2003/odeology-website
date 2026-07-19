@@ -12249,30 +12249,34 @@ function formatWorkspaceLabel(workspace) {
           }, 0);
         }
 
-        function rerenderWorkspaceSearchPreserveFocus(value = '') {
-          renderPanel();
-          window.requestAnimationFrame(() => {
-            const nextSearch = document.getElementById('workspace-search');
-            if (!(nextSearch instanceof HTMLInputElement)) return;
-            nextSearch.focus();
-            const length = String(value || '').length;
-            try {
-              nextSearch.setSelectionRange(length, length);
-            } catch {}
-          });
+        // Search re-renders are DEBOUNCED so the live input element is never
+        // destroyed mid-typing. Rewriting the panel's innerHTML on every
+        // keystroke detaches the focused input and drops every character after
+        // the first; deferring the rebuild until the user pauses keeps the
+        // input alive (its value accumulates normally) and only refreshes the
+        // results list once they stop.
+        let searchRerenderTimer = 0;
+        function debouncedSearchRerender(focusId) {
+          window.clearTimeout(searchRerenderTimer);
+          searchRerenderTimer = window.setTimeout(() => {
+            const active = document.activeElement;
+            const sel = (active && typeof active.selectionStart === 'number') ? active.selectionStart : null;
+            renderPanel();
+            window.requestAnimationFrame(() => {
+              const next = document.getElementById(String(focusId || '').trim());
+              if (!(next instanceof HTMLInputElement)) return;
+              next.focus();
+              const pos = sel != null ? sel : String(next.value || '').length;
+              try { next.setSelectionRange(pos, pos); } catch {}
+            });
+          }, 220);
+        }
+        function rerenderWorkspaceSearchPreserveFocus() {
+          debouncedSearchRerender('workspace-search');
         }
 
-        function rerenderInputPreserveFocus(inputId = '', value = '') {
-          renderPanel();
-          window.requestAnimationFrame(() => {
-            const nextInput = document.getElementById(String(inputId || '').trim());
-            if (!(nextInput instanceof HTMLInputElement)) return;
-            nextInput.focus();
-            const length = String(value || '').length;
-            try {
-              nextInput.setSelectionRange(length, length);
-            } catch {}
-          });
+        function rerenderInputPreserveFocus(inputId = '') {
+          debouncedSearchRerender(inputId);
         }
 
         function getCheckedValues(name) {
