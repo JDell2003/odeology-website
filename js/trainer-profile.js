@@ -908,6 +908,10 @@
   }
 
   function canEditTrainerPage(trainer, view = '') {
+    // ?preview=1 — strictly view-only render (the Website hub's Peer In frame
+    // embeds the page this way). No edit chrome, no editor, regardless of who
+    // is looking.
+    try { if (new URLSearchParams(window.location.search).get('preview') === '1') return false; } catch {}
     if (isResultsGalleryView(view)) return false;
     const viewer = window.__trainerProfileViewer || null;
     if (!viewer?.id) return false;

@@ -250,7 +250,8 @@
           <span class="tw-ic"><svg viewBox="0 0 24 24"><use href="#icon-book"></use></svg></span>
           <h3>Peer in</h3>
         </div>
-        <div class="tw-toggle" id="tw-view-toggle" style="margin-left:auto;">
+        <button class="tw-btn" type="button" id="tw-edit-site" style="margin-left:auto;" hidden>Edit website</button>
+        <div class="tw-toggle" id="tw-view-toggle">
           <button type="button" data-view="desktop" class="is-active">Desktop</button>
           <button type="button" data-view="phone">Phone</button>
         </div>
@@ -361,7 +362,9 @@
         resolveBuiltPage().then((path) => {
           if (!path) return; // genuinely no site → keep the empty state
           if (String($('#tw-site-url').value || '').trim()) return; // they pasted one meanwhile
-          frame.innerHTML = `<iframe src="${esc(path)}" title="Website preview" loading="lazy"></iframe>`;
+          const sep = path.indexOf('?') === -1 ? '?' : '&';
+          frame.innerHTML = `<iframe src="${esc(path + sep + 'preview=1')}" title="Website preview" loading="lazy"></iframe>`;
+          const editBtn = $('#tw-edit-site'); if (editBtn) editBtn.hidden = false;
         });
       }
 
@@ -490,6 +493,10 @@
       });
       // "Create website" in the empty preview → the page builder. Delegated
       // because renderPreview() re-creates the button.
+      $('#tw-edit-site').addEventListener('click', () => {
+        const h = String(handle || '').trim();
+        window.location.href = h ? `/coach/${encodeURIComponent(h)}?edit=1` : 'trainer-profile.html';
+      });
       document.addEventListener('click', (ev) => {
         if (ev.target.closest('#tw-create-site')) {
           // Open the trainer's OWN coach page with its editor turned on —
