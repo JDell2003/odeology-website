@@ -26,6 +26,7 @@
     questions: [
       // --- WHO ---
       { id: 'audience', section: 'who', path: 'quick', type: 'chips', label: 'Who do you train?', sub: 'Say it the way you’d describe them out loud.', blank: 'I train ___', softCap: 8, example: 'men over 30 who used to be athletes', lesson: 'Groups, not individuals. “Men over 30” gets watched. “You” gets scrolled.', why: 'Every hook you post names this group. If it’s vague or singular, the hooks fall flat. A specific group makes a specific person stop scrolling.', chips: ['men over 30', 'busy moms', 'beginners in their first year', 'guys who used to be athletes', 'women over 40', 'new lifters', 'shift workers', 'desk-job dads'], inputmode: 'text', validate: 'audience', required: true },
+      { id: 'audience_short', section: 'who', path: 'quick', type: 'text', label: 'That’s good — but too long for a hook.', sub: 'Give me the short version. Three or four words. This is what goes in your hooks — the longer version still shows up in your material.', blank: 'I train ___', softCap: 4, example: 'men over 35', showIfSentence: 'audience', prefillFrom: 'audience', validate: 'audience', required: true },
       { id: 'outcome', section: 'who', path: 'quick', type: 'textarea', label: 'What do they get from working with you?', sub: 'Finish the sentence.', blank: 'My clients finally ___', softCap: 8, example: 'lose 30 lbs without giving up food they like', why: 'This is the promise in your CTA and your app posts. Say it the way they’d say it, not in coach-speak.', required: true },
 
       // --- STAND ---
@@ -59,7 +60,7 @@
       { id: 'fear', section: 'story', path: 'detailed', type: 'chips', label: 'What are they secretly afraid of?', sub: 'Deeper than the objection.', example: 'that this is just who they are now', chips: ['that this is just who they are now', 'that they’ll never feel confident', 'that they’ll fail in front of people', 'that they’ve left it too late', 'that nothing works for them'], required: true },
 
       // --- VOICE ---
-      { id: 'voice', section: 'voice', path: 'quick', type: 'choice', label: 'How do you talk?', sub: 'Pick the one closest to you.', choices: [{ v: 'direct', label: 'Straight and direct' }, { v: 'warm', label: 'Warm and encouraging' }, { v: 'blunt', label: 'Funny and blunt' }, { v: 'technical', label: 'Calm and technical' }], required: true },
+      { id: 'voice', section: 'voice', path: 'quick', type: 'choice', label: 'How do you talk?', sub: 'Pick the one closest to you.', choices: [{ v: 'blunt', label: 'Straight and blunt' }, { v: 'warm', label: 'Warm and encouraging' }, { v: 'funny', label: 'Funny and dry' }, { v: 'technical', label: 'Calm and technical' }], required: true },
       { id: 'profanity', section: 'voice', path: 'detailed', type: 'choice', label: 'Do you swear?', sub: 'We’ll match your posts to how you actually talk.', choices: [{ v: 'no', label: 'No' }, { v: 'some', label: 'Occasionally' }, { v: 'yes', label: 'Yes' }], required: true },
       { id: 'catchphrase', section: 'voice', path: 'detailed', type: 'text', label: 'Got a phrase you say a lot?', sub: 'A line that’s yours.', example: 'discipline is a love language', required: true },
 

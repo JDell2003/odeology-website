@@ -31,37 +31,65 @@
       startDate: null, dayZeroDone: false, dzTasks: {},
       appWeekday: 5, overrides: {}, checkins: {}, storiesDone: {},
       editLog: [], postStats: {}, personalTakes: {}, reminderTime: '18:00', lastPack: 0, levelIdx: 0,
-      redoing: false, answered_meta: {}
+      redoing: false, answered_meta: {},
+      // v10 0.2/0.3 — THE commit boundary. The questionnaire (first run AND
+      // redo) only ever writes into `draft`; the live `answered` program is
+      // untouched until finish commits the draft. Abandon = discard the draft,
+      // live program survives.
+      draft: null
     };
   }
-  function loadLocal() {
-    try { var raw = JSON.parse(localStorage.getItem(lsKey()) || 'null'); if (raw && raw.answered) return raw; } catch (e) {}
-    try { var raw2 = JSON.parse(localStorage.getItem(LS_KEY) || 'null'); if (raw2 && raw2.answered) return raw2; } catch (e) {}
-    // migrate a v1 program if present
+  function deepClone(o) { try { return JSON.parse(JSON.stringify(o || {})); } catch (e) { return {}; } }
+  function beginDraft(path) {
+    state.draft = {
+      answers: state.setupDone ? deepClone(state.answered) : {},
+      meta: deepClone(state.answered_meta || {}),
+      path: path || state.path || 'quick',
+      i: 0
+    };
+    state.redoing = !!state.setupDone;
+    persist();
+  }
+  // Effective answers for the questionnaire + previews: the draft while one is
+  // open, the committed program otherwise.
+  function qa() { return (state.draft && state.draft.answers) ? state.draft.answers : state.answered; }
+  function qmeta() { return (state.draft && state.draft.meta) ? state.draft.meta : (state.answered_meta = state.answered_meta || {}); }
+  // v10 0.1 — storage is STRICTLY per-user. No un-keyed fallback: on a shared
+  // browser that let account B inherit account A's entire program (the
+  // staydown0813 bleed). Un-keyed keys get deleted, never migrated — we can't
+  // know whose they are. A uid stamp inside the object is the second line of
+  // defence.
+  function currentUid() { try { var u = window.__odeCurrentUser || (typeof readAuthUserHint === 'function' ? readAuthUserHint() : null); return u && (u.id || u.username) ? String(u.id || u.username) : ''; } catch (e) {} return ''; }
+  function lsKey() { var uid = currentUid(); return uid ? LS_KEY + ':' + uid : ''; }
+  function purgeForeignStorage() {
     try {
-      var old = JSON.parse(localStorage.getItem(LS_OLD) || 'null');
-      if (old && old.vars && old.setupDone) {
-        var s = defaultState(); s.path = 'quick'; s.setupDone = true; s.dayZeroDone = true;
-        s.startDate = old.startDate || ymd(today()); s.appWeekday = old.appWeekday != null ? old.appWeekday : 5;
-        s.overrides = old.overrides || {}; s.checkins = old.checkins || {}; s.storiesDone = old.storiesDone || {}; s.editLog = old.editLog || [];
-        s.answered = {
-          audience: old.vars.audience, outcome: old.vars.outcome, core: old.vars.core,
-          mistake1: (old.vars.mistakes || [])[0], mistake2: (old.vars.mistakes || [])[1], mistake3: (old.vars.mistakes || [])[2],
-          turning_point: old.vars.story, has_proof: 'client', proofName: old.vars.proofName, proofResult: old.vars.proofResult,
-          objection: old.vars.objection, days: { count: old.vars.days || 3, days: old.vars.postDays || [1, 3, 5] }
-        };
-        return s;
+      var uid = currentUid(); var mine = lsKey(); var kill = [];
+      for (var i = 0; i < localStorage.length; i++) {
+        var k = localStorage.key(i);
+        if (k === LS_KEY || k === LS_OLD) kill.push(k); // un-keyed: delete, never migrate
+        else if (k && k.indexOf(LS_KEY + ':') === 0 && k !== mine) kill.push(k); // other accounts on this browser
+      }
+      kill.forEach(function (k) { try { localStorage.removeItem(k); } catch (e) {} });
+    } catch (e) {}
+  }
+  function loadLocal() {
+    purgeForeignStorage();
+    var key = lsKey(); if (!key) return null; // no resolved user → no program
+    try {
+      var raw = JSON.parse(localStorage.getItem(key) || 'null');
+      if (raw && raw.answered) {
+        if (raw.uid && raw.uid !== currentUid()) { try { localStorage.removeItem(key); } catch (e) {} return null; }
+        return raw;
       }
     } catch (e) {}
     return null;
   }
   var saveTimer = 0;
-  function lsKey() { try { var u = window.__odeCurrentUser; if (u && (u.id || u.username)) return LS_KEY + ':' + (u.id || u.username); } catch (e) {} return LS_KEY; }
   function persist() {
     state.updatedAt = Date.now();
-    // Save every answer immediately to localStorage (user-keyed mirror + legacy
-    // key), and debounce the server write so nothing is lost on a mid-flow reload.
-    try { var s = JSON.stringify(state); localStorage.setItem(lsKey(), s); localStorage.setItem(LS_KEY, s); } catch (e) {}
+    state.uid = currentUid();
+    var key = lsKey();
+    if (key) { try { localStorage.setItem(key, JSON.stringify(state)); } catch (e) {} }
     if (saveTimer) clearTimeout(saveTimer); saveTimer = setTimeout(saveToProfile, 400);
   }
   function saveToProfile() { try { fetch('/api/profile', { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ profile: { content_program_v2: state } }) }).catch(function () {}); } catch (e) {} }
@@ -73,9 +101,20 @@
   }
 
   // ---------- derived variables ----------
-  function trainerName() { if (state.answered.name) return state.answered.name; try { var u = window.__odeCurrentUser; if (u && (u.displayName || u.username)) return (u.displayName || u.username); } catch (e) {} return 'your coach'; }
+  // v10 0.4 — ONE name resolution, at render time, never snapshotted:
+  // trainer_profiles.full_name → display_name → username.
+  function trainerName() {
+    try {
+      var u = window.__odeCurrentUser || (typeof readAuthUserHint === 'function' ? readAuthUserHint() : null);
+      if (u) {
+        var full = (u.trainer && (u.trainer.fullName || u.trainer.full_name)) || u.trainerFullName || '';
+        return String(full || u.displayName || u.username || '').trim() || 'your coach';
+      }
+    } catch (e) {}
+    return 'your coach';
+  }
   function mistakesList() {
-    var a = state.answered; var arr = [a.mistake1, a.mistake2, a.mistake3];
+    var a = qa(); var arr = [a.mistake1, a.mistake2, a.mistake3];
     (a.extraMistakes || []).forEach(function (m) { arr.push(m); });
     return arr.filter(function (m) { return String(m || '').trim(); });
   }
@@ -108,9 +147,10 @@
     // Guard: if a hook/template OBJECT ({pattern, voices}) reaches fill, resolve
     // it to a string instead of rendering "[object Object]".
     if (str && typeof str === 'object') { str = (str.voices && str.voices[voiceKey()]) || str.pattern || str.text || ''; }
-    var a = state.answered; var m = mistakesList();
+    var a = qa(); var m = mistakesList();
     var map = {
-      '{audience}': a.audience || 'the people you train',
+      '{audience}': a.audience_short || a.audience || 'the people you train',
+      '{audience_full}': a.audience || a.audience_short || 'the people you train',
       '{outcome}': a.outcome || 'reach their goal',
       '{core}': a.core || 'the fundamentals',
       '{support1}': a.support1 || '', '{support2}': a.support2 || '',
@@ -146,7 +186,7 @@
   function autoLink() { var s = coachSlug(); return location.origin + '/coach' + (s ? '/' + s : ''); }
 
   // Voice: questionnaire values → library voice keys (beats stay constant).
-  function voiceKey() { return ({ direct: 'blunt', warm: 'warm', blunt: 'funny', technical: 'technical' })[state.answered.voice] || 'blunt'; }
+  function voiceKey() { var v = qa().voice; if (v === 'blunt' || v === 'warm' || v === 'funny' || v === 'technical') return v; return ({ direct: 'blunt' })[v] || 'blunt'; }
 
   // §2 — classify an answer so the generator knows where it may appear.
   function wordCount(s) { s = String(s || '').trim(); return s ? s.split(/\s+/).length : 0; }
@@ -157,8 +197,17 @@
     var type = (w > 8 || comma) ? 'SENTENCE' : conj ? 'FRAGMENT' : startsVerb ? 'SHORT_VERB' : 'NOUN_PHRASE';
     return { type: type, words: w };
   }
-  function answerType(id) { var m = state.answered_meta && state.answered_meta[id]; return m ? m.type : classifyAnswer(state.answered[id]).type; }
-  function tooLongInline(id) { var t = answerType(id); return t === 'SENTENCE' || t === 'FRAGMENT'; }
+  // Best-guess 3–4 word noun phrase from a long answer (prefill for audience_short).
+  function shortGuess(text) {
+    var t = String(text || '').trim(); if (!t) return '';
+    t = t.split(',')[0].split(/s+(?:who|that|which)s+/i)[0];
+    return t.split(/s+/).slice(0, 4).join(' ');
+  }
+  function answerType(id) { var m = qmeta()[id]; return m ? m.type : classifyAnswer(qa()[id]).type; }
+  function tooLongInline(id) {
+    if (id === 'audience' && String(qa().audience_short || '').trim()) id = 'audience_short';
+    var t = answerType(id); return t === 'SENTENCE' || t === 'FRAGMENT';
+  }
 
   // §5 — grammar guard. Returns false if a composed sentence is broken.
   function grammarGuard(sentence) {
@@ -333,7 +382,7 @@
       var hh = el('h3', null, esc(pth.name)); hh.appendChild(el('span', 'meta', pth.count + ' questions · ' + pth.mins)); opt.appendChild(hh);
       opt.appendChild(el('p', null, esc(pth.pitch)));
       var go = el('button', 'cp-btn ' + (pth.id === 'detailed' ? 'cp-btn-primary' : 'cp-btn-ghost'), pth.id === 'detailed' ? 'Start the detailed setup' : 'Start quick instead'); go.type = 'button'; go.style.marginTop = '12px';
-      go.onclick = function () { state.path = pth.id; state.lastStepIndex = 0; persist(); startQuestionnaire(); };
+      go.onclick = function () { state.draft = null; beginDraft(pth.id); startQuestionnaire(); };
       opt.appendChild(go); wrap.appendChild(opt);
     });
     var re = el('p', 'cp-reassure', 'You can switch later without losing anything.'); staggerRise(re, 5); wrap.appendChild(re);
@@ -343,9 +392,10 @@
   // ================= QUESTIONNAIRE (schema-driven) =================
   var flow = null; // { steps, i }
   function activeQuestions() {
-    return CFG.questions.filter(function (q) { return state.path === 'detailed' || q.path === 'quick'; });
+    var pth = (state.draft && state.draft.path) || state.path;
+    return CFG.questions.filter(function (q) { return pth === 'detailed' || q.path === 'quick'; });
   }
-  function showIfOk(q) { if (!q.showIf) return true; return Object.keys(q.showIf).every(function (k) { return state.answered[k] === q.showIf[k]; }); }
+  function showIfOk(q) { if (q.showIfSentence) { if (answerType(q.showIfSentence) !== 'SENTENCE') return false; } if (!q.showIf) return true; return Object.keys(q.showIf).every(function (k) { return qa()[k] === q.showIf[k]; }); }
   function buildSteps() {
     var steps = []; var lastSection = null;
     activeQuestions().forEach(function (q) {
@@ -358,28 +408,46 @@
   var pendingResume = false;
   function startQuestionnaire(opts) {
     opts = opts || {};
-    // Redoing a finished program: mark it so a mid-redo reload RESUMES the
-    // questionnaire instead of dumping back to the dashboard (v8 0.3). Snapshot
-    // the current answers so the old program stays intact until the new one is
-    // finished.
-    if (state.setupDone && !state.redoing) { state.redoing = true; try { state.redoBackup = JSON.parse(JSON.stringify(state.answered)); } catch (e) {} persist(); }
+    // v10 0.2/0.3 — the questionnaire ALWAYS works on a draft. The live
+    // program (state.answered) is never touched until finish commits.
+    if (!state.draft) beginDraft(state.path);
     flow = { steps: buildSteps(), i: 0 };
     if (opts.upgrade) { // detailed upgrade: land on first unanswered
-      while (flow.i < flow.steps.length) { var st = flow.steps[flow.i]; if (st.kind === 'q' && showIfOk(st.q) && (state.answered[st.q.id] == null || state.answered[st.q.id] === '')) break; flow.i++; }
-    } else if (opts.resume && typeof state.lastStepIndex === 'number') {
-      flow.i = Math.min(Math.max(0, state.lastStepIndex), flow.steps.length - 1);
+      while (flow.i < flow.steps.length) { var st = flow.steps[flow.i]; if (st.kind === 'q' && showIfOk(st.q) && (qa()[st.q.id] == null || qa()[st.q.id] === '')) break; flow.i++; }
+    } else if (opts.resume && state.draft && typeof state.draft.i === 'number') {
+      flow.i = Math.min(Math.max(0, state.draft.i), flow.steps.length - 1);
       while (flow.i > 0 && stepIsSkippable(flow.steps[flow.i])) flow.i--;
       pendingResume = flow.i > 0;
     }
     drawStep();
   }
+  // In-app confirm (native confirm() froze the page for one auditor — 2.4).
+  function confirmModal(msg, yesLabel, onYes) {
+    var node = el('div');
+    node.appendChild(el('h3', null, 'Hold on'));
+    node.appendChild(el('p', 'cp-sub', esc(msg)));
+    var yes = el('button', 'cp-btn cp-btn-primary', yesLabel || 'Yes'); yes.type = 'button'; yes.style.marginTop = '14px'; yes.onclick = function () { closeModal(); onYes(); };
+    var no = el('button', 'cp-btn cp-btn-ghost', 'Cancel'); no.type = 'button'; no.style.marginTop = '8px'; no.onclick = closeModal;
+    node.appendChild(yes); node.appendChild(no); openModal(node);
+  }
+  function discardDraft() { state.draft = null; state.redoing = false; persist(); renderDashboard(); }
   function resumeBannerNode() {
-    var bar = el('div'); bar.style.cssText = 'display:flex;align-items:center;justify-content:space-between;gap:8px;margin:6px 0 2px;padding:8px 12px;border-radius:10px;background:var(--accent-soft);border:1px solid rgba(197,141,79,.3);font-size:.82rem;font-weight:700;color:var(--ink);';
-    bar.appendChild(el('span', null, 'Picked up where you left off.'));
-    var actions = el('span'); actions.style.cssText = 'display:flex;gap:8px;';
-    var over = el('button', null, 'Start over'); over.type = 'button'; over.style.cssText = 'background:none;border:0;color:var(--accent);font-weight:800;cursor:pointer;font-size:.82rem;'; over.onclick = function () { if (confirm('Start the questionnaire over? Your current answers will be cleared.')) { state.answered = {}; state.lastStepIndex = 0; persist(); renderPathChooser(); } };
-    var x = el('button', null, '✕'); x.type = 'button'; x.style.cssText = 'background:none;border:0;color:var(--muted);cursor:pointer;font-size:.9rem;'; x.onclick = function () { bar.remove(); };
-    actions.appendChild(over); actions.appendChild(x); bar.appendChild(actions);
+    var isRedo = !!state.setupDone;
+    var bar = el('div'); bar.style.cssText = 'display:flex;align-items:center;justify-content:space-between;gap:8px;margin:6px 0 2px;padding:8px 12px;border-radius:10px;background:var(--accent-soft);border:1px solid rgba(197,141,79,.3);font-size:.82rem;font-weight:700;color:var(--ink);flex-wrap:wrap;';
+    bar.appendChild(el('span', null, isRedo ? 'You’ve got a redo in progress.' : 'Picked up where you left off.'));
+    var actions = el('span'); actions.style.cssText = 'display:flex;gap:10px;';
+    if (isRedo) {
+      var cont = el('button', null, 'Continue'); cont.type = 'button'; cont.style.cssText = 'background:none;border:0;color:var(--accent);font-weight:800;cursor:pointer;font-size:.82rem;min-height:44px;'; cont.onclick = function () { bar.remove(); };
+      var disc = el('button', null, 'Discard'); disc.type = 'button'; disc.style.cssText = 'background:none;border:0;color:var(--muted);font-weight:800;cursor:pointer;font-size:.82rem;min-height:44px;';
+      disc.onclick = function () { confirmModal('Throw away this redo? Your finished program stays exactly as it was.', 'Discard the redo', discardDraft); };
+      actions.appendChild(cont); actions.appendChild(disc);
+    } else {
+      var over = el('button', null, 'Start over'); over.type = 'button'; over.style.cssText = 'background:none;border:0;color:var(--accent);font-weight:800;cursor:pointer;font-size:.82rem;min-height:44px;';
+      over.onclick = function () { confirmModal('Start the questionnaire over? Your answers so far will be cleared.', 'Start over', function () { state.draft = null; persist(); renderPathChooser(); }); };
+      var x = el('button', null, '✕'); x.type = 'button'; x.style.cssText = 'background:none;border:0;color:var(--muted);cursor:pointer;font-size:.9rem;min-height:44px;'; x.onclick = function () { bar.remove(); };
+      actions.appendChild(over); actions.appendChild(x);
+    }
+    bar.appendChild(actions);
     return bar;
   }
   function stepIsSkippable(st) { return st.kind === 'q' && !showIfOk(st.q); }
@@ -388,7 +456,7 @@
   function answerableProgress() { var qs = flow.steps.filter(function (s) { return s.kind === 'q' && showIfOk(s.q); }); var doneCount = 0; for (var j = 0; j <= flow.i && j < flow.steps.length; j++) { var s = flow.steps[j]; if (s.kind === 'q' && showIfOk(s.q)) doneCount++; } return { total: qs.length, done: Math.max(1, doneCount) }; }
 
   function drawStep() {
-    state.lastStepIndex = flow.i; persist();
+    if (state.draft) { state.draft.i = flow.i; } state.lastStepIndex = flow.i; persist();
     root.className = 'cp-wrap flow'; root.innerHTML = '';
     var st = flow.steps[flow.i];
     if (st.kind === 'intro') { drawIntro(st.section); maybeShowResume(); return; }
@@ -457,7 +525,7 @@
     var errEl = el('p', 'cp-err');
 
     if (q.type === 'choice') {
-      var wrap = el('div', 'cp-choices'); var chosen = state.answered[q.id] || null; var btns = {};
+      var wrap = el('div', 'cp-choices'); var chosen = qa()[q.id] || null; var btns = {};
       q.choices.forEach(function (c) { var b = el('button', 'cp-choice' + (chosen === c.v ? ' on' : '')); b.type = 'button'; b.textContent = c.label; b.onclick = function () { chosen = c.v; Object.keys(btns).forEach(function (k) { btns[k].classList.toggle('on', k === c.v); }); errEl.textContent = ''; }; wrap.appendChild(b); btns[c.v] = b; });
       body.appendChild(wrap);
       getVal = function () { return chosen; };
@@ -470,7 +538,7 @@
       if (q.blank) { var idxBlank = q.blank.indexOf('___'); blankHalves = idxBlank === -1 ? [q.blank + ' ', ''] : [q.blank.slice(0, idxBlank), q.blank.slice(idxBlank + 3)]; body.appendChild(el('p', 'cp-blank', esc(blankHalves[0]) + '<span class="cp-blank-slot">' + '&nbsp;____&nbsp;' + '</span>' + esc(blankHalves[1]))); }
       var inWrap = el('div', 'cp-qinput');
       var input = q.type === 'textarea' ? el('textarea', 'cp-textarea') : el('input', 'cp-input');
-      input.value = state.answered[q.id] || '';
+      input.value = qa()[q.id] || (q.prefillFrom ? shortGuess(qa()[q.prefillFrom]) : '');
       if (q.blank && !input.value) input.placeholder = (blankHalves[0] || '').trim() + ' …';
       // 1.4 — write-friendly inputs
       input.spellcheck = true; input.setAttribute('autocorrect', 'on'); input.setAttribute('autocapitalize', 'sentences'); input.setAttribute('autocomplete', 'off');
@@ -493,7 +561,13 @@
         counter.textContent = v ? (w + ' word' + (w === 1 ? '' : 's') + (w > cap ? ' · shorter is better here — you can add detail in the next question' : '')) : '';
         counter.style.color = w > cap ? 'var(--accent)' : 'var(--muted)';
       }
-      input.addEventListener('input', function () { errEl.textContent = ''; syncBlank(); });
+      var typeTimer = 0;
+      input.addEventListener('input', function () {
+        errEl.textContent = ''; syncBlank();
+        // v10 2.6 — the answer being typed survives a reload: debounce it into
+        // the draft (validation still runs on Next before it counts).
+        clearTimeout(typeTimer); typeTimer = setTimeout(function () { qa()[q.id] = input.value; persist(); }, 600);
+      });
       setTimeout(syncBlank, 0);
       // chips that fill the field
       if (q.chips && q.chips.length) { var cw = el('div', 'cp-chipwrap'); q.chips.forEach(function (c) { var b = el('button', 'cp-chip2', esc(c)); b.type = 'button'; b.onclick = function () { input.value = c; errEl.textContent = ''; input.focus(); }; cw.appendChild(b); }); body.appendChild(cw); }
@@ -527,8 +601,8 @@
         if (String(val).trim().length < 4) { errEl.textContent = 'Give me a bit more — who are they?'; return; }
         if (isSingularOrVague(val)) { errEl.textContent = 'Name a group, not “you” — try “men over 35” or “people who’ve tried every diet.”'; return; }
       }
-      state.answered[q.id] = val;
-      if (typeof val === 'string') { state.answered_meta = state.answered_meta || {}; state.answered_meta[q.id] = classifyAnswer(val); }
+      qa()[q.id] = val;
+      if (typeof val === 'string') { qmeta()[q.id] = classifyAnswer(val); }
       persist(); nextStep();
     };
     sticky.appendChild(next); screen.appendChild(sticky);
@@ -537,7 +611,8 @@
 
   // 1.6 — no volume selector. Just: which days can you post? (multi-select).
   function buildDaysPicker() {
-    var picked = (state.answered.days && state.answered.days.days && state.answered.days.days.slice()) || [1, 3, 5];
+    var srcDays = qa().days;
+    var picked = (srcDays && srcDays.days && srcDays.days.slice()) || [1, 3, 5];
     var node = el('div');
     var daySel = el('div', 'cp-daysel'); var dayBtns = [];
     for (var i = 0; i < 7; i++) (function (i) { var b = el('button', 'cp-day' + (picked.indexOf(i) !== -1 ? ' on' : '')); b.type = 'button'; b.textContent = DOW[i]; b.onclick = function () { var at = picked.indexOf(i); if (at !== -1) picked.splice(at, 1); else picked.push(i); draw(); }; daySel.appendChild(b); dayBtns.push(b); })(i);
@@ -558,7 +633,7 @@
     if (!raw) return null;
     // hide entirely if it can only compose generic filler with no prior context
     var needs = (CFG.suggestNeeds && CFG.suggestNeeds[q.id]) || [];
-    if (needs.some(function (k) { return !state.answered[k]; })) return null;
+    if (needs.some(function (k) { return !qa()[k]; })) return null;
     return raw.map(function (t) { return fill(t); });
   }
   function swapSuggestions(q, host, input, errEl) {
@@ -588,7 +663,14 @@
   function isSingularOrVague(text) { var t = String(text || '').trim().toLowerCase(); if (!t) return true; if (/^(you|people|everyone|anyone|someone|clients?|person|him|her|them|me|i)$/.test(t)) return true; if (/^you\b/.test(t)) return true; var plural = /(s|men|women|folks|guys|moms|dads|people|lifters|athletes|beginners|workers)\b/.test(t); return !plural; }
 
   function finishQuestionnaire() {
-    state.answered.name = trainerName(); delete state.answered.link; // link is always derived, never stored
+    // COMMIT: the draft becomes the live program only here (v10 0.2/0.3).
+    if (state.draft) {
+      state.answered = state.draft.answers || {};
+      state.answered_meta = state.draft.meta || {};
+      state.path = state.draft.path || state.path || 'quick';
+      state.draft = null;
+    }
+    delete state.answered.name; delete state.answered.link; // both are resolved at render, never stored
     state.redoing = false; delete state.redoBackup;
     var pd = postDays(); if (pd.length) state.appWeekday = pd[pd.length - 1];
     state.setupDone = true; persist();
@@ -690,7 +772,38 @@
   function setStart(d) { state.startDate = ymd(d); state.dayZeroDone = false; state.dzTasks = {}; persist(); renderDayZero(); }
 
   // ================= DAY ZERO =================
-  function pinScript(pin) { return fill(pin.script); }
+  // v10 1.4 — pins use the beats-based library data (LIB.pins / post_types),
+  // same thinking-brief treatment as the daily card. Only the hook is a
+  // written line, and it goes through the grammar guard.
+  function pinBriefFor(pi) {
+    var P = LIB.pins || {}; var PT = LIB.post_types || {};
+    function beats(arr) { return (arr || []).map(function (b) { return { t: b.t, job: fill(b.job) }; }); }
+    function safeHook(h, fallback) { return grammarGuard(h) ? h : fallback; }
+    if (pi === 0) {
+      var p1 = P.pin1 || {};
+      return { label: p1.label || 'Who I am', len: p1.length || '60–75 sec', beats: beats(p1.beats),
+        hook: safeHook(fill('I’m {name}. This page is for {audience}.'), fill('I’m {name}.')) };
+    }
+    if (pi === 1) {
+      var mt = PT.myth || {};
+      return { label: (P.pin2 || {}).label || 'What I believe', len: (P.pin2 || {}).length || '45–60 sec', beats: beats(mt.beats),
+        hook: safeHook(fill('Here’s something most trainers won’t say: {contrarian}.'), fill('Here’s what I actually believe about {core}.')),
+        note: (P.pin2 || {}).note || '' };
+    }
+    var w = PT.win || {}; var self = qa().has_proof === 'self';
+    return { label: (P.pin3 || {}).label || 'Proof', len: (P.pin3 || {}).length || '45–60 sec',
+      beats: beats(self ? (w.no_client_variant || {}).beats : w.beats),
+      hook: self ? safeHook(fill('What I used to believe that was wrong: {old_belief}.'), 'I’ve been where you are.')
+                 : safeHook(fill('When {proof_name} started, they were sure {proof_belief}.'), fill('Let me tell you about {proof_name}.')) };
+  }
+  function pinPlanText(pi) {
+    var pb = pinBriefFor(pi); var o = [];
+    o.push('PIN ' + (pi + 1) + ' — ' + pb.label + ' (' + pb.len + ')');
+    o.push('HOOK: ' + pb.hook); o.push('');
+    pb.beats.forEach(function (b) { o.push(b.t + '  ' + b.job); });
+    o.push(''); o.push('CTA: ' + ctaText());
+    return o.join('\n');
+  }
   function renderDayZero() {
     root.className = 'cp-wrap'; root.innerHTML = '';
     root.appendChild(el('span', 'cp-kicker', 'Day Zero · ' + (state.startDate === ymd(today()) ? 'Today' : (state.startDate === ymd(addDays(today(), 1)) ? 'Tomorrow' : (state.startDate)))));
@@ -710,7 +823,7 @@
       var b = el('div', 'cp-dz-body'); b.appendChild(el('p', null, esc(task.body)));
       if (task.id === 'guide') { var gl = el('a', 'cp-btn cp-btn-ghost sm', 'Open the guide (downloadable)'); gl.href = '/content/filming-guide'; gl.target = '_blank'; gl.rel = 'noopener'; gl.style.cssText = 'display:inline-flex;margin-top:8px;text-decoration:none;'; gl.onclick = function (e) { e.stopPropagation(); }; b.appendChild(gl); }
 
-      if (task.bioLine) { var bio = 'I help ' + (state.answered.audience || 'people') + ' ' + (state.answered.outcome || 'reach their goals'); var bl = el('div', 'cp-dz-pin'); bl.appendChild(el('div', 'cp-label', 'Your bio line')); bl.appendChild(el('p', 'cp-cta-text', esc(bio))); var cpy = el('button', 'cp-btn cp-btn-ghost sm', 'Copy bio'); cpy.type = 'button'; cpy.style.marginTop = '8px'; cpy.onclick = function (e) { e.stopPropagation(); copyText(bio, 'Bio copied'); }; bl.appendChild(cpy); b.appendChild(bl); }
+      if (task.bioLine) { var bio = fill('I help {audience} {outcome}'); if (!grammarGuard(bio) || tooLongInline('outcome')) bio = fill('I train {audience}.') + ' ' + fill('What you get: {outcome}.'); var bl = el('div', 'cp-dz-pin'); bl.appendChild(el('div', 'cp-label', 'Your bio line')); bl.appendChild(el('p', 'cp-cta-text', esc(bio))); var cpy = el('button', 'cp-btn cp-btn-ghost sm', 'Copy bio'); cpy.type = 'button'; cpy.style.marginTop = '8px'; cpy.onclick = function (e) { e.stopPropagation(); copyText(bio, 'Bio copied'); }; bl.appendChild(cpy); b.appendChild(bl); }
 
       if (task.pins) {
         dz.pins.forEach(function (pin, pi) {
@@ -721,9 +834,11 @@
           ph.appendChild(pchk);
           ph.appendChild(el('h4', null, 'Pin ' + (pi + 1) + ' — ' + esc(pin.title) + ' <span style="color:var(--muted);font-weight:600;font-size:.8rem;">(' + pin.len + ')</span>'));
           pinBox.appendChild(ph);
-          var beats = el('ul', 'beats'); pin.beats.forEach(function (bt) { beats.appendChild(el('li', null, esc(bt))); }); pinBox.appendChild(beats);
-          var sc = el('div', 'cp-script'); sc.textContent = pinScript(pin); sc.style.marginTop = '8px'; pinBox.appendChild(sc);
-          var cpy = el('button', 'cp-btn cp-btn-ghost sm', 'Copy script'); cpy.type = 'button'; cpy.style.marginTop = '8px'; cpy.onclick = function (e) { e.stopPropagation(); copyText(pinScript(pin), 'Script copied'); }; pinBox.appendChild(cpy);
+          var pb = pinBriefFor(pi);
+          if (pb.note) pinBox.appendChild(el('p', 'cp-hooknote', esc(pb.note)));
+          var hk = el('div'); hk.style.cssText = 'margin-top:8px;font-weight:700;font-size:.98rem;line-height:1.35;'; hk.textContent = 'Hook: ' + pb.hook; pinBox.appendChild(hk);
+          pb.beats.forEach(function (bt) { var row = el('div'); row.style.cssText = 'display:grid;grid-template-columns:auto 1fr;gap:10px;padding:7px 0;border-top:1px solid var(--line);font-size:.88rem;'; var t = el('span'); t.style.cssText = 'font-weight:800;color:var(--accent);white-space:nowrap;'; t.textContent = bt.t; row.appendChild(t); row.appendChild(el('span', null, esc(bt.job))); pinBox.appendChild(row); });
+          var cpy = el('button', 'cp-btn cp-btn-ghost sm', 'Copy filming plan'); cpy.type = 'button'; cpy.style.marginTop = '8px'; cpy.onclick = function (e) { e.stopPropagation(); copyText(pinPlanText(pi), 'Plan copied'); }; pinBox.appendChild(cpy);
           b.appendChild(pinBox);
         });
         var allRow = el('div', 'cp-dz-head'); allRow.style.paddingTop = '6px';
@@ -760,6 +875,18 @@
     head.appendChild(titleRow); root.appendChild(head);
 
     renderBadgeHead();
+    // v10 addendum A — account flagged by the bleed migration: their saved
+    // answers may be another trainer's. Offer the 4-minute redo, never guess.
+    if (state.needsReview) {
+      var nr = el('div', 'cp-card cp-unlock');
+      nr.appendChild(el('div', 'cp-label', 'Check your answers'));
+      nr.appendChild(el('p', 'cp-sub', 'We found a problem with your saved answers — they may not all be yours. Want to redo your program? Takes 4 minutes.'));
+      var row = el('div', 'cp-copyrow');
+      var redoB = el('button', 'cp-btn cp-btn-primary', 'Redo my program'); redoB.type = 'button'; redoB.onclick = function () { state.needsReview = false; persist(); renderPathChooser(); };
+      var keepB = el('button', 'cp-btn cp-btn-ghost', 'They’re mine — keep them'); keepB.type = 'button'; keepB.onclick = function () { state.needsReview = false; persist(); renderDashboard(); };
+      row.appendChild(redoB); row.appendChild(keepB); nr.appendChild(row);
+      root.appendChild(nr);
+    }
     if (state.path === 'quick') renderUpgrade();
     maybeWeeklyRecap();
     renderTodayCard();
@@ -806,7 +933,7 @@
     card.appendChild(el('div', 'cp-label', 'Level up your posts'));
     card.appendChild(el('p', 'cp-sub', remaining + ' more answers unlocks the story posts and your voice — so your posts sound like you, not a good trainer in general.'));
     var b = el('button', 'cp-btn cp-btn-primary', 'Add more detail to my program'); b.type = 'button'; b.style.marginTop = '8px';
-    b.onclick = function () { state.path = 'detailed'; persist(); startQuestionnaire({ upgrade: true }); }; card.appendChild(b);
+    b.onclick = function () { state.draft = null; beginDraft('detailed'); startQuestionnaire({ upgrade: true }); }; card.appendChild(b);
     root.appendChild(card);
   }
 
@@ -1128,29 +1255,37 @@
 
   // ================= boot / router =================
   function route() {
-    // A redo in progress resumes the questionnaire even though the old program
-    // is still marked complete (v8 0.3).
-    if (state.redoing && state.setupDone) return startQuestionnaire({ resume: true });
-    if (!state.path || !state.setupDone) { if (state.path && !state.setupDone) return startQuestionnaire({ resume: true }); return renderPathChooser(); }
+    // An open draft (first run or redo) resumes the questionnaire (v10 0.2).
+    if (state.draft) return startQuestionnaire({ resume: true });
+    if (!state.path || !state.setupDone) return renderPathChooser();
     if (!state.startDate) return renderStartDate();
     if (!state.dayZeroDone) return renderDayZero();
     renderDashboard(); maybeEveningNudge(); scheduleReminder();
   }
+  var bootedUid = null;
   function boot() {
+    bootedUid = currentUid();
     state = loadLocal() || defaultState();
     if (state.answered && state.answered.link) delete state.answered.link; // purge any stale seeded slug (v8 0.1)
+    // Legacy v8 redo repair: redoBackup held the pre-redo program while the redo
+    // wrote into live. Restore the backup as live and drop the broken redo.
+    if (state.redoBackup) { state.answered = state.redoBackup; delete state.redoBackup; state.redoing = false; }
     route();
-    // Reconcile with the server draft by freshness (newest wins) — never let an
+    // Reconcile with the server copy by freshness (newest wins) — never let an
     // older/empty profile clobber in-progress answers (that was the wipe bug).
+    // The server copy is per-account by session cookie, so no bleed risk here.
     loadFromProfile().then(function (cp) {
       if (cp && cp.answered && (cp.updatedAt || 0) > (state.updatedAt || 0)) {
         state = Object.assign(defaultState(), cp);
-        try { localStorage.setItem(lsKey(), JSON.stringify(state)); localStorage.setItem(LS_KEY, JSON.stringify(state)); } catch (e) {}
+        var key = lsKey(); if (key) { try { localStorage.setItem(key, JSON.stringify(state)); } catch (e) {} }
         route();
       }
     });
   }
   if (document.readyState !== 'loading') boot(); else document.addEventListener('DOMContentLoaded', boot);
+  // If auth resolves (or switches accounts) after first paint, re-boot against
+  // the right per-user key so we never keep another account's state on screen.
+  try { window.addEventListener('odeauth', function () { if (currentUid() !== bootedUid) boot(); }); } catch (e) {}
 
   // §7 — test hook so the QA harness can drive the generator directly.
   try {
@@ -1159,7 +1294,8 @@
       setVoice: function (v) { state.answered.voice = v; },
       scriptFor: function (d) { return scriptFor(parseYmd(d)); },
       storiesFor: function (d) { return storiesFor(parseYmd(d)); },
-      ctaText: ctaText, hookLine: hookLine, grammarGuard: grammarGuard, classifyAnswer: classifyAnswer,
+      ctaText: ctaText, hookLine: hookLine, grammarGuard: grammarGuard, classifyAnswer: classifyAnswer, voiceKey: voiceKey,
+      getState: function () { return state; },
       jobFor: function (d) { return jobFor(parseYmd(d)); }, wordCount: wordCount,
       today: function () { return ymd(today()); }, addDays: function (d, n) { return ymd(addDays(parseYmd(d), n)); }
     };
