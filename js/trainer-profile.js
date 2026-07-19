@@ -907,11 +907,16 @@
     return String(view || '').trim().toLowerCase() === 'results' && !pageState.publicPagePayload?.page;
   }
 
+  // ?preview=1: render as a pure public visitor — used by the Website hub's
+  // Peer In frame. Affects BOTH edit rights and which payload loads.
+  function isPreviewOnlyRender() {
+    try { return new URLSearchParams(window.location.search).get('preview') === '1'; } catch { return false; }
+  }
   function canEditTrainerPage(trainer, view = '') {
     // ?preview=1 — strictly view-only render (the Website hub's Peer In frame
     // embeds the page this way). No edit chrome, no editor, regardless of who
     // is looking.
-    try { if (new URLSearchParams(window.location.search).get('preview') === '1') return false; } catch {}
+    if (isPreviewOnlyRender()) return false;
     if (isResultsGalleryView(view)) return false;
     const viewer = window.__trainerProfileViewer || null;
     if (!viewer?.id) return false;
@@ -11977,7 +11982,7 @@ footer{padding:34px 0;text-align:center;font-size:13px;color:var(--muted);}
     let publicPayload = null;
     const routeHandle = sanitizeHandle(pathMatch?.[1] || param || '');
     const viewerHandle = sanitizeHandle(window.__trainerProfileViewer?.publicHandle || window.__trainerProfileViewer?.username || '');
-    const ownerViewingOwnRoute = Boolean(routeHandle && viewerHandle && routeHandle === viewerHandle);
+    const ownerViewingOwnRoute = !isPreviewOnlyRender() && Boolean(routeHandle && viewerHandle && routeHandle === viewerHandle);
     if (param) {
       if (!ownerViewingOwnRoute) {
         const publicPageSlug = pathMatch ? view : '';
