@@ -240,11 +240,50 @@
     var audienceMid = /\{audience\}[^.!?]*\{|\{audience\}\s+\w+\s+\w/.test(pat) && tooLongInline('audience');
     var out = fill(pat, mistakeForCycle);
     if (!grammarGuard(out) || usesMistakeMid || audienceMid) {
-      // safe fallback: one variable, at the end of a short sentence
-      if (String(mistakeForCycle || '').trim()) return fill('Here’s what I keep seeing: ' + fillSafe(mistakeForCycle) + '.');
-      return fill('This one’s for {audience}.');
+      // safe fallback: one variable, at the end of a short sentence — but
+      // still VOICED (a voice-blind fallback made blunt/technical read
+      // identical whenever long answers forced this path).
+      if (String(mistakeForCycle || '').trim()) return fill(voicedFallbackLead() + ' ' + fillSafe(mistakeForCycle) + '.');
+      return fill(voicedAudienceLead());
     }
     return out;
+  }
+  // Voiced frames for the safety layouts + shared-pool hook wrappers. The
+  // variable still lands at the end (or inside quotes), so the grammar-guard
+  // safety property is unchanged — only the frame words carry the voice.
+  function voicedFallbackLead() {
+    return ({
+      blunt: 'Here’s what I keep seeing:',
+      warm: 'Can I share the pattern I keep seeing?',
+      funny: 'Same movie, every single week:',
+      technical: 'The most common pattern in the people I coach:'
+    })[voiceKey()] || 'Here’s what I keep seeing:';
+  }
+  function voicedAudienceLead() {
+    return ({
+      blunt: 'This one’s for {audience}.',
+      warm: 'If you’re one of {audience}, this one is for you.',
+      funny: 'Attention {audience}: this one’s yours.',
+      technical: 'A note for {audience} — worth two minutes.'
+    })[voiceKey()] || 'This one’s for {audience}.';
+  }
+  function voicedMythHook(topic) {
+    var t = String(topic || '').trim();
+    return ({
+      blunt: 'Most people believe: “' + t + '” — here’s why that’s wrong.',
+      warm: 'A lot of people believe “' + t + '” — let’s talk about why it keeps you stuck.',
+      funny: '“' + t + '” — sure. And I’m the tooth fairy.',
+      technical: 'Claim: “' + t + '”. The evidence points the other way.'
+    })[voiceKey()] || ('Most people believe: “' + t + '” — here’s why that’s wrong.');
+  }
+  function voicedTopicHook(topic) {
+    var t = String(topic || '').trim();
+    return ({
+      blunt: '“' + t + '”',
+      warm: 'Let’s talk about “' + t + '”.',
+      funny: '“' + t + '” … we need to talk.',
+      technical: 'On “' + t + '”: what actually works.'
+    })[voiceKey()] || ('“' + t + '”');
   }
   function fillSafe(v) { return String(v || '').replace(/\.$/, ''); }
   function slugify(s) { return String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 60); }
@@ -315,8 +354,8 @@
     // shared-pool types: mistake / myth / objection
     var a = angleFor(type, idx);
     if (type === 'mistake') { var mt = mistakesList(); base.hook = hookLine(idx, mt.length ? mt[idx % mt.length] : (a && a.item.topic)); }
-    else if (type === 'myth') { base.hook = a ? ('Most people believe: “' + a.item.topic + '” — here’s why that’s wrong.') : hookLine(idx); }
-    else { base.hook = a ? ('“' + a.item.topic + '”') : hookLine(idx); }
+    else if (type === 'myth') { base.hook = a ? voicedMythHook(a.item.topic) : hookLine(idx); }
+    else { base.hook = a ? voicedTopicHook(a.item.topic) : hookLine(idx); }
     if (a) { base.angle = { kind: a.needsTake ? 'prompt' : 'personal', topicKey: a.item.key, topic: a.item.topic, why: a.item.why, ref: a.item.ref, prompt: a.item.prompt, take: a.take }; base.needsTake = a.needsTake; }
     base.hookSource = 'house';
     if (choice && choice.text) { base.hook = choice.text; base.hookSource = 'trainer'; base.trainerHookId = choice.trainerHookId || null; }

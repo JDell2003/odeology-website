@@ -9774,6 +9774,75 @@ async function handleOwnerAccountPasswordUpdate(req, res, targetUserId) {
   return sendJson(res, 200, { ok: true });
 }
 
+// Owner role editor: toggle the trainer / client / manager flags behind the
+// role model. Only the provided boolean keys change. Every change is logged
+// to app_events ('owner_role_change': who, what, when) so there is an audit
+// trail — the flags themselves must stay pure tokens (an audit sentence in
+// admin_notes would corrupt notesHasFlag parsing).
+async function handleOwnerAccountRolesUpdate(req, res, targetUserId) {
+  const actor = await requireOwnerActor(req, res);
+  if (!actor) return true;
+  const userId = String(targetUserId || '').trim();
+  if (!/^[0-9a-f-]{36}$/i.test(userId)) return sendJson(res, 400, { ok: false, error: 'Invalid account id' });
+
+  let payload;
+  try {
+    payload = await readJsonBody(req);
+  } catch {
+    return sendJson(res, 400, { ok: false, error: 'Invalid JSON body' });
+  }
+
+  const row = (await db.query(
+    'SELECT id, username, COALESCE(admin_notes, \'\') AS admin_notes FROM app_users WHERE id = $1 LIMIT 1;',
+    [userId]
+  )).rows?.[0];
+  if (!row) return sendJson(res, 404, { ok: false, error: 'Account not found' });
+
+  const changes = {};
+  let nextNotes = row.admin_notes;
+  for (const flag of ['trainer', 'client', 'manager']) {
+    if (typeof payload?.[flag] !== 'boolean') continue;
+    const before = notesHasFlag(nextNotes, flag);
+    if (before === payload[flag]) continue;
+    nextNotes = setAdminNoteFlag(nextNotes, flag, payload[flag]);
+    changes[flag] = { from: before, to: payload[flag] };
+  }
+
+  if (Object.keys(changes).length) {
+    await db.query('UPDATE app_users SET admin_notes = $2 WHERE id = $1;', [userId, nextNotes]);
+    try {
+      await db.query(
+        `INSERT INTO app_events (event_name, path, user_id, guest_id, props)
+         VALUES ('owner_role_change', '/owner-accounts.html', $1, NULL, $2::jsonb);`,
+        [userId, JSON.stringify({
+          actorId: actor.id,
+          actorUsername: actor.username || '',
+          targetUsername: row.username || '',
+          changes,
+          reason: cleanShortText(payload?.reason, 200) || undefined,
+          at: new Date().toISOString()
+        })]
+      );
+    } catch { /* audit failure must not block the fix */ }
+  }
+
+  const isTrainer = notesHasFlag(nextNotes, 'trainer');
+  const isClient = notesHasFlag(nextNotes, 'client');
+  const isManager = notesHasFlag(nextNotes, 'manager');
+  return sendJson(res, 200, {
+    ok: true,
+    changed: Object.keys(changes).length > 0,
+    account: {
+      id: userId,
+      adminNotes: nextNotes,
+      isTrainer,
+      isClient,
+      isManager,
+      resolvedRole: isTrainer && isClient ? 'dual' : isTrainer ? 'trainer' : isManager ? 'manager' : 'client'
+    }
+  });
+}
+
 async function handleOwnerAccountDelete(req, res, targetUserId) {
   const actor = await requireOwnerActor(req, res);
   if (!actor) return true;
@@ -10895,6 +10964,7 @@ const authRoutes = async function authRoutes(req, res, url) {
     maybeCleanup().catch(() => {});
     const ownerAccountMatch = url.pathname.match(/^\/api\/auth\/owner\/account\/([0-9a-fA-F-]{36})$/);
     const ownerAccountPasswordMatch = url.pathname.match(/^\/api\/auth\/owner\/account\/([0-9a-fA-F-]{36})\/password$/);
+    const ownerAccountRolesMatch = url.pathname.match(/^\/api\/auth\/owner\/account\/([0-9a-fA-F-]{36})\/roles$/);
     const ownerImpersonateMatch = url.pathname.match(/^\/api\/auth\/owner\/impersonate\/([0-9a-fA-F-]{36})$/);
     const trainerImpersonateMatch = url.pathname.match(/^\/api\/auth\/trainer\/impersonate\/([0-9a-fA-F-]{36})$/);
     const trainerClientMatch = url.pathname.match(/^\/api\/auth\/trainer\/clients\/([0-9a-fA-F-]{36})$/);
@@ -10953,6 +11023,31 @@ const authRoutes = async function authRoutes(req, res, url) {
         await ensureSchema();
         await db.query('UPDATE app_users SET onboarding_completed_at = NULL WHERE id = $1;', [user.id]);
         return sendJson(res, 200, { ok: true });
+      } catch (err) {
+        if (err instanceof DbUnavailableError || isTransientPgError(err)) {
+          logTransientDbError(err, `authRoutes:${req.method}:${url.pathname}`);
+          return sendJson(res, 200, { ok: false, dbUnavailable: true });
+        }
+        throw err;
+      }
+    }
+
+    // Trainer opts into using the client app for their own training
+    // (dual-role): adds the explicit 'client' flag alongside 'trainer'.
+    // Role-based nav + the page guards read this as clientAccess.
+    if (url.pathname === '/api/auth/enable-client-mode' && req.method === 'POST') {
+      try {
+        const user = await getUserFromRequest(req);
+        if (!user) return sendJson(res, 401, { ok: false, error: 'UNAUTHORIZED' });
+        await ensureSchema();
+        const row = await db.query(
+          'SELECT COALESCE(admin_notes, \'\') AS admin_notes FROM app_users WHERE id = $1 LIMIT 1;',
+          [user.id]
+        );
+        const nextNotes = setAdminNoteFlag(row.rows?.[0]?.admin_notes || '', 'client', true);
+        await db.query('UPDATE app_users SET admin_notes = $2 WHERE id = $1;', [user.id, nextNotes]);
+        const nextUser = await getUserFromRequest(req);
+        return sendJson(res, 200, { ok: true, user: nextUser });
       } catch (err) {
         if (err instanceof DbUnavailableError || isTransientPgError(err)) {
           logTransientDbError(err, `authRoutes:${req.method}:${url.pathname}`);
@@ -11402,6 +11497,10 @@ const authRoutes = async function authRoutes(req, res, url) {
       return await handleOwnerAccountPasswordUpdate(req, res, ownerAccountPasswordMatch[1]);
     }
 
+    if (ownerAccountRolesMatch && req.method === 'PATCH') {
+      return await handleOwnerAccountRolesUpdate(req, res, ownerAccountRolesMatch[1]);
+    }
+
     if (ownerAccountMatch && req.method === 'DELETE') {
       return await handleOwnerAccountDelete(req, res, ownerAccountMatch[1]);
     }
@@ -11478,3 +11577,10 @@ authRoutes._private = {
 };
 
 module.exports = authRoutes;
+// Shared owner test so server-side role guards (core/roleGuard.js) use the
+// exact same owner definition as the session payload.
+module.exports.isOwnerUser = isOwnerUser;
+// Shared flag helpers so migrations/tools (scripts/backfill-role-flags.js)
+// resolve roles with the exact production logic, not a copy.
+module.exports.notesHasFlag = notesHasFlag;
+module.exports.setAdminNoteFlag = setAdminNoteFlag;

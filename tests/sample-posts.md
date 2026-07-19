@@ -98,7 +98,7 @@ _angle: Four hours on the stairmaster because it feels like work. Effort isn’t
 - 0:50–1:00 — CTA
 CTA: I’m Coach QA, and I help men over 35 get strong again. If that’s you, drop your name at the link in my bio and I’ll put a plan together for you.
 
-**myth** — hook: “Most people believe: “Soreness means it worked.” — here’s why that’s wrong.”
+**myth** — hook: “A lot of people believe “Soreness means it worked.” — let’s talk about why it keeps you stuck.”
 _angle: Soreness means it worked._
 - 0:00–0:05 — Say the thing most people won’t. State the myth, then reject it.
 - 0:05–0:20 — Why everyone believes it. Be fair to it — that’s what makes you credible.
@@ -150,7 +150,7 @@ _angle: Four hours on the stairmaster because it feels like work. Effort isn’t
 - 0:50–1:00 — CTA
 CTA: I’m Coach QA. I help men over 35 get strong again, mostly by telling them things they don’t want to hear. Link’s in my bio.
 
-**myth** — hook: “Most people believe: “Soreness means it worked.” — here’s why that’s wrong.”
+**myth** — hook: ““Soreness means it worked.” — sure. And I’m the tooth fairy.”
 _angle: Soreness means it worked._
 - 0:00–0:05 — Say the thing most people won’t. State the myth, then reject it.
 - 0:05–0:20 — Why everyone believes it. Be fair to it — that’s what makes you credible.
@@ -202,7 +202,7 @@ _angle: Four hours on the stairmaster because it feels like work. Effort isn’t
 - 0:50–1:00 — CTA
 CTA: I’m Coach QA. I help men over 35 get strong again. If you want the plan built around your situation, the link’s in my bio.
 
-**myth** — hook: “Most people believe: “Soreness means it worked.” — here’s why that’s wrong.”
+**myth** — hook: “Claim: “Soreness means it worked.”. The evidence points the other way.”
 _angle: Soreness means it worked._
 - 0:00–0:05 — Say the thing most people won’t. State the myth, then reject it.
 - 0:05–0:20 — Why everyone believes it. Be fair to it — that’s what makes you credible.
@@ -291,7 +291,7 @@ CTA: I’m Coach QA. / I train men over 35. / What you get: finally get strong a
 - 0:55–1:00 — CTA
 CTA: I’m Coach QA. / I train men over 35. / What you get: finally get strong again without wrecking their knees or living in the gym. / Drop your name at the link in my bio and I’ll build you a plan.
 
-**mistake** — hook: “Here’s what I keep seeing: they train really hard in the gym and then eat like they didn’t do anything at all.”
+**mistake** — hook: “Can I share the pattern I keep seeing? they train really hard in the gym and then eat like they didn’t do anything at all.”
 _angle: Doing endless cardio thinking it burns fat, when all it leaves you with is loose skin and no shape._
 - 0:00–0:05 — Hook — name the group and the mistake
 - 0:05–0:20 — What it’s costing them. Be specific — time, money, results.
@@ -316,7 +316,7 @@ _angle: Four hours on the stairmaster because it feels like work. Effort isn’t
 - 0:50–1:00 — CTA
 CTA: I’m Coach QA. / I train men over 35. / What you get: finally get strong again without wrecking their knees or living in the gym. / Drop your name at the link in my bio and I’ll build you a plan.
 
-**myth** — hook: “Most people believe: “Soreness means it worked.” — here’s why that’s wrong.”
+**myth** — hook: “A lot of people believe “Soreness means it worked.” — let’s talk about why it keeps you stuck.”
 _angle: Soreness means it worked._
 - 0:00–0:05 — Say the thing most people won’t. State the myth, then reject it.
 - 0:05–0:20 — Why everyone believes it. Be fair to it — that’s what makes you credible.
@@ -343,7 +343,7 @@ CTA: I’m Coach QA. / I train men over 35. / What you get: finally get strong a
 - 0:55–1:00 — CTA
 CTA: I’m Coach QA. / I train men over 35. / What you get: finally get strong again without wrecking their knees or living in the gym. / Drop your name at the link in my bio and I’ll build you a plan.
 
-**mistake** — hook: “Here’s what I keep seeing: they train really hard in the gym and then eat like they didn’t do anything at all.”
+**mistake** — hook: “Same movie, every single week: they train really hard in the gym and then eat like they didn’t do anything at all.”
 _angle: Doing endless cardio thinking it burns fat, when all it leaves you with is loose skin and no shape._
 - 0:00–0:05 — Hook — name the group and the mistake
 - 0:05–0:20 — What it’s costing them. Be specific — time, money, results.
@@ -368,7 +368,7 @@ _angle: Four hours on the stairmaster because it feels like work. Effort isn’t
 - 0:50–1:00 — CTA
 CTA: I’m Coach QA. / I train men over 35. / What you get: finally get strong again without wrecking their knees or living in the gym. / Drop your name at the link in my bio and I’ll build you a plan.
 
-**myth** — hook: “Most people believe: “Soreness means it worked.” — here’s why that’s wrong.”
+**myth** — hook: ““Soreness means it worked.” — sure. And I’m the tooth fairy.”
 _angle: Soreness means it worked._
 - 0:00–0:05 — Say the thing most people won’t. State the myth, then reject it.
 - 0:05–0:20 — Why everyone believes it. Be fair to it — that’s what makes you credible.
@@ -395,7 +395,7 @@ CTA: I’m Coach QA. / I train men over 35. / What you get: finally get strong a
 - 0:55–1:00 — CTA
 CTA: I’m Coach QA. / I train men over 35. / What you get: finally get strong again without wrecking their knees or living in the gym. / Drop your name at the link in my bio and I’ll build you a plan.
 
-**mistake** — hook: “Here’s what I keep seeing: they train really hard in the gym and then eat like they didn’t do anything at all.”
+**mistake** — hook: “The most common pattern in the people I coach: they train really hard in the gym and then eat like they didn’t do anything at all.”
 _angle: Doing endless cardio thinking it burns fat, when all it leaves you with is loose skin and no shape._
 - 0:00–0:05 — Hook — name the group and the mistake
 - 0:05–0:20 — What it’s costing them. Be specific — time, money, results.
@@ -420,7 +420,7 @@ _angle: Four hours on the stairmaster because it feels like work. Effort isn’t
 - 0:50–1:00 — CTA
 CTA: I’m Coach QA. / I train men over 35. / What you get: finally get strong again without wrecking their knees or living in the gym. / Drop your name at the link in my bio and I’ll build you a plan.
 
-**myth** — hook: “Most people believe: “Soreness means it worked.” — here’s why that’s wrong.”
+**myth** — hook: “Claim: “Soreness means it worked.”. The evidence points the other way.”
 _angle: Soreness means it worked._
 - 0:00–0:05 — Say the thing most people won’t. State the myth, then reject it.
 - 0:05–0:20 — Why everyone believes it. Be fair to it — that’s what makes you credible.
@@ -436,7 +436,7 @@ CTA: I’m Coach QA. / I train men over 35. / What you get: finally get strong a
 - 0:45–1:00 — CTA to the link
 CTA: I’m Coach QA. / I train men over 35. / What you get: finally get strong again without wrecking their knees or living in the gym. / Drop your name at the link in my bio and I’ll build you a plan.
 
-_voice overlap blunt↔technical: 57%_
+_voice overlap blunt↔technical: 53%_
 
 
 ## Trainer: comma-rambler
@@ -509,7 +509,7 @@ CTA: I’m Coach QA. / I train busy moms over 40. / What you get: lose the weigh
 - 0:55–1:00 — CTA
 CTA: I’m Coach QA. / I train busy moms over 40. / What you get: lose the weight, keep their energy, and not hate the process. / Drop your name at the link in my bio and I’ll build you a plan.
 
-**mistake** — hook: “Here’s what I keep seeing: they starve all day, then binge at night, and blame themselves.”
+**mistake** — hook: “Can I share the pattern I keep seeing? they starve all day, then binge at night, and blame themselves.”
 _angle: Doing endless cardio thinking it burns fat, when all it leaves you with is loose skin and no shape._
 - 0:00–0:05 — Hook — name the group and the mistake
 - 0:05–0:20 — What it’s costing them. Be specific — time, money, results.
@@ -534,7 +534,7 @@ _angle: Four hours on the stairmaster because it feels like work. Effort isn’t
 - 0:50–1:00 — CTA
 CTA: I’m Coach QA. / I train busy moms over 40. / What you get: lose the weight, keep their energy, and not hate the process. / Drop your name at the link in my bio and I’ll build you a plan.
 
-**myth** — hook: “Most people believe: “Soreness means it worked.” — here’s why that’s wrong.”
+**myth** — hook: “A lot of people believe “Soreness means it worked.” — let’s talk about why it keeps you stuck.”
 _angle: Soreness means it worked._
 - 0:00–0:05 — Say the thing most people won’t. State the myth, then reject it.
 - 0:05–0:20 — Why everyone believes it. Be fair to it — that’s what makes you credible.
@@ -561,7 +561,7 @@ CTA: I’m Coach QA. / I train busy moms over 40. / What you get: lose the weigh
 - 0:55–1:00 — CTA
 CTA: I’m Coach QA. / I train busy moms over 40. / What you get: lose the weight, keep their energy, and not hate the process. / Drop your name at the link in my bio and I’ll build you a plan.
 
-**mistake** — hook: “Here’s what I keep seeing: they starve all day, then binge at night, and blame themselves.”
+**mistake** — hook: “Same movie, every single week: they starve all day, then binge at night, and blame themselves.”
 _angle: Doing endless cardio thinking it burns fat, when all it leaves you with is loose skin and no shape._
 - 0:00–0:05 — Hook — name the group and the mistake
 - 0:05–0:20 — What it’s costing them. Be specific — time, money, results.
@@ -586,7 +586,7 @@ _angle: Four hours on the stairmaster because it feels like work. Effort isn’t
 - 0:50–1:00 — CTA
 CTA: I’m Coach QA. / I train busy moms over 40. / What you get: lose the weight, keep their energy, and not hate the process. / Drop your name at the link in my bio and I’ll build you a plan.
 
-**myth** — hook: “Most people believe: “Soreness means it worked.” — here’s why that’s wrong.”
+**myth** — hook: ““Soreness means it worked.” — sure. And I’m the tooth fairy.”
 _angle: Soreness means it worked._
 - 0:00–0:05 — Say the thing most people won’t. State the myth, then reject it.
 - 0:05–0:20 — Why everyone believes it. Be fair to it — that’s what makes you credible.
@@ -613,7 +613,7 @@ CTA: I’m Coach QA. / I train busy moms over 40. / What you get: lose the weigh
 - 0:55–1:00 — CTA
 CTA: I’m Coach QA. / I train busy moms over 40. / What you get: lose the weight, keep their energy, and not hate the process. / Drop your name at the link in my bio and I’ll build you a plan.
 
-**mistake** — hook: “Here’s what I keep seeing: they starve all day, then binge at night, and blame themselves.”
+**mistake** — hook: “The most common pattern in the people I coach: they starve all day, then binge at night, and blame themselves.”
 _angle: Doing endless cardio thinking it burns fat, when all it leaves you with is loose skin and no shape._
 - 0:00–0:05 — Hook — name the group and the mistake
 - 0:05–0:20 — What it’s costing them. Be specific — time, money, results.
@@ -638,7 +638,7 @@ _angle: Four hours on the stairmaster because it feels like work. Effort isn’t
 - 0:50–1:00 — CTA
 CTA: I’m Coach QA. / I train busy moms over 40. / What you get: lose the weight, keep their energy, and not hate the process. / Drop your name at the link in my bio and I’ll build you a plan.
 
-**myth** — hook: “Most people believe: “Soreness means it worked.” — here’s why that’s wrong.”
+**myth** — hook: “Claim: “Soreness means it worked.”. The evidence points the other way.”
 _angle: Soreness means it worked._
 - 0:00–0:05 — Say the thing most people won’t. State the myth, then reject it.
 - 0:05–0:20 — Why everyone believes it. Be fair to it — that’s what makes you credible.
@@ -654,5 +654,5 @@ CTA: I’m Coach QA. / I train busy moms over 40. / What you get: lose the weigh
 - 0:45–1:00 — CTA to the link
 CTA: I’m Coach QA. / I train busy moms over 40. / What you get: lose the weight, keep their energy, and not hate the process. / Drop your name at the link in my bio and I’ll build you a plan.
 
-_voice overlap blunt↔technical: 51%_
+_voice overlap blunt↔technical: 42%_
 

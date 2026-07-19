@@ -5815,7 +5815,7 @@
 
     <script type="module" src="js/usda.js"></script>
     <script src="data/dri-targets.js?v=2026-02-24-micros-1"></script>
-    <script src="js/main.js?v=2026-07-16-fabnav-2"></script>
+    <script src="js/main.js?v=2026-07-19-roles-1"></script>
     <script src="js/identity-activity.js?v=2026-07-12-dash-1"></script>
     <script src="js/identity-engine.js?v=2026-07-15-glitchguard-1"></script>
     <script src="js/daily-recap.js?v=2026-07-13-recap-4"></script>
@@ -7938,7 +7938,12 @@ function formatWorkspaceLabel(workspace) {
         function renderEntryStage() {
           const stage = currentEntryStage();
           if (stage === 'overview') {
-            window.location.href = 'overview.html#control-panel';
+            // Land by role: trainer-only → content tool, client → overview,
+            // manager → manager home, owner → overview (sees everything).
+            const liveUser = window.__odeCurrentUser || readAuthUserHint() || null;
+            window.location.href = (typeof window.__odeHomeFor === 'function')
+              ? window.__odeHomeFor(liveUser)
+              : 'overview.html#control-panel';
             return;
           }
           // Entry takeover: while auth/roles/onboarding is on screen, the
@@ -13278,7 +13283,10 @@ function formatWorkspaceLabel(workspace) {
           syncOnboardingStateFromAuthenticatedUser();
           setPathCardState('');
           if (shouldRouteSignedInUserToOverview()) {
-            window.location.href = 'overview.html#control-panel';
+            const liveUser = window.__odeCurrentUser || readAuthUserHint() || null;
+            window.location.href = (typeof window.__odeHomeFor === 'function')
+              ? window.__odeHomeFor(liveUser)
+              : 'overview.html#control-panel';
             return;
           }
           if (ensureSignedInOnboardingPath()) return;

@@ -2247,25 +2247,127 @@ function getDashboardNavHref(user = null) {
         if (typeof window.__odeGetRestrictedPortalHref === 'function') {
             return window.__odeGetRestrictedPortalHref(user);
         }
-        return 'trainer-dashboard.html';
+        return 'content.html';
     }
     return 'overview.html#control-panel';
 }
+
+/* ============================================
+   ROLE CORE — single source of truth for who sees what.
+   Roles come from the account (isOwner / isTrainer / isManager / isClient).
+   "Client" is the default state: an account with no trainer/manager role has
+   client access even without the explicit isClient flag. A trainer gets client
+   access only with the explicit flag (dual-role) — trainer && !isClient is
+   trainer-only and sees zero client surface. Owner is a floor, not a filter:
+   passes every guard and navFor() returns the union of all sections.
+   ============================================ */
+const ODE_ACTIVE_VIEW_KEY = 'ode_active_view_v1';
+
+function odeRoleFlags(user = null, meta = null) {
+    const u = user || window.__odeCurrentUser || (typeof readAuthUserHint === 'function' ? readAuthUserHint() : null);
+    if (!u) return { known: false, owner: false, trainer: false, manager: false, explicitClient: false, clientAccess: false, trainerOnly: false, dual: false, impersonating: false };
+    const owner = Boolean(u.isOwner);
+    const trainer = Boolean(u.isTrainer || u?.trainer?.active);
+    const manager = Boolean(u.isManager || u?.manager?.active);
+    const explicitClient = Boolean(u.isClient || u?.client?.active);
+    const impersonating = Boolean(meta?.impersonation?.active);
+    const clientAccess = owner || impersonating || explicitClient || (!trainer && !manager);
+    return {
+        known: true,
+        owner,
+        trainer,
+        manager,
+        explicitClient,
+        clientAccess,
+        trainerOnly: trainer && !explicitClient && !owner,
+        dual: trainer && explicitClient && !owner,
+        impersonating
+    };
+}
+
+function odeGetActiveView(user = null) {
+    const r = odeRoleFlags(user);
+    let stored = '';
+    try { stored = String(sessionStorage.getItem(ODE_ACTIVE_VIEW_KEY) || ''); } catch { /* ignore */ }
+    if (r.owner) return ['owner', 'trainer', 'client'].includes(stored) ? stored : 'owner';
+    if (r.dual) return ['trainer', 'client'].includes(stored) ? stored : 'trainer';
+    if (r.trainer) return 'trainer';
+    if (r.manager) return 'manager';
+    return 'client';
+}
+
+function odeSetActiveView(view) {
+    try { sessionStorage.setItem(ODE_ACTIVE_VIEW_KEY, String(view || '')); } catch { /* ignore */ }
+}
+
+// Where this account "lives". Trainer-only → the content tool; client → the
+// training portal; dual → whichever view is active; owner → client home
+// (owner sees everything anyway).
+function odeHomeFor(user = null) {
+    const r = odeRoleFlags(user);
+    if (!r.known) return 'index.html';
+    if (r.owner) return odeGetActiveView(user) === 'trainer' ? 'content.html' : 'overview.html#control-panel';
+    if (r.manager) return typeof window.__odeGetRestrictedPortalHref === 'function' ? window.__odeGetRestrictedPortalHref(user) : 'manager-trainers.html';
+    if (r.trainerOnly) return 'content.html';
+    if (r.dual) return odeGetActiveView(user) === 'client' ? 'overview.html#control-panel' : 'content.html';
+    return 'overview.html#control-panel';
+}
+
+// The top-nav item lists per surface. Every nav render goes through this —
+// no hardcoded lists at call sites.
+function odeNavFor(user = null) {
+    const r = odeRoleFlags(user);
+    const path = String(location.pathname || '').toLowerCase();
+    const isIndex = path.endsWith('/index.html') || path === '/' || path === '';
+    const homeHref = isIndex ? '#' : 'index.html';
+    const macroHref = isIndex ? '#resources' : 'index.html#resources';
+    const home = { label: 'Home', href: homeHref };
+    const macro = { label: 'Macro Calculator', href: macroHref };
+    const clientItems = [
+        home,
+        macro,
+        { label: 'Training', href: 'training-coming-soon.html' },
+        { label: 'Cardio', href: 'cardio.html', attrs: 'data-nav-cardio="1"' },
+        { label: 'Dashboard', href: getDashboardNavHref(user), attrs: 'data-nav-dashboard="1"' }
+    ];
+    const trainerItems = [
+        home,
+        { label: 'Content', href: 'content.html' },
+        { label: 'Clients', href: 'trainer-dashboard.html' },
+        { label: 'Website', href: 'trainer-website.html' },
+        { label: 'Calendar', href: 'trainer-calendar.html' }
+    ];
+    // Signed-out / unknown: keep the classic marketing nav (sign-in funnel).
+    if (!r.known) return clientItems;
+    if (r.owner) {
+        const view = odeGetActiveView(user);
+        if (view === 'trainer') return trainerItems;
+        if (view === 'client') return clientItems;
+        // Owner default: the union — full client surface + trainer surface.
+        return clientItems.concat(trainerItems.slice(1));
+    }
+    if (r.manager) return [home, macro, { label: 'Dashboard', href: getDashboardNavHref(user), attrs: 'data-nav-dashboard="1"' }];
+    if (r.trainerOnly) return trainerItems;
+    if (r.dual) return odeGetActiveView(user) === 'client' ? clientItems : trainerItems;
+    return clientItems;
+}
+
+try {
+    window.__odeRoleFlags = odeRoleFlags;
+    window.__odeHomeFor = odeHomeFor;
+    window.__odeGetActiveView = odeGetActiveView;
+    window.__odeSetActiveView = odeSetActiveView;
+} catch { /* ignore */ }
 
 function syncNavbarDashboardLink(user = null) {
     const navMenu = document.getElementById('nav-menu');
     if (!navMenu) return;
     const href = getDashboardNavHref(user);
-    let link = navMenu.querySelector('a[data-nav-dashboard="1"]');
-    if (!link) {
-        const li = document.createElement('li');
-        link = document.createElement('a');
-        link.dataset.navDashboard = '1';
-        link.textContent = 'Dashboard';
-        li.appendChild(link);
-        navMenu.appendChild(li);
-    }
-    link.href = href;
+    // Update-only: the nav is generated from odeNavFor(user), and some
+    // surfaces (trainer-only) intentionally have no Dashboard tab — never
+    // append one back in.
+    const link = navMenu.querySelector('a[data-nav-dashboard="1"]');
+    if (link) link.href = href;
 
     // Signed-in users never get routed to the legacy macro landing page from
     // inside the app: swap the "Macro Calculator" tab for "Nutrition"
@@ -2417,19 +2519,11 @@ function setupNav() {
 
     if (!navMenu) return;
 
-    // Hard-normalize top navbar items so desktop/mobile always show Training in nav.
-    const path = String(location.pathname || '').toLowerCase();
-    const isIndex = path.endsWith('/index.html') || path.endsWith('index.html') || path === '/' || path === '';
-    const homeHref = isIndex ? '#' : 'index.html';
-    const macroHref = isIndex ? '#resources' : 'index.html#resources';
-    const trainingHref = 'training-coming-soon.html';
-    navMenu.innerHTML = `
-        <li><a href="${homeHref}">Home</a></li>
-        <li><a href="${macroHref}">Macro Calculator</a></li>
-        <li><a href="${trainingHref}">Training</a></li>
-        <li><a href="cardio.html" data-nav-cardio="1">Cardio</a></li>
-        <li><a href="${getDashboardNavHref()}" data-nav-dashboard="1">Dashboard</a></li>
-    `;
+    // Role-generated nav: items come from odeNavFor(user) — resolved from the
+    // auth hint before first paint so the wrong surface never flashes, then
+    // re-rendered from the authoritative /api/auth/me user via
+    // window.__odeRenderRoleNav (called in setSignedInUi / setSignedOutUi).
+    renderRoleNav(window.__odeCurrentUser || null);
     // Cardio routes by the onboarding cardioSource pref (built-in tracker vs
     // deep-link out to Strava). Delegated so it survives nav re-renders.
     navMenu.addEventListener('click', (ev) => {
@@ -2478,48 +2572,151 @@ function setupNav() {
         if (e.key === 'Escape') closeDrawer();
     });
 
-    // Guard against duplicate "Macro Calculator" items injected by legacy code.
-    const macroLinks = Array.from(navMenu.querySelectorAll('a')).filter((a) => {
-        const label = String(a.textContent || '').trim().toLowerCase();
-        return label === 'macro calculator';
-    });
-    if (macroLinks.length > 1) {
-        macroLinks.slice(1).forEach((a) => a.closest('li')?.remove());
-    }
+    // (Legacy label normalization removed: the nav is fully generated from
+    // odeNavFor(user) in renderRoleNav — nothing else may add or force tabs.)
+}
 
-    // Normalize top-level nav labels across pages:
-    // remove legacy tabs and ensure a single "Training" tab exists.
-    const legacyLabels = new Set(['how it works', 'how it works?', 'why RiseForIt', 'why RiseForIt?', 'pricing']);
-    let trainingLi = null;
-    Array.from(navMenu.querySelectorAll('li')).forEach((li) => {
-        const link = li.querySelector('a');
-        if (!link) return;
-        const label = String(link.textContent || '').trim().toLowerCase();
-        if (legacyLabels.has(label)) {
-            li.remove();
-            return;
-        }
-        if (label === 'training') {
-            if (!trainingLi) trainingLi = li;
-            else {
-                li.remove();
+// Render the top nav from the role model. Safe to call repeatedly (auth
+// resolve, view switch, sign-out) — the delegated listeners on #nav-menu
+// survive innerHTML swaps.
+function renderRoleNav(user = null) {
+    const navMenu = document.getElementById('nav-menu');
+    if (!navMenu) return;
+    const items = odeNavFor(user);
+    navMenu.innerHTML = items
+        .map((it) => `<li><a href="${it.href}"${it.attrs ? ' ' + it.attrs : ''}>${it.label}</a></li>`)
+        .join('');
+    navMenu.querySelectorAll('a').forEach((link) => {
+        link.addEventListener('click', () => {
+            navMenu.classList.remove('active');
+            document.body.classList.remove('nav-drawer-open');
+            document.getElementById('hamburger')?.setAttribute('aria-expanded', 'false');
+        });
+    });
+}
+try { window.__odeRenderRoleNav = renderRoleNav; } catch { /* ignore */ }
+
+/* ============================================
+   PAGE ROLE GUARDS — every app page declares which roles it accepts.
+   Hiding nav items is not access control: these run before paint (from the
+   auth hint) and again with the authoritative /api/auth/me user.
+   Owner is a floor, not a filter — passes everything.
+   ============================================ */
+const ODE_CLIENT_PAGES = new Set([
+    'overview.html', 'dashboard.html', 'training.html', 'training-status.html',
+    'training-custom-builder.html', 'workout-builder.html', 'workout-test.html',
+    'nutrition.html', 'grocery-calendar.html', 'grocery-final.html',
+    'grocery-plan.html', 'meal-program.html', 'cardio.html', 'activity.html',
+    'alarm.html'
+]);
+const ODE_TRAINER_PAGES = new Set([
+    'content.html', 'trainer-dashboard.html', 'trainer-website.html',
+    'trainer-analytics.html', 'trainer-calendar.html', 'trainer-profile.html',
+    'payment-settings.html'
+]);
+const ODE_MANAGER_PAGES = new Set(['manager-trainers.html']);
+const ODE_OWNER_PAGES = new Set([
+    'owner-accounts.html', 'owner-analytics.html', 'owner-doors.html',
+    'owner-emails.html', 'owner-messaging.html', 'owner-websites.html',
+    'workout-database.html', 'food-admin.html'
+]);
+
+function odeCurrentPageFile() {
+    const path = String(window.location.pathname || '/').toLowerCase();
+    return path.split('/').filter(Boolean).pop() || 'index.html';
+}
+
+// Trainer-only account on a client page: offer client mode instead of a 404.
+function odeShowEnableClientOffer() {
+    if (document.getElementById('ode-enable-client-offer')) return;
+    const overlay = document.createElement('div');
+    overlay.id = 'ode-enable-client-offer';
+    overlay.setAttribute('role', 'dialog');
+    overlay.setAttribute('aria-modal', 'true');
+    overlay.style.cssText = 'position:fixed;inset:0;z-index:2147483000;display:grid;place-items:center;padding:20px;background:rgba(6,9,15,0.92);backdrop-filter:blur(6px);';
+    overlay.innerHTML = `
+        <div style="max-width:460px;width:100%;background:#10161f;border:1px solid rgba(255,255,255,0.12);border-radius:18px;padding:28px;text-align:center;font-family:'Space Grotesk',system-ui,sans-serif;color:#fff;">
+            <div style="font-size:34px;line-height:1;margin-bottom:10px;">&#127947;</div>
+            <h2 style="margin:0 0 8px;font-size:1.3rem;font-weight:800;">This is the client side of RiseForIt</h2>
+            <p style="margin:0 0 18px;color:rgba(255,255,255,0.65);font-size:0.95rem;line-height:1.5;">Want to use RiseForIt for your own training too? Turn on My Training and you'll get the full client app — workouts, nutrition, the Arena — alongside your trainer tools.</p>
+            <div style="display:grid;gap:9px;">
+                <button type="button" id="ode-enable-client-btn" style="padding:12px;border:0;border-radius:11px;background:linear-gradient(180deg,#e5b070,#c07f34);color:#0c1119;font-weight:800;font-size:0.98rem;cursor:pointer;">Turn it on</button>
+                <a href="content.html" style="padding:11px;border-radius:11px;border:1px solid rgba(255,255,255,0.16);color:rgba(255,255,255,0.8);font-weight:700;font-size:0.92rem;text-decoration:none;">Back to my trainer tools</a>
+            </div>
+        </div>`;
+    (document.body || document.documentElement).appendChild(overlay);
+    const btn = overlay.querySelector('#ode-enable-client-btn');
+    btn?.addEventListener('click', async () => {
+        btn.disabled = true;
+        btn.textContent = 'Turning on...';
+        try {
+            const resp = await fetch('/api/auth/enable-client-mode', { method: 'POST', credentials: 'include' });
+            const json = await resp.json().catch(() => null);
+            if (resp.ok && json?.ok) {
+                if (json.user && typeof writeAuthUserHint === 'function') writeAuthUserHint(json.user);
+                odeSetActiveView('client');
+                window.location.reload();
                 return;
             }
-            link.setAttribute('href', 'training-coming-soon.html');
-        }
+        } catch { /* fall through */ }
+        btn.disabled = false;
+        btn.textContent = 'Turn it on';
+        try { window.alert('Could not turn on client mode. Try again.'); } catch { /* ignore */ }
     });
-
-    if (!trainingLi) {
-        const li = document.createElement('li');
-        const a = document.createElement('a');
-        a.href = 'training-coming-soon.html';
-        a.textContent = 'Training';
-        li.appendChild(a);
-        navMenu.appendChild(li);
-    }
-
-    syncNavbarDashboardLink(window.__odeCurrentUser || null);
 }
+
+function odeRemoveEnableClientOffer() {
+    document.getElementById('ode-enable-client-offer')?.remove();
+}
+
+// Returns true when it blocked or navigated (caller should stop signed-in UI).
+function odeEnforcePageRoles(user = null, meta = null) {
+    const u = user || window.__odeCurrentUser || (typeof readAuthUserHint === 'function' ? readAuthUserHint() : null);
+    if (!u) return false; // signed-out is the auth gate's problem
+    const r = odeRoleFlags(u, meta);
+    if (r.owner || r.impersonating) { odeRemoveEnableClientOffer(); return false; }
+    const file = odeCurrentPageFile();
+
+    if (ODE_CLIENT_PAGES.has(file)) {
+        if (r.clientAccess) {
+            odeRemoveEnableClientOffer();
+            // Dual-role: being on a client page IS the client view — persist
+            // it so the session remembers the surface they're using.
+            if (r.dual) {
+                const changed = odeGetActiveView(u) !== 'client';
+                odeSetActiveView('client');
+                if (changed) renderRoleNav(u);
+            }
+            return false;
+        }
+        if (r.trainerOnly) { odeShowEnableClientOffer(); return true; }
+        window.location.replace(odeHomeFor(u));
+        return true;
+    }
+    if (ODE_TRAINER_PAGES.has(file)) {
+        if (r.trainer) {
+            if (r.dual) {
+                const changed = odeGetActiveView(u) !== 'trainer';
+                odeSetActiveView('trainer');
+                if (changed) renderRoleNav(u);
+            }
+            return false;
+        }
+        window.location.replace(odeHomeFor(u));
+        return true;
+    }
+    if (ODE_MANAGER_PAGES.has(file)) {
+        if (r.manager) return false;
+        window.location.replace(odeHomeFor(u));
+        return true;
+    }
+    if (ODE_OWNER_PAGES.has(file)) {
+        window.location.replace(odeHomeFor(u));
+        return true;
+    }
+    return false;
+}
+try { window.__odeEnforcePageRoles = odeEnforcePageRoles; } catch { /* ignore */ }
 
 function setupMacroNavLink() {
     const navMenu = document.getElementById('nav-menu');
@@ -9615,6 +9812,9 @@ document.addEventListener('DOMContentLoaded', () => {
     initTracking();
     setupPreloader();
     setupForumPreloaderNavigation();
+    // Role guard before first paint: the auth hint carries roles, so a
+    // trainer-only account never renders (or flashes) the client surface.
+    odeEnforcePageRoles(null, null);
     setupNav();
     setupTrainingNavRouting();
     injectTrainerFooterLinks();
@@ -14226,6 +14426,10 @@ function initAuthUi() {
     const canAccessClientTrainingPortal = (user = currentUser, meta = currentAuthMeta) => {
         if (!user) return true;
         if (isOwnerClientUser(user, meta)) return true;
+        // Trainers/owners impersonating a client see the client surface.
+        if (meta?.impersonation?.active) return true;
+        // Dual-role: a trainer with the explicit client flag trains here too.
+        if (user.isClient || user?.client?.active) return true;
         return !isTrainerClientUser(user) && !isManagerClientUser(user);
     };
 
@@ -14233,7 +14437,8 @@ function initAuthUi() {
     window.__odeGetRestrictedPortalHref = (user = currentUser) => (
         isManagerClientUser(user)
             ? getManagerTrainerHref(user)
-            : 'trainer-dashboard.html'
+            // Trainer-only home is the content tool, not the client app.
+            : 'content.html'
     );
 
     let managerLivePendingReviewIds = [];
@@ -15146,20 +15351,11 @@ function initAuthUi() {
         window.location.href = getTrainerQuickActionHref();
     };
 
-    const enforceSignedInRolePageAccess = (user = currentUser, meta = currentAuthMeta) => {
-        if (canAccessClientTrainingPortal(user, meta)) return false;
-        const body = document.body;
-        if (!body) return false;
-        const inClientTrainingPortal = body.classList.contains('training-page')
-            || body.classList.contains('dashboard-page')
-            || body.classList.contains('overview-page');
-        if (!inClientTrainingPortal) return false;
-        const nextHref = typeof window.__odeGetRestrictedPortalHref === 'function'
-            ? window.__odeGetRestrictedPortalHref(user)
-            : 'trainer-dashboard.html';
-        window.location.replace(nextHref);
-        return true;
-    };
+    const enforceSignedInRolePageAccess = (user = currentUser, meta = currentAuthMeta) => (
+        // Full page-role model (client/trainer/manager/owner tables) — not
+        // just the three legacy body classes.
+        odeEnforcePageRoles(user, meta)
+    );
 
     const buildOwnerExitHref = (returnTo = '/owner-accounts.html', user = currentUser, meta = currentAuthMeta) => {
         const imp = getImpersonation(meta);
@@ -15371,6 +15567,8 @@ function initAuthUi() {
         // Clear the cached identity BEFORE any redirect, otherwise the entry
         // page still sees a "signed in" hint and bounces back here forever.
         clearAuthUserHint();
+        renderRoleNav(null);
+        odeRemoveEnableClientOffer();
         if (odeRequiresSignedInUser()) {
             // Signed-out visitors cannot stay on app pages; send them to sign in.
             window.location.replace('/?authMode=login');
@@ -15474,6 +15672,9 @@ function initAuthUi() {
         window.__odeCurrentUser = user;
         document.body.classList.remove('ode-signed-out');
         writeAuthUserHint(user);
+        // Authoritative role pass: re-render the nav from the real user and
+        // re-run the page guard (the pre-paint pass used the local hint).
+        renderRoleNav(user);
         if (enforceOnboardingCompletionGate(user)) return;
         if (enforceSignedInRolePageAccess(user, meta || null)) return;
         const label = user?.displayName || user?.username || 'Account';
@@ -15513,15 +15714,50 @@ function initAuthUi() {
         setImpersonationUi(user, meta);
         showTrainerReviewNoticeIfNeeded(user);
 
+        // View switcher — dual-role picks a surface (one at a time, remembered
+        // per session); owner previews any surface without losing access.
+        const roleFlags = odeRoleFlags(user, meta);
+        const activeView = odeGetActiveView(user);
+        let switcherHtml = '';
+        if (!imp && roleFlags.owner) {
+            switcherHtml = `
+            <div class="auth-menu-viewswitch" style="padding:8px 12px 4px;border-top:1px solid rgba(128,128,128,0.18);">
+                <div style="font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;opacity:.55;margin-bottom:5px;">View as</div>
+                <button type="button" class="auth-menu-item${activeView === 'owner' ? ' is-activeview' : ''}" data-set-view="owner" style="${activeView === 'owner' ? 'font-weight:800;' : ''}">Owner (everything)</button>
+                <button type="button" class="auth-menu-item${activeView === 'trainer' ? ' is-activeview' : ''}" data-set-view="trainer" style="${activeView === 'trainer' ? 'font-weight:800;' : ''}">Trainer</button>
+                <button type="button" class="auth-menu-item${activeView === 'client' ? ' is-activeview' : ''}" data-set-view="client" style="${activeView === 'client' ? 'font-weight:800;' : ''}">Client</button>
+            </div>`;
+        } else if (!imp && roleFlags.dual) {
+            switcherHtml = `
+            <div class="auth-menu-viewswitch" style="padding:8px 12px 4px;border-top:1px solid rgba(128,128,128,0.18);">
+                <div style="font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;opacity:.55;margin-bottom:5px;">View</div>
+                <button type="button" class="auth-menu-item${activeView === 'trainer' ? ' is-activeview' : ''}" data-set-view="trainer" style="${activeView === 'trainer' ? 'font-weight:800;' : ''}">Trainer view</button>
+                <button type="button" class="auth-menu-item${activeView === 'client' ? ' is-activeview' : ''}" data-set-view="client" style="${activeView === 'client' ? 'font-weight:800;' : ''}">My training</button>
+            </div>`;
+        }
         menu.innerHTML = `
             ${imp ? `<a class="auth-menu-item" id="auth-menu-return-owner" href="${buildOwnerExitHref('/owner-accounts.html', user, meta)}">Return to Owner Account</a>` : ''}
             <a class="auth-menu-item auth-menu-item-dashboard" id="auth-menu-dashboard" href="${getDashboardNavHref(user)}">Dashboard</a>
             <a class="auth-menu-item" id="auth-menu-account" href="account.html">Account</a>
+            ${switcherHtml}
             <button type="button" class="auth-menu-item" id="auth-menu-logout">Sign out</button>
         `;
         menu.querySelectorAll('a.auth-menu-item').forEach((link) => {
             link.addEventListener('click', () => {
                 menu.classList.add('hidden');
+            });
+        });
+        menu.querySelectorAll('[data-set-view]').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                const view = String(btn.getAttribute('data-set-view') || '');
+                odeSetActiveView(view);
+                menu.classList.add('hidden');
+                renderRoleNav(user);
+                // Land on that view's home so the page matches the surface.
+                const dest = view === 'trainer' ? 'content.html'
+                    : view === 'client' ? 'overview.html#control-panel'
+                    : odeHomeFor(user);
+                window.location.href = dest;
             });
         });
         const logoutBtn = menu.querySelector('#auth-menu-logout');
@@ -22583,6 +22819,15 @@ function setupControlPanel() {
         closeBtn.textContent = '×';
         closeBtn.addEventListener('click', toggleControlPanel);
 
+        // The mobile dock is client chrome (Training / Nutrition / Dashboard /
+        // Cardio / Check In). Trainer- and manager-only accounts never get it;
+        // the rest of the control-panel wiring still runs for them.
+        const dockRole = odeRoleFlags();
+        if (dockRole.known && !dockRole.clientAccess) {
+            document.getElementById('control-mobile-fab-dock')?.remove();
+            document.getElementById('control-mobile-fab')?.remove();
+            document.getElementById('control-mobile-fab-nav')?.remove();
+        } else {
         let fab = document.getElementById('control-mobile-fab');
         if (!fab) {
             fab = document.createElement('button');
@@ -22622,6 +22867,7 @@ function setupControlPanel() {
                 observer.observe(trainingRoot, { childList: true, subtree: true, characterData: true });
                 trainingRoot.__odeControlFabObserver = observer;
             }
+        }
         }
     } else {
         // Desktop: keep pinned/open.

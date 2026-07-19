@@ -233,6 +233,9 @@
       const trainerPill = acct.isTrainer
         ? '<span class="owner-accounts-pill good">Trainer</span>'
         : '';
+      // Resolved role under the role model (odeRoleFlags semantics): what
+      // surface this account actually lands on. Client is the default state.
+      const rolePill = `<span class="owner-accounts-pill" style="border-color:rgba(217,161,92,.55);color:#a1751f;font-weight:800;">Role: ${escapeHtml(resolveAccountRole(acct))}</span>`;
       const assignedTrainerPill = acct.hasTrainerAssignment
         ? '<span class="owner-accounts-pill">Has trainer</span>'
         : '';
@@ -257,7 +260,7 @@
         <article class="owner-account-item" data-account-id="${escapeHtml(acct.id)}" role="button" tabindex="0">
           <div class="owner-account-row1">
             <div class="owner-account-name">${escapeHtml(acct.displayName || 'Account')}</div>
-            <div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;">${newPill}${trainerPill}${managerPill}${assignedTrainerPill}${onboardingPill}${planPill}${msgPill}</div>
+            <div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;">${rolePill}${newPill}${trainerPill}${managerPill}${assignedTrainerPill}${onboardingPill}${planPill}${msgPill}</div>
           </div>
           <div class="owner-account-meta">
             <span>${escapeHtml(username)}</span>
@@ -268,13 +271,93 @@
           <div class="owner-accounts-actions">
             ${viewOverviewButton}
             ${primaryActionButton}
+            <button class="btn btn-ghost" type="button" data-action="roles" data-account-id="${escapeHtml(acct.id)}">Roles</button>
             <button class="btn btn-ghost" type="button" data-action="password" data-account-id="${escapeHtml(acct.id)}">Change Password</button>
             <button class="btn btn-ghost" type="button" data-action="peer" data-account-id="${escapeHtml(acct.id)}">Peer</button>
             <button class="btn btn-ghost" type="button" data-action="delete" data-account-id="${escapeHtml(acct.id)}">Delete</button>
           </div>
+          <div class="owner-account-roles-editor" data-roles-editor="${escapeHtml(acct.id)}" hidden></div>
         </article>
       `;
     }).join('');
+  }
+
+  // Mirror of the client role model (odeRoleFlags in js/main.js): owner is a
+  // floor; a trainer with the explicit client flag is dual; flagless = client.
+  function resolveAccountRole(acct) {
+    const notes = String(acct?.adminNotes || '');
+    const has = (flag) => notes.split(/\s+/).some((p) => p.trim().toLowerCase() === flag);
+    if (acct?.isOwner || has('owner')) return 'owner';
+    const trainer = has('trainer');
+    const client = has('client');
+    if (trainer && client) return 'dual';
+    if (trainer) return 'trainer';
+    if (has('manager')) return 'manager';
+    return 'client';
+  }
+
+  // Inline role editor: raw flags + toggles, quick-fixes, confirm step.
+  function toggleRolesEditor(accountId) {
+    const acct = findAccount(accountId);
+    const host = document.querySelector(`[data-roles-editor="${CSS.escape(String(accountId))}"]`);
+    if (!acct || !host) return;
+    if (!host.hidden) { host.hidden = true; host.innerHTML = ''; return; }
+    const notes = String(acct.adminNotes || '');
+    const has = (flag) => notes.split(/\s+/).some((p) => p.trim().toLowerCase() === flag);
+    host.innerHTML = `
+      <div style="margin-top:10px;padding:12px;border:1px solid rgba(217,161,92,.4);border-radius:10px;display:grid;gap:10px;">
+        <div style="font-size:12px;">
+          <b>Resolved role:</b> ${escapeHtml(resolveAccountRole(acct))}
+          &nbsp;&middot;&nbsp; <b>raw flags:</b> <code>${escapeHtml(notes || '(none)')}</code>
+        </div>
+        <div style="display:flex;gap:14px;flex-wrap:wrap;font-size:13px;">
+          <label><input type="checkbox" data-role-flag="trainer" ${has('trainer') ? 'checked' : ''}> Trainer</label>
+          <label><input type="checkbox" data-role-flag="client" ${has('client') ? 'checked' : ''}> Client</label>
+          <label><input type="checkbox" data-role-flag="manager" ${has('manager') ? 'checked' : ''}> Manager</label>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button class="btn btn-ghost" type="button" data-roles-quickfix="trainer">Misrouted? This is a trainer</button>
+          <button class="btn btn-ghost" type="button" data-roles-quickfix="client">Misrouted? This is a client</button>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <button class="btn btn-primary" type="button" data-roles-save>Save roles</button>
+          <button class="btn btn-ghost" type="button" data-roles-cancel>Cancel</button>
+        </div>
+      </div>`;
+    host.hidden = false;
+
+    const readBoxes = () => ({
+      trainer: host.querySelector('[data-role-flag="trainer"]').checked,
+      client: host.querySelector('[data-role-flag="client"]').checked,
+      manager: host.querySelector('[data-role-flag="manager"]').checked
+    });
+    const save = async (flags, label) => {
+      const resolved = flags.trainer && flags.client ? 'dual' : flags.trainer ? 'trainer' : flags.manager ? 'manager' : 'client';
+      const confirmed = window.confirm(
+        `${label} @${acct.username || acct.id}\n\ntrainer=${flags.trainer}  client=${flags.client}  manager=${flags.manager}\n→ resolves as: ${resolved}\n\nApply?`
+      );
+      if (!confirmed) return;
+      const resp = await api(`/api/auth/owner/account/${encodeURIComponent(accountId)}/roles`, {
+        method: 'PATCH',
+        body: JSON.stringify({ ...flags, reason: label })
+      });
+      if (!resp.ok || !resp.json?.ok) {
+        setStatus(resp.json?.error || 'Could not update roles.', 'bad');
+        return;
+      }
+      acct.adminNotes = resp.json.account.adminNotes;
+      acct.isTrainer = resp.json.account.isTrainer;
+      acct.isManager = resp.json.account.isManager;
+      setStatus(`Roles updated for @${acct.username || acct.id} → ${resp.json.account.resolvedRole}`, 'good');
+      renderList();
+    };
+
+    host.querySelector('[data-roles-save]')?.addEventListener('click', () => save(readBoxes(), 'Manual role edit'));
+    host.querySelector('[data-roles-cancel]')?.addEventListener('click', () => { host.hidden = true; host.innerHTML = ''; });
+    host.querySelector('[data-roles-quickfix="trainer"]')?.addEventListener('click', () =>
+      save({ trainer: true, client: false, manager: false }, 'Quick-fix: this is a trainer'));
+    host.querySelector('[data-roles-quickfix="client"]')?.addEventListener('click', () =>
+      save({ trainer: false, client: true, manager: false }, 'Quick-fix: this is a client'));
   }
 
   function setWorkspaceRequestCount(text) {
@@ -534,6 +617,10 @@
     }
     if (action === 'password') {
       await changePassword(accountId);
+      return;
+    }
+    if (action === 'roles') {
+      toggleRolesEditor(accountId);
       return;
     }
     if (action === 'delete') {

@@ -1,37 +1,38 @@
 {
-    "name": "jasons-web",
-    "version": "1.0.0",
-    "private": true,
-    "description": "Static landing page with optional Node proxy server",
-    "scripts": {
-        "dev": "node scripts/dev.js",
-        "start": "node server.js",
-        "start:local": "node --env-file .env server.js",
-        "klaviyo:flows": "node --env-file .env scripts/klaviyo-setup-flows.js",
-        "serve": "npx http-server .",
-        "scrape:prices": "node js/scrape-prices.js",
-        "plan:groceries": "node js/planner.js",
-        "scrape:api": "node index.js",
-        "scrape:scraperapi": "node js/scraperapi-fetch.js",
-        "studies:refresh": "node scripts/refresh-studies.js"
-    },
-    "keywords": [],
-    "author": "",
-    "license": "UNLICENSED",
-    "dependencies": {
-        "@neondatabase/serverless": "^1.1.0",
-        "@xenova/transformers": "^2.17.2",
-        "bcryptjs": "^3.0.2",
-        "node-fetch": "^3.3.2",
-        "pg": "^8.18.0",
-        "puppeteer": "^24.36.1",
-        "puppeteer-extra": "^3.3.6",
-        "puppeteer-extra-plugin-stealth": "^2.11.2",
-        "scraperapi-sdk": "^2.0.1",
-        "undici": "^6.19.8",
-        "ws": "^8.21.0"
-    },
-    "devDependencies": {
-        "jsqr": "^1.4.0"
-    }
+  "name": "jasons-web",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Static landing page with optional Node proxy server",
+  "scripts": {
+    "dev": "node scripts/dev.js",
+    "start": "node server.js",
+    "start:local": "node --env-file .env server.js",
+    "klaviyo:flows": "node --env-file .env scripts/klaviyo-setup-flows.js",
+    "serve": "npx http-server .",
+    "scrape:prices": "node js/scrape-prices.js",
+    "plan:groceries": "node js/planner.js",
+    "scrape:api": "node index.js",
+    "scrape:scraperapi": "node js/scraperapi-fetch.js",
+    "studies:refresh": "node scripts/refresh-studies.js",
+    "test": "node tests/run-all.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "UNLICENSED",
+  "dependencies": {
+    "@neondatabase/serverless": "^1.1.0",
+    "@xenova/transformers": "^2.17.2",
+    "bcryptjs": "^3.0.2",
+    "node-fetch": "^3.3.2",
+    "pg": "^8.18.0",
+    "puppeteer": "^24.36.1",
+    "puppeteer-extra": "^3.3.6",
+    "puppeteer-extra-plugin-stealth": "^2.11.2",
+    "scraperapi-sdk": "^2.0.1",
+    "undici": "^6.19.8",
+    "ws": "^8.21.0"
+  },
+  "devDependencies": {
+    "jsqr": "^1.4.0"
+  }
 }
