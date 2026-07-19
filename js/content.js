@@ -32,6 +32,7 @@
       appWeekday: 5, overrides: {}, checkins: {}, storiesDone: {},
       editLog: [], postStats: {}, personalTakes: {}, reminderTime: '18:00', lastPack: 0, levelIdx: 0,
       redoing: false, answered_meta: {},
+      hookDay: 3, hookChoices: {}, trainerHooks: [],
       // v10 0.2/0.3 — THE commit boundary. The questionnaire (first run AND
       // redo) only ever writes into `draft`; the live `answered` program is
       // untouched until finish commits the draft. Abandon = discard the draft,
@@ -294,12 +295,23 @@
     if (type === 'app') { base.hook = fill(pick(pt.hook_variants, idx)); return base; }
     if (type === 'reframe') { base.hook = fill(pick(pt.variants, idx)); return base; }
 
+    // v11 2.1/2.6 — a chosen trainer hook (Hook Day) overrides; and once a
+    // trainer has 3+ active hooks for this type, theirs cycle on normal days
+    // too (their material first, ours filling gaps).
+    var choice = (state.hookChoices || {})[ymd(d)];
     // shared-pool types: mistake / myth / objection
     var a = angleFor(type, idx);
     if (type === 'mistake') { var mt = mistakesList(); base.hook = hookLine(idx, mt.length ? mt[idx % mt.length] : (a && a.item.topic)); }
     else if (type === 'myth') { base.hook = a ? ('Most people believe: “' + a.item.topic + '” — here’s why that’s wrong.') : hookLine(idx); }
     else { base.hook = a ? ('“' + a.item.topic + '”') : hookLine(idx); }
     if (a) { base.angle = { kind: a.needsTake ? 'prompt' : 'personal', topicKey: a.item.key, topic: a.item.topic, why: a.item.why, ref: a.item.ref, prompt: a.item.prompt, take: a.take }; base.needsTake = a.needsTake; }
+    base.hookSource = 'house';
+    if (choice && choice.text) { base.hook = choice.text; base.hookSource = 'trainer'; base.trainerHookId = choice.trainerHookId || null; }
+    else {
+      var mine = (state.trainerHooks || []).filter(function (h) { return h.status !== 'retired' && (!h.post_type || h.post_type === type); });
+      if (mine.length >= 3 && (idx % 2 === 1)) { var th = mine[Math.floor(idx / 2) % mine.length]; base.hook = th.hook_text || th.text; base.hookSource = 'trainer'; base.trainerHookId = th.id || null; }
+    }
+    base.isHookDay = isHookDay(d, type);
     return base;
   }
   // Safe per-slot fallbacks — variables at the end of short lines (or none), so
@@ -311,6 +323,27 @@
     4: function () { return fill('Right now: doing the exact thing I tell my people to do.'); },
     5: function () { return 'Link’s in my bio. Drop your name and I’ll build you a plan.'; }
   };
+  // v11 2.1 — Hook Day: once a week (default Wed) on the mistake post, 225+.
+  function isHookDay(d, type) { return type === 'mistake' && d.getDay() === (state.hookDay != null ? state.hookDay : 3) && (state.levelIdx || 0) >= 1; }
+  function validTrainerHook(text) {
+    var t = String(text || '').trim();
+    if (t.length < 8) return 'Give it a full line.';
+    if (/^you|you('re|r)?/i.test(t.split(/s+/).slice(0, 3).join(' '))) return 'Name a group, not “you” — “men over 35…”, not “you…”';
+    var aud = (qa().audience_short || qa().audience || '').toLowerCase();
+    if (aud && t.toLowerCase().indexOf(aud.split(' ').slice(0, 2).join(' ')) === -1) return 'Say the group by name — that’s what makes strangers stop.';
+    if (!grammarGuard(t)) return 'Read that out loud — something’s off. Try again.';
+    return '';
+  }
+  function logPost(d, sc, posted, stats) {
+    try {
+      fetch('/api/content/posts', { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({
+        scheduledDate: ymd(d), postType: sc.type, hookText: sc.hook || '', hookSource: sc.hookSource || 'house',
+        trainerHookId: sc.trainerHookId || null, status: posted ? 'posted' : 'scheduled',
+        views: stats && stats.views, dms: stats && stats.dms, clicks: stats && stats.clicks,
+        script: { beats: sc.beats || [], cta: sc.cta || '' }
+      }) }).catch(function () {});
+    } catch (e) {}
+  }
   function storiesFor(d) {
     var idx = daysBetween(ymd(programStart()), ymd(d)); if (idx < 0) idx = 0;
     var slots = (LIB.stories_daily && LIB.stories_daily.slots) || [];
@@ -891,6 +924,15 @@
       root.appendChild(nr);
     }
     if (state.path === 'quick') renderUpgrade();
+    // v11 2.3 — Your hooks vs ours. Only renders once a trainer-hook post is
+    // logged; no verdict line below 5 posts per side (2.5 — no winners on noise).
+    if (!renderDashboard._hooksFetched) {
+      renderDashboard._hooksFetched = true;
+      try {
+        fetch('/api/content/hooks', { credentials: 'include' }).then(function (r) { return r.ok ? r.json() : null; }).then(function (j) { if (j && j.hooks) { state.trainerHooks = j.hooks; persist(); } }).catch(function () {});
+        fetch('/api/content/hook-stats', { credentials: 'include' }).then(function (r) { return r.ok ? r.json() : null; }).then(function (j) { if (j && j.stats) { renderDashboard._stats = j.stats; renderHookCompare(); } }).catch(function () {});
+      } catch (e) {}
+    } else renderHookCompare();
     maybeWeeklyRecap();
     renderTodayCard();
     renderStrip();
@@ -900,6 +942,27 @@
     renderReminderRow();
   }
 
+
+  function renderHookCompare() {
+    var stats = renderDashboard._stats || []; if (!stats.length) return;
+    var mine = stats.find(function (x) { return x.hook_source === 'trainer'; });
+    var house = stats.find(function (x) { return x.hook_source === 'house'; });
+    if (!mine || !mine.posts) return; // only once they've logged a trainer-hook post
+    var host = document.getElementById('cp-hook-compare');
+    if (!host) { host = el('div', 'cp-card'); host.id = 'cp-hook-compare'; var anchor = root.querySelector('.cp-today'); if (anchor) root.insertBefore(host, anchor); else root.appendChild(host); }
+    host.innerHTML = '';
+    host.appendChild(el('div', 'cp-label', 'Your hooks vs ours'));
+    function line(lbl, o) { return lbl + ': ' + (o ? o.posts : 0) + ' post' + ((o && o.posts === 1) ? '' : 's') + ' · ' + (o ? o.clicks : 0) + ' click' + ((o && o.clicks === 1) ? '' : 's'); }
+    host.appendChild(el('p', 'cp-sub', line('Your hooks', mine)));
+    host.appendChild(el('p', 'cp-sub', line('House hooks', house)));
+    var enough = mine.posts >= 5 && house && house.posts >= 5;
+    if (enough) {
+      var mineRate = mine.clicks / Math.max(1, mine.posts); var houseRate = (house.clicks || 0) / Math.max(1, house.posts);
+      host.appendChild(el('p', 'cp-note', mineRate > houseRate ? 'Yours are winning. Keep writing them.' : 'The house is ahead for now — keep testing yours.'));
+    } else {
+      host.appendChild(el('p', 'cp-note', 'Numbers only for now — verdicts start at 5 posts per side.'));
+    }
+  }
   function renderBadgeHead() {
     var lvi = levelIndex(); var lv = CFG.levels[lvi];
     var wrap = el('div', 'cp-badge-head'); wrap.setAttribute('role', 'button'); wrap.tabIndex = 0;
@@ -998,10 +1061,38 @@
       var hookText = (state.personalTakes && state.personalTakes[hookKey]) || s.hook || '';
       var written = el('div', 'cp-card'); written.style.marginTop = '10px'; written.appendChild(el('div', 'cp-label', 'The two lines you write out'));
       var hookBox = el('div'); hookBox.style.cssText = 'padding:8px 0;border-top:1px solid var(--line);';
-      hookBox.appendChild(el('div', 'cp-hooknote', 'HOOK — say this first')); var hookLineEl = el('div'); hookLineEl.style.cssText = 'font-weight:700;font-size:1.04rem;line-height:1.35;'; hookLineEl.textContent = hookText; hookBox.appendChild(hookLineEl);
+      var todayKey = ymd(d);
+      if (s.isHookDay && !(state.hookChoices || {})[todayKey]) {
+        // v11 2.1 — Your Hook Day: they write the opener. House version only
+        // shows AFTER they've typed, so they don't just reword ours.
+        hookBox.appendChild(el('div', 'cp-hooknote', 'YOUR HOOK DAY — today you write the opener. Same rules: name the group, never “you.”'));
+        var hdIn = el('textarea', 'cp-textarea'); hdIn.placeholder = 'Your hook…'; hdIn.setAttribute('aria-label', 'Your hook'); hookBox.appendChild(hdIn);
+        var hdErr = el('p', 'cp-err'); hookBox.appendChild(hdErr);
+        var houseRef = el('p', 'cp-hooknote'); houseRef.style.display = 'none'; houseRef.textContent = 'House version, for reference: “' + (s.hook || '') + '”'; hookBox.appendChild(houseRef);
+        hdIn.addEventListener('input', function () { hdErr.textContent = ''; if (hdIn.value.trim().length > 8) houseRef.style.display = 'block'; });
+        var hdRow = el('div'); hdRow.style.cssText = 'display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;';
+        var useMine = el('button', 'cp-btn cp-btn-primary sm', 'Use mine'); useMine.type = 'button';
+        useMine.onclick = function () {
+          var msg = validTrainerHook(hdIn.value); if (msg) { hdErr.textContent = msg; return; }
+          var text = hdIn.value.trim();
+          state.hookChoices[todayKey] = { source: 'trainer', text: text };
+          state.trainerHooks = state.trainerHooks || [];
+          var local = { hook_text: text, post_type: s.type, status: 'active', topic_key: (s.angle && s.angle.topicKey) || '' };
+          state.trainerHooks.push(local); persist();
+          try { fetch('/api/content/hooks', { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ hookText: text, topicKey: local.topic_key, postType: s.type }) }).then(function (r) { return r.ok ? r.json() : null; }).then(function (j) { if (j && j.id) { local.id = j.id; state.hookChoices[todayKey].trainerHookId = j.id; persist(); } }).catch(function () {}); } catch (e) {}
+          toast('That’s your opener today'); renderDashboard();
+        };
+        var useHouse = el('button', 'cp-btn cp-btn-ghost sm', 'Use the house version'); useHouse.type = 'button';
+        useHouse.onclick = function () { state.hookChoices[todayKey] = { source: 'house', text: s.hook || '' }; persist(); renderDashboard(); };
+        hdRow.appendChild(useMine); hdRow.appendChild(useHouse); hookBox.appendChild(hdRow);
+        written.appendChild(hookBox);
+        hookText = '';
+      } else {
+      hookBox.appendChild(el('div', 'cp-hooknote', 'HOOK — say this first' + (s.hookSource === 'trainer' ? ' · yours' : ''))); var hookLineEl = el('div'); hookLineEl.style.cssText = 'font-weight:700;font-size:1.04rem;line-height:1.35;'; hookLineEl.textContent = hookText; hookBox.appendChild(hookLineEl);
       written.appendChild(hookBox);
+      }
       // §7 read-aloud check
-      var ra = el('div'); ra.style.cssText = 'display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;';
+      var ra = el('div'); ra.style.cssText = 'display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;' + (hookText ? '' : 'display:none;');
       var ok = el('button', 'cp-btn cp-btn-ghost sm', 'Sounds right'); ok.type = 'button'; ok.onclick = function () { toast('Good — film it.'); };
       var fix = el('button', 'cp-btn cp-btn-ghost sm', 'Let me fix it'); fix.type = 'button';
       fix.onclick = function () {
@@ -1170,6 +1261,7 @@
     save.onclick = function () {
       if (isPost && postVal === 'yes' && !qcAllTicked()) { qcErr.textContent = 'Tick all five — a post that skips these usually underperforms.'; return; }
       state.checkins[key] = { posted: postVal === 'yes', stories: stVal || 'no', reason: needReason() ? (reasonVal || '') : '', quality: (isPost && postVal === 'yes') ? qcState.slice() : [] };
+      if (isPost) { try { var num2 = function (x) { x = String(x || '').replace(/[^0-9]/g, ''); return x ? +x : undefined; }; logPost(d, scriptFor(d), postVal === 'yes', { views: num2(vIn.value), dms: num2(dIn.value), clicks: num2(cIn.value) }); } catch (e) {} }
       if (isPost && postVal === 'yes') { var num = function (x) { x = String(x || '').replace(/[^0-9]/g, ''); return x ? +x : undefined; }; var st = { views: num(vIn.value), dms: num(dIn.value), clicks: num(cIn.value) }; if (st.views != null || st.dms != null || st.clicks != null) state.postStats[key] = st; }
       persist(); closeModal(); toast('Logged'); renderDashboard();
     };
@@ -1297,7 +1389,7 @@
       setVoice: function (v) { state.answered.voice = v; },
       scriptFor: function (d) { return scriptFor(parseYmd(d)); },
       storiesFor: function (d) { return storiesFor(parseYmd(d)); },
-      ctaText: ctaText, hookLine: hookLine, grammarGuard: grammarGuard, classifyAnswer: classifyAnswer, voiceKey: voiceKey,
+      ctaText: ctaText, hookLine: hookLine, grammarGuard: grammarGuard, classifyAnswer: classifyAnswer, voiceKey: voiceKey, isHookDay: function (d, t) { return isHookDay(parseYmd(d), t); }, validTrainerHook: validTrainerHook,
       getState: function () { return state; },
       jobFor: function (d) { return jobFor(parseYmd(d)); }, wordCount: wordCount,
       today: function () { return ymd(today()); }, addDays: function (d, n) { return ymd(addDays(parseYmd(d), n)); }
