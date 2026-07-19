@@ -332,14 +332,37 @@
           </div>`;
       }
 
+      // The Peer In frame shows, in order: the pasted external site, else the
+      // trainer's BUILT RiseForIt page (builder pages never set siteUrl — that
+      // gap made the hub claim "No website yet" for trainers with live pages).
+      let builtPagePath = null; let builtPageChecked = false;
+      async function resolveBuiltPage() {
+        if (builtPageChecked) return builtPagePath;
+        builtPageChecked = true;
+        try {
+          const resp = await fetch('/api/auth/trainer/pages', { credentials: 'include' });
+          const json = await resp.json().catch(() => null);
+          const pages = (json && json.pages) || [];
+          const home = pages.filter((p) => p && p.isHome)[0] || pages[0];
+          builtPagePath = pages.length
+            ? ((home && home.publicPath) || (handle ? `/coach/${encodeURIComponent(handle)}` : null))
+            : null;
+        } catch { builtPagePath = null; }
+        return builtPagePath;
+      }
       function renderPreview() {
         const frame = $('#tw-frame');
         const url = String(config.siteUrl || '').trim();
-        if (!url) {
-          frame.innerHTML = emptyPreviewHtml();
+        if (url) {
+          frame.innerHTML = `<iframe src="${esc(url)}" title="Website preview" loading="lazy"></iframe>`;
           return;
         }
-        frame.innerHTML = `<iframe src="${esc(url)}" title="Website preview" loading="lazy"></iframe>`;
+        frame.innerHTML = emptyPreviewHtml();
+        resolveBuiltPage().then((path) => {
+          if (!path) return; // genuinely no site → keep the empty state
+          if (String($('#tw-site-url').value || '').trim()) return; // they pasted one meanwhile
+          frame.innerHTML = `<iframe src="${esc(path)}" title="Website preview" loading="lazy"></iframe>`;
+        });
       }
 
       function renderVariants() {
