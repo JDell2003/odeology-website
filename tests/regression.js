@@ -205,6 +205,43 @@ async function mkPage(b, user, profileStore) {
     await p.close();
   }
 
+
+  // ============ TEST 6 (v11 Part 1): voices, profanity gate, pinned story ============
+  {
+    const store={data:{}}; const user={id:'vc1',username:'voicet',displayName:'Voice T',isTrainer:true,trainer:{active:true}};
+    const p=await mkPage(b,user,store);
+    await p.goto(URL,{waitUntil:'networkidle2'}); await p.evaluate(()=>localStorage.clear());
+    await p.reload({waitUntil:'networkidle2'}); await new Promise(r=>setTimeout(r,700));
+    const v=await p.evaluate(()=>{
+      const T=window.__cpTest; const today=T.today();
+      function prof(voice,profanity){ T.setProfile({answered:{audience:'men over 35',voice:voice,profanity:profanity,mistake1:'do endless cardio',days:{days:[1,3,5]}},setupDone:true,dayZeroDone:true});
+        // h_not_lazy is index 5 in the hooks array
+        return T.hookLine(5,'do endless cardio'); }
+      const cleanBlunt=prof('blunt','no');
+      const dirtyBlunt=prof('blunt','some');
+      const dirtyWarm=prof('warm','freely');
+      // pinned story line: blunt morning slot
+      T.setProfile({answered:{audience:'men over 35',voice:'blunt',core:'strength first',days:{days:[1,3,5]}},setupDone:true,dayZeroDone:true});
+      const stories=T.storiesFor(today).map(x=>x.line).join(' | ');
+      T.setProfile({answered:{audience:'men over 35',voice:'warm',core:'strength first',days:{days:[1,3,5]}},setupDone:true,dayZeroDone:true});
+      const storiesWarm=T.storiesFor(today).map(x=>x.line).join(' | ');
+      // reframe question identical across voices
+      function reframe(voice){ T.setProfile({answered:{audience:'men over 35',voice:voice,days:{days:[1,3,5]}},setupDone:true,dayZeroDone:true,overrides:{[today]:{type:'reframe',reason:'t'}}}); const sc=T.scriptFor(today); return sc.hook||''; }
+      const rb=reframe('blunt'), rt=reframe('technical');
+      const q='would you be happy?';
+      return { cleanBlunt, dirtyBlunt, dirtyWarm,
+        profWorks: dirtyBlunt.indexOf('shit')!==-1 && cleanBlunt.indexOf('shit')===-1 && dirtyWarm.indexOf('shit')===-1,
+        pinned: /Up\. Moving\. Before the day gets a vote\./.test(stories),
+        storiesDiffer: stories!==storiesWarm,
+        reframeSameQ: rb.indexOf(q)!==-1 && rt.indexOf(q)!==-1 && rb!==rt };
+    });
+    ok('v11p1 profanity only on sometimes/freely + blunt/funny', v.profWorks, JSON.stringify({clean:v.cleanBlunt.slice(0,40),dirty:v.dirtyBlunt.slice(0,40)}));
+    ok('v11p1 pinned line survives: "Up. Moving…"', v.pinned);
+    ok('v11p1 stories differ across voices', v.storiesDiffer);
+    ok('v11p1 reframe question identical, follow-through varies', v.reframeSameQ);
+    await p.close();
+  }
+
   console.log(results.join('\n'));
   const fails = results.filter(r => r.startsWith('FAIL')).length;
   console.log('\n' + (fails ? fails + ' FAILURES' : 'ALL PASS'));
