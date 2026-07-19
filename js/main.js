@@ -22408,6 +22408,7 @@ var LAUNCH_LIVE_HREFS = [
 var LAUNCH_LIVE_TRAINER_IDS = [
     'control-trainer-website-hub-link',
     'control-trainer-clients-link',
+    'control-trainer-content-link',
     'control-trainer-consult-hits-link',
     'control-trainer-payments-link',
     'control-trainer-calendar-link'
