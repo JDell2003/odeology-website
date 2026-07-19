@@ -35,10 +35,12 @@ const trainingRoutes = require('./core/trainingRoutes');
 const socialRoutes = require('./core/socialRoutes');
 const forumRoutes = require('./core/forumRoutes');
 const groceriesRoutes = require('./core/groceriesRoutes');
+const { rejectsClientOnlyApi } = require('./core/roleGuard');
 const leaderboardRoutes = require('./core/leaderboardRoutes');
 const profileRoutes = require('./core/profileRoutes');
 const healthRoutes = require('./core/healthRoutes');
 const stravaRoutes = require('./core/stravaRoutes');
+const contentRoutes = require('./core/contentRoutes');
 const studiesRoutes = require('./core/studiesRoutes');
 const scoringGather = require('./core/scoringGather');
 const scoringRoutes = require('./core/scoringRoutes');
@@ -1828,10 +1830,25 @@ const server = http.createServer(async (req, res) => {
       return;
     }
 
+    // Client-only API floor: these are strictly self-scoped client features
+    // (own grocery lists, own health data). A trainer/manager-only session is
+    // rejected here — hiding the nav is not access control. Owner and
+    // dual-role (explicit client flag) pass; unauthenticated requests fall
+    // through to each endpoint's own 401.
+    if (
+        (url.pathname.startsWith('/api/groceries/') || url.pathname.startsWith('/api/health/'))
+        && await rejectsClientOnlyApi(req)
+    ) {
+        return sendJson(res, 403, { ok: false, error: 'client_access_required' });
+    }
+
     if (await healthRoutes(req, res, url)) {
       return;
     }
 
+    if (await contentRoutes(req, res, url)) {
+        return;
+    }
     if (await stravaRoutes(req, res, url)) {
       return;
     }
