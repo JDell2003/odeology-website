@@ -222,12 +222,20 @@
   // §1 — hook composed safely. If the voiced pattern trips the guard, or it
   // splices a long/sentence answer mid-clause, fall back to a layout that puts
   // the answer at the END of a short sentence (reads fine at any length).
+  // Profanity variants serve ONLY when the trainer said sometimes/freely, and
+  // only on blunt/funny (v11 Part 1 rule 3).
+  function profanityOk() { var p = String(qa().profanity || '').toLowerCase(); return p === 'some' || p === 'sometimes' || p === 'yes' || p === 'freely'; }
   function hookLine(idx, mistakeForCycle) {
     // Answers often start with "they …" while templates now supply the
     // subject ("because they {mistake}") — strip the doubled pronoun.
     if (mistakeForCycle) mistakeForCycle = String(mistakeForCycle).replace(/^(they|them)s+(alsos+)?/i, '');
     var hs = LIB.hooks || []; if (!hs.length) return '';
-    var h = hs[idx % hs.length]; var pat = (h.voices && h.voices[voiceKey()]) || h.pattern;
+    var h = hs[idx % hs.length]; var vk = voiceKey();
+    var pat = (h.voices && h.voices[vk]) || h.pattern;
+    if (profanityOk() && (vk === 'blunt' || vk === 'funny')) {
+      var pv = (LIB.hooks_profanity || {})[h.id];
+      if (pv && pv[vk]) pat = pv[vk];
+    }
     var usesMistakeMid = /\{mistake\}/.test(pat) && String(mistakeForCycle || '').trim() && wordCount(mistakeForCycle) > 8;
     var audienceMid = /\{audience\}[^.!?]*\{|\{audience\}\s+\w+\s+\w/.test(pat) && tooLongInline('audience');
     var out = fill(pat, mistakeForCycle);
@@ -287,13 +295,18 @@
     var idx = occurrenceIndex(d, type); var pt = (LIB.post_types || {})[type] || {};
     var base = { type: type, title: pt.label || type, beats: (pt.beats || []).map(function (b) { return { t: b.t, job: fill(b.job) }; }), cta: ctaText(), coachingNote: pt.coaching_note || '', length: pt.length || '' };
 
+    var PTV = LIB.post_type_voices || {}; var vkey = voiceKey();
     if (type === 'win') {
-      if (state.answered.has_proof === 'self') { var nv = pt.no_client_variant || {}; base.title = nv.label || 'Your progress'; base.beats = (nv.beats || []).map(function (b) { return { t: b.t, job: fill(b.job) }; }); base.framing = nv.framing; base.hook = fill('What I used to believe that was wrong: {old_belief}.'); }
-      else { base.hook = fill('When {proof_name} started, they were sure {proof_belief}.'); base.angle = { kind: 'proof', text: fill('{proof_name} — {proof_result}') }; }
+      if (qa().has_proof === 'self') { var nv = pt.no_client_variant || {}; base.title = nv.label || 'Your progress'; base.beats = (nv.beats || []).map(function (b) { return { t: b.t, job: fill(b.job) }; }); base.framing = nv.framing; base.hook = fill((PTV.win_self && PTV.win_self[vkey]) || 'What I used to believe that was wrong: {old_belief}.'); }
+      else { base.hook = fill((PTV.win && PTV.win[vkey]) || 'When {proof_name} started, they were sure {proof_belief}.'); base.angle = { kind: 'proof', text: fill('{proof_name} — {proof_result}') }; }
       return base;
     }
-    if (type === 'app') { base.hook = fill(pick(pt.hook_variants, idx)); return base; }
-    if (type === 'reframe') { base.hook = fill(pick(pt.variants, idx)); return base; }
+    if (type === 'app') { base.hook = fill((PTV.app && PTV.app[vkey]) || pick(pt.hook_variants, idx)); return base; }
+    if (type === 'reframe') {
+      var rf = PTV.reframe || {};
+      base.hook = rf.question ? (rf.question + (rf[vkey] ? '\n' + fill(rf[vkey]) : '')) : fill(pick(pt.variants, idx));
+      return base;
+    }
 
     // v11 2.1/2.6 — a chosen trainer hook (Hook Day) overrides; and once a
     // trainer has 3+ active hooks for this type, theirs cycle on normal days
@@ -347,8 +360,10 @@
   function storiesFor(d) {
     var idx = daysBetween(ymd(programStart()), ymd(d)); if (idx < 0) idx = 0;
     var slots = (LIB.stories_daily && LIB.stories_daily.slots) || [];
+    var svk = voiceKey();
     return slots.map(function (s) {
-      var tpl = pick(s.examples, idx); var line = fill(tpl);
+      var poolArr = (s.examples_by_voice && s.examples_by_voice[svk]) || s.examples || [];
+      var tpl = pick(poolArr, idx); var line = fill(tpl);
       var risky = (/\{audience\}/.test(tpl) && tooLongInline('audience')) || (/\{outcome\}/.test(tpl) && tooLongInline('outcome')) || (/\{core\}/.test(tpl) && tooLongInline('core'));
       if (!grammarGuard(line) || risky) line = (STORY_SAFE[s.n] ? STORY_SAFE[s.n]() : line);
       return { slot: s.type, line: line };
