@@ -21,7 +21,7 @@ core:     lift heavy and eat enough
 - 0:55–1:00 — CTA
 CTA: I’m Coach QA. I help men over 35 get strong again. Link’s in my bio — drop your name and I’ll build you a plan.
 
-**mistake** — hook: “Most men over 35 are stuck because do endless cardio.”
+**mistake** — hook: “Most men over 35 are stuck. One reason: they do endless cardio.”
 _angle: Doing endless cardio thinking it burns fat, when all it leaves you with is loose skin and no shape._
 - 0:00–0:05 — Hook — name the group and the mistake
 - 0:05–0:20 — What it’s costing them. Be specific — time, money, results.
@@ -37,7 +37,7 @@ CTA: I’m Coach QA. I help men over 35 get strong again. Link’s in my bio —
 - 0:45–1:00 — CTA to the link
 CTA: I’m Coach QA. I help men over 35 get strong again. Link’s in my bio — drop your name and I’ll build you a plan.
 
-**mistake** — hook: “Three mistakes. Every men over 35 I meet makes them. Here they are.”
+**mistake** — hook: “Three mistakes. Nearly all the men over 35 I meet make them. Here they are.”
 _angle: Four hours on the stairmaster because it feels like work. Effort isn’t the same as stimulus._
 - 0:00–0:05 — Hook — name the group and the mistake
 - 0:05–0:20 — What it’s costing them. Be specific — time, money, results.
@@ -73,7 +73,7 @@ CTA: I’m Coach QA. I help men over 35 get strong again. Link’s in my bio —
 - 0:55–1:00 — CTA
 CTA: I’m Coach QA, and I help men over 35 get strong again. If that’s you, drop your name at the link in my bio and I’ll put a plan together for you.
 
-**mistake** — hook: “If you’re one of the men over 35 who’s been stuck, it’s usually this: do endless cardio.”
+**mistake** — hook: “If you’re one of the men over 35 who’s been stuck, it’s usually this: they do endless cardio.”
 _angle: Doing endless cardio thinking it burns fat, when all it leaves you with is loose skin and no shape._
 - 0:00–0:05 — Hook — name the group and the mistake
 - 0:05–0:20 — What it’s costing them. Be specific — time, money, results.
@@ -125,7 +125,7 @@ CTA: I’m Coach QA, and I help men over 35 get strong again. If that’s you, d
 - 0:55–1:00 — CTA
 CTA: I’m Coach QA. I help men over 35 get strong again, mostly by telling them things they don’t want to hear. Link’s in my bio.
 
-**mistake** — hook: “men over 35 have a favorite way to waste a year, and it’s do endless cardio.”
+**mistake** — hook: “men over 35 have a favorite way to waste a year. They do endless cardio.”
 _angle: Doing endless cardio thinking it burns fat, when all it leaves you with is loose skin and no shape._
 - 0:00–0:05 — Hook — name the group and the mistake
 - 0:05–0:20 — What it’s costing them. Be specific — time, money, results.
@@ -177,7 +177,7 @@ CTA: I’m Coach QA. I help men over 35 get strong again, mostly by telling them
 - 0:55–1:00 — CTA
 CTA: I’m Coach QA. I help men over 35 get strong again. If you want the plan built around your situation, the link’s in my bio.
 
-**mistake** — hook: “There’s one reason most men over 35 plateau, and it’s do endless cardio.”
+**mistake** — hook: “There’s one reason most men over 35 plateau: they do endless cardio.”
 _angle: Doing endless cardio thinking it burns fat, when all it leaves you with is loose skin and no shape._
 - 0:00–0:05 — Hook — name the group and the mistake
 - 0:05–0:20 — What it’s costing them. Be specific — time, money, results.
@@ -218,7 +218,7 @@ CTA: I’m Coach QA. I help men over 35 get strong again. If you want the plan b
 - 0:45–1:00 — CTA to the link
 CTA: I’m Coach QA. I help men over 35 get strong again. If you want the plan built around your situation, the link’s in my bio.
 
-_voice overlap blunt↔technical: 83%_
+_voice overlap blunt↔technical: 92%_
 
 
 ## Trainer: sentence-writer
@@ -255,7 +255,7 @@ CTA: I’m Coach QA. / I train men over 35. / What you get: finally get strong a
 - 0:45–1:00 — CTA to the link
 CTA: I’m Coach QA. / I train men over 35. / What you get: finally get strong again without wrecking their knees or living in the gym. / Drop your name at the link in my bio and I’ll build you a plan.
 
-**mistake** — hook: “Three mistakes. Every men over 35 I meet makes them. Here they are.”
+**mistake** — hook: “Three mistakes. Nearly all the men over 35 I meet make them. Here they are.”
 _angle: Four hours on the stairmaster because it feels like work. Effort isn’t the same as stimulus._
 - 0:00–0:05 — Hook — name the group and the mistake
 - 0:05–0:20 — What it’s costing them. Be specific — time, money, results.
@@ -473,7 +473,7 @@ CTA: I’m Coach QA. / I train busy moms over 40. / What you get: lose the weigh
 - 0:45–1:00 — CTA to the link
 CTA: I’m Coach QA. / I train busy moms over 40. / What you get: lose the weight, keep their energy, and not hate the process. / Drop your name at the link in my bio and I’ll build you a plan.
 
-**mistake** — hook: “Three mistakes. Every busy moms over 40 I meet makes them. Here they are.”
+**mistake** — hook: “Three mistakes. Nearly all the busy moms over 40 I meet make them. Here they are.”
 _angle: Four hours on the stairmaster because it feels like work. Effort isn’t the same as stimulus._
 - 0:00–0:05 — Hook — name the group and the mistake
 - 0:05–0:20 — What it’s costing them. Be specific — time, money, results.

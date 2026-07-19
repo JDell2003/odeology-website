@@ -212,7 +212,7 @@
   // §5 — grammar guard. Returns false if a composed sentence is broken.
   function grammarGuard(sentence) {
     var s = ' ' + String(sentence || '').toLowerCase().replace(/[.,!?;:—-]/g, ' ').replace(/\s+/g, ' ') + ' ';
-    if (/ (to they|to i|to you|ready to they|is are|are is|to to|the the|a a|an an|of of|for for) /.test(s)) return false;
+    if (/ (to they|to i|to you|ready to they|is are|are is|to to|the the|a a|an an|of of|for for|they they|them them|because (do|skip|chase|wait|train|eat|copy|program|start|compare|cut|go|quit|weigh|fear|starve|only|never)) /.test(s)) return false;
     // a verb immediately following "to" that's actually a pronoun+verb splice
     if (/ (ready|going|about|able) to (they|you|i|he|she|we) /.test(s)) return false;
     return true;
@@ -222,6 +222,9 @@
   // splices a long/sentence answer mid-clause, fall back to a layout that puts
   // the answer at the END of a short sentence (reads fine at any length).
   function hookLine(idx, mistakeForCycle) {
+    // Answers often start with "they …" while templates now supply the
+    // subject ("because they {mistake}") — strip the doubled pronoun.
+    if (mistakeForCycle) mistakeForCycle = String(mistakeForCycle).replace(/^(they|them)s+(alsos+)?/i, '');
     var hs = LIB.hooks || []; if (!hs.length) return '';
     var h = hs[idx % hs.length]; var pat = (h.voices && h.voices[voiceKey()]) || h.pattern;
     var usesMistakeMid = /\{mistake\}/.test(pat) && String(mistakeForCycle || '').trim() && wordCount(mistakeForCycle) > 8;

@@ -8,30 +8,30 @@
     version: '1.0',
 
     hooks: [
-      { id: 'h_group_stuck', pattern: 'Most {audience} are stuck because {mistake}.', voices: {
-        blunt: 'Most {audience} are stuck because {mistake}.',
-        warm: 'If you’re one of the {audience} who’s been stuck, it’s usually this: {mistake}.',
-        funny: '{audience} have a favorite way to waste a year, and it’s {mistake}.',
-        technical: 'There’s one reason most {audience} plateau, and it’s {mistake}.'
+      { id: 'h_group_stuck', pattern: 'Most {audience} are stuck because they {mistake}.', voices: {
+        blunt: 'Most {audience} are stuck. One reason: they {mistake}.',
+        warm: 'If you’re one of the {audience} who’s been stuck, it’s usually this: they {mistake}.',
+        funny: '{audience} have a favorite way to waste a year. They {mistake}.',
+        technical: 'There’s one reason most {audience} plateau: they {mistake}.'
       } },
-      { id: 'h_three_mistakes', pattern: 'Three mistakes I see {audience} make every week.', voices: { blunt: 'Three mistakes. Every {audience} I meet makes them. Here they are.', warm: 'There are three little things I see {audience} trip over — and every one is fixable.', funny: 'I could set my watch by the three mistakes {audience} make. Let’s ruin that.', technical: 'Three recurring errors explain most stalled progress in {audience}. In order:' } },
-      { id: 'h_nobody_tells', pattern: 'Nobody tells {audience} this, but {mistake} is why nothing’s changing.' },
+      { id: 'h_three_mistakes', pattern: 'Three mistakes I see {audience} make every week.', voices: { blunt: 'Three mistakes. Nearly all the {audience} I meet make them. Here they are.', warm: 'There are three little things I see {audience} trip over — and every one is fixable.', funny: 'I could set my watch by the three mistakes {audience} make. Let’s ruin that.', technical: 'Three recurring errors explain most stalled progress in {audience}. In order:' } },
+      { id: 'h_nobody_tells', pattern: 'Nobody tells {audience} this, but the reason nothing’s changing is simple: they {mistake}.' },
       { id: 'h_backwards', pattern: '{audience} are doing this completely backwards.' },
       { id: 'h_year', pattern: 'If you’ve been the same weight for a year, this is usually why.' },
       { id: 'h_not_lazy', pattern: '{audience} aren’t lazy. Their plan is wrong.', voices: { blunt: '{audience} aren’t lazy. The plan’s wrong. Big difference.', warm: 'You’re not lazy. I promise. The plan you were handed just wasn’t built for you.', funny: 'Nobody’s ever accused {audience} of being lazy at work. Funny how the gym gets blamed on willpower.', technical: 'Effort isn’t the limiting variable for most {audience}. Program design is. The distinction matters.' } },
       { id: 'h_everyone_says', pattern: 'Everyone tells {audience} the usual advice. That’s wrong, and here’s what it’s costing them.' },
       { id: 'h_skip', pattern: 'If {audience} want to {outcome}, this is the part everyone skips.' },
       { id: 'h_week_three', pattern: 'The reason most {audience} quit at week three.', voices: { blunt: 'Most {audience} quit at week three. One reason. Here it is.', warm: 'If you’ve quit around week three before, it wasn’t you — it was this.', funny: 'Week three is where {audience} go to break up with the gym. Predictably.', technical: 'There’s a specific point — around week three — where adherence collapses in {audience}. The cause is knowable.' } },
-      { id: 'h_dont_need', pattern: '{audience} don’t need another program. They need to stop {mistake}.' },
+      { id: 'h_dont_need', pattern: '{audience} don’t need another program. They need to quit one habit: they {mistake}.' },
       { id: 'h_paid_for', pattern: '{audience} are paying for results they’ll never see. Here’s where the money’s going.' },
-      { id: 'h_hardest', pattern: 'The hardest thing to tell {audience} is that {mistake} isn’t discipline. It’s the wrong target.' },
+      { id: 'h_hardest', pattern: 'The hardest thing to tell {audience}: the habit they’re proudest of is the wrong target. They {mistake}.' },
       { id: 'h_watched', pattern: 'I’ve watched hundreds of {audience} do this exact thing and get nowhere.' },
-      { id: 'h_scale', pattern: '{audience} keep chasing a number on the scale. That was never the goal.', voices: { blunt: '{audience} chase the scale. Wrong number. Never was the goal.', warm: 'If you’re a {audience} watching the scale like a hawk — I get it. But that number was never really the goal.', funny: '{audience} and their bathroom scale: the most toxic relationship in fitness.', technical: 'Bodyweight is a poor proxy for the outcome {audience} actually want. Here’s the better metric.' } },
-      { id: 'h_looks_like', pattern: 'This is what {mistake} actually looks like six months in.' },
+      { id: 'h_scale', pattern: '{audience} keep chasing a number on the scale. That was never the goal.', voices: { blunt: '{audience} chase the scale. Wrong number. Never was the goal.', warm: 'If you’re one of the {audience} watching the scale like a hawk — I get it. But that number was never really the goal.', funny: '{audience} and their bathroom scale: the most toxic relationship in fitness.', technical: 'Bodyweight is a poor proxy for the outcome {audience} actually want. Here’s the better metric.' } },
+      { id: 'h_looks_like', pattern: 'This is what it looks like six months in: they {mistake}.' },
       { id: 'h_two_types', pattern: 'There are two kinds of {audience}. One gets results. Here’s the difference.' },
       { id: 'h_used_to', pattern: 'I used to be one of the {audience} who {old_belief}. Here’s what changed.' },
       { id: 'h_honest', pattern: 'Here’s something most trainers won’t say to {audience}: {contrarian}.' },
-      { id: 'h_cost', pattern: '{mistake} isn’t a small thing. Here’s what it’s actually costing {audience}.' },
+      { id: 'h_cost', pattern: 'It’s not a small thing that they {mistake}. Here’s what it’s actually costing {audience}.' },
       { id: 'h_worked_for', pattern: 'The thing that worked for your friend probably won’t work for you. Here’s why.' },
       { id: 'h_afford', pattern: '{audience} say they can’t afford a trainer. Let’s do the math out loud.' },
       { id: 'h_myself', pattern: 'Every one of the {audience} who says they’ll do it themselves has already been doing it themselves. For years.' }
