@@ -479,15 +479,15 @@
       "beats": [
         {
           "t": "0:00–0:05",
-          "job": "Hook — lead with what they believed, not what they achieved. “When {proof_name} started, they were sure {proof_belief}.”"
+          "job": "Hook — lead with what {p_they} believed, not what {p_they} achieved. “When {proof_name} started, {p_they} {p_were} sure {proof_belief}.”"
         },
         {
           "t": "0:05–0:25",
-          "job": "Where they were. What they’d tried and why it hadn’t worked."
+          "job": "Where {p_they} {p_were}. What {p_they}’d tried and why it hadn’t worked."
         },
         {
           "t": "0:25–0:45",
-          "job": "What changed in their head. This is the whole post."
+          "job": "What changed in {p_their} head. This is the whole post."
         },
         {
           "t": "0:45–0:55",
@@ -758,7 +758,7 @@
         },
         {
           "t": "0:08–0:30",
-          "job": "Why you do this — {why}, {turning_point}. One line, not a memoir."
+          "job": "Why you do this — {story_line}. One line, not a memoir."
         },
         {
           "t": "0:30–0:50",
@@ -896,9 +896,9 @@
   },
   "post_type_voices": {
     "win": {
-      "blunt": "When {proof_name} started, they were sure of one thing: {proof_belief}. They were wrong.",
-      "warm": "I want to tell you about {proof_name} — because when they walked in, they believed exactly what you might believe right now: {proof_belief}.",
-      "funny": "{proof_name} showed up certain that {proof_belief}. I love it when they're certain. Makes the next part better.",
+      "blunt": "When {proof_name} started, {p_they} {p_were} sure of one thing: {proof_belief}. Wrong.",
+      "warm": "I want to tell you about {proof_name} — because when {p_they} walked in, {p_they} believed exactly what you might believe right now: {proof_belief}.",
+      "funny": "{proof_name} showed up certain that {proof_belief}. I love the certain ones. Makes the next part better.",
       "technical": "{proof_name}'s starting assumption was {proof_belief}. Reasonable. Also wrong — and the interesting part is why."
     },
     "win_self": {
