@@ -242,6 +242,53 @@ async function mkPage(b, user, profileStore) {
     await p.close();
   }
 
+
+  // ============ TEST 7 (v12): field-state invariants, name unification, pronouns ============
+  {
+    const uid='v12t'; const prog=programFor(uid,'men over 30');
+    prog.answered.turning_point='blew out my back at 38 and had to learn to move again';
+    prog.answered.proof_pronoun='he'; prog.answered.proofName='Dave';
+    const store={data:{content_program_v2:prog}};
+    const user={id:uid,username:'handle12',displayName:'handle12',isTrainer:true,trainer:{active:true,fullName:'Marcus Delgado'}};
+    const p=await mkPage(b,user,store);
+    await p.goto(URL,{waitUntil:'networkidle2'}); await p.evaluate(()=>localStorage.clear());
+    await p.reload({waitUntil:'networkidle2'}); await new Promise(r=>setTimeout(r,1200));
+    // 3 — signup handle in ZERO generated strings across a week + pins
+    const gen=await p.evaluate(()=>{
+      const T=window.__cpTest; const start=T.today(); const chunks=[];
+      for(let i=0;i<7;i++){ const s=T.scriptFor(T.addDays(start,i)); chunks.push(s.hook||'',s.cta||''); (s.beats||[]).forEach(b2=>chunks.push(b2.job)); }
+      T.storiesFor(start).forEach(x=>chunks.push(x.line));
+      chunks.push(T.ctaText());
+      return chunks.join(' || ');
+    });
+    ok('v12 3 signup handle in zero generated strings', gen.indexOf('handle12')===-1);
+    ok('v12 3 full name present in CTA', /Marcus Delgado/.test(gen));
+    // 4 — pronoun: he-client → win hook says he/was, not they/were
+    const win=await p.evaluate(()=>{
+      const T=window.__cpTest; const start=T.today(); const st=window.__cpTest.getState();
+      st.overrides={}; st.overrides[start]={type:'win',reason:'t'};
+      return T.scriptFor(start).hook||'';
+    });
+    ok('v12 4 named he-client uses he/was in win hook', /\bhe was\b|\bhe walked\b|\bhe believed\b/i.test(win) && !/\bthey were\b/i.test(win), win.slice(0,70));
+    // 1/2 — redo field invariants with REAL keyboard
+    await p.evaluate(()=>{const btn=[...document.querySelectorAll('.cp-btn')].find(x=>/Redo my program/.test(x.textContent)); btn&&btn.click();});
+    await new Promise(r=>setTimeout(r,300));
+    await p.evaluate(()=>{const btn=[...document.querySelectorAll('.cp-pathopt .cp-btn')].find(x=>/quick/i.test(x.textContent)); btn&&btn.click();});
+    await new Promise(r=>setTimeout(r,300));
+    await p.evaluate(()=>{const btn=[...document.querySelectorAll('.cp-sticky .cp-btn')].find(x=>/Continue/.test(x.textContent)); btn&&btn.click();});
+    await new Promise(r=>setTimeout(r,300));
+    const disp=await p.evaluate(()=>{const el2=document.querySelector('.cp-qinput input'); return el2?el2.value:null;});
+    ok('v12 1 redo field DISPLAYS the stored answer', disp==='men over 30', JSON.stringify(disp));
+    await p.focus('.cp-qinput input');
+    await p.keyboard.down('Control'); await p.keyboard.press('a'); await p.keyboard.up('Control');
+    await p.keyboard.type('women over 50',{delay:15});
+    await new Promise(r=>setTimeout(r,750));
+    const typed=await p.evaluate(()=>{const el2=document.querySelector('.cp-qinput input'); const st=window.__cpTest.getState(); return {field:el2.value,draft:st.draft&&st.draft.answers.audience};});
+    ok('v12 1 typed replacement stores EXACTLY what was typed', typed.field==='women over 50'&&typed.draft==='women over 50', JSON.stringify(typed));
+    ok('v12 2 no prefix characters that were not typed', !/^[a-z]women/.test(typed.field));
+    await p.close();
+  }
+
   console.log(results.join('\n'));
   const fails = results.filter(r => r.startsWith('FAIL')).length;
   console.log('\n' + (fails ? fails + ' FAILURES' : 'ALL PASS'));

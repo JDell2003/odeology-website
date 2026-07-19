@@ -120,7 +120,7 @@ const VOICES = ['blunt', 'warm', 'funny', 'technical'];
 
   console.log('=== Content QA ===');
   console.log('sample-posts.md written:', fs.statSync(path.join(__dirname, 'sample-posts.md')).size, 'bytes');
-  console.log('pageerrors:', consoleErrs.length);
+  console.log('pageerrors:', consoleErrs.length); consoleErrs.slice(0,3).forEach(e=>console.log('  pageerr:', e.slice(0,140)));
   console.log('failures:', failures.length);
   failures.slice(0, 20).forEach(f => console.log('  ✗', f));
   process.exit(failures.length ? 1 : 0);

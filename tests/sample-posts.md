@@ -13,7 +13,7 @@ core:     lift heavy and eat enough
 
 ### Voice: blunt
 
-**win** — hook: “When J. started, they were sure of one thing: they had no time. They were wrong.”
+**win** — hook: “When J. started, they were sure of one thing: they had no time. Wrong.”
 - 0:00–0:05 — Hook — lead with what they believed, not what they achieved. “When J. started, they were sure they had no time.”
 - 0:05–0:25 — Where they were. What they’d tried and why it hadn’t worked.
 - 0:25–0:45 — What changed in their head. This is the whole post.
@@ -117,7 +117,7 @@ CTA: I’m Coach QA, and I help men over 35 get strong again. If that’s you, d
 
 ### Voice: funny
 
-**win** — hook: “J. showed up certain that they had no time. I love it when they're certain. Makes the next part better.”
+**win** — hook: “J. showed up certain that they had no time. I love the certain ones. Makes the next part better.”
 - 0:00–0:05 — Hook — lead with what they believed, not what they achieved. “When J. started, they were sure they had no time.”
 - 0:05–0:25 — Where they were. What they’d tried and why it hadn’t worked.
 - 0:25–0:45 — What changed in their head. This is the whole post.
@@ -449,7 +449,7 @@ core:     consistency, not intensity, and eating enough
 
 ### Voice: blunt
 
-**win** — hook: “When M. started, they were sure of one thing: she had to give up bread forever. They were wrong.”
+**win** — hook: “When M. started, they were sure of one thing: she had to give up bread forever. Wrong.”
 - 0:00–0:05 — Hook — lead with what they believed, not what they achieved. “When M. started, they were sure she had to give up bread forever.”
 - 0:05–0:25 — Where they were. What they’d tried and why it hadn’t worked.
 - 0:25–0:45 — What changed in their head. This is the whole post.
@@ -553,7 +553,7 @@ CTA: I’m Coach QA. / I train busy moms over 40. / What you get: lose the weigh
 
 ### Voice: funny
 
-**win** — hook: “M. showed up certain that she had to give up bread forever. I love it when they're certain. Makes the next part better.”
+**win** — hook: “M. showed up certain that she had to give up bread forever. I love the certain ones. Makes the next part better.”
 - 0:00–0:05 — Hook — lead with what they believed, not what they achieved. “When M. started, they were sure she had to give up bread forever.”
 - 0:05–0:25 — Where they were. What they’d tried and why it hadn’t worked.
 - 0:25–0:45 — What changed in their head. This is the whole post.
