@@ -517,6 +517,22 @@
     </div>
   </div>
 
+  <div class="owner-accounts-modal" id="owner-info-modal" hidden>
+    <div class="owner-accounts-modal-card">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;">
+        <div>
+          <div style="font-weight:800;font-size:18px;" id="owner-info-title">Account information</div>
+          <div class="owner-accounts-muted" id="owner-info-subtitle"></div>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <button class="btn btn-ghost" type="button" id="owner-info-copy">Copy</button>
+          <button class="btn btn-ghost" type="button" id="owner-info-close">Close</button>
+        </div>
+      </div>
+      <div id="owner-info-list" class="owner-accounts-modal-list"></div>
+    </div>
+  </div>
+
   <div class="owner-accounts-modal" id="owner-add-account-modal" hidden>
     <div class="owner-accounts-modal-card">
       <div class="oaa-head">
@@ -608,7 +624,7 @@
   </div>
 
   <script src="js/main.js?v=2026-07-19-roles-1"></script>
-  <script src="js/ownerAccounts.js?v=2026-07-19-roles-editor-1"></script>
+  <script src="js/ownerAccounts.js?v=2026-07-19-info-1"></script>
 </body>
 </html>
 

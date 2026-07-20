@@ -271,6 +271,7 @@
           <div class="owner-accounts-actions">
             ${viewOverviewButton}
             ${primaryActionButton}
+            <button class="btn btn-ghost" type="button" data-action="info" data-account-id="${escapeHtml(acct.id)}">Information</button>
             <button class="btn btn-ghost" type="button" data-action="roles" data-account-id="${escapeHtml(acct.id)}">Roles</button>
             <button class="btn btn-ghost" type="button" data-action="password" data-account-id="${escapeHtml(acct.id)}">Change Password</button>
             <button class="btn btn-ghost" type="button" data-action="peer" data-account-id="${escapeHtml(acct.id)}">Peer</button>
@@ -555,6 +556,231 @@
     modal.removeAttribute('hidden');
   }
 
+  // --- Information modal: full onboarding submission, read-only -------------
+  // Aggregated server-side by /api/content/owner/onboarding-record. Renders
+  // whatever is on file (summary insights, client intake, trainer onboarding,
+  // content-program answers) in the order asked; raw keys fall through as-is.
+  let infoCopyText = '';
+
+  const INTAKE_LABELS = [
+    ['goal', 'Main goal'],
+    ['trainingWhy', 'Why they train'],
+    ['clientGoalLabel', 'Goal (their words)'],
+    ['experience', 'Training experience'],
+    ['phase', 'Current phase'],
+    ['priority', 'Top priority'],
+    ['timeline', 'Timeline'],
+    ['age', 'Age'],
+    ['activityLevel', 'Activity level'],
+    ['location', 'Where they train'],
+    ['modality', 'Training modality'],
+    ['equipment', 'Equipment'],
+    ['daysPerWeek', 'Days per week'],
+    ['preferredDays', 'Preferred days'],
+    ['sessionLength', 'Session length (min)'],
+    ['loadStyle', 'Preferred load style'],
+    ['outputStyle', 'Output style'],
+    ['trainToFailure', 'Trains to failure?'],
+    ['sleepHours', 'Sleep hours'],
+    ['stress', 'Stress level'],
+    ['injuries', 'Injuries'],
+    ['avoidMoves', 'Moves to avoid'],
+    ['focus', 'Focus areas']
+  ];
+  // internal wizard state, not answers
+  const INTAKE_SKIP = new Set(['step']);
+  const CONTENT_LABELS = {
+    audience: 'Who they help',
+    outcome: 'Result they deliver',
+    core: 'Core method',
+    voice: 'Voice',
+    profanity: 'Profanity comfort',
+    mistake1: 'Audience mistake #1',
+    mistake2: 'Audience mistake #2',
+    mistake3: 'Audience mistake #3',
+    turning_point: 'Turning point story',
+    has_proof: 'Has a client result?',
+    proofName: 'Client name',
+    proofPronouns: 'Client pronouns',
+    proofResult: 'The result',
+    proofBelief: 'What that client believed',
+    objection: 'Biggest objection heard',
+    days: 'Posting days'
+  };
+  const INSIGHT_LABELS = [
+    ['role', 'Signed up as'],
+    ['source', 'How they found us'],
+    ['expectedFeature', 'Feature they wanted most'],
+    ['results', 'Results they want']
+  ];
+
+  function infoVal(v) {
+    if (v == null || v === '') return '';
+    let out;
+    if (Array.isArray(v)) out = v.map((x) => infoVal(x)).filter(Boolean).join(', ');
+    else if (typeof v === 'object') { try { out = JSON.stringify(v); } catch { out = String(v); } }
+    else out = String(v);
+    return out.length > 1200 ? `${out.slice(0, 1200)}…` : out;
+  }
+  function fmtDateTime(v) {
+    if (!v) return '';
+    const d = new Date(v);
+    return Number.isNaN(d.getTime()) ? String(v) : d.toLocaleString();
+  }
+  function humanizeKey(k) {
+    return String(k).replace(/_/g, ' ').replace(/([a-z])([A-Z])/g, '$1 $2').replace(/^./, (c) => c.toUpperCase());
+  }
+
+  // -> [{title, rows:[[label, value]]}] in the order the questions were asked.
+  function buildInfoSections(rec) {
+    const sections = [];
+    if (rec.insights) {
+      const rows = [];
+      INSIGHT_LABELS.forEach(([k, label]) => { const v = infoVal(rec.insights[k]); if (v) rows.push([label, v]); });
+      if (rec.insights.joinedAt) rows.push(['Submitted', fmtDateTime(rec.insights.joinedAt)]);
+      if (rows.length) sections.push({ title: 'Signup onboarding', rows });
+    }
+    if (rec.trainingIntake && typeof rec.trainingIntake === 'object') {
+      const rows = [];
+      const seen = new Set();
+      INTAKE_LABELS.forEach(([k, label]) => {
+        seen.add(k);
+        const v = infoVal(rec.trainingIntake[k]);
+        if (v) rows.push([label, v]);
+      });
+      Object.keys(rec.trainingIntake).forEach((k) => {
+        if (seen.has(k) || INTAKE_SKIP.has(k)) return;
+        const raw = rec.trainingIntake[k];
+        const v = /At$/.test(k) ? fmtDateTime(raw) : infoVal(raw);
+        if (v) rows.push([/At$/.test(k) ? 'Submitted' : humanizeKey(k), v]);
+      });
+      if (rows.length) sections.push({ title: 'Client intake', rows });
+    }
+    if (rec.trainerOnboarding) {
+      const t = rec.trainerOnboarding;
+      const rows = [];
+      if (t.fullName) rows.push(['Full name', infoVal(t.fullName)]);
+      if (t.contactEmail) rows.push(['Contact email', infoVal(t.contactEmail)]);
+      // meta also carries the whole page-builder config — only surface the
+      // fields that came from onboarding itself.
+      const meta = t.meta && typeof t.meta === 'object' ? t.meta : {};
+      [
+        ['displayName', 'Display name'],
+        ['city', 'City'],
+        ['state', 'State'],
+        ['managerCode', 'Manager code'],
+        ['workspaceId', 'Workspace'],
+        ['locationId', 'Location'],
+        ['specialtyClients', 'Specialties'],
+        ['coachingFormat', 'Coaching format'],
+        ['yearsCoaching', 'Years coaching'],
+        ['publicHandle', 'Public handle']
+      ].forEach(([k, label]) => {
+        const v = infoVal(meta[k]);
+        if (v && v.length <= 300) rows.push([label, v]);
+      });
+      if (t.completedAt) rows.push(['Completed', fmtDateTime(t.completedAt)]);
+      if (rows.length) sections.push({ title: 'Trainer onboarding', rows });
+    }
+    if (rec.contentProgram && rec.contentProgram.answered && typeof rec.contentProgram.answered === 'object') {
+      const answered = rec.contentProgram.answered;
+      const rows = [];
+      Object.keys(answered).forEach((k) => {
+        const v = infoVal(answered[k]);
+        if (v) rows.push([CONTENT_LABELS[k] || humanizeKey(k), v]);
+      });
+      if (rec.contentProgram.updatedAt) rows.push(['Last updated', fmtDateTime(rec.contentProgram.updatedAt)]);
+      if (rows.length) sections.push({ title: 'Content program setup', rows });
+    }
+    return sections;
+  }
+
+  function closeInfoModal() {
+    const modal = $('#owner-info-modal');
+    if (modal) modal.setAttribute('hidden', '');
+  }
+
+  async function openInfoModal(accountId) {
+    const acct = findAccount(accountId);
+    const modal = $('#owner-info-modal');
+    const titleEl = $('#owner-info-title');
+    const subtitleEl = $('#owner-info-subtitle');
+    const listEl = $('#owner-info-list');
+    if (!modal || !titleEl || !subtitleEl || !listEl) return;
+    const label = acct?.displayName || acct?.username || 'Account';
+    titleEl.textContent = `${label} — Information`;
+    subtitleEl.textContent = 'Loading onboarding record...';
+    listEl.innerHTML = '<div class="owner-accounts-muted">Loading...</div>';
+    infoCopyText = '';
+    modal.removeAttribute('hidden');
+
+    const resp = await api(`/api/content/owner/onboarding-record?userId=${encodeURIComponent(accountId)}`);
+    if (!resp.ok) {
+      subtitleEl.textContent = '';
+      listEl.innerHTML = `<div class="owner-accounts-muted">${escapeHtml(resp.json?.error || 'Failed to load onboarding record.')}</div>`;
+      return;
+    }
+    const rec = resp.json || {};
+    const account = rec.account || {};
+    const roles = Array.isArray(account.roles) && account.roles.length
+      ? account.roles.map((r) => String(r).toLowerCase()).join(' + ')
+      : resolveAccountRole(acct || {});
+    const submittedAt = rec.insights?.joinedAt || rec.trainerOnboarding?.completedAt || account.createdAt || null;
+    const contextBits = [
+      account.username ? `@${account.username}` : '',
+      roles ? `Role: ${roles}` : '',
+      submittedAt ? `Submitted: ${fmtDateTime(submittedAt)}` : ''
+    ].filter(Boolean);
+    subtitleEl.textContent = contextBits.join(' • ');
+
+    const sections = buildInfoSections(rec);
+    if (!sections.length) {
+      listEl.innerHTML = '<div class="owner-accounts-muted">No onboarding on file.</div>';
+      infoCopyText = `${label}${account.username ? ` (@${account.username})` : ''}\n${contextBits.slice(1).join(' | ')}\n\nNo onboarding on file.`;
+      return;
+    }
+    listEl.innerHTML = sections.map((sec) => `
+      <article class="owner-accounts-modal-item">
+        <div style="font-weight:800;margin-bottom:6px;">${escapeHtml(sec.title)}</div>
+        ${sec.rows.map(([q, a]) => `
+          <div style="margin-bottom:6px;">
+            <div class="owner-accounts-muted" style="font-size:12px;">${escapeHtml(q)}</div>
+            <div>${escapeHtml(a)}</div>
+          </div>
+        `).join('')}
+      </article>
+    `).join('');
+    infoCopyText = [
+      `${label}${account.username ? ` (@${account.username})` : ''}`,
+      contextBits.slice(1).join(' | '),
+      '',
+      ...sections.map((sec) => [`== ${sec.title} ==`, ...sec.rows.map(([q, a]) => `${q}: ${a}`), ''].join('\n'))
+    ].join('\n').trim();
+  }
+
+  async function copyInfoModal() {
+    const btn = $('#owner-info-copy');
+    const text = infoCopyText || 'No onboarding on file.';
+    let ok = false;
+    try { await navigator.clipboard.writeText(text); ok = true; } catch {
+      try {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        ta.style.position = 'fixed';
+        ta.style.opacity = '0';
+        document.body.appendChild(ta);
+        ta.select();
+        ok = document.execCommand('copy');
+        ta.remove();
+      } catch { ok = false; }
+    }
+    if (btn) {
+      const prev = btn.textContent;
+      btn.textContent = ok ? 'Copied' : 'Copy failed';
+      setTimeout(() => { btn.textContent = prev; }, 1600);
+    }
+  }
+
   function findAccount(accountId) {
     return state.accounts.find((item) => String(item.id) === String(accountId)) || null;
   }
@@ -613,6 +839,10 @@
     }
     if (action === 'trainers') {
       openManagerTrainersModal(accountId);
+      return;
+    }
+    if (action === 'info') {
+      await openInfoModal(accountId);
       return;
     }
     if (action === 'password') {
@@ -1009,6 +1239,21 @@
     const managerModalClose = $('#owner-manager-trainers-close');
     if (managerModalClose) {
       managerModalClose.addEventListener('click', closeManagerTrainersModal);
+    }
+
+    const infoModal = $('#owner-info-modal');
+    if (infoModal) {
+      infoModal.addEventListener('click', (e) => {
+        if (e.target === infoModal) closeInfoModal();
+      });
+    }
+    const infoModalClose = $('#owner-info-close');
+    if (infoModalClose) {
+      infoModalClose.addEventListener('click', closeInfoModal);
+    }
+    const infoModalCopy = $('#owner-info-copy');
+    if (infoModalCopy) {
+      infoModalCopy.addEventListener('click', copyInfoModal);
     }
   }
 

@@ -13,6 +13,9 @@
 const crypto = require('crypto');
 const db = require('./db');
 const authRoutes = require('./authRoutes');
+// getUserFromRequest lives under _private since the roles refactor - resolve
+// it lazily so require-order between route modules can't bite.
+function getUserFromRequest(req) { return authRoutes._private.getUserFromRequest(req); }
 
 let schemaReady = null;
 function ensureSchema() {
@@ -120,7 +123,7 @@ module.exports = async function contentRoutes(req, res, url) {
 
   // --- log / upsert a generated post (stamps hook_source) ----------------
   if (p === '/api/content/posts' && req.method === 'POST') {
-    const user = await authRoutes.getUserFromRequest(req);
+    const user = await getUserFromRequest(req);
     if (!user) return sendJson(res, 401, { ok: false, error: 'UNAUTHORIZED' });
     await ensureSchema();
     const b = await readBody(req);
@@ -157,7 +160,7 @@ module.exports = async function contentRoutes(req, res, url) {
 
   // --- trainer hooks: create + list --------------------------------------
   if (p === '/api/content/hooks' && req.method === 'POST') {
-    const user = await authRoutes.getUserFromRequest(req);
+    const user = await getUserFromRequest(req);
     if (!user) return sendJson(res, 401, { ok: false, error: 'UNAUTHORIZED' });
     await ensureSchema();
     const b = await readBody(req);
@@ -169,7 +172,7 @@ module.exports = async function contentRoutes(req, res, url) {
     return sendJson(res, 200, { ok: true, id: r.rows?.[0]?.id });
   }
   if (p === '/api/content/hooks' && req.method === 'GET') {
-    const user = await authRoutes.getUserFromRequest(req);
+    const user = await getUserFromRequest(req);
     if (!user) return sendJson(res, 401, { ok: false, error: 'UNAUTHORIZED' });
     await ensureSchema();
     const r = await db.query(
@@ -180,7 +183,7 @@ module.exports = async function contentRoutes(req, res, url) {
 
   // --- comparison rollup: house vs trainer (2.3, floor enforced client-side too) ---
   if (p === '/api/content/hook-stats' && req.method === 'GET') {
-    const user = await authRoutes.getUserFromRequest(req);
+    const user = await getUserFromRequest(req);
     if (!user) return sendJson(res, 401, { ok: false, error: 'UNAUTHORIZED' });
     await ensureSchema();
     const r = await db.query(`
@@ -192,6 +195,43 @@ module.exports = async function contentRoutes(req, res, url) {
       WHERE trainer_user_id = $1 AND status = 'posted'
       GROUP BY hook_source;`, [user.id]);
     return sendJson(res, 200, { ok: true, stats: r.rows || [] });
+  }
+
+  // --- owner-only: a user's full onboarding record, aggregated ------------
+  // (owner-accounts "Information" button). Read-only; renders whatever is on
+  // file across the four stores rather than failing on shape.
+  if (p === '/api/content/owner/onboarding-record' && req.method === 'GET') {
+    const viewer = await getUserFromRequest(req);
+    if (!viewer) return sendJson(res, 401, { ok: false, error: 'UNAUTHORIZED' });
+    if (!viewer.isOwner) return sendJson(res, 403, { ok: false, error: 'OWNER_ONLY' });
+    const userId = String(url.searchParams.get('userId') || '').trim();
+    if (!userId) return sendJson(res, 400, { ok: false, error: 'userId required' });
+    const out = { ok: true, userId };
+    try {
+      const u = await db.query("SELECT username, display_name, email, COALESCE(admin_notes, '') AS admin_notes, created_at FROM app_users WHERE id = $1 LIMIT 1;", [userId]);
+      const row = u.rows?.[0];
+      if (!row) return sendJson(res, 404, { ok: false, error: 'Account not found' });
+      out.account = { username: row.username, displayName: row.display_name, email: row.email, createdAt: row.created_at, roles: String(row.admin_notes || '').match(/\b(trainer|manager|client|demo)\b/gi) || [] };
+    } catch (e) { return sendJson(res, 500, { ok: false, error: 'DB error' }); }
+    try {
+      const pr = await db.query('SELECT profile, updated_at FROM app_user_profiles WHERE user_id = $1 LIMIT 1;', [userId]);
+      const prof = pr.rows?.[0]?.profile || {};
+      out.profileUpdatedAt = pr.rows?.[0]?.updated_at || null;
+      out.trainingIntake = prof.training_intake || null;
+      const cp = prof.content_program_v2 || null;
+      out.contentProgram = cp ? { answered: cp.answered || {}, path: cp.path || '', updatedAt: cp.updatedAt || null, setupDone: !!cp.setupDone } : null;
+    } catch (e) {}
+    try {
+      const tp = await db.query('SELECT full_name, contact_email, meta, onboarding_completed_at, updated_at FROM app_trainer_profiles WHERE user_id = $1 LIMIT 1;', [userId]);
+      const trow = tp.rows?.[0];
+      if (trow) out.trainerOnboarding = { fullName: trow.full_name, contactEmail: trow.contact_email, completedAt: trow.onboarding_completed_at, updatedAt: trow.updated_at, meta: trow.meta || {} };
+    } catch (e) {}
+    try {
+      const jsonStore = require('./jsonStore');
+      const insights = await jsonStore.getJson('onboarding-insights', []);
+      out.insights = (Array.isArray(insights) ? insights : []).find((r) => String(r.userId) === userId) || null;
+    } catch (e) {}
+    return sendJson(res, 200, out);
   }
 
   return false;
