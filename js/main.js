@@ -2618,7 +2618,7 @@ const ODE_MANAGER_PAGES = new Set(['manager-trainers.html']);
 const ODE_OWNER_PAGES = new Set([
     'owner-accounts.html', 'owner-analytics.html', 'owner-doors.html',
     'owner-emails.html', 'owner-messaging.html', 'owner-websites.html',
-    'workout-database.html', 'food-admin.html'
+    'owner-calendar.html', 'workout-database.html', 'food-admin.html'
 ]);
 
 function odeCurrentPageFile() {
@@ -22624,6 +22624,22 @@ function injectNutritionLink(panel) {
     groceryLink.insertAdjacentElement('beforebegin', link);
 }
 
+/* Owner Calendar lives in the OWNER section on every page. Pages carry their
+   own static control-panel markup, so inject at runtime where missing. */
+function injectOwnerCalendarLink(panel) {
+    if (!panel || panel.querySelector('a[href="owner-calendar.html"]')) return;
+    const ownerSection = panel.querySelector('#control-owner-section');
+    if (!ownerSection) return;
+    const link = document.createElement('a');
+    link.className = 'control-link';
+    link.id = 'control-owner-calendar-link';
+    link.href = 'owner-calendar.html';
+    link.innerHTML = '<span class="icon"><svg><use href="#icon-calendar-check"></use></svg></span><span class="text">Calendar</span>';
+    const accountsLink = ownerSection.querySelector('a[href="owner-accounts.html"]');
+    if (accountsLink) accountsLink.insertAdjacentElement('afterend', link);
+    else ownerSection.appendChild(link);
+}
+
 /* ---- Launch gating -------------------------------------------------
    Soft launch: clients get only the Website tab; every other control-panel
    tab is hidden. Trainers additionally get their live business tools —
@@ -22734,6 +22750,7 @@ function setupControlPanel() {
     controlPanel = ensureSharedControlPanel();
     if (!controlPanel) return;
     injectNutritionLink(controlPanel);
+    injectOwnerCalendarLink(controlPanel);
     const isStandaloneCoachRoute = /^\/coach\/[^/]+(?:\/[^/]+)?$/i.test(String(window.location.pathname || '').trim());
     if (isStandaloneCoachRoute) {
         controlPanel.setAttribute('hidden', '');

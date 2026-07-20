@@ -8448,6 +8448,8 @@ async function handleOwnerAccountsList(req, res, url) {
                u.last_seen,
                u.last_login,
                p.profile->'profile'->>'photoDataUrl' AS photo,
+               COALESCE((p.profile->'content_program_v2'->>'setupDone')::boolean, false) AS content_setup_done,
+               (p.profile ? 'content_program_v2') AS has_content_program,
                tp.onboarding_complete,
                tp.discipline,
                tp.days_per_week,
@@ -8587,6 +8589,10 @@ async function handleOwnerAccountsList(req, res, url) {
     isOnline: isLastSeenOnline(row.last_seen),
     lastLogin: row.last_login || null,
     onboardingComplete: Boolean(row.onboarding_complete),
+    // Content Program (Flow B) setup state — lets the owner chase trainers
+    // who finished signup onboarding but never built their content plan.
+    contentSetupDone: row.content_setup_done === true,
+    hasContentProgram: row.has_content_program === true,
     discipline: row.discipline || null,
     daysPerWeek: Number.isFinite(Number(row.days_per_week)) ? Number(row.days_per_week) : null,
     trainingUpdatedAt: row.training_updated_at || null,

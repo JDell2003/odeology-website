@@ -5815,7 +5815,7 @@
 
     <script type="module" src="js/usda.js"></script>
     <script src="data/dri-targets.js?v=2026-02-24-micros-1"></script>
-    <script src="js/main.js?v=2026-07-19-roles-1"></script>
+    <script src="js/main.js?v=2026-07-20-ownercal-1"></script>
     <script src="js/identity-activity.js?v=2026-07-12-dash-1"></script>
     <script src="js/identity-engine.js?v=2026-07-15-glitchguard-1"></script>
     <script src="js/daily-recap.js?v=2026-07-13-recap-4"></script>
@@ -9627,15 +9627,37 @@ function formatWorkspaceLabel(workspace) {
               savedAt: Date.now()
             }));
           } catch {}
-          if (nextAction === 'Generate test workout') {
-            window.location.href = 'training.html';
-            return;
-          }
-          if (nextAction === 'Explore dashboard') {
-            window.location.href = 'trainer-dashboard.html';
-            return;
-          }
-          window.location.href = 'trainers.html#onboarding';
+          let dest = 'trainers.html#onboarding';
+          if (nextAction === 'Generate test workout') dest = 'training.html';
+          else if (nextAction === 'Explore dashboard') dest = 'trainer-dashboard.html';
+          // Flow A -> Flow B bridge: signup onboarding is done, but the content
+          // plan questionnaire (Flow B, /content) is a separate onboarding that
+          // trainers were silently skipping. One screen, straight into the
+          // quick track — or continue to where they were headed.
+          showTrainerContentBridge(dest);
+        }
+
+        function showTrainerContentBridge(skipDest) {
+          if (document.getElementById('trainer-content-bridge')) return;
+          const overlay = document.createElement('div');
+          overlay.id = 'trainer-content-bridge';
+          overlay.setAttribute('role', 'dialog');
+          overlay.setAttribute('aria-modal', 'true');
+          overlay.style.cssText = 'position:fixed;inset:0;z-index:2147483000;display:grid;place-items:center;padding:20px;background:rgba(6,9,15,0.94);backdrop-filter:blur(6px);';
+          overlay.innerHTML = `
+            <div style="max-width:480px;width:100%;background:#10161f;border:1px solid rgba(255,255,255,0.12);border-radius:18px;padding:30px;text-align:center;font-family:'Space Grotesk',system-ui,sans-serif;color:#fff;">
+              <div style="font-size:34px;line-height:1;margin-bottom:12px;">&#127916;</div>
+              <h2 style="margin:0 0 8px;font-size:1.35rem;font-weight:800;">Last step &mdash; 10 quick questions</h2>
+              <p style="margin:0 0 20px;color:rgba(255,255,255,0.65);font-size:0.95rem;line-height:1.5;">Answer 10 quick questions so we can build your content plan &mdash; daily post briefs in your voice, for your audience. Takes about 5 minutes.</p>
+              <div style="display:grid;gap:9px;">
+                <a href="content.html?path=quick" style="padding:13px;border-radius:11px;background:linear-gradient(180deg,#e5b070,#c07f34);color:#0c1119;font-weight:800;font-size:1rem;text-decoration:none;">Build my content plan</a>
+                <button type="button" id="trainer-content-bridge-skip" style="padding:11px;border-radius:11px;border:1px solid rgba(255,255,255,0.16);background:transparent;color:rgba(255,255,255,0.75);font-weight:700;font-size:0.92rem;cursor:pointer;">I&rsquo;ll do it later</button>
+              </div>
+            </div>`;
+          document.body.appendChild(overlay);
+          overlay.querySelector('#trainer-content-bridge-skip')?.addEventListener('click', () => {
+            window.location.href = skipDest || 'trainers.html#onboarding';
+          });
         }
 
         async function goToManagerPath(nextAction) {

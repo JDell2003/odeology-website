@@ -236,6 +236,12 @@
       // Resolved role under the role model (odeRoleFlags semantics): what
       // surface this account actually lands on. Client is the default state.
       const rolePill = `<span class="owner-accounts-pill" style="border-color:rgba(217,161,92,.55);color:#a1751f;font-weight:800;">Role: ${escapeHtml(resolveAccountRole(acct))}</span>`;
+      // Trainers >24h old with no completed Content Program setup (Flow B):
+      // the account looks onboarded but their content plan was never built.
+      const accountAgeMs = acct.createdAt ? (Date.now() - new Date(acct.createdAt).getTime()) : 0;
+      const noContentSetupPill = (acct.isTrainer && acct.contentSetupDone !== true && accountAgeMs > 24 * 60 * 60 * 1000)
+        ? '<span class="owner-accounts-pill" style="border-color:rgba(214,40,40,.6);color:#8f1d1d;background:rgba(214,40,40,.07);font-weight:800;">NO CONTENT SETUP</span>'
+        : '';
       const assignedTrainerPill = acct.hasTrainerAssignment
         ? '<span class="owner-accounts-pill">Has trainer</span>'
         : '';
@@ -260,7 +266,7 @@
         <article class="owner-account-item" data-account-id="${escapeHtml(acct.id)}" role="button" tabindex="0">
           <div class="owner-account-row1">
             <div class="owner-account-name">${escapeHtml(acct.displayName || 'Account')}</div>
-            <div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;">${rolePill}${newPill}${trainerPill}${managerPill}${assignedTrainerPill}${onboardingPill}${planPill}${msgPill}</div>
+            <div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;">${noContentSetupPill}${rolePill}${newPill}${trainerPill}${managerPill}${assignedTrainerPill}${onboardingPill}${planPill}${msgPill}</div>
           </div>
           <div class="owner-account-meta">
             <span>${escapeHtml(username)}</span>

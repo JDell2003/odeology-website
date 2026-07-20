@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#140f0b">
+  <script src="js/theme-color.js?v=2026-07-13-themebar-1" defer></script>
+  <title>Owner Calendar · RiseForIt</title>
+  <link rel="stylesheet" href="css/main.css?v=2026-07-16-fabnav-2">
+  <style>
+    body.owner-calendar-page { overflow: auto !important; }
+    .owner-cal-wrap {
+      max-width: 1100px;
+      margin: calc(var(--navbar-height, 72px) + 24px) auto 40px;
+      padding: 0 16px 24px;
+      display: grid;
+      gap: 12px;
+    }
+    .owner-cal-card {
+      background: rgba(255, 255, 255, 0.93);
+      border: 1px solid rgba(0, 0, 0, 0.08);
+      border-radius: 14px;
+      padding: 14px;
+    }
+    .owner-cal-head {
+      display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between;
+    }
+    .owner-cal-title { font-weight: 800; font-size: 18px; color: #0f2435; }
+    .owner-cal-nav { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+    .owner-cal-btn {
+      min-height: 36px; padding: 0.45rem 0.9rem; border-radius: 999px;
+      border: 1px solid rgba(10, 31, 47, 0.12); background: rgba(15, 36, 53, 0.04);
+      color: #0f2435; font-size: 0.82rem; font-weight: 900; cursor: pointer;
+    }
+    .owner-cal-btn.active {
+      background: linear-gradient(135deg, rgba(15, 36, 53, 0.95), rgba(34, 71, 98, 0.95));
+      color: #f7fbff; border-color: rgba(15, 36, 53, 0.18);
+    }
+    .owner-cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; margin-top: 12px; }
+    .owner-cal-dow { text-align: center; font-size: 11px; font-weight: 800; color: #667; letter-spacing: .05em; text-transform: uppercase; padding: 4px 0; }
+    .owner-cal-day {
+      min-height: 96px; border: 1px solid rgba(0, 0, 0, 0.08); border-radius: 10px;
+      background: #fff; padding: 6px; cursor: pointer; display: flex; flex-direction: column; gap: 4px;
+      transition: border-color .15s ease, box-shadow .15s ease; overflow: hidden; text-align: left;
+    }
+    .owner-cal-day:hover { border-color: rgba(15, 36, 53, 0.35); box-shadow: 0 6px 14px rgba(10, 31, 47, 0.08); }
+    .owner-cal-day.is-out { opacity: 0.45; background: #fafafa; }
+    .owner-cal-day.is-today { border-color: #b98a2b; box-shadow: inset 0 0 0 1.5px rgba(185, 138, 43, 0.65); }
+    .owner-cal-daynum { font-size: 12px; font-weight: 800; color: #0f2435; }
+    .owner-cal-day.is-today .owner-cal-daynum { color: #8a6414; }
+    .owner-cal-evt {
+      border-radius: 7px; padding: 3px 6px; font-size: 10.5px; font-weight: 700; color: #fff;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; border: 0; text-align: left; width: 100%;
+    }
+    .owner-cal-evt.t-call { background: #1f6c8f; }
+    .owner-cal-evt.t-content { background: #b98a2b; }
+    .owner-cal-evt.t-outreach { background: #6b4fbf; }
+    .owner-cal-evt.t-follow-up { background: #1f8f52; }
+    .owner-cal-more { font-size: 10px; font-weight: 800; color: #667; }
+    /* week view */
+    .owner-cal-week { display: grid; gap: 8px; margin-top: 12px; }
+    .owner-cal-week-day { border: 1px solid rgba(0,0,0,0.08); border-radius: 10px; background: #fff; padding: 10px; }
+    .owner-cal-week-day.is-today { border-color: #b98a2b; box-shadow: inset 0 0 0 1.5px rgba(185, 138, 43, 0.65); }
+    .owner-cal-week-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+    .owner-cal-week-title { font-weight: 800; font-size: 13px; color: #0f2435; }
+    .owner-cal-week-list { display: grid; gap: 6px; margin-top: 8px; }
+    .owner-cal-week-evt { display: flex; gap: 8px; align-items: center; border: 1px solid rgba(0,0,0,0.07); border-radius: 9px; padding: 7px 9px; cursor: pointer; background: #fff; text-align: left; width: 100%; }
+    .owner-cal-week-evt .dot { flex: none; width: 10px; height: 10px; border-radius: 50%; }
+    .owner-cal-week-evt .t { flex: 1; min-width: 0; font-size: 13px; font-weight: 700; color: #0f2435; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .owner-cal-week-evt .m { flex: none; font-size: 11px; color: #667; font-weight: 700; }
+    .owner-cal-legend { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 10px; font-size: 11px; font-weight: 800; color: #445; }
+    .owner-cal-legend i { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 5px; }
+    .owner-cal-status { min-height: 18px; font-size: 13px; color: #555; margin-top: 8px; }
+    .owner-cal-status.error { color: #8f1d1d; }
+    .owner-cal-status.ok { color: #1f6c2f; }
+    /* modal */
+    .owner-cal-modal { position: fixed; inset: 0; display: grid; place-items: center; padding: 16px; background: rgba(15, 23, 42, 0.42); z-index: 120; }
+    .owner-cal-modal[hidden] { display: none !important; }
+    .owner-cal-modal-card { width: min(480px, 100%); max-height: 90vh; overflow: auto; background: #fff; border: 1px solid rgba(0,0,0,0.08); border-radius: 16px; padding: 18px; box-shadow: 0 24px 50px rgba(15,23,42,0.18); display: grid; gap: 10px; }
+    .owner-cal-modal-card h3 { margin: 0; font-size: 16px; color: #0f2435; }
+    .owner-cal-field { display: grid; gap: 4px; }
+    .owner-cal-field label { font-size: 11px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; color: #667; }
+    .owner-cal-field input, .owner-cal-field select, .owner-cal-field textarea {
+      border: 1px solid rgba(0,0,0,0.14); border-radius: 9px; padding: 9px 10px; font: 600 14px/1.4 inherit; color: #0f2435; background: #fff; width: 100%; box-sizing: border-box;
+    }
+    .owner-cal-field textarea { min-height: 70px; resize: vertical; }
+    .owner-cal-modal-actions { display: flex; gap: 8px; flex-wrap: wrap; justify-content: space-between; margin-top: 4px; }
+    .owner-cal-modal-actions .right { display: flex; gap: 8px; }
+    .owner-cal-del { color: #8f1d1d; border-color: rgba(214,40,40,0.4); }
+    @media (max-width: 700px) {
+      .owner-cal-day { min-height: 64px; padding: 4px; }
+      .owner-cal-evt { font-size: 9px; padding: 2px 4px; }
+      .owner-cal-daynum { font-size: 11px; }
+    }
+  </style>
+</head>
+<body class="owner-calendar-page" data-require-auth="1">
+  <div class="grain"></div>
+
+  <svg aria-hidden="true" class="icon-sprite">
+    <symbol id="icon-account" viewBox="0 0 24 24">
+      <path d="M4.75 5.75a1 1 0 0 1 1-1h6.5a1 1 0 0 1 1 1v2.5"></path>
+      <path d="M13.25 15.75v3a1 1 0 0 1-1 1h-6.5a1 1 0 0 1-1-1v-13"></path>
+      <path d="M15.5 12H7.5"></path>
+      <path d="m12 9.5 3.5 2.5-3.5 2.5"></path>
+    </symbol>
+    <symbol id="icon-calendar-check" viewBox="0 0 24 24">
+      <rect x="4.5" y="6.5" width="15" height="12" rx="2"></rect>
+      <path d="M9 4.5v3M15 4.5v3M8.75 12.5l2.25 2 4-4"></path>
+    </symbol>
+    <symbol id="icon-users" viewBox="0 0 24 24">
+      <circle cx="10" cy="9" r="2.5"></circle>
+      <path d="M5.5 16.5a4.5 4.5 0 0 1 9 0"></path>
+      <circle cx="16.5" cy="10.5" r="2"></circle>
+      <path d="M14.5 15a3.5 3.5 0 0 1 5 1.5"></path>
+    </symbol>
+    <symbol id="icon-book" viewBox="0 0 24 24">
+      <path d="M8 6.5h7.5a1 1 0 0 1 1 1v11l-3-2-3 2v-12a1 1 0 0 0-1-1H8a2.5 2.5 0 0 0-2.5 2.5v10.5"></path>
+    </symbol>
+    <symbol id="icon-folder" viewBox="0 0 24 24">
+      <path d="M4.5 7.5a2 2 0 0 1 2-2h4l2 2H17.5a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-11a2 2 0 0 1-2-2v-11Z"></path>
+    </symbol>
+  </svg>
+
+  <nav class="navbar">
+    <div class="navbar-container">
+      <div class="navbar-brand"><span class="brand-wordmark" aria-label="RiseForIt"><span class="brand-char">R</span><span class="brand-char">i</span><span class="brand-char">s</span><span class="brand-char">e</span><span class="brand-char">F</span><span class="brand-char">o</span><span class="brand-char">r</span><span class="brand-char">I</span><span class="brand-char">t</span></span><span class="brand-dot"></span></div>
+      <button class="hamburger" id="hamburger" aria-label="Toggle navigation">
+        <span></span><span></span><span></span>
+      </button>
+      <ul class="nav-menu" id="nav-menu">
+        <li><a href="index.html#resources">Home</a></li>
+        <li><a href="overview.html">Overview</a></li>
+        <li><a class="nav-training" href="training.html"><span class="nav-training-main">Training</span><span class="nav-training-sub">30 days free</span></a></li>
+        <li><a href="store.html">Store</a></li>
+      </ul>
+      <button class="theme-toggle" id="theme-toggle" aria-label="Toggle theme"><span class="theme-icon">&#x1F319;</span></button>
+    </div>
+  </nav>
+
+  <aside class="control-panel" id="control-panel">
+    <div class="control-panel-header"></div>
+    <div class="control-section"><p class="section-label section-label-help">HELP</p><button class="control-link" id="control-tour" type="button"><span class="icon"><svg><use href="#icon-book"></use></svg></span><span class="text">Quick tour</span></button></div>
+    <div class="control-section"><p class="section-label">DASH</p><div class="control-pill-row"><button class="control-link control-checkin-pill" id="control-checkin" type="button"><span class="icon"><svg><use href="#icon-calendar-check"></use></svg></span><span class="text">Dash</span></button></div></div>
+    <div class="control-section"><p class="section-label">TRAINING PORTAL</p><a class="control-link" href="overview.html"><span class="icon"><svg><use href="#icon-book"></use></svg></span><span class="text">Overview</span></a><a class="control-link" href="training.html"><span class="icon"><svg><use href="#icon-folder"></use></svg></span><span class="text">Training Program</span></a><a class="control-link" href="grocery-calendar.html"><span class="icon"><svg><use href="#icon-calendar-check"></use></svg></span><span class="text">Grocery Calendar</span></a><a class="control-link" id="control-trainer-coaches-link" href="coaches.html"><span class="icon"><svg><use href="#icon-users"></use></svg></span><span class="text">Coaches page</span></a></div>
+    <div class="control-section"><p class="section-label">COMMUNITY</p><a class="control-link" href="leaderboard.html"><span class="icon"><svg><use href="#icon-users"></use></svg></span><span class="text">Leaderboard</span></a><a class="control-link" href="friends.html"><span class="icon"><svg><use href="#icon-users"></use></svg></span><span class="text">Messages</span></a><a class="control-link" href="coaches.html"><span class="icon"><svg><use href="#icon-users"></use></svg></span><span class="text">Coaches</span></a></div>
+    <div class="control-section hidden" id="control-trainer-section"><p class="section-label">TRAINER</p><a class="control-link" id="control-trainer-dashboard-link" href="trainer-dashboard.html"><span class="icon"><svg><use href="#icon-users"></use></svg></span><span class="text">Trainer Dashboard</span></a></div>
+    <div class="control-section" id="control-owner-section">
+      <p class="section-label">OWNER</p>
+      <a class="control-link" id="control-workout-db-link" href="workout-database.html"><span class="icon"><svg><use href="#icon-folder"></use></svg></span><span class="text">Workout Database</span></a>
+      <a class="control-link" id="control-owner-messaging-link" href="owner-messaging.html"><span class="icon"><svg><use href="#icon-book"></use></svg></span><span class="text">Outreach</span></a>
+      <a class="control-link" id="control-owner-doors-link" href="owner-doors.html"><span class="icon"><svg><use href="#icon-folder"></use></svg></span><span class="text">Doors</span></a>
+      <a class="control-link" id="control-owner-accounts-link" href="owner-accounts.html"><span class="icon"><svg><use href="#icon-account"></use></svg></span><span class="text">Accounts</span></a>
+      <a class="control-link active" id="control-owner-calendar-link" href="owner-calendar.html" aria-current="true"><span class="icon"><svg><use href="#icon-calendar-check"></use></svg></span><span class="text">Calendar</span></a>
+    </div>
+  </aside>
+
+  <main class="owner-cal-wrap">
+    <div class="owner-cal-card">
+      <div class="owner-cal-head">
+        <div class="owner-cal-title" id="owner-cal-title">Calendar</div>
+        <div class="owner-cal-nav">
+          <button class="owner-cal-btn" id="owner-cal-prev" type="button" aria-label="Previous">&larr;</button>
+          <button class="owner-cal-btn" id="owner-cal-today" type="button">Today</button>
+          <button class="owner-cal-btn" id="owner-cal-next" type="button" aria-label="Next">&rarr;</button>
+          <button class="owner-cal-btn active" id="owner-cal-view-month" type="button">Month</button>
+          <button class="owner-cal-btn" id="owner-cal-view-week" type="button">Week</button>
+        </div>
+      </div>
+      <div id="owner-cal-body"></div>
+      <div class="owner-cal-legend">
+        <span><i style="background:#1f6c8f"></i>Call</span>
+        <span><i style="background:#b98a2b"></i>Content</span>
+        <span><i style="background:#6b4fbf"></i>Outreach</span>
+        <span><i style="background:#1f8f52"></i>Follow-up</span>
+      </div>
+      <div class="owner-cal-status" id="owner-cal-status"></div>
+    </div>
+  </main>
+
+  <div class="owner-cal-modal" id="owner-cal-modal" hidden>
+    <div class="owner-cal-modal-card" role="dialog" aria-modal="true" aria-labelledby="owner-cal-modal-title">
+      <h3 id="owner-cal-modal-title">Add event</h3>
+      <div class="owner-cal-field"><label for="owner-cal-f-title">Title</label><input id="owner-cal-f-title" type="text" maxlength="160" placeholder="Call with Nick"></div>
+      <div class="owner-cal-field"><label for="owner-cal-f-date">Date</label><input id="owner-cal-f-date" type="date"></div>
+      <div class="owner-cal-field"><label for="owner-cal-f-time">Time (optional)</label><input id="owner-cal-f-time" type="time"></div>
+      <div class="owner-cal-field"><label for="owner-cal-f-type">Type</label>
+        <select id="owner-cal-f-type">
+          <option value="call">Call</option>
+          <option value="content">Content</option>
+          <option value="outreach">Outreach</option>
+          <option value="follow-up">Follow-up</option>
+        </select>
+      </div>
+      <div class="owner-cal-field"><label for="owner-cal-f-note">Note (optional)</label><textarea id="owner-cal-f-note" maxlength="2000"></textarea></div>
+      <div class="owner-cal-modal-actions">
+        <button class="owner-cal-btn owner-cal-del" id="owner-cal-f-delete" type="button" hidden>Delete</button>
+        <div class="right">
+          <button class="owner-cal-btn" id="owner-cal-f-cancel" type="button">Cancel</button>
+          <button class="owner-cal-btn active" id="owner-cal-f-save" type="button">Save</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/main.js?v=2026-07-20-ownercal-1"></script>
+  <script src="js/ownerCalendar.js?v=2026-07-20-ocal-1"></script>
+</body>
+</html>

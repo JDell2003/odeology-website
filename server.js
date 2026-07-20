@@ -36,6 +36,7 @@ const socialRoutes = require('./core/socialRoutes');
 const forumRoutes = require('./core/forumRoutes');
 const groceriesRoutes = require('./core/groceriesRoutes');
 const { rejectsClientOnlyApi } = require('./core/roleGuard');
+const ownerCalendarRoutes = require('./core/ownerCalendarRoutes');
 const leaderboardRoutes = require('./core/leaderboardRoutes');
 const profileRoutes = require('./core/profileRoutes');
 const healthRoutes = require('./core/healthRoutes');
@@ -1870,6 +1871,10 @@ const server = http.createServer(async (req, res) => {
     }
 
     if (await socialRoutes(req, res, url)) {
+        return;
+    }
+
+    if (await ownerCalendarRoutes(req, res, url)) {
         return;
     }
 

@@ -93,7 +93,43 @@
     if (key) { try { localStorage.setItem(key, JSON.stringify(state)); } catch (e) {} }
     if (saveTimer) clearTimeout(saveTimer); saveTimer = setTimeout(saveToProfile, 400);
   }
-  function saveToProfile() { try { fetch('/api/profile', { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ profile: { content_program_v2: state } }) }).catch(function () {}); } catch (e) {} }
+  // Server save with VISIBLE failure feedback. A trainer must never answer
+  // questions into the void: on a failed POST we show a persistent banner and
+  // retry with backoff until a save lands, then clear it.
+  var saveRetryTimer = 0;
+  var saveRetryDelay = 2000;
+  function saveBannerEl() {
+    var el = document.getElementById('cp-save-banner');
+    if (el) return el;
+    el = document.createElement('div');
+    el.id = 'cp-save-banner';
+    el.setAttribute('role', 'alert');
+    el.style.cssText = 'position:fixed;left:50%;bottom:16px;transform:translateX(-50%);z-index:99999;display:none;'
+      + 'padding:10px 16px;border-radius:10px;background:#8f1d1d;color:#fff;'
+      + 'font:700 13px/1.4 "Space Grotesk",system-ui,sans-serif;box-shadow:0 12px 28px rgba(0,0,0,.35);max-width:92vw;text-align:center;';
+    el.textContent = 'Answers not saving — check connection. Retrying…';
+    (document.body || document.documentElement).appendChild(el);
+    return el;
+  }
+  function saveFailed() {
+    try { saveBannerEl().style.display = 'block'; } catch (e) {}
+    if (saveRetryTimer) clearTimeout(saveRetryTimer);
+    saveRetryTimer = setTimeout(function () { saveRetryTimer = 0; saveToProfile(); }, saveRetryDelay);
+    saveRetryDelay = Math.min(saveRetryDelay * 2, 60000);
+  }
+  function saveSucceeded() {
+    saveRetryDelay = 2000;
+    if (saveRetryTimer) { clearTimeout(saveRetryTimer); saveRetryTimer = 0; }
+    var el = document.getElementById('cp-save-banner');
+    if (el) el.style.display = 'none';
+  }
+  function saveToProfile() {
+    try {
+      fetch('/api/profile', { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ profile: { content_program_v2: state } }) })
+        .then(function (r) { if (r && r.ok) saveSucceeded(); else saveFailed(); })
+        .catch(function () { saveFailed(); });
+    } catch (e) { saveFailed(); }
+  }
   function loadFromProfile() {
     return fetch('/api/profile', { credentials: 'include' })
       .then(function (r) { return r.ok ? r.json() : null; })
@@ -1426,6 +1462,17 @@
   function route() {
     // An open draft (first run or redo) resumes the questionnaire (v10 0.2).
     if (state.draft) return startQuestionnaire({ resume: true });
+    // Flow A -> Flow B bridge: /content?path=quick (from the post-signup
+    // "last step" screen) drops a first-time trainer straight into the quick
+    // track instead of the chooser. Completed programs are never touched.
+    if (!state.setupDone && !state.draft) {
+      var wanted = '';
+      try { wanted = String(new URL(window.location.href).searchParams.get('path') || ''); } catch (e) {}
+      if (wanted === 'quick' || wanted === 'full') {
+        beginDraft(wanted);
+        return startQuestionnaire();
+      }
+    }
     if (!state.path || !state.setupDone) return renderPathChooser();
     if (!state.startDate) return renderStartDate();
     if (!state.dayZeroDone) return renderDayZero();

@@ -33,6 +33,12 @@ const SUITES = [
     cmd: process.execPath,
     args: ['tests/role-guard.server.js'],
     needsServer: false
+  },
+  {
+    name: 'owner calendar — server routes (auth + CRUD)',
+    cmd: process.execPath,
+    args: ['tests/owner-calendar.server.js'],
+    needsServer: false
   }
 ];
 
