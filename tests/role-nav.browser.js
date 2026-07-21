@@ -149,20 +149,30 @@ const navLabels = async (page) => page.evaluate(() =>
     await page.close();
   }
 
-  // ---- 7. owner: union nav + full access + View-as switcher ----
+  // ---- 7. owner: trainer-only nav by DEFAULT (no mixed union) + switcher can
+  //         restore the full union via "Owner (everything)" + full access ----
   {
     const page = await newRolePage(browser, USERS.owner);
     await page.goto(`http://localhost:${PORT}/overview.html`, { waitUntil: 'domcontentloaded' });
     await new Promise((r) => setTimeout(r, 900));
     const labels = await navLabels(page);
-    check('owner overview: union nav (client + trainer tabs)',
-      labels.includes('Cardio') && labels.includes('Dashboard') && labels.includes('Content') && labels.includes('Clients'), JSON.stringify(labels));
+    check('owner default nav: trainer surface only (Content/Clients/Website/Calendar)',
+      labels.includes('Content') && labels.includes('Clients') && labels.includes('Website') && labels.includes('Calendar'), JSON.stringify(labels));
+    check('owner default nav: NO client tabs (no mixed union)',
+      !labels.includes('Cardio') && !labels.includes('Dashboard') && !labels.includes('Nutrition'), JSON.stringify(labels));
     const switcher = await page.evaluate(() => ({
       owner: Boolean(document.querySelector('[data-set-view="owner"]')),
       trainer: Boolean(document.querySelector('[data-set-view="trainer"]')),
       client: Boolean(document.querySelector('[data-set-view="client"]'))
     }));
     check('owner: View-as switcher (Owner/Trainer/Client)', switcher.owner && switcher.trainer && switcher.client, JSON.stringify(switcher));
+    // "Owner (everything)" (stored view = owner) restores the full union nav.
+    await page.evaluate(() => { try { sessionStorage.setItem('ode_active_view_v1', 'owner'); } catch {} });
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    await new Promise((r) => setTimeout(r, 900));
+    const unionLabels = await navLabels(page);
+    check('owner "everything" view restores union (client + trainer tabs)',
+      unionLabels.includes('Content') && (unionLabels.includes('Cardio') || unionLabels.includes('Dashboard')), JSON.stringify(unionLabels));
     await page.close();
   }
   {

@@ -2289,7 +2289,11 @@ function odeGetActiveView(user = null) {
     const r = odeRoleFlags(user);
     let stored = '';
     try { stored = String(sessionStorage.getItem(ODE_ACTIVE_VIEW_KEY) || ''); } catch { /* ignore */ }
-    if (r.owner) return ['owner', 'trainer', 'client'].includes(stored) ? stored : 'owner';
+    // A trainer account with client access (owner is the superset) defaults to
+    // the TRAINER surface — a mixed client+trainer nav reads as broken. The
+    // owner can still restore the full union via the "Owner (everything)"
+    // switcher option; the left control panel keeps full access either way.
+    if (r.owner) return ['owner', 'trainer', 'client'].includes(stored) ? stored : 'trainer';
     if (r.dual) return ['trainer', 'client'].includes(stored) ? stored : 'trainer';
     if (r.trainer) return 'trainer';
     if (r.manager) return 'manager';
@@ -2306,7 +2310,10 @@ function odeSetActiveView(view) {
 function odeHomeFor(user = null) {
     const r = odeRoleFlags(user);
     if (!r.known) return 'index.html';
-    if (r.owner) return odeGetActiveView(user) === 'trainer' ? 'content.html' : 'overview.html#control-panel';
+    // Owner passive/login landing stays the dashboard regardless of the nav
+    // surface (owner has full sidebar access). An explicit "Trainer" switch
+    // still routes to content.html via the account-menu handler.
+    if (r.owner) return 'overview.html#control-panel';
     if (r.manager) return typeof window.__odeGetRestrictedPortalHref === 'function' ? window.__odeGetRestrictedPortalHref(user) : 'manager-trainers.html';
     if (r.trainerOnly) return 'content.html';
     if (r.dual) return odeGetActiveView(user) === 'client' ? 'overview.html#control-panel' : 'content.html';
