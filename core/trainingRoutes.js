@@ -11826,6 +11826,12 @@ async function trainingRoutes(req, res, url) {
       if (!m) return 90;
       return m[2] === 'min' ? Number(m[1]) * 60 : Number(m[1]);
     };
+    const progressionMode = String(src.progression || '') === 'system' ? 'system' : 'manual';
+    const clampNum = (v, lo, hi) => {
+      if (v == null || String(v).trim() === '') return null;
+      const n = Number(v);
+      return Number.isFinite(n) ? Math.max(lo, Math.min(hi, n)) : null;
+    };
     const days = [];
     WEEKDAYS.forEach((wd) => {
       const items = Array.isArray(src.days[wd]) ? src.days[wd] : [];
@@ -11833,7 +11839,7 @@ async function trainingRoutes(req, res, url) {
         .filter((it) => it && it.kind !== 'rest' && String(it.name || '').trim())
         .map((it) => {
           const isTime = String(it.targetType || '') === 'time';
-          return {
+          const ex = {
             name: String(it.name).trim(),
             displayName: String(it.name).trim(),
             exerciseId: slugOf(it.name),
@@ -11844,6 +11850,16 @@ async function trainingRoutes(req, res, url) {
             restSeconds: restToSeconds(it.rest),
             manual: true
           };
+          if (progressionMode === 'system') {
+            // Capture the starting prescription; the client climbs reps each
+            // week, then bumps weight and resets (double progression).
+            const startReps = clampNum(it.startReps, 1, 100);
+            const startWeight = clampNum(it.startWeight, 0, 2000);
+            ex.progression = { mode: 'system', scheme: 'reps_then_weight', startReps, startWeight };
+            // seed the displayed reps with the starting value so week 1 reads right
+            if (startReps != null) ex.reps = String(startReps);
+          }
+          return ex;
         });
       if (exercises.length) days.push({ day: wd, dayType: 'Workout', label: wd, exercises });
     });
@@ -11854,6 +11870,7 @@ async function trainingRoutes(req, res, url) {
         manual: true,
         name: String(src.name || 'My workout').slice(0, 120),
         instructions: String(src.instructions || '').slice(0, 2000),
+        progression: progressionMode,
         createdAt: new Date().toISOString()
       },
       discipline: 'custom',

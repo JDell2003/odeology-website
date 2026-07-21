@@ -44,10 +44,35 @@
       '.wb-day.is-drop{border-color:var(--gold);box-shadow:0 0 0 2px rgba(212,165,55,.35);}',
       '.wb-day .wb-day-count{margin-left:6px;font-weight:800;opacity:.7;font-size:11px;}',
       // toolbar
-      '.wb-tools{display:flex;gap:8px;align-items:center;padding:8px 18px;border-bottom:1px solid var(--line);}',
+      '.wb-tools{display:flex;gap:8px;align-items:center;padding:8px 18px;border-bottom:1px solid var(--line);position:relative;}',
       '.wb-tool{border:1px solid var(--line);background:#fff;border-radius:7px;padding:7px 12px;font:700 11px/1 system-ui;color:#475569;cursor:pointer;letter-spacing:.03em;}',
       '.wb-tool:hover{background:#f8fafc;}',
+      '.wb-tool.copy{color:#2f6f8f;border-color:rgba(47,111,143,.4);background:rgba(47,111,143,.08);}',
       '.wb-tool.rest{margin-left:auto;color:#a1751f;border-color:rgba(185,138,43,.4);background:rgba(212,165,55,.1);}',
+      // copy-to-days popup
+      '.wb-copy-pop{position:absolute;top:calc(100% + 4px);left:18px;z-index:60;background:#fff;border:1px solid var(--line);border-radius:12px;box-shadow:0 18px 44px rgba(15,23,42,.2);padding:10px;display:grid;gap:2px;min-width:250px;}',
+      '.wb-copy-pop[hidden]{display:none;}',
+      '.wb-copy-pop-title{font:700 11px/1.4 system-ui;letter-spacing:.04em;text-transform:uppercase;color:#94a3b8;padding:4px 8px 2px;}',
+      '.wb-copy-pop-warn{font:600 11px/1.4 system-ui;color:#b45309;background:rgba(212,165,55,.12);border-radius:7px;padding:6px 8px;margin:2px 4px 6px;}',
+      '.wb-copy-day{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:8px;font:600 13px/1 system-ui;color:#33465c;cursor:pointer;}',
+      '.wb-copy-day:hover{background:#f1f5f9;} .wb-copy-day input{width:16px;height:16px;accent-color:var(--gold);cursor:pointer;}',
+      '.wb-copy-day.is-empty{color:#94a3b8;}',
+      '.wb-copy-actions{display:flex;gap:8px;justify-content:flex-end;padding:8px 4px 2px;}',
+      '.wb-copy-go{background:#2f6f8f;border:0;color:#fff;font:800 12px/1 system-ui;padding:9px 16px;border-radius:8px;cursor:pointer;}',
+      '.wb-copy-go:disabled{opacity:.45;cursor:default;}',
+      '.wb-copy-cancel{background:#fff;border:1px solid var(--line);color:#64748b;font:700 12px/1 system-ui;padding:9px 14px;border-radius:8px;cursor:pointer;}',
+      // progression toggle (segmented) + note
+      '.wb-prog{display:flex;align-items:center;gap:10px;padding:10px 18px 4px;flex-wrap:wrap;}',
+      '.wb-prog-label{font:700 11px/1 system-ui;letter-spacing:.04em;text-transform:uppercase;color:#94a3b8;}',
+      '.wb-seg{display:inline-flex;border:1px solid var(--line);border-radius:9px;overflow:hidden;}',
+      '.wb-seg button{border:0;background:#fff;color:#475569;font:800 12px/1 system-ui;padding:8px 14px;cursor:pointer;}',
+      '.wb-seg button.is-active{background:var(--ink);color:#fff;}',
+      '.wb-prog-note{font:600 11.5px/1.4 system-ui;color:#64748b;flex:1 1 240px;min-width:180px;}',
+      '.wb-prog-note b{color:#a1751f;}',
+      // per-exercise start reps/weight cell (system mode)
+      '.wb-start{display:flex;gap:6px;align-items:center;}',
+      '.wb-start input{flex:1 1 0;min-width:0;text-align:center;}',
+      '.wb-start .wb-start-x{flex:0 0 auto;color:#94a3b8;font:700 12px/1 system-ui;}',
       // rows
       '.wb-rows{flex:1 1 auto;overflow:auto;min-height:0;padding:4px 12px 24px;}',
       '.wb-colhead{display:grid;grid-template-columns:1fr 60px 178px 92px 26px;gap:8px;padding:10px 6px 6px;font:700 11px/1 system-ui;letter-spacing:.04em;text-transform:uppercase;color:#94a3b8;}',
@@ -141,11 +166,15 @@
     var state = {
       activeDay: 'Monday',
       days: {},
+      progression: 'manual', // 'manual' | 'system'
       q: '', bodyPart: '', equip: ''
     };
     DAYS.forEach(function (d) { state.days[d] = []; });
     if (opts.plan && opts.plan.days) {
       DAYS.forEach(function (d) { if (Array.isArray(opts.plan.days[d])) state.days[d] = opts.plan.days[d]; });
+    }
+    if (opts.plan && (opts.plan.progression === 'system' || opts.plan.progression === 'manual')) {
+      state.progression = opts.plan.progression;
     }
 
     function filtered() {
@@ -176,7 +205,8 @@
       state.days[day].push({
         id: uid(), kind: 'exercise', name: ex.name, exerciseId: ex.name,
         img0: imgPath(ex, 0), img1: imgPath(ex, 1),
-        sets: 3, targetType: 'text', target: '', rest: '90 sec'
+        sets: 3, targetType: 'text', target: '', rest: '90 sec',
+        startReps: '', startWeight: ''
       });
       if (!quiet) toast(ex, day);
       render();
@@ -184,6 +214,28 @@
     function addRest(day) {
       state.days[day].push({ id: uid(), kind: 'rest', name: 'Rest', sets: '', targetType: 'text', target: '', rest: '90 sec' });
       render();
+    }
+
+    // Deep-clone a day's items with fresh ids (so copies don't share references).
+    function cloneItems(items) {
+      return (items || []).map(function (it) {
+        var c = {}; for (var k in it) { if (Object.prototype.hasOwnProperty.call(it, k)) c[k] = it[k]; }
+        c.id = uid();
+        return c;
+      });
+    }
+
+    // Copy the active day's workout onto each chosen day, replacing what's there.
+    function copyActiveDayTo(targetDays) {
+      var src = state.days[state.activeDay] || [];
+      var n = 0;
+      targetDays.forEach(function (d) {
+        if (d === state.activeDay || !state.days[d]) return;
+        state.days[d] = cloneItems(src);
+        n += 1;
+      });
+      render();
+      setStatus('ok', 'Copied ' + state.activeDay + ' to ' + n + ' day' + (n === 1 ? '' : 's') + '.');
     }
 
     function rowHtml(item) {
@@ -194,11 +246,23 @@
           + '<div><select class="wb-in" data-f="rest">' + REST_OPTIONS.map(function (o) { return '<option' + (o === item.rest ? ' selected' : '') + '>' + o + '</option>'; }).join('') + '</select></div>'
           + '<button class="wb-del" data-del="' + item.id + '" title="Remove">&times;</button></div>';
       }
+      var targetCell;
+      if (state.progression === 'system') {
+        // System progression: capture the STARTING reps + weight; the client
+        // climbs reps each week, then bumps weight and resets. No free-text.
+        targetCell = '<div class="wb-start">'
+          + '<input class="wb-in" type="number" min="1" inputmode="numeric" value="' + esc(item.startReps) + '" data-f="startReps" placeholder="reps">'
+          + '<span class="wb-start-x">@</span>'
+          + '<input class="wb-in" type="number" min="0" step="0.5" inputmode="decimal" value="' + esc(item.startWeight) + '" data-f="startWeight" placeholder="wt">'
+          + '</div>';
+      } else {
+        targetCell = '<div class="wb-target"><select class="wb-in" data-f="targetType"><option value="text"' + (item.targetType === 'text' ? ' selected' : '') + '>reps/weight</option><option value="time"' + (item.targetType === 'time' ? ' selected' : '') + '>time</option></select>'
+          + '<input class="wb-in" value="' + esc(item.target) + '" data-f="target" placeholder="' + (item.targetType === 'time' ? '30s, 1 min…' : 'reps, weight…') + '"></div>';
+      }
       return '<div class="wb-row" data-id="' + item.id + '" draggable="true">'
         + '<div class="wb-ex"><img class="wb-ex-thumb" src="' + esc(item.img0) + '" alt="" onerror="this.style.visibility=\'hidden\'"><div class="wb-ex-name" title="' + esc(item.name) + '">' + esc(item.name) + '</div></div>'
         + '<div><input class="wb-in" type="number" min="1" value="' + esc(item.sets) + '" data-f="sets"></div>'
-        + '<div class="wb-target"><select class="wb-in" data-f="targetType"><option value="text"' + (item.targetType === 'text' ? ' selected' : '') + '>reps/weight</option><option value="time"' + (item.targetType === 'time' ? ' selected' : '') + '>time</option></select>'
-        + '<input class="wb-in" value="' + esc(item.target) + '" data-f="target" placeholder="' + (item.targetType === 'time' ? '30s, 1 min…' : 'reps, weight…') + '"></div>'
+        + targetCell
         + '<div><select class="wb-in" data-f="rest">' + REST_OPTIONS.map(function (o) { return '<option' + (o === item.rest ? ' selected' : '') + '>' + o + '</option>'; }).join('') + '</select></div>'
         + '<button class="wb-del" data-del="' + item.id + '" title="Remove">&times;</button></div>';
     }
@@ -226,6 +290,37 @@
         + '<div class="wb-grid" id="wb-grid">' + list.map(function (ex) { return cardHtml(ex, allExercises.indexOf(ex)); }).join('') + '</div>';
     }
 
+    function progressionHtml() {
+      var sys = state.progression === 'system';
+      return '<div class="wb-prog">'
+        + '<span class="wb-prog-label">Progression</span>'
+        + '<span class="wb-seg" id="wb-prog-seg">'
+        + '<button type="button" data-prog="system"' + (sys ? ' class="is-active"' : '') + '>System</button>'
+        + '<button type="button" data-prog="manual"' + (!sys ? ' class="is-active"' : '') + '>Manual</button>'
+        + '</span>'
+        + '<span class="wb-prog-note">' + (sys
+          ? 'Enter each lift\'s <b>starting reps &amp; weight</b>. Reps climb each week; once they top out, weight goes up and reps reset — the app takes it from there.'
+          : 'You write the target for each lift (reps/weight or time). Nothing auto-adjusts.')
+        + '</span>'
+        + '</div>';
+    }
+
+    function copyPopHtml() {
+      var others = DAYS.filter(function (d) { return d !== state.activeDay; });
+      return '<div class="wb-copy-pop" id="wb-copy-pop" hidden>'
+        + '<div class="wb-copy-pop-title">Copy <b>' + esc(state.activeDay) + '</b> to…</div>'
+        + '<div class="wb-copy-pop-warn">Heads up: this overwrites whatever is on the days you pick.</div>'
+        + others.map(function (d) {
+          var n = (state.days[d] || []).length;
+          return '<label class="wb-copy-day' + (n ? '' : ' is-empty') + '"><input type="checkbox" data-copy-day="' + d + '"><span>' + d + (n ? ' (' + n + ')' : ' (empty)') + '</span></label>';
+        }).join('')
+        + '<div class="wb-copy-actions">'
+        + '<button type="button" class="wb-copy-cancel" data-copy-cancel>Cancel</button>'
+        + '<button type="button" class="wb-copy-go" id="wb-copy-go" disabled>Copy</button>'
+        + '</div>'
+        + '</div>';
+    }
+
     function render() {
       var dayItems = state.days[state.activeDay] || [];
       root.innerHTML = ''
@@ -246,9 +341,13 @@
           var n = (state.days[d] || []).length;
           return '<button class="wb-day' + (d === state.activeDay ? ' is-active' : '') + '" data-day="' + d + '">' + d + (n ? '<span class="wb-day-count">' + n + '</span>' : '') + '</button>';
         }).join('') + '</div>'
-        + '<div class="wb-tools"><button class="wb-tool" data-tool="superset">SUPERSET</button><button class="wb-tool" data-tool="circuit">CIRCUIT</button><button class="wb-tool rest" data-tool="rest">＋ ADD REST</button></div>'
+        + progressionHtml()
+        + '<div class="wb-tools">'
+        + '<button class="wb-tool copy" data-tool="copy">⧉ COPY DAY</button>'
+        + copyPopHtml()
+        + '<button class="wb-tool" data-tool="superset">SUPERSET</button><button class="wb-tool" data-tool="circuit">CIRCUIT</button><button class="wb-tool rest" data-tool="rest">＋ ADD REST</button></div>'
         + '<div class="wb-rows" id="wb-rows">'
-        + '<div class="wb-colhead"><span>Exercise</span><span>Sets</span><span>Target</span><span>Rest</span><span></span></div>'
+        + '<div class="wb-colhead"><span>Exercise</span><span>Sets</span><span>' + (state.progression === 'system' ? 'Start reps @ wt' : 'Target') + '</span><span>Rest</span><span></span></div>'
         + (dayItems.length ? dayItems.map(rowHtml).join('') : '<div class="wb-empty" id="wb-empty">Drag exercises here for <b>' + state.activeDay + '</b><br><span style="font-size:12px;">(or tap one on the right)</span></div>')
         + '</div>'
         + '</div>'
@@ -328,11 +427,51 @@
         var b = e.target.closest('[data-day]'); if (!b) return;
         state.activeDay = b.getAttribute('data-day'); render();
       });
+      var copyPop = root.querySelector('#wb-copy-pop');
       root.querySelector('.wb-tools').addEventListener('click', function (e) {
         var b = e.target.closest('[data-tool]'); if (!b) return;
         var t = b.getAttribute('data-tool');
         if (t === 'rest') addRest(state.activeDay);
+        else if (t === 'copy') {
+          if (!(state.days[state.activeDay] || []).length) { setStatus('bad', 'Add exercises to ' + state.activeDay + ' first.'); return; }
+          e.stopPropagation();
+          if (copyPop) copyPop.hidden = !copyPop.hidden;
+        }
       });
+      // Copy popup: track checkboxes, enable Copy when ≥1 day picked
+      if (copyPop) {
+        var refreshCopyBtn = function () {
+          var go = copyPop.querySelector('#wb-copy-go');
+          var any = copyPop.querySelectorAll('[data-copy-day]:checked').length > 0;
+          if (go) go.disabled = !any;
+        };
+        copyPop.addEventListener('change', refreshCopyBtn);
+        copyPop.addEventListener('click', function (e) {
+          if (e.target.closest('[data-copy-cancel]')) { copyPop.hidden = true; return; }
+          var go = e.target.closest('#wb-copy-go');
+          if (go) {
+            var picked = Array.prototype.map.call(copyPop.querySelectorAll('[data-copy-day]:checked'), function (c) { return c.getAttribute('data-copy-day'); });
+            if (!picked.length) return;
+            copyPop.hidden = true;
+            copyActiveDayTo(picked);
+          }
+        });
+        document.addEventListener('click', function (e) {
+          if (!copyPop.hidden && !copyPop.contains(e.target) && !e.target.closest('[data-tool="copy"]')) copyPop.hidden = true;
+        });
+      }
+      // Progression System/Manual toggle
+      var progSeg = root.querySelector('#wb-prog-seg');
+      if (progSeg) {
+        progSeg.addEventListener('click', function (e) {
+          var b = e.target.closest('[data-prog]'); if (!b) return;
+          var mode = b.getAttribute('data-prog');
+          if (mode !== 'system' && mode !== 'manual') return;
+          if (mode === state.progression) return;
+          state.progression = mode;
+          render();
+        });
+      }
       // row edits + delete
       var rows = root.querySelector('#wb-rows');
       rows.addEventListener('input', function (e) {
@@ -402,10 +541,14 @@
     }
 
     function assemble() {
-      var out = { name: 'My workout', instructions: '', days: {} };
+      var out = { name: 'My workout', instructions: '', progression: state.progression, days: {} };
       DAYS.forEach(function (d) {
         out.days[d] = (state.days[d] || []).map(function (it) {
-          return { kind: it.kind, name: it.name, exerciseId: it.exerciseId || null, sets: it.sets, targetType: it.targetType, target: it.target, rest: it.rest };
+          return {
+            kind: it.kind, name: it.name, exerciseId: it.exerciseId || null,
+            sets: it.sets, targetType: it.targetType, target: it.target, rest: it.rest,
+            startReps: it.startReps || '', startWeight: it.startWeight || ''
+          };
         });
       });
       return out;

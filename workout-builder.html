@@ -13,7 +13,7 @@
 <body>
   <div id="wb-root"><div id="wb-loading">Loading the workout builder…</div></div>
 
-  <script src="js/workout-builder.js?v=2026-07-15-wb-5"></script>
+  <script src="js/workout-builder.js?v=2026-07-21-wb-6"></script>
   <script type="module">
     import { exercises } from '/data/exercises.master.js';
 
@@ -57,6 +57,7 @@
     function mapServerPlan(planObj) {
       if (!planObj || !Array.isArray(planObj.weeks) || !planObj.weeks[0]) return null;
       const out = { name: (planObj.meta && planObj.meta.name) || 'My workout', instructions: '', days: {} };
+      out.progression = (planObj.meta && planObj.meta.progression === 'system') ? 'system' : 'manual';
       DAYS.forEach(d => { out.days[d] = []; });
       let any = false;
       (planObj.weeks[0].days || []).forEach((day, i) => {
@@ -65,11 +66,14 @@
           const name = ex.displayName || ex.name; if (!name) return;
           any = true;
           const isTime = !!(ex.targetTime && String(ex.targetTime).trim());
+          const prog = ex.progression && typeof ex.progression === 'object' ? ex.progression : null;
           out.days[wd].push({
             id: uid(), kind: 'exercise', name, exerciseId: name,
             img0: imgOf(name, 0), img1: imgOf(name, 1),
             sets: ex.sets || 3, targetType: isTime ? 'time' : 'text',
             target: isTime ? ex.targetTime : (ex.reps != null ? String(ex.reps) : ''),
+            startReps: prog && prog.startReps != null ? String(prog.startReps) : '',
+            startWeight: prog && prog.startWeight != null ? String(prog.startWeight) : '',
             rest: restLabel(ex.restSeconds)
           });
         });

@@ -1336,6 +1336,10 @@
   const SHARE_OUTGOING_SYNC_MS = 4500;
   const SHARE_DEBUG_VERSION = '2026-03-08-share-debug-6';
   const TRAINING_SKIP_LOG_KEY = 'ode_training_skip_log_v1';
+  // "Do another day": a per-date override that swaps which plan day you perform
+  // on a given date (without touching the skip/schedule counters). Keyed by the
+  // date you're doing it on -> { doDate, dayIndex, focus, reason, loggedAt }.
+  const TRAINING_DO_OVERRIDE_KEY = 'ode_training_do_override_v1';
   const TRAINING_WELCOME_STORAGE_KEY = 'ode_training_share_welcome_v1';
   const TRAINING_WELCOME_TTL_MS = 6 * 60 * 60 * 1000;
   const TRAINING_QUICK_TOUR_SEEN_PREFIX = 'ode_training_quick_tour_seen_v1';
@@ -4815,6 +4819,53 @@
     return normalized;
   }
 
+  // --- "Do another day" overrides -----------------------------------------
+  // Map of doDate(ISO) -> { doDate, dayIndex, focus, reason, loggedAt }. Keeps
+  // the last ~120 entries. Read/normalized defensively so a corrupt blob can't
+  // brick the plan view.
+  function normalizeDoOverrideEntries(rawList) {
+    const src = Array.isArray(rawList) ? rawList : [];
+    const dedup = new Map();
+    for (const item of src) {
+      const rec = item && typeof item === 'object' ? item : {};
+      const parsedDate = parseISODateLocal(rec.doDate);
+      const dayIndex = Number(rec.dayIndex);
+      if (!parsedDate || !Number.isFinite(dayIndex) || dayIndex < 1) continue;
+      const doDate = toISODateLocal(parsedDate);
+      dedup.set(doDate, {
+        doDate,
+        dayIndex: Math.round(dayIndex),
+        focus: String(rec.focus || '').trim().slice(0, 80),
+        reason: String(rec.reason || '').trim().slice(0, 300),
+        loggedAt: String(rec.loggedAt || '').trim() || new Date().toISOString()
+      });
+    }
+    return Array.from(dedup.values())
+      .sort((a, b) => String(a.doDate || '').localeCompare(String(b.doDate || '')))
+      .slice(-120);
+  }
+
+  function readDoOverrideLog() {
+    const readFrom = (storage) => {
+      try {
+        const raw = storage.getItem(TRAINING_DO_OVERRIDE_KEY);
+        if (!raw) return [];
+        return normalizeDoOverrideEntries(JSON.parse(raw));
+      } catch { return []; }
+    };
+    const local = readFrom(localStorage);
+    if (local.length) return local;
+    return readFrom(sessionStorage);
+  }
+
+  function writeDoOverrideLog(entries) {
+    const normalized = normalizeDoOverrideEntries(entries);
+    const text = JSON.stringify(normalized);
+    try { localStorage.setItem(TRAINING_DO_OVERRIDE_KEY, text); } catch { /* ignore */ }
+    try { sessionStorage.setItem(TRAINING_DO_OVERRIDE_KEY, text); } catch { /* ignore */ }
+    return normalized;
+  }
+
   function planStartDate(plan) {
     const timestamps = [];
     const pushTimestamp = (raw) => {
@@ -4852,6 +4903,35 @@
     const idx = Math.floor(Math.max(0, diffDays) / 7) + 1;
     const maxWeeks = Array.isArray(plan?.weeks) ? plan.weeks.length : 1;
     return Math.max(1, Math.min(maxWeeks, idx));
+  }
+
+  // Double-progression for manual "system" workouts (built in the workout
+  // builder). Reps climb +1 each calendar week from the starting reps for
+  // SYS_PROG_REP_STEPS weeks; then weight goes up one step and reps reset.
+  // Returns the target for `date`, or null when the exercise isn't on system
+  // progression. This is the "takes it from there" logic — it advances purely
+  // by weeks elapsed since the plan started, no manual bookkeeping.
+  const SYS_PROG_REP_STEPS = 4;     // weeks of rep climb before a weight bump
+  const SYS_PROG_WEIGHT_STEP = 5;   // lb added when reps reset
+  function systemProgressionTarget(ex, date, plan) {
+    const prog = ex && ex.progression;
+    if (!prog || prog.mode !== 'system') return null;
+    const startReps = Number(prog.startReps);
+    if (!Number.isFinite(startReps) || startReps <= 0) return null;
+    const hasWeight = Number.isFinite(Number(prog.startWeight));
+    const startWeight = hasWeight ? Number(prog.startWeight) : null;
+    const start = planStartDate(plan);
+    const diffDays = Math.floor((dayStart(date).getTime() - start.getTime()) / 86400000);
+    const block = Math.max(0, Math.floor(diffDays / 7)); // whole weeks elapsed
+    const weightBumps = Math.floor(block / SYS_PROG_REP_STEPS);
+    const repAdd = block % SYS_PROG_REP_STEPS;
+    return {
+      reps: startReps + repAdd,
+      hasWeight,
+      weight: hasWeight ? startWeight + weightBumps * SYS_PROG_WEIGHT_STEP : null,
+      week: block + 1,
+      justReset: repAdd === 0 && block > 0
+    };
   }
 
   function dateForWeekday(weekIndex, weekday, plan) {
@@ -14937,6 +15017,8 @@ function toggleSharePopover(force) {
       const isHistoryDate = dayStart(activeDate).getTime() < dayStart(planMinDate).getTime();
       const skipLogEntries = readTrainingSkipLog();
       const skipLogByDate = new Map(skipLogEntries.map((entry) => [String(entry?.skipDate || '').trim(), entry]));
+      const doOverrideEntries = readDoOverrideLog();
+      const doOverrideByDate = new Map(doOverrideEntries.map((entry) => [String(entry?.doDate || '').trim(), entry]));
       const sessionOrdinalByDate = new Map();
       const skipCountByDate = new Map();
       const dayStartByDate = new Map();
@@ -15018,7 +15100,15 @@ function toggleSharePopover(force) {
       writeTrainingPlanNavValue(`day_${activeWeek}`, `wd:${activeWeekday}`, { planId: state.planRow?.id });
       writeTrainingPlanNavValue('active_date', toISODateLocal(activeDate), { planId: state.planRow?.id });
 
-      const activeDayIndex = dayIndexForDate(activeDate);
+      const baseActiveDayIndex = dayIndexForDate(activeDate);
+      // "Do another day": if this date carries an override, perform that plan
+      // day instead (even on a rest day, where the base index is null).
+      const activeDoOverride = doOverrideByDate.get(toISODateLocal(activeDate)) || null;
+      const overrideDayIndex = activeDoOverride
+        ? Math.max(1, Math.min(days.length, Number(activeDoOverride.dayIndex) || 0))
+        : 0;
+      const activeDayIndex = overrideDayIndex || baseActiveDayIndex;
+      const isDoOverrideActive = Boolean(overrideDayIndex) && overrideDayIndex !== baseActiveDayIndex;
       const activeDay = activeDayIndex || -1;
       const pageWorkoutContext = {
         planId: state.planRow?.id || null,
@@ -15148,6 +15238,69 @@ function toggleSharePopover(force) {
           return;
         }
         render();
+      };
+
+      // --- "Do another day": swap today's workout for a chosen plan day ------
+      const doOverlayStyle = 'position:fixed;inset:0;z-index:2147483000;display:grid;place-items:center;padding:18px;background:rgba(6,9,15,0.72);';
+      const doCardStyle = 'max-width:440px;width:100%;background:#fff;border-radius:16px;padding:20px;box-shadow:0 24px 60px rgba(0,0,0,0.35);font-family:system-ui,-apple-system,\'Segoe UI\',sans-serif;';
+      const openDoAnotherDay = () => {
+        const activeIso = toISODateLocal(activeDate);
+        if (dayStart(activeDate).getTime() > todayStart.getTime()) {
+          window.alert('You can only do a workout for today or a past day.');
+          return;
+        }
+        const choices = days.map((d, i) => ({
+          dayIndex: i + 1,
+          focus: String(d?.focus || '').trim() || `Day ${i + 1}`,
+          title: getDayTitle(d) || (String(d?.focus || '').trim() || `Day ${i + 1}`)
+        }));
+        if (!choices.length) { window.alert('This plan has no workout days to choose from.'); return; }
+
+        const overlay = el('div', { style: doOverlayStyle });
+        const close = () => { try { overlay.remove(); } catch { /* ignore */ } };
+        const card = el('div', { style: doCardStyle },
+          el('div', { style: 'font-weight:800;font-size:1.05rem;margin-bottom:4px;color:#1f2937' }, 'Do a different day today'),
+          el('div', { style: 'font-size:0.86rem;color:#64748b;line-height:1.45;margin-bottom:14px' },
+            `Pick the workout to do on ${activeIso}. It replaces what's scheduled for that date and logs against the day you pick.`),
+          el('div', { style: 'display:grid;gap:8px;max-height:46vh;overflow:auto' },
+            ...choices.map((c) => el('button', {
+              type: 'button',
+              class: 'btn btn-ghost',
+              style: `text-align:left;justify-content:flex-start;${c.dayIndex === baseActiveDayIndex ? 'border-color:#a1751f;' : ''}`,
+              onclick: () => {
+                close();
+                const reasonRaw = window.prompt(`Why are you doing "${c.focus}" instead of your scheduled workout on ${activeIso}?`);
+                if (reasonRaw === null) return;
+                const reason = String(reasonRaw || '').trim();
+                if (!reason) { window.alert('Please type a reason for the change.'); return; }
+                const confirmed = window.confirm(`Do "${c.focus}" on ${activeIso} instead?\nReason: ${reason}`);
+                if (!confirmed) return;
+                writeDoOverrideLog([
+                  ...doOverrideEntries.filter((e) => String(e?.doDate || '').trim() !== activeIso),
+                  { doDate: activeIso, dayIndex: c.dayIndex, focus: c.focus, reason, loggedAt: new Date().toISOString() }
+                ]);
+                state.planError = '';
+                setActiveDate(activeDate);
+              }
+            },
+              el('span', { style: 'font-weight:700' }, `Day ${c.dayIndex}: ${c.focus}`),
+              c.dayIndex === baseActiveDayIndex ? el('span', { style: 'margin-left:8px;color:#a1751f;font-size:0.78rem;font-weight:700' }, '(scheduled)') : null
+            ))
+          ),
+          el('button', { type: 'button', class: 'btn btn-ghost', style: 'margin-top:14px;width:100%', onclick: close }, 'Cancel')
+        );
+        overlay.appendChild(card);
+        overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
+        document.body.appendChild(overlay);
+      };
+      const clearDoOverrideForActiveDate = () => {
+        if (!isDoOverrideActive) return;
+        const activeIso = toISODateLocal(activeDate);
+        const proceed = window.confirm(`Go back to your scheduled workout for ${activeIso}?`);
+        if (!proceed) return;
+        writeDoOverrideLog(doOverrideEntries.filter((e) => String(e?.doDate || '').trim() !== activeIso));
+        state.planError = '';
+        setActiveDate(activeDate);
       };
 
       const shareBox = el('div', { class: 'plan-topbar-share' },
@@ -15280,6 +15433,12 @@ function toggleSharePopover(force) {
         },
           el('button', { type: 'button', class: 'btn btn-ghost', onclick: openScheduleChangeModal }, 'Change workout days'),
           el('div', { class: 'plan-topbar-skip-row' },
+            el('button', {
+              type: 'button',
+              class: 'btn btn-ghost',
+              title: 'Do a different day\'s workout today',
+              onclick: isDoOverrideActive ? clearDoOverrideForActiveDate : openDoAnotherDay
+            }, isDoOverrideActive ? 'Undo swap' : 'Do?'),
             el('button', { type: 'button', class: 'btn btn-ghost', onclick: skipToNextWorkoutDay }, 'Skipping'),
             el('button', {
               type: 'button',
@@ -15594,7 +15753,14 @@ function toggleSharePopover(force) {
             dayIndex,
             fallback: Math.max(defaultSetCount, savedSetCount)
           });
-        const setsRepsRest = `${setCount} sets \u00D7 ${ex.reps} reps \u00D7 rest ${fmtRest(ex.restSec)}`;
+        const sysProg = systemProgressionTarget(ex, activeDate, plan);
+        const dispReps = sysProg ? sysProg.reps : ex.reps;
+        const setsRepsRest = `${setCount} sets \u00D7 ${dispReps} reps \u00D7 rest ${fmtRest(ex.restSec)}`;
+        const sysProgNote = sysProg
+          ? (sysProg.hasWeight
+            ? `Auto progression \u2022 Week ${sysProg.week}: aim ${sysProg.reps} reps @ ${sysProg.weight} lb` + (sysProg.justReset ? ' (weight went up \u2014 reps reset)' : ' (reps climb, then weight)')
+            : `Auto progression \u2022 Week ${sysProg.week}: aim ${sysProg.reps} reps (reps climb, then weight)`)
+          : '';
           const baseSetCount = (() => {
             if (Number.isFinite(ex._baseSets)) return Math.max(0, Math.min(12, Math.round(ex._baseSets)));
             ex._baseSets = defaultSetCount;
@@ -15837,6 +16003,7 @@ function toggleSharePopover(force) {
                   : null
               ),
               el('div', { class: 'exercise-prescription' }, setsRepsRest),
+              sysProgNote ? el('div', { class: 'training-muted', style: 'margin-top:0.35rem;color:#a1751f;font-weight:700' }, sysProgNote) : null,
               ex.tempo ? el('div', { class: 'exercise-substitutions' }, `Tempo: ${String(ex.tempo)}`) : null,
               ex.coaching?.progress ? el('div', { class: 'training-muted', style: 'margin-top:0.35rem' }, `Progress: ${String(ex.coaching.progress)}`) : null,
               ex.coaching?.regress ? el('div', { class: 'training-muted' }, `Regress: ${String(ex.coaching.regress)}`) : null,
@@ -15892,6 +16059,13 @@ function toggleSharePopover(force) {
       dayDetail = shell.appendChild(
         el('div', { class: 'day-card' },
           todayBar,
+          isDoOverrideActive
+            ? el('div', { class: 'training-subcard', style: 'margin:0 0 0.75rem;border-left:3px solid #a1751f;background:rgba(212,165,55,0.08)' },
+              el('div', { style: 'font-weight:800;color:#a1751f' }, `Swapped: doing ${activeDoOverride?.focus || activeDayFocus} today`),
+              activeDoOverride?.reason ? el('div', { class: 'training-muted', style: 'margin-top:0.2rem' }, `Reason: ${activeDoOverride.reason}`) : null,
+              el('button', { type: 'button', class: 'btn btn-ghost', style: 'margin-top:0.5rem', onclick: clearDoOverrideForActiveDate }, 'Undo — back to scheduled')
+            )
+            : null,
           el('div', { class: 'training-section-line' }),
           (() => {
             try {
