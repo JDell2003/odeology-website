@@ -7892,6 +7892,12 @@ function formatWorkspaceLabel(workspace) {
 
         function syncOnboardingStateFromAuthenticatedUser() {
           if (TEST_ONBOARDING_MODE) return;
+          // A deliberate reset (Restart onboarding) or a fresh signup sets the
+          // force flag. Never auto-complete it from a cached "trainer onboarded"
+          // signal — the auth hint is still stale right after a reset, and using
+          // it here would silently undo the reset (set DONE, clear FORCE) and
+          // route the user straight back to the app instead of into onboarding.
+          if (isOnboardingForced()) return;
           const liveUser = window.__odeCurrentUser || readAuthUserHint() || null;
           const trainerOnboarded = Boolean(
             liveUser?.trainer?.onboarded
