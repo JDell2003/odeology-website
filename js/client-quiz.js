@@ -208,38 +208,12 @@
             'I cook them myself', 'Someone else cooks for me', 'I order from restaurants', 'I eat premade meals'
         ] },
         { id: 'knowCalories', section: 'nutrition', type: 'choice', title: 'Do you know your daily calorie needs for your goal?', options: ['Yes', 'No'] },
-        { id: 'calorieDifficulty', section: 'nutrition', type: 'choice', title: 'How difficult is it for you to count calories?', options: [
-            'Extremely difficult', 'Quite challenging', 'Not difficult at all', "I haven't tried"
-        ] },
         { id: 'caloriePromo', type: 'info', kicker: 'RiseForIt', title: 'Track your calorie intake effortlessly', body: "Calorie deficit is key for weight loss, while calorie surplus is essential for muscle gain.\nWe'll calculate your optimal daily intake and help you stay on track.", art: 'calories' },
-        { id: 'mealsPerDay', section: 'nutrition', type: 'choice', title: 'How many meals do you typically eat in a day?', options: [
-            'Fewer than 3 meals', '3 meals', 'At least 3 meals, and snacks', 'Depends on the day'
-        ] },
-        { id: 'firstMeal', section: 'nutrition', type: 'choice', title: 'When do you usually have your first meal of the day?', options: [
-            'Before 6 AM', '6-8 AM', '8-10 AM', 'After 10 AM'
-        ] },
-        { id: 'lastMeal', section: 'nutrition', type: 'choice', title: 'When do you usually have your last meal of the day?', options: [
-            'Before 6 PM', '6-8 PM', '8-10 PM', 'After 10 PM'
-        ] },
-        { id: 'water', section: 'nutrition', type: 'choice', title: 'How much water do you drink daily?', options: [
-            'I only have coffee or tea', 'About 2 glasses (16 oz)', '2 to 6 glasses (16-48 oz)', 'More than 6 glasses'
-        ] },
 
-        { id: 'stressFood', section: 'mind', type: 'choice', title: 'How do stress and emotions affect your food choices?', options: [
-            'I start eating more', 'I lose my appetite', 'I crave specific comfort foods', 'Other', "I don't notice any changes"
-        ] },
         { id: 'agree1', section: 'mind', type: 'scale', title: '‘No matter how hard I try, the results always slip away’' },
-        { id: 'agree2', section: 'mind', type: 'scale', title: "‘I usually eat everything on my plate, even if I'm full’" },
-        { id: 'agree3', section: 'mind', type: 'scale', title: '‘I feel obligated to eat when others are eating’' },
         { id: 'agree4', section: 'mind', type: 'scale', title: '‘Getting in shape is tough. I try for a bit, but then I slip back into old habits’' },
         { id: 'habitsPromo', type: 'info', kicker: 'RiseForIt', title: 'Supercharge your results with better habits', body: "We'll work with your emotions and behavior to improve your habits.\nThis helps you make progress easily and keep it long-term.", art: 'chapters' },
 
-        { id: 'lifeAreas', section: 'lifestyle', type: 'multi', title: 'What areas of life currently occupy most of your time?', options: [
-            'Work or career', 'Family or children', 'Social life', 'Hobbies or leisure activities', 'Personal development', 'Other'
-        ] },
-        { id: 'workSchedule', section: 'lifestyle', type: 'choice', title: "What's your work schedule like?", options: [
-            '9 to 5', 'My hours are flexible', 'Night shifts', "I'm retired / not working right now"
-        ] },
         { id: 'sleepHours', section: 'lifestyle', type: 'choice', title: 'How much sleep do you usually get?', options: [
             'Less than 5 hours', '5-6 hours', '7-8 hours', 'More than 8 hours'
         ] },
@@ -274,16 +248,12 @@
         { id: 'event', section: 'goals', type: 'choice', title: 'Do you have an important event coming up?', subtitle: 'Having something to look forward to can be a great motivator for reaching your goal', options: [
             'Vacation', 'Wedding', 'Holiday', 'Sporting event', 'Reunion', 'Birthday', 'Other', 'No events any time soon'
         ] },
-        { id: 'eventDate', section: 'goals', type: 'date', title: 'When is your event?', subtitle: 'We will keep this important event in mind for your journey', skipIf: (a) => a.event === 'No events any time soon' },
         { id: 'projection', type: 'projection' },
         { id: 'confidence', section: 'goals', type: 'choice', title: (a) => `How confident are you in reaching ${goalWeightLabel(a)}?`, options: [
             'I believe I can do it!', "I'm uncertain, but willing to try!", "I'm still really unsure"
         ] },
         { id: 'mainReason', section: 'goals', type: 'choice', title: "What's your main reason to get in shape?", options: [
             'Become more confident in my body', 'Feel healthier and more energetic', 'Fit in my clothes better', 'Participate in activities and hobbies with ease', 'Other'
-        ] },
-        { id: 'happyWeight', section: 'goals', type: 'multi', title: 'At my best shape, I see myself:', options: [
-            'Enjoying foods guilt-free', 'Eating more mindfully', 'Engaging in activities without discomfort', 'Glowing with health and vitality', 'Having a more active social life', 'Free of judgment or bias from others', 'Other'
         ] },
         { id: 'loading', type: 'loading' },
         { id: 'plan', type: 'plan' }
