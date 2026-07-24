@@ -569,21 +569,78 @@
     var sub = el('p', 'cp-sub', 'These questions build your website and your content plan. Answer rough and honest — we sharpen them together on your call.');
     staggerRise(sub, 2); wrap.appendChild(sub);
     var go = el('button', 'cp-btn cp-btn-primary', 'Start'); go.type = 'button'; go.style.marginTop = '16px'; staggerRise(go, 3);
-    go.onclick = function () {
-      state.draft = null;
-      beginDraft('detailed'); // signup always defaults to the detailed track
-      // Pre-fill what Flow A already knows (rough seeds they refine on the call).
+    go.onclick = function () { state.draft = null; seedDetailedFromPrefill(); startQuestionnaire(); };
+    wrap.appendChild(go);
+    root.appendChild(wrap);
+  }
+
+  function isTrainerUser() {
+    try {
+      var u = window.__odeCurrentUser || (typeof readAuthUserHint === 'function' ? readAuthUserHint() : null);
+      return !!(u && (u.isTrainer || (u.trainer && u.trainer.active)));
+    } catch (e) {}
+    return false;
+  }
+  // The owner is exempt from the trainer gate (interstitial + server-only boot):
+  // they preview content on their own account and must never walk their own gate.
+  function isOwnerUser() {
+    try {
+      var u = window.__odeCurrentUser || (typeof readAuthUserHint === 'function' ? readAuthUserHint() : null);
+      return !!(u && u.isOwner);
+    } catch (e) {}
+    return false;
+  }
+  // Existing trainers have no local prefill blob (they predate the handoff), so
+  // we pull their Flow A answers (brand_positioning -> outcome, specialties)
+  // from the server once and use them as the seed source.
+  var signupPrefillServer = null;
+  function fetchServerPrefill() {
+    try {
+      fetch('/api/content/signup-prefill', { credentials: 'include' })
+        .then(function (r) { return r.ok ? r.json() : null; })
+        .then(function (j) { if (j && j.ok && (j.outcome || (Array.isArray(j.specialties) && j.specialties.length))) signupPrefillServer = j; })
+        .catch(function () {});
+    } catch (e) {}
+  }
+  function renderTrainerLoading() {
+    root.className = 'cp-wrap'; root.innerHTML = '';
+    root.appendChild(el('div', 'cp-ambient'));
+    var wrap = el('div', 'cp-pathwrap');
+    wrap.appendChild(el('p', 'cp-sub', 'Loading your content program…'));
+    root.appendChild(wrap);
+  }
+  // Applies the shared Flow A -> Flow B pre-fill onto the fresh detailed draft:
+  // the local signup blob if present, else the server-fetched Flow A answers.
+  // Used by both the signup framing and the upgrade interstitial.
+  function seedDetailedFromPrefill() {
+    beginDraft('detailed');
+    var pf = readSignupPrefill() || signupPrefillServer;
+    if (pf) {
       try {
-        if (prefill.outcome) state.draft.answers.outcome = String(prefill.outcome);
-        var specs = Array.isArray(prefill.specialties) ? prefill.specialties.filter(Boolean) : [];
+        if (pf.outcome) state.draft.answers.outcome = String(pf.outcome);
+        var specs = Array.isArray(pf.specialties) ? pf.specialties.filter(Boolean) : [];
         if (specs.length) {
           if (!state.draft.answers.core) state.draft.answers.core = String(specs[0]);
           if (!state.draft.answers.audience) state.draft.answers.audience = 'people who want ' + specs.slice(0, 2).join(' and ').toLowerCase();
         }
       } catch (e) {}
       clearSignupPrefill();
-      startQuestionnaire();
-    };
+    }
+  }
+  // One-time upgrade interstitial for an EXISTING trainer whose content
+  // questionnaire is missing/incomplete (setupDone=false). Hard gate: it stands
+  // in front of the dashboard until they finish. Distinct from the signup
+  // framing screen (new trainers, prefill blob present).
+  function renderUpgradeInterstitial() {
+    root.className = 'cp-wrap'; root.innerHTML = '';
+    root.appendChild(el('div', 'cp-ambient'));
+    var wrap = el('div', 'cp-pathwrap');
+    var eyebrow = el('span', 'cp-seclabel cp-kicker', 'Content Program'); staggerRise(eyebrow, 0); wrap.appendChild(eyebrow);
+    var h = el('h1', 'cp-h1', 'We’ve upgraded onboarding'); h.style.marginTop = '12px'; staggerRise(h, 1); wrap.appendChild(h);
+    var sub = el('p', 'cp-sub', 'Your content questions are the foundation of your website and your posting plan — and yours need to be completed on the new system. Takes 20–30 min, answer rough and honest; we sharpen them together on your call. Your content plan unlocks the moment you finish.');
+    staggerRise(sub, 2); wrap.appendChild(sub);
+    var go = el('button', 'cp-btn cp-btn-primary', 'Finish my questions'); go.type = 'button'; go.style.marginTop = '16px'; staggerRise(go, 3);
+    go.onclick = function () { state.draft = null; seedDetailedFromPrefill(); startQuestionnaire(); };
     wrap.appendChild(go);
     root.appendChild(wrap);
   }
@@ -1565,7 +1622,13 @@
         return startQuestionnaire();
       }
     }
-    if (!state.path || !state.setupDone) return renderPathChooser();
+    if (!state.path || !state.setupDone) {
+      // Existing trainer with an incomplete/missing questionnaire: one-time
+      // upgrade interstitial, hard-gated in front of the dashboard. The owner is
+      // exempt (previews on their own account); non-trainers keep the chooser.
+      if (!state.setupDone && isTrainerUser() && !isOwnerUser()) return renderUpgradeInterstitial();
+      return renderPathChooser();
+    }
     if (!state.startDate) return renderStartDate();
     if (!state.dayZeroDone) return renderDayZero();
     renderDashboard(); maybeEveningNudge(); scheduleReminder();
@@ -1573,6 +1636,23 @@
   var bootedUid = null;
   function boot() {
     bootedUid = currentUid();
+    // Trainers are SERVER-AUTHORITATIVE: never seed from localStorage. A stale
+    // local blob on a shared/impersonated browser must not resurrect as
+    // "complete" (the ghost that misdirected onboarding this week). If the
+    // server says no record, the answer is no record. Owners are exempt — they
+    // preview on their own account and use the normal local path.
+    if (isTrainerUser() && !isOwnerUser()) {
+      purgeForeignStorage(); // still scrub other-account/legacy keys off a shared browser
+      state = defaultState();
+      renderTrainerLoading();
+      renderWhoBanner();
+      fetchServerPrefill(); // ready the Flow A seeds for an incomplete trainer
+      loadFromProfile().then(function (cp) {
+        if (cp) state = Object.assign(defaultState(), cp); // whatever the server has, authoritative
+        route();
+      }).catch(function () { route(); });
+      return;
+    }
     state = loadLocal() || defaultState();
     if (state.answered && state.answered.link) delete state.answered.link; // purge any stale seeded slug (v8 0.1)
     // Legacy v8 redo repair: redoBackup held the pre-redo program while the redo

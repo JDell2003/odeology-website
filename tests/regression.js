@@ -50,9 +50,11 @@ async function mkPage(b, user, profileStore) {
       dom: document.body.innerHTML.indexOf('men over 30') !== -1 || document.body.innerHTML.indexOf('trainerA') !== -1,
       unkeyed: localStorage.getItem('ode_content_program_v2') !== null,
       foreignKey: localStorage.getItem('ode_content_program_v2:userA') !== null,
-      seesChooser: /Two ways to start/.test(document.getElementById('cp-root').innerText)
+      // A fresh TRAINER now sees the upgrade interstitial; a non-trainer would
+      // see the path chooser. Either is an empty program (no bleed).
+      seesGate: /Two ways to start/.test(document.getElementById('cp-root').innerText) || /upgraded onboarding/.test(document.getElementById('cp-root').innerText)
     }));
-    ok('0.1 B sees empty program (path chooser)', bleed.seesChooser);
+    ok('0.1 B sees empty program (interstitial/chooser, no bleed)', bleed.seesGate);
     ok('0.1 no A strings in B DOM', !bleed.dom);
     ok('0.1 un-keyed key deleted', !bleed.unkeyed);
     ok('0.1 foreign per-user key deleted', !bleed.foreignKey);

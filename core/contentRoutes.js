@@ -234,5 +234,28 @@ module.exports = async function contentRoutes(req, res, url) {
     return sendJson(res, 200, out);
   }
 
+  // --- Flow A -> Flow B pre-fill for the CURRENT trainer --------------------
+  // Existing trainers have no local prefill blob, so content.js fetches their
+  // signup answers here to seed the detailed questionnaire (outcome, specialties).
+  if (p === '/api/content/signup-prefill' && req.method === 'GET') {
+    const user = await getUserFromRequest(req);
+    if (!user) return sendJson(res, 401, { ok: false, error: 'UNAUTHORIZED' });
+    try {
+      const r = await db.query('SELECT full_name, brand_positioning, meta FROM app_trainer_profiles WHERE user_id = $1 LIMIT 1;', [user.id]);
+      const row = r.rows?.[0];
+      if (!row) return sendJson(res, 200, { ok: true, outcome: '', specialties: [], fullName: '' });
+      const meta = row.meta && typeof row.meta === 'object' ? row.meta : {};
+      const specialties = Array.isArray(meta.specialtyClients) ? meta.specialtyClients.filter(Boolean) : [];
+      return sendJson(res, 200, {
+        ok: true,
+        outcome: String(row.brand_positioning || '').trim(),
+        specialties,
+        fullName: String(row.full_name || '').trim()
+      });
+    } catch (e) {
+      return sendJson(res, 200, { ok: true, outcome: '', specialties: [], fullName: '' });
+    }
+  }
+
   return false;
 };
