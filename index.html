@@ -8460,6 +8460,18 @@ function formatWorkspaceLabel(workspace) {
               window.dispatchEvent(new CustomEvent('odeauth', { detail: { user: data.user } }));
             } catch {}
           }
+          // Flow A -> Flow B handoff: hand the content questionnaire what signup
+          // already knows. content.js reads this once on first open, shows the
+          // "last step" framing screen, and pre-fills the detailed track.
+          try {
+            const _t = state.answers.trainer || {};
+            localStorage.setItem('ode_content_prefill_v1', JSON.stringify({
+              fromSignup: true,
+              outcome: String(_t.brandPositioning || _t.summary || '').trim(),
+              specialties: Array.isArray(_t.specialties) ? _t.specialties.filter(Boolean) : [],
+              fullName: String(_t.fullName || '').trim()
+            }));
+          } catch (e) { /* non-fatal */ }
           markOnboardingDone();
           return data;
         }

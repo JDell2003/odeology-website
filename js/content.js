@@ -553,6 +553,41 @@
   function closeModal() { modalEl.hidden = true; modalEl.innerHTML = ''; }
 
   // ================= PATH CHOOSER (full-bleed title screen) =================
+  // ---- Flow A -> Flow B signup handoff ----
+  var SIGNUP_PREFILL_KEY = 'ode_content_prefill_v1';
+  function readSignupPrefill() {
+    try { return JSON.parse(localStorage.getItem(SIGNUP_PREFILL_KEY) || 'null'); } catch (e) { return null; }
+  }
+  function clearSignupPrefill() { try { localStorage.removeItem(SIGNUP_PREFILL_KEY); } catch (e) {} }
+  // The "last step" framing screen shown once, straight out of Flow A signup.
+  function renderSignupFraming(prefill) {
+    root.className = 'cp-wrap'; root.innerHTML = '';
+    root.appendChild(el('div', 'cp-ambient'));
+    var wrap = el('div', 'cp-pathwrap');
+    var eyebrow = el('span', 'cp-seclabel cp-kicker', 'Content Program'); staggerRise(eyebrow, 0); wrap.appendChild(eyebrow);
+    var h = el('h1', 'cp-h1', 'Last step'); h.style.marginTop = '12px'; staggerRise(h, 1); wrap.appendChild(h);
+    var sub = el('p', 'cp-sub', 'These questions build your website and your content plan. Answer rough and honest — we sharpen them together on your call.');
+    staggerRise(sub, 2); wrap.appendChild(sub);
+    var go = el('button', 'cp-btn cp-btn-primary', 'Start'); go.type = 'button'; go.style.marginTop = '16px'; staggerRise(go, 3);
+    go.onclick = function () {
+      state.draft = null;
+      beginDraft('detailed'); // signup always defaults to the detailed track
+      // Pre-fill what Flow A already knows (rough seeds they refine on the call).
+      try {
+        if (prefill.outcome) state.draft.answers.outcome = String(prefill.outcome);
+        var specs = Array.isArray(prefill.specialties) ? prefill.specialties.filter(Boolean) : [];
+        if (specs.length) {
+          if (!state.draft.answers.core) state.draft.answers.core = String(specs[0]);
+          if (!state.draft.answers.audience) state.draft.answers.audience = 'people who want ' + specs.slice(0, 2).join(' and ').toLowerCase();
+        }
+      } catch (e) {}
+      clearSignupPrefill();
+      startQuestionnaire();
+    };
+    wrap.appendChild(go);
+    root.appendChild(wrap);
+  }
+
   function renderPathChooser() {
     root.className = 'cp-wrap'; root.innerHTML = '';
     root.appendChild(el('div', 'cp-ambient'));
@@ -1516,10 +1551,13 @@
   function route() {
     // An open draft (first run or redo) resumes the questionnaire (v10 0.2).
     if (state.draft) return startQuestionnaire({ resume: true });
-    // Flow A -> Flow B bridge: /content?path=quick (from the post-signup
-    // "last step" screen) drops a first-time trainer straight into the quick
-    // track instead of the chooser. Completed programs are never touched.
+    // Flow A -> Flow B handoff: a first-time trainer arriving from signup sees
+    // one framing screen, then the DETAILED track pre-filled from what signup
+    // already knows. Completed programs (setupDone) never see this.
     if (!state.setupDone && !state.draft) {
+      var prefill = readSignupPrefill();
+      if (prefill && prefill.fromSignup) return renderSignupFraming(prefill);
+      // Legacy bridge: /content?path=quick|full also drops straight in.
       var wanted = '';
       try { wanted = String(new URL(window.location.href).searchParams.get('path') || ''); } catch (e) {}
       if (wanted === 'quick' || wanted === 'full') {
