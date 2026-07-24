@@ -123,12 +123,66 @@
     var el = document.getElementById('cp-save-banner');
     if (el) el.style.display = 'none';
   }
+  function saveIdentityMismatch() {
+    // The session changed under the page (peered in/out in another tab). A
+    // retry would just save to the wrong account — stop and tell the user
+    // instead of silently misdirecting answers (the peer routing bug).
+    try {
+      var el = saveBannerEl();
+      el.style.background = '#8a5a00';
+      el.textContent = 'Not saving — your session changed (peered in or out). Reload this page before continuing.';
+      el.style.display = 'block';
+    } catch (e) {}
+    if (saveRetryTimer) { clearTimeout(saveRetryTimer); saveRetryTimer = 0; }
+    renderWhoBanner();
+  }
   function saveToProfile() {
     try {
-      fetch('/api/profile', { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ profile: { content_program_v2: state } }) })
-        .then(function (r) { if (r && r.ok) saveSucceeded(); else saveFailed(); })
+      // Server-authoritative save target: tell the server which account we
+      // BELIEVE we're editing; it rejects (409) if that != the session's user,
+      // so a stale page can never save one trainer's answers into another's row.
+      var expectedUserId = (window.__odeCurrentUser && window.__odeCurrentUser.id) ? String(window.__odeCurrentUser.id) : '';
+      fetch('/api/profile', { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ profile: { content_program_v2: state }, expectedUserId: expectedUserId }) })
+        .then(function (r) {
+          if (r && r.ok) { saveSucceeded(); return; }
+          if (r && r.status === 409) { saveIdentityMismatch(); return; }
+          saveFailed();
+        })
         .catch(function () { saveFailed(); });
     } catch (e) { saveFailed(); }
+  }
+  // ---------- identity banner ----------
+  // Persistent, unmistakable "whose content program is this" bar. The peer
+  // (impersonation) save-routing bug silently misdirected two trainers'
+  // onboarding calls; this makes the active save target impossible to miss.
+  function renderWhoBanner() {
+    fetch('/api/auth/me', { credentials: 'include' })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (j) {
+        if (!j || !j.user) return;
+        var imp = (j.impersonation && j.impersonation.active) ? j.impersonation : null;
+        var el = document.getElementById('cp-who-banner');
+        // Plain trainer on their own account: no banner needed.
+        if (!imp && !j.user.isOwner) { if (el && el.parentNode) el.parentNode.removeChild(el); return; }
+        if (!el) {
+          el = document.createElement('div');
+          el.id = 'cp-who-banner';
+          el.setAttribute('role', 'status');
+          var root = document.getElementById('cp-root');
+          if (root && root.parentNode) root.parentNode.insertBefore(el, root);
+          else (document.body || document.documentElement).insertBefore(el, (document.body || document.documentElement).firstChild);
+        }
+        var who = '@' + esc(j.user.username || j.user.displayName || 'account');
+        var base = 'position:sticky;top:0;z-index:50;padding:9px 16px;text-align:center;font:600 13px/1.45 "Space Grotesk",system-ui,sans-serif;box-shadow:0 2px 10px rgba(0,0,0,.18);';
+        if (imp) {
+          el.style.cssText = base + 'background:#8a5a00;color:#fff;';
+          el.innerHTML = '⚠ Peered in — you are editing <b>' + who + '</b>’s content program. Everything you type saves to their account.';
+        } else {
+          el.style.cssText = base + 'background:#0f2435;color:#fff;';
+          el.innerHTML = 'You are editing <b>your own</b> content program (' + who + '). You are <b>not</b> peered into a trainer.';
+        }
+      })
+      .catch(function () {});
   }
   function loadFromProfile() {
     return fetch('/api/profile', { credentials: 'include' })
@@ -1487,11 +1541,18 @@
     // wrote into live. Restore the backup as live and drop the broken redo.
     if (state.redoBackup) { state.answered = state.redoBackup; delete state.redoBackup; state.redoing = false; }
     route();
-    // Reconcile with the server copy by freshness (newest wins) — never let an
-    // older/empty profile clobber in-progress answers (that was the wipe bug).
-    // The server copy is per-account by session cookie, so no bleed risk here.
+    renderWhoBanner();
+    // Reconcile with the server copy — never let an older/empty profile clobber
+    // in-progress answers (the wipe bug), BUT a COMPLETED server record always
+    // wins over an incomplete local scaffold regardless of timestamps. That is
+    // what stops "log in on another device and get asked to start over" when the
+    // answers are already saved server-side (server-authoritative completion).
     loadFromProfile().then(function (cp) {
-      if (cp && cp.answered && (cp.updatedAt || 0) > (state.updatedAt || 0)) {
+      if (!cp || !cp.answered) return;
+      var serverNewer = (cp.updatedAt || 0) > (state.updatedAt || 0);
+      var serverComplete = !!cp.setupDone && Object.keys(cp.answered).length > 0;
+      var localComplete = !!(state && state.setupDone);
+      if (serverNewer || (serverComplete && !localComplete)) {
         state = Object.assign(defaultState(), cp);
         var key = lsKey(); if (key) { try { localStorage.setItem(key, JSON.stringify(state)); } catch (e) {} }
         route();
@@ -1503,6 +1564,7 @@
   // the right per-user key so we never keep another account's state on screen.
   var lastRenderedName = null;
   try { window.addEventListener('odeauth', function () {
+    renderWhoBanner(); // identity may resolve/switch after first paint
     if (currentUid() !== bootedUid) { boot(); return; }
     // Same account, richer user object (trainer.fullName arrives with the full
     // /api/auth/me): if the resolved name changed, re-render so the CTA and

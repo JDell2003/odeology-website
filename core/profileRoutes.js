@@ -173,6 +173,16 @@ module.exports = async function profileRoutes(req, res, url) {
 
     const replace = Boolean(payload?.replace);
 
+    // Server-authoritative save target: if the client says which account it
+    // believes it is editing (expectedUserId) and that != the session's user,
+    // refuse. Stops a stale/peered page from writing one trainer's answers into
+    // another account. Only enforced when the client opts in, so other callers
+    // of /api/profile are unaffected.
+    const expectedUserId = payload && payload.expectedUserId ? String(payload.expectedUserId) : '';
+    if (expectedUserId && expectedUserId !== String(userId)) {
+      return sendJson(res, 409, { error: 'IDENTITY_MISMATCH', editing: userId });
+    }
+
     try {
       const existing = await db.query(
         'SELECT profile FROM app_user_profiles WHERE user_id = $1 LIMIT 1;',
