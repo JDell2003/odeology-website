@@ -8195,9 +8195,6 @@ function formatWorkspaceLabel(workspace) {
           const step = currentStepConfig();
           if (!input.checked || !state.selectedPath || !step) return Boolean(input.checked);
           const answers = currentAnswers();
-          if (state.selectedPath === 'trainer' && step.id === 'type' && input.name === 'trainerType' && input.value === 'invited') {
-            return isKnownManagerInviteCode(answers.inviteCode || '');
-          }
           return true;
         }
 
@@ -9996,7 +9993,7 @@ function formatWorkspaceLabel(workspace) {
           if (path === 'trainer' && step.id === 'type') {
             return {
               title: 'How do you train?',
-              subtitle: 'Choose the trainer path first. Independent trainers can still pick a gym, location, and manager next if they work around a facility. Remote trainers skip the gym entirely.',
+              subtitle: 'Choose the trainer path first. Independent trainers can still pick a gym and location next if they work around a facility. Remote trainers skip the gym entirely.',
               body: `
                 <div class="entry-stack">
                   <div class="entry-field full">
@@ -10007,18 +10004,6 @@ function formatWorkspaceLabel(workspace) {
                       { value: 'company', label: 'I work at a gym/company' }
                     ], trainer.trainerType)}
                   </div>
-                  ${trainer.trainerType === 'invited' ? `
-                    <div class="entry-field full">
-                      ${renderCodeInputField({
-                        id: 'trainer-invite-code',
-                        name: 'inviteCode',
-                        value: trainer.inviteCode,
-                        placeholder: 'Enter invite code',
-                        label: 'Invite code',
-                        submitAction: 'trainer-manager-invite'
-                      })}
-                    </div>
-                  ` : ''}
                   ${trainer.trainerType === 'company' || trainer.trainerType === 'independent' ? `
                     <div class="entry-directory-card">
                       <strong>Workspace directory</strong>
@@ -10028,7 +10013,7 @@ function formatWorkspaceLabel(workspace) {
                   ${trainer.trainerType === 'remote' ? `
                     <div class="entry-directory-card">
                       <strong>No gym needed</strong>
-                      <p>Remote trainers coach online, so there is no gym, location, or manager to pick — next you will set up your trainer profile.</p>
+                      <p>Remote trainers coach online, so there is no gym or location to pick — next you will set up your trainer profile.</p>
                     </div>
                   ` : ''}
                 </div>
@@ -10120,9 +10105,7 @@ function formatWorkspaceLabel(workspace) {
               title: 'Where should your trainer profile live?',
               subtitle: trainer.trainerType === 'independent'
                 ? 'Independent trainers can still choose a gym/company and location if they work around one.'
-                  : trainer.trainerType === 'invited'
-                  ? 'Invited trainers should inherit workspace and location from the invite.'
-                  : 'Company trainers can request access to an existing workspace.',
+                : 'Company trainers can request access to an existing workspace.',
               body: `
                 <div class="entry-grid">
                   ${trainer.trainerType === 'company' || trainer.trainerType === 'independent' ? `
@@ -10143,16 +10126,6 @@ function formatWorkspaceLabel(workspace) {
                         <strong>${selectedWorkspace ? escapeHtml(selectedWorkspace.name) : 'Pending workspace selection'}</strong>
                         <p>${selectedWorkspace ? `${escapeHtml(selectedWorkspace.type)} • ${escapeHtml([selectedWorkspace.city, selectedWorkspace.state].filter(Boolean).join(', '))}` : 'Choose the gym/company from the directory instead of entering it manually.'}</p>
                       </div>
-                    </div>
-                  ` : ''}
-                  ${trainer.trainerType === 'invited' ? `
-                    <div class="entry-field">
-                      <label for="trainer-invited-workspace">Invite code</label>
-                      <input id="trainer-invited-workspace" name="inviteCode" type="text" value="${escapeHtml(trainer.inviteCode)}" placeholder="Invite code">
-                    </div>
-                    <div class="entry-field">
-                      <label for="trainer-invited-location">Location assignment</label>
-                      <input id="trainer-invited-location" name="selectedLocationId" type="text" value="${escapeHtml(trainer.selectedLocationId)}" placeholder="Assigned location">
                     </div>
                   ` : ''}
                 </div>
@@ -10998,28 +10971,18 @@ function formatWorkspaceLabel(workspace) {
             const url = new URL(window.location.href);
             const trainerInvite = String(url.searchParams.get('trainerInvite') || '').trim();
             const trainerRef = String(url.searchParams.get('trainerRef') || '').trim();
-            const managerInvite = String(url.searchParams.get('managerInvite') || '').trim().toUpperCase();
-            const expiresAt = Number(url.searchParams.get('expires') || '0');
             if (trainerInvite) {
               state.inviteContext.trainerInvite = trainerInvite;
               state.inviteContext.trainerRef = trainerRef;
               openPath('user');
               return;
             }
-            if (!managerInvite) return;
-            if (expiresAt && Date.now() > expiresAt) {
-              window.alert(`That manager invite expired on ${new Date(expiresAt).toLocaleString()}. Ask for a new one.`);
-              return;
+            // A ?managerInvite= link used to drop the trainer into an
+            // "invited by a manager" path. Managers are gone from the app, so
+            // the link now just opens the normal trainer onboarding.
+            if (String(url.searchParams.get('managerInvite') || '').trim()) {
+              openPath('trainer');
             }
-            if (!isKnownManagerInviteCode(managerInvite)) {
-              window.alert('That manager invite is not valid anymore.');
-              return;
-            }
-            openPath('trainer');
-            state.answers.trainer.trainerType = 'invited';
-            state.answers.trainer.inviteCode = managerInvite;
-            renderPanel();
-            scheduleAutoAdvance();
           } catch {}
         }
 
@@ -11694,18 +11657,13 @@ function formatWorkspaceLabel(workspace) {
           if (!path || !step) return false;
           const answers = currentAnswers();
           if (path === 'trainer' && step.id === 'type') {
-            const trainerType = String(answers.trainerType || '').trim();
-            if (!trainerType) return false;
-            if (trainerType === 'invited') {
-              return isKnownManagerInviteCode(answers.inviteCode || '');
-            }
-            return true;
+            return Boolean(String(answers.trainerType || '').trim());
           }
           if (path === 'trainer' && step.id === 'workspace') {
-            return String(answers.trainerType || '').trim() === 'invited' || Boolean(String(answers.selectedWorkspaceId || '').trim());
+            return Boolean(String(answers.selectedWorkspaceId || '').trim());
           }
           if (path === 'trainer' && step.id === 'location') {
-            return String(answers.trainerType || '').trim() === 'invited' || Boolean(String(answers.selectedLocationId || '').trim());
+            return Boolean(String(answers.selectedLocationId || '').trim());
           }
           if (path === 'manager' && step.id === 'workspace') {
             return Boolean(String(answers.selectedWorkspaceId || '').trim());
@@ -12044,20 +12002,6 @@ function formatWorkspaceLabel(workspace) {
         function submitCodeAction(action) {
           const normalized = String(action || '').trim();
           if (!normalized) return false;
-          if (normalized === 'trainer-manager-invite') {
-            const code = String(state.answers.trainer?.inviteCode || '').trim();
-            if (!code) {
-              window.alert('Enter your manager invite code.');
-              return false;
-            }
-            if (!isKnownManagerInviteCode(code)) {
-              window.alert('Enter a valid manager invite code.');
-              return false;
-            }
-            updateChipState(onboardingPanel);
-            scheduleAutoAdvance();
-            return true;
-          }
           if (normalized === 'client-trainer-invite') {
             const code = String(state.answers.user?.inviteCode || state.inviteContext.trainerInvite || '').trim();
             if (!code) {
@@ -12083,15 +12027,6 @@ function formatWorkspaceLabel(workspace) {
 
           if (path === 'trainer' && step.id === 'type') {
             if (!validateChoiceGroup('trainerType', 'Choose how you train.')) return false;
-            const trainer = state.answers.trainer || {};
-            if (trainer.trainerType === 'invited' && !String(trainer.inviteCode || '').trim()) {
-              window.alert('Enter your manager invite code.');
-              return false;
-            }
-            if (trainer.trainerType === 'invited' && !isKnownManagerInviteCode(trainer.inviteCode || '')) {
-              window.alert('Enter a valid manager invite code.');
-              return false;
-            }
           }
 
           if (path === 'trainer' && step.id === 'profile') {
@@ -12100,7 +12035,7 @@ function formatWorkspaceLabel(workspace) {
 
           if (path === 'trainer' && step.id === 'workspace') {
             const trainer = state.answers.trainer || {};
-            if (!['invited', 'remote'].includes(trainer.trainerType) && !String(trainer.selectedWorkspaceId || '').trim()) {
+            if (trainer.trainerType !== 'remote' && !String(trainer.selectedWorkspaceId || '').trim()) {
               window.alert('Choose or enter the gym/company workspace you want to join.');
               return false;
             }
@@ -12108,7 +12043,7 @@ function formatWorkspaceLabel(workspace) {
 
           if (path === 'trainer' && step.id === 'location') {
             const trainer = state.answers.trainer || {};
-            if (!['invited', 'remote'].includes(trainer.trainerType) && !String(trainer.selectedLocationId || '').trim()) {
+            if (trainer.trainerType !== 'remote' && !String(trainer.selectedLocationId || '').trim()) {
               window.alert('Choose the gym/company location you coach at.');
               return false;
             }
@@ -12214,7 +12149,7 @@ function formatWorkspaceLabel(workspace) {
             let nextStep = state.currentStep + 1;
             // Invited trainers inherit gym + location from the invite, and
             // remote trainers have neither: both jump straight to the profile.
-            if (['type', 'workspace', 'location'].includes(currentStepId) && (trainerType === 'invited' || trainerType === 'remote')) {
+            if (['type', 'workspace', 'location'].includes(currentStepId) && trainerType === 'remote') {
               nextStep = flow.steps.findIndex((step) => step.id === 'profile') + 1;
             }
             return Math.max(1, nextStep);
@@ -12230,7 +12165,7 @@ function formatWorkspaceLabel(workspace) {
             const trainerAnswers = state.answers.trainer || {};
             const trainerType = String(trainerAnswers.trainerType || '').trim();
             let previousStep = state.currentStep - 1;
-            if ((trainerType === 'invited' || trainerType === 'remote') && currentStepId === 'profile') {
+            if (trainerType === 'remote' && currentStepId === 'profile') {
               previousStep = flow.steps.findIndex((step) => step.id === 'type') + 1;
             }
             return Math.max(1, previousStep);
