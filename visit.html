@@ -120,8 +120,10 @@
       }
 
       function goToSite() {
-        if (siteUrl) location.replace(siteUrl);
-        else stage.innerHTML = '<div class="vf-fallback">You\'re all set.</div>';
+        // siteUrl is either the trainer's pasted external site or, when they
+        // built their page in RiseForIt instead, their published /coach/ path.
+        if (siteUrl) { location.replace(siteUrl); return; }
+        stage.innerHTML = '<div class="vf-fallback">Thanks &mdash; your answers went straight to your coach.</div>';
       }
 
       function showStep(i) {
