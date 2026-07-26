@@ -2625,7 +2625,10 @@ const ODE_MANAGER_PAGES = new Set(['manager-trainers.html']);
 const ODE_OWNER_PAGES = new Set([
     'owner-accounts.html', 'owner-analytics.html', 'owner-doors.html',
     'owner-emails.html', 'owner-messaging.html', 'owner-websites.html',
-    'owner-calendar.html', 'workout-database.html', 'food-admin.html'
+    'owner-calendar.html', 'workout-database.html', 'food-admin.html',
+    // The coaches directory is owner-only: hiding the nav link is not access
+    // control, so the page itself bounces everyone but the owner.
+    'coaches.html'
 ]);
 
 function odeCurrentPageFile() {
@@ -22661,9 +22664,10 @@ var LAUNCH_LIVE_HREFS = [
     'training.html',        // Training Program
     'nutrition.html',       // Nutrition
     'grocery-calendar.html',// Grocery Calendar
-    'coaches.html',         // Coaches page
     'leaderboard.html'      // The Arena
 ];
+// NOTE: coaches.html is deliberately absent — the coaches directory is hidden
+// from every view and permission set except the owner's (see ODE_OWNER_PAGES).
 // Trainer tabs that go live in the soft launch. These links only ever
 // render inside the trainer section (hidden from non-trainers), so
 // whitelisting them here exposes them to trainers only.
