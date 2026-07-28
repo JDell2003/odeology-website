@@ -103,15 +103,16 @@
 
     // Which answer keys feed each axis (best-effort; missing keys are skipped).
     var AXIS_INPUTS = {
-        strength: ['build', 'exerciseFreq', 'workoutFreq', 'alsoAchieve', 'targetZones'],
-        cardio: ['dailyActivity', 'walks', 'breath', 'exerciseFreq', 'energy'],
-        consistency: ['exerciseFreq', 'workoutFreq', 'dailyActivity', 'walks'],
-        nutrition: ['nutritionHabits', 'mealPlanning', 'mealPrep', 'knowCalories'],
-        recovery: ['energy', 'dailyActivity', 'discomfort'],
-        progress: ['bodyGoal', 'alsoAchieve']
+        strength: ['build', 'exerciseFreq', 'workoutFreq', 'targetZones'],
+        cardio: ['walks', 'exerciseFreq', 'exerciseTime'],
+        consistency: ['exerciseFreq', 'workoutFreq', 'walks'],
+        nutrition: ['mealPrep', 'knowCalories'],
+        recovery: ['sleepHours'],
+        progress: ['bodyGoal', 'pillarGoals']
     };
-    // 'breath' and 'discomfort' are problems: more of them = LOWER readiness.
-    var INVERSE_KEYS = { breath: true, discomfort: true, badHabits: true };
+    // The old inverse keys (breath / discomfort / badHabits) were questions cut
+    // from onboarding; nothing left in AXIS_INPUTS scores backwards.
+    var INVERSE_KEYS = {};
 
     /* ---- direct "history" seed (js/client-quiz.js `history` section) -----
        Six questions, one per axis, where the user states their current level

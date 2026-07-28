@@ -1,9 +1,11 @@
 /* BetterMe-style client onboarding quiz.
    One question per screen, tap-to-advance, section progress bar,
-   interstitial "message" screens, BMI + projection graph, loading
-   screen, then a FREE plan-ready page. Mounted by index.html's entry
-   flow at the client path's `quiz` step; answers are mapped back onto
-   the existing intake fields so plan generation is unchanged. */
+   interstitial "message" screens, BMI + projection graph, then the
+   loading screen that hands off to the rank finale and straight into
+   the app. Mounted by index.html's entry flow at the client path's
+   `quiz` step — which is now the WHOLE client onboarding; answers are
+   mapped back onto the existing intake fields so plan generation is
+   unchanged. */
 (() => {
     'use strict';
 
@@ -101,9 +103,6 @@
             'I gain and lose weight easily',
             'I struggle to gain weight or muscle'
         ] },
-        { id: 'weightEvents', section: 'profile', type: 'multi', title: 'Have any of the following led to weight change in the last few years?', options: [
-            'Work pressure', 'Busy family life', 'Divorce or breakup', 'Slower metabolism due to aging', 'Financial challenges', 'An injury or illness', 'Other stressful events', 'None of the above'
-        ] },
         { id: 'promise1', type: 'info', kicker: 'RiseForIt', title: "We know how to make that happen!", body: "RiseForIt doesn't believe in one-size-fits-all solutions.\nWe'll create a personalized plan to help you reach your goal at your own pace — and enjoy it.", art: 'check' },
 
         /* HISTORY: where you're starting from. Everyone begins a Peasant — these
@@ -130,15 +129,6 @@
             'Starting from scratch', 'A little progress', 'Solid progress', "I'm already in great shape"
         ] },
 
-        { id: 'alsoAchieve', section: 'activity', type: 'multi', title: 'What else do you hope to achieve with this plan?', options: [
-            'Build muscle strength', 'Add muscle definition', 'Improve posture', 'Develop flexibility', 'Improve overall fitness', 'None of the above'
-        ] },
-        { id: 'dailyActivity', section: 'activity', type: 'choice', title: 'How active are you on a typical day?', options: [
-            'I spend most of the day sitting', 'I take active breaks', "I'm on my feet all day long"
-        ] },
-        { id: 'energy', section: 'activity', type: 'choice', title: 'How are your energy levels during the day?', options: [
-            'Low, I feel tired throughout the day', 'Post lunch slump', 'Dragging before meals', 'High and steady'
-        ] },
         { id: 'walks', section: 'activity', type: 'choice', title: 'How often do you go for walks?', options: [
             'Almost every day', '3-4 times a week', '1-2 times a week', 'More like once a month'
         ] },
@@ -149,6 +139,14 @@
             '10-20 min', '20-30 min', '30-40 min', '40-60 min'
         ] },
         { id: 'promise2', type: 'info', kicker: 'RiseForIt', title: 'Short sessions, major results!', body: "Strength, general fitness, HIIT, stretching: you name it, we got it.\nLet's create a routine that fits your lifestyle.", art: 'workouts' },
+        /* Workout source used to be its own entry-flow step in front of the quiz.
+           It now lives here, inside onboarding, next to the rest of the training
+           questions. 'own' suppresses the auto-build so the client can log their
+           existing plan from the Training page instead. */
+        { id: 'workoutSource', section: 'activity', type: 'choice', title: 'How do you want to start?', subtitle: 'Either we build the workout for you, or you bring the one you already run.', options: [
+            { value: 'generate', label: 'Generate a workout for me', desc: 'Built from these answers — ready the moment onboarding ends.' },
+            { value: 'own', label: 'I have my own workout', desc: 'Keep going — you can type it in or import a photo/PDF on your Training page.' }
+        ] },
         { id: 'workoutFreq', section: 'activity', type: 'choice', title: 'How often do you want to work out?', options: [
             '1 - 3 times a week', '4 - 5 times a week', '6 - 7 times a week', 'Not sure yet'
         ] },
@@ -162,12 +160,6 @@
             'Arms', 'Pecs', 'Belly', 'Legs', 'Back', 'Butt'
         ] },
         { id: 'promise3', type: 'info', kicker: 'RiseForIt', title: 'Grow muscle and get stronger day by day', body: 'Receive a step-by-step workout program to tone up each target zone.', art: 'program' },
-        { id: 'breath', section: 'activity', type: 'choice', title: 'How often do you experience shortness of breath?', options: [
-            'Very often', 'Only when active', 'Occasionally', 'Almost never'
-        ] },
-        { id: 'discomfort', section: 'activity', type: 'choice', title: 'Do you experience discomfort or tension when working out?', options: [
-            'Yes', 'No', "I don't know"
-        ] },
         { id: 'struggles', section: 'activity', type: 'multi', title: 'Do you struggle with any of the following?', icons: { 'Sensitive back': 'backPain', 'Sensitive knees': 'kneePain', 'None of the above': 'check' }, options: [
             'Sensitive back', 'Sensitive knees', 'None of the above'
         ] },
@@ -175,20 +167,14 @@
             ? 'Your plan will include gentle exercises that protect sensitive joints while you get stronger.\nThis helps reduce tension and improve posture.'
             : "Great — we'll build your plan at full range and keep an eye on your form cues.", art: 'check' },
 
-        { id: 'nutritionHabits', section: 'nutrition', type: 'choice', title: 'How would you describe your nutrition habits?', options: [
-            "My diet is on point and I'd like to keep it that way", 'I know how I should eat but old habits get in the way', 'I simply eat whatever I want'
-        ] },
-        { id: 'badHabits', section: 'nutrition', type: 'multi', title: 'Do you have any of the following habits?', options: [
-            'Overeating', 'Boredom eating', 'Late-night snacking', 'Skipping meals too often', 'None of the above'
-        ] },
-        { id: 'cravings', section: 'nutrition', type: 'multi', title: 'What foods do you crave most often?', options: [
-            'Sweet treats', 'Salty snacks', 'Fast food', 'Soda', 'None of the above'
-        ] },
-        { id: 'mealPlanning', section: 'nutrition', type: 'choice', title: 'How do you typically plan your meals?', options: [
-            'I eat without any planning', "I have a general idea of what I'll eat", 'I decide my meals a day ahead', 'I plan all my meals in advance'
-        ] },
         { id: 'mealsPromo', type: 'info', kicker: 'RiseForIt', title: 'Optimize nutrition with a personalized meal plan', body: 'Quick, simple and balanced recipes will make you enjoy every bite — with the grocery list built for you.', art: 'meals' },
-        /* Meal Program (Part 2): the picture-picker + budget + dietary live INSIDE onboarding.
+        /* Dietary preference + allergies are asked BEFORE the photo pickers so the
+           meal pools below are already filtered — a client is never shown a meal
+           they can't eat. mealFilter() turns these two answers into the
+           (pref, allergies) pair the meal engine takes. */
+        { id: 'dietaryPref', section: 'nutrition', type: 'choice', title: 'Any dietary preference?', options: ['No restrictions', 'Vegetarian', 'Vegan', 'Pescatarian', 'No red meat'] },
+        { id: 'allergies', section: 'nutrition', type: 'multi', title: 'Any food allergies?', subtitle: 'We filter these out of every meal you get shown.', options: ['Fish', 'Eggs', 'Dairy', 'Gluten', 'None of the above'] },
+        /* Meal Program (Part 2): the picture-picker + budget live INSIDE onboarding.
            Photo grids reuse the meal-program engine/dataset (window.MealProgramEngine /
            window.MealProgramData, loaded by index.html); screens auto-skip when unavailable
            so the quiz never breaks offline. */
@@ -202,8 +188,6 @@
             { value: '$500 or more', desc: 'Max protein tier: the most muscle, the best you’ll feel, and the widest food choice.' }
         ] },
         { id: 'mealState', section: 'nutrition', type: 'stateSelect', title: 'Which state do you shop in?', subtitle: 'Grocery prices adjust to your area.', skipIf: () => !(window.MealProgramEngine && window.MealProgramData) },
-        { id: 'dietaryPref', section: 'nutrition', type: 'choice', title: 'Any dietary preference?', options: ['No restrictions', 'Vegetarian', 'Vegan', 'Pescatarian', 'No red meat'] },
-        { id: 'allergies', section: 'nutrition', type: 'multi', title: 'Any food allergies?', options: ['Fish', 'Eggs', 'Dairy', 'Gluten', 'None of the above'] },
         { id: 'mealPrep', section: 'nutrition', type: 'choice', title: 'How do you usually prepare your meals?', options: [
             'I cook them myself', 'Someone else cooks for me', 'I order from restaurants', 'I eat premade meals'
         ] },
@@ -216,12 +200,6 @@
 
         { id: 'sleepHours', section: 'lifestyle', type: 'choice', title: 'How much sleep do you usually get?', options: [
             'Less than 5 hours', '5-6 hours', '7-8 hours', 'More than 8 hours'
-        ] },
-        { id: 'sleepIssues', section: 'lifestyle', type: 'multi', title: 'Have you experienced any of these over the past month?', options: [
-            'Tossed and turned throughout the night', 'Had trouble falling asleep', 'Woke up multiple times during the night', 'Found it hard to prioritize sleep', 'None of the above'
-        ] },
-        { id: 'morningFeel', section: 'lifestyle', type: 'choice', title: "How do you usually feel during the day after a night's sleep?", options: [
-            'Energetic and ready to tackle the day', 'Moderately alert, but with some difficulty focusing', 'Struggling to stay awake and alert', 'Completely drained and unable to function'
         ] },
         { id: 'sleepPromo', type: 'info', kicker: 'RiseForIt', title: 'Improve sleep for a massive energy boost', body: 'Your plan optimizes recovery, so you wake up refreshed and revitalized.', art: 'sleep' },
 
@@ -255,8 +233,10 @@
         { id: 'mainReason', section: 'goals', type: 'choice', title: "What's your main reason to get in shape?", options: [
             'Become more confident in my body', 'Feel healthier and more energetic', 'Fit in my clothes better', 'Participate in activities and hobbies with ease', 'Other'
         ] },
-        { id: 'loading', type: 'loading' },
-        { id: 'plan', type: 'plan' }
+        /* Last screen. The loading ring hands off to the host's rank finale, and
+           the finale hands off straight to the app — there is no plan-ready
+           upsell page any more. */
+        { id: 'loading', type: 'loading' }
     ];
 
     /* ---------- helpers ---------- */
@@ -353,7 +333,25 @@
             priorityMuscles: (a.targetZones || []).map((z) => zoneMap[z]).filter(Boolean).slice(0, 3),
             stepTracking: String(a.permSteps || '').startsWith('Yes'),
             sleepTracking: String(a.permSleep || '').startsWith('Yes'),
-            wakeTime: String(a.wakeTime || '')
+            wakeTime: String(a.wakeTime || ''),
+            // 'own' suppresses the post-onboarding auto-build (index.html reads
+            // this exact field), so the client can log their existing plan later.
+            workoutSource: a.workoutSource === 'own' ? 'own' : 'generate'
+        };
+    }
+
+    /* The (pref, allergies) pair the meal engine takes, derived from the two
+       dietary questions that now run BEFORE the meal pickers. */
+    function mealFilter(a) {
+        const prefMap = {
+            'No restrictions': 'no-restrictions', 'Vegetarian': 'vegetarian',
+            'Vegan': 'vegan', 'Pescatarian': 'pescatarian', 'No red meat': 'no-red-meat'
+        };
+        return {
+            pref: prefMap[a.dietaryPref] || 'no-restrictions',
+            allergies: (Array.isArray(a.allergies) ? a.allergies : [])
+                .filter((x) => x && x !== 'None of the above')
+                .map((x) => String(x).toLowerCase())
         };
     }
 
@@ -365,21 +363,24 @@
             + (a.walks === 'Almost every day' ? 5 : 0), 5, 95);
         const cardio = clamp(Math.round((
             pick(a.walks, { 'Almost every day': 80, '3-4 times a week': 62, '1-2 times a week': 42, 'More like once a month': 22 }, 40)
-            + pick(a.breath, { 'Very often': 15, 'Only when active': 45, 'Occasionally': 60, 'Almost never': 82 }, 50)
-            + pick(a.energy, { 'Low, I feel tired throughout the day': 25, 'Post lunch slump': 45, 'Dragging before meals': 45, 'High and steady': 75 }, 50)
-        ) / 3), 5, 95);
+            + pick(a.histCardio, { 'I get winded fast': 20, 'I can do light cardio': 45, "I'm fairly conditioned": 65, 'I have great endurance': 85 }, 50)
+        ) / 2), 5, 95);
         let strength = pick(a.build, { 'Slender': 35, 'Medium build': 45, 'Stocky': 42, 'Significantly overweight': 30 }, 40);
         if (a.exerciseFreq === 'Almost every day') strength += 20;
         else if (a.exerciseFreq === 'Several times a week') strength += 12;
         strength = clamp(strength, 5, 95);
-        let nutrition = pick(a.nutritionHabits, { "My diet is on point and I'd like to keep it that way": 82, 'I know how I should eat but old habits get in the way': 52, 'I simply eat whatever I want': 26 }, 45);
-        nutrition -= ((a.badHabits || []).filter((h) => h !== 'None of the above').length) * 4;
-        nutrition -= ((a.cravings || []).filter((c) => c !== 'None of the above').length) * 2;
-        nutrition += pick(a.mealPlanning, { 'I plan all my meals in advance': 10, 'I decide my meals a day ahead': 6, "I have a general idea of what I'll eat": 2, 'I eat without any planning': -4 }, 0);
+        // The habit/craving/meal-planning questions were cut from onboarding, so
+        // nutrition now leans on the History self-report plus the two behavioural
+        // questions that remain.
+        let nutrition = pick(a.histNutrition, { 'I eat whatever': 26, 'I try but slip': 50, 'Mostly clean': 68, 'Very dialed in': 84 }, 45);
+        nutrition += pick(a.mealPrep, { 'I cook them myself': 6, 'I eat premade meals': 0, 'Someone else cooks for me': 0, 'I order from restaurants': -6 }, 0);
+        nutrition += (a.knowCalories === 'Yes' ? 4 : 0);
         nutrition = clamp(nutrition, 5, 95);
-        let recovery = pick(a.sleepHours, { 'Less than 5 hours': 22, '5-6 hours': 45, '7-8 hours': 75, 'More than 8 hours': 85 }, 50);
-        recovery -= ((a.sleepIssues || []).filter((i) => i !== 'None of the above').length) * 5;
-        recovery += pick(a.morningFeel, { 'Energetic and ready to tackle the day': 8, 'Moderately alert, but with some difficulty focusing': 0, 'Struggling to stay awake and alert': -6, 'Completely drained and unable to function': -10 }, 0);
+        // Same for recovery: sleep issues / morning feel are gone, History carries it.
+        let recovery = Math.round((
+            pick(a.sleepHours, { 'Less than 5 hours': 22, '5-6 hours': 45, '7-8 hours': 75, 'More than 8 hours': 85 }, 50)
+            + pick(a.histSleep, { 'Poor and restless': 20, 'Hit or miss': 45, 'Usually solid': 68, 'Great — I wake up refreshed': 85 }, 50)
+        ) / 2);
         recovery = clamp(recovery, 5, 95);
         const progress = clamp(Math.round((
             pick(a.confidence, { 'I believe I can do it!': 72, "I'm uncertain, but willing to try!": 54, "I'm still really unsure": 36 }, 50)
@@ -516,6 +517,24 @@
                 </button>`;
         };
 
+        /* The meals a client may pick for one slot, already filtered by the
+           dietary preference + allergies they gave a few screens earlier.
+           Render and the tap handlers must agree, so both go through here. */
+        function mealPoolFor(screen) {
+            const data = window.__mpQuizData || null;
+            if (!data || !window.MealProgramEngine) return [];
+            const goal = ({ 'A few sizes smaller': 'cut', 'Athletic': 'maintain', 'Ripped': 'cut', 'Swole': 'bulk' })[answers.bodyGoal] || 'maintain';
+            const diet = mealFilter(answers);
+            return window.MealProgramEngine.slotPool(data.meals, screen.slot, goal, diet.pref, diet.allergies);
+        }
+        /* Never ask for more picks than the filtered pool can supply — a strict
+           allergy set would otherwise disable NEXT forever. */
+        function mealMinSelect(screen) {
+            const want = Math.max(1, Number(screen.minSelect || 2));
+            const size = mealPoolFor(screen).length;
+            return size ? Math.min(want, size) : 0;
+        }
+
         const infoArt = (kind) => {
             if (kind === 'trio') return `<div class="bm-art"><div class="bm-art-row">${torso(20, true, 30)}${torso(19, true, 34)}${torso(22, true, 31)}</div></div>`;
             if (kind === 'workouts') return `<div class="bm-art"><div class="bm-art-cards">
@@ -632,7 +651,7 @@
                 }
                 case 'mealGrid': {
                     const picksArr = Array.isArray(answers[screen.id]) ? answers[screen.id] : [];
-                    const minSelect = Math.max(1, Number(screen.minSelect || 2));
+                    const minSelect = mealMinSelect(screen);
                     const data = window.__mpQuizData || null;
                     if (!data) {
                         // Fail open: a dead dataset fetch must never trap the quiz —
@@ -653,8 +672,17 @@
                         } catch { window.__mpQuizDataFailed = true; }
                         return `${head}<p class="bm-hint">Loading meals…</p>`;
                     }
-                    const goal = ({ 'A few sizes smaller': 'cut', 'Athletic': 'maintain', 'Ripped': 'cut', 'Swole': 'bulk' })[answers.bodyGoal] || 'maintain';
-                    const pool = window.MealProgramEngine.slotPool(data.meals, screen.slot, goal, 'no-restrictions', []);
+                    // Dietary preference + allergies were asked before this screen,
+                    // so the client is only ever shown meals they can actually eat.
+                    const pool = mealPoolFor(screen);
+                    if (!pool.length) {
+                        // A strict allergy set can empty a slot. Never trap the
+                        // client on an empty grid — the engine builds this slot
+                        // around the restrictions instead.
+                        return `${head}
+                            <p class="bm-hint" style="text-align:center">Nothing here clears your allergies — we’ll build this meal around them for you.</p>
+                            <div class="bm-footer"><button type="button" class="bm-cta" data-bm-next>NEXT STEP</button></div>`;
+                    }
                     const cards = pool.map((meal) => `
                         <button type="button" class="mp-card ${picksArr.includes(meal.id) ? 'selected' : ''}" data-bm-mealpick="${meal.id}" aria-pressed="${picksArr.includes(meal.id)}">
                             <img loading="lazy" alt="${esc(meal.name)}" src="${esc(meal.image_url || '')}" onerror="this.style.visibility='hidden'">
@@ -787,7 +815,9 @@
                     const cls = bmiClass(v);
                     const risky = cls === 'Obese' || cls === 'Overweight';
                     const bodyType = { 'Slender': 'Ectomorph', 'Medium build': 'Mesomorph', 'Stocky': 'Mesomorph', 'Significantly overweight': 'Endomorph' }[answers.build] || 'Mesomorph';
-                    const lifestyle = { 'I spend most of the day sitting': 'Sedentary', 'I take active breaks': 'Lightly active', "I'm on my feet all day long": 'Active' }[answers.dailyActivity] || 'Moderate';
+                    // "How active are you on a typical day?" is gone — walk frequency
+                    // is the activity signal we still collect.
+                    const lifestyle = { 'More like once a month': 'Sedentary', '1-2 times a week': 'Lightly active', '3-4 times a week': 'Moderate', 'Almost every day': 'Active' }[answers.walks] || 'Moderate';
                     const fitness = { 'Never': 'Basic', 'Several times a month': 'Basic', 'Several times a week': 'Intermediate', 'Almost every day': 'Advanced' }[answers.exerciseFreq] || 'Basic';
                     const metabolism = { 'I gain weight fast but lose it slowly': 'Moderate, challenging to stay trim', 'I gain and lose weight easily': 'Fast and responsive', 'I struggle to gain weight or muscle': 'Fast, hard to gain' }[answers.weightChange] || 'Moderate';
                     return `
@@ -861,63 +891,6 @@
                             <p>Workouts, meals and restock alerts all talk to each other. I stopped juggling four apps.</p>
                         </div>
                         <p class="bm-finePrint">*Disclaimer: following the exercise and meal plan is the key to your results. Individual results may vary.</p>`;
-                case 'plan': {
-                    const mapped = mapAnswers(answers);
-                    const nowW = Math.round(weightLb(answers) || 0);
-                    const goalW = Math.round(goalWeightLb(answers) || 0);
-                    const losing = nowW >= goalW;
-                    const v = bmi(answers);
-                    const fatNow = v ? (v >= 30 ? 'High' : v >= 25 ? 'Elevated' : 'Moderate') : 'Moderate';
-                    return `
-                        <div class="bm-compare">
-                            <div class="bm-compare-col">
-                                <div class="bm-compare-tag">Now</div>
-                                ${torso(answers.build === 'Significantly overweight' ? 32 : answers.build === 'Stocky' ? 27 : 22, false, 31)}
-                                <div class="bm-compare-meta"><span>Body fat</span><strong>${esc(fatNow)}</strong></div>
-                                <div class="bm-compare-meta"><span>Fitness level</span><strong>Beginner</strong></div>
-                                <div class="bm-meter"><span style="width:33%"></span></div>
-                            </div>
-                            <div class="bm-compare-arrow">→</div>
-                            <div class="bm-compare-col">
-                                <div class="bm-compare-tag is-goal">Your goal</div>
-                                ${torso(19, true, 33)}
-                                <div class="bm-compare-meta"><span>Body fat</span><strong>${losing ? 'Lean' : 'Athletic'}</strong></div>
-                                <div class="bm-compare-meta"><span>Fitness level</span><strong>Advanced</strong></div>
-                                <div class="bm-meter"><span style="width:92%"></span></div>
-                            </div>
-                        </div>
-                        <h2 class="bm-title">Your personalized plan is ready!</h2>
-                        <div class="bm-plan-chips">
-                            <div class="bm-plan-chip"><span>Goal</span><strong>${esc(mapped.goal)}</strong></div>
-                            ${goalW ? `<div class="bm-plan-chip"><span>Target weight</span><strong>${goalW} lbs</strong></div>` : ''}
-                        </div>
-                        <div class="bm-free-card">
-                            <div class="bm-free-badge">100% FREE</div>
-                            <strong>No card. No trial. No catch.</strong>
-                            <p>Your full plan — workouts, meals and grocery list — is included with your RiseForIt account.</p>
-                        </div>
-                        <div class="bm-footer">
-                            <button type="button" class="bm-cta is-big" data-finish-action="client-overview">GET MY FREE PLAN</button>
-                        </div>
-                        <h3 class="bm-plan-sub">Highlights of your plan</h3>
-                        <div class="bm-highlights">
-                            <div class="bm-highlight"><strong>${esc(mapped.timePerSession)} min workouts</strong><span>matched to your ${esc(mapped.daysPerWeek)} training days a week</span></div>
-                            <div class="bm-highlight"><strong>${esc(answers.equipmentQ && answers.equipmentQ.length ? answers.equipmentQ[0] : 'Bodyweight')}-friendly exercises</strong><span>built for the equipment you actually have</span></div>
-                            <div class="bm-highlight"><strong>Personalized meal plan</strong><span>with quick recipes and a grocery list that restocks itself</span></div>
-                            <div class="bm-highlight"><strong>Macro & calorie targets</strong><span>calculated for your goal — no math needed</span></div>
-                            <div class="bm-highlight"><strong>Rank & progress tracking</strong><span>watch your six stats climb the pyramid as you train</span></div>
-                        </div>
-                        <div class="bm-faq">
-                            <h3 class="bm-plan-sub">People often ask</h3>
-                            <details><summary>What happens after I get my plan?</summary><p>You land on your Overview page with your stats, today's workout, your meal plan and your grocery list ready to go.</p></details>
-                            <details><summary>Do I need any fitness equipment?</summary><p>No — your plan is built around the equipment you told us you have, down to bodyweight-only.</p></details>
-                            <details><summary>Is it really free?</summary><p>Yes. The full plan is part of your RiseForIt account. No card required.</p></details>
-                        </div>
-                        <div class="bm-footer">
-                            <button type="button" class="bm-cta is-big" data-finish-action="client-overview">GET MY FREE PLAN</button>
-                        </div>
-                        <p class="bm-finePrint">*Disclaimer: following the exercise and meal plan is key to your results. Individual results may vary. Consult a physician first.</p>`;
-                }
                 default:
                     return head;
             }
@@ -931,13 +904,6 @@
                     ${screenBody(screen)}
                 </div>`;
             if (screen.type === 'loading') startLoading();
-            if (screen.type === 'plan') {
-                writeIdentityProfile();
-                if (typeof opts.onQuizComplete === 'function') {
-                    // All answers are in: hand the mapped intake + stats up before the CTA.
-                    opts.onQuizComplete({ fields: mapAnswers(answers), stats: computeStats(answers), raw: answers });
-                }
-            }
             root.scrollTop = 0;
             window.scrollTo({ top: 0, behavior: 'auto' });
         }
@@ -1013,6 +979,11 @@
 
         function startLoading() {
             writeIdentityProfile();
+            if (typeof opts.onQuizComplete === 'function') {
+                // Every answer is in by the time the ring starts: hand the mapped
+                // intake + stats up now, so the host has them before the finale.
+                opts.onQuizComplete({ fields: mapAnswers(answers), stats: computeStats(answers), raw: answers });
+            }
             const ring = root.querySelector('[data-bm-ring]');
             const pctEl = root.querySelector('[data-bm-pct]');
             const CIRC = 2 * Math.PI * 52;
@@ -1029,11 +1000,14 @@
                     window.clearInterval(loadingTimer);
                     loadingTimer = 0;
                     const stats = computeStats(answers);
+                    // Loading is the last screen. The host runs the rank finale
+                    // and then finishes onboarding — there is no plan page left
+                    // to advance to, so never call go() from here.
+                    const finish = () => { if (typeof opts.onFinish === 'function') opts.onFinish(); };
                     if (typeof opts.onLoadingDone === 'function') {
-                        // Let the host run the rank finale, then bring up the plan.
-                        opts.onLoadingDone(stats, () => go(idx + 1));
+                        opts.onLoadingDone(stats, finish);
                     } else {
-                        go(idx + 1);
+                        finish();
                     }
                 }
             }, reduceMotion ? 100 : 40);
@@ -1108,7 +1082,7 @@
                 persist();
                 mealBtn.classList.toggle('selected', arr.includes(mealId));
                 mealBtn.setAttribute('aria-pressed', String(arr.includes(mealId)));
-                const minSelect = Math.max(1, Number(screen.minSelect || 2));
+                const minSelect = mealMinSelect(screen);
                 const hint = root.querySelector('[data-bm-pickhint]');
                 if (hint) hint.textContent = `Pick at least ${minSelect} · ${arr.length} picked`;
                 const cta = root.querySelector('[data-bm-next]');
@@ -1118,8 +1092,11 @@
 
             const surpriseBtn = target.closest('[data-bm-surprise]');
             if (surpriseBtn && screen.type === 'mealGrid' && window.MealProgramEngine && window.__mpQuizData) {
+                // Surprise picks come out of the same allergy-filtered pool, and
+                // keep the engine's configured surprise count.
                 const goal = ({ 'A few sizes smaller': 'cut', 'Athletic': 'maintain', 'Ripped': 'cut', 'Swole': 'bulk' })[answers.bodyGoal] || 'maintain';
-                const ids = window.MealProgramEngine.surprisePicks(window.__mpQuizData.meals, screen.slot, goal, 'no-restrictions', []);
+                const diet = mealFilter(answers);
+                const ids = window.MealProgramEngine.surprisePicks(window.__mpQuizData.meals, screen.slot, goal, diet.pref, diet.allergies);
                 let arr = Array.isArray(answers[screen.id]) ? answers[screen.id].slice() : [];
                 ids.forEach((mealId) => { if (!arr.includes(mealId) && arr.length < 8) arr.push(mealId); });
                 answers[screen.id] = arr;
@@ -1129,7 +1106,7 @@
                     el.classList.toggle('selected', on);
                     el.setAttribute('aria-pressed', String(on));
                 });
-                const minSelect = Math.max(1, Number(screen.minSelect || 2));
+                const minSelect = mealMinSelect(screen);
                 const hint = root.querySelector('[data-bm-pickhint]');
                 if (hint) hint.textContent = `Pick at least ${minSelect} · ${arr.length} picked`;
                 const cta = root.querySelector('[data-bm-next]');

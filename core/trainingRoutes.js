@@ -11801,6 +11801,53 @@ async function trainingRoutes(req, res, url) {
     const entry = Object.values(all).find((row) => String(row?.username || '').toLowerCase() === key);
     return entry || null;
   };
+  // The trainer's published RiseForIt page, if they built one. Used as the
+  // share link's destination when no external siteUrl was pasted in. The site
+  // slug is trainer-chosen, so it is read off the page row rather than assumed
+  // to be the username. Fail-open: a DB hiccup just means "no built page".
+  const resolveBuiltCoachPath = async (handle) => {
+    const key = String(handle || '').trim().toLowerCase();
+    if (!key || !db.isConfigured()) return '';
+    try {
+      // Mirrors getPublicTrainerPage(): a page is live when is_published is
+      // true, and the site's home page is the one with an empty page_slug.
+      const result = await db.query(
+        `
+          SELECT p.site_slug, p.page_slug
+          FROM app_trainer_pages p
+          JOIN app_users u ON u.id = p.trainer_user_id
+          WHERE LOWER(u.username) = $1
+            AND p.is_published = true
+            AND p.site_slug <> ''
+          ORDER BY (p.page_slug = '') DESC, p.is_home DESC, p.nav_order ASC, p.created_at ASC
+          LIMIT 1;
+        `,
+        [key]
+      );
+      const row = result.rows?.[0];
+      if (!row) return '';
+      const site = String(row.site_slug || '').trim();
+      const page = String(row.page_slug || '').trim();
+      if (!site) return '';
+      return page ? `/coach/${site}/${page}` : `/coach/${site}`;
+    } catch {
+      return '';
+    }
+  };
+  const resolveCoachDisplayName = async (handle) => {
+    const key = String(handle || '').trim().toLowerCase();
+    if (!key || !db.isConfigured()) return 'Coach';
+    try {
+      const result = await db.query(
+        `SELECT COALESCE(NULLIF(TRIM(display_name), ''), username) AS name
+         FROM app_users WHERE LOWER(username) = $1 LIMIT 1;`,
+        [key]
+      );
+      return String(result.rows?.[0]?.name || 'Coach');
+    } catch {
+      return 'Coach';
+    }
+  };
 
   if (pathname === '/api/training/manual-workout' && req.method === 'POST') {
     // Save a hand-built workout (from workout-builder.html) as the user's
@@ -11988,13 +12035,21 @@ async function trainingRoutes(req, res, url) {
 
   if (pathname === '/api/training/website-funnel' && req.method === 'GET') {
     // PUBLIC: visitors clicking a trainer link have no account.
-    const entry = await findWebsiteByHandle(url.searchParams.get('t'));
-    if (!entry) return sendJson(res, 404, { error: 'Unknown trainer link' });
+    const handleParam = String(url.searchParams.get('t') || '').trim().toLowerCase();
+    const entry = await findWebsiteByHandle(handleParam);
+    // siteUrl is only ever set by pasting an EXTERNAL site into the website
+    // hub. A trainer who built their page in the RiseForIt builder has no
+    // siteUrl (and may have no trainer-websites record at all), which used to
+    // leave their share link dead-ending on "You're all set." or claiming the
+    // page was not set up. Fall back to their published page, exactly like the
+    // hub's preview frame already does.
+    const siteUrl = String(entry?.siteUrl || '').trim() || await resolveBuiltCoachPath(handleParam);
+    if (!entry && !siteUrl) return sendJson(res, 404, { error: 'Unknown trainer link' });
     return sendJson(res, 200, {
       ok: true,
-      displayName: entry.displayName || 'Coach',
-      siteUrl: entry.siteUrl || '',
-      variants: (entry.variants || []).filter((v) => (v.questions || []).length && v.weight > 0)
+      displayName: entry?.displayName || await resolveCoachDisplayName(handleParam),
+      siteUrl,
+      variants: (entry?.variants || []).filter((v) => (v.questions || []).length && v.weight > 0)
     });
   }
 
