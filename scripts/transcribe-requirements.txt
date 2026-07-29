@@ -2,16 +2,22 @@
 # Single source of truth: the Dockerfile installs from this file so the root
 # and deploy/transcription/ copies can never drift apart.
 #
-# Pinned deliberately, not loosely. faster-whisper 1.0.3 imports `requests`
-# without declaring it, and relied on huggingface-hub pulling it in; hub 1.x
-# switched to httpx and dropped requests, which broke the import outright.
-# So: hold hub on 0.x AND name requests explicitly.
+# Pinned deliberately, not loosely.
+#
+# History worth keeping: faster-whisper 1.0.3 imported `requests` without
+# declaring it and relied on huggingface-hub to pull it in; hub 1.x switched to
+# httpx and dropped requests, which broke the import outright and failed a
+# deploy. So requests stays named explicitly even though >=1.1 declares its own
+# dependencies properly — it costs nothing and removes a whole failure mode.
+#
+# >=1.1 is required for BatchedInferencePipeline (~3-4x faster on CPU at the
+# same model and accuracy). Upper bound keeps a future major out of the build.
 
-faster-whisper==1.0.3
-huggingface-hub>=0.23,<1.0
+faster-whisper>=1.1,<1.3
+huggingface-hub>=0.23
 requests>=2.31,<3
 ctranslate2>=4.0,<5
 tokenizers>=0.13,<1
 onnxruntime>=1.14,<2
-av>=11,<13
+av>=11,<14
 numpy>=1.24,<2

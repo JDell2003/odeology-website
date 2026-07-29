@@ -117,9 +117,16 @@ const FAKE_TRANSCRIPT = {
         engine: { available: true, detail: 'faster-whisper 1.0.3' },
         storage: { tempRootOk: true, tempRootError: '', audioPersisted: false },
         limits: { sampleRate: 16000, channels: 1, maxAudioBytes: 419430400, maxChunkBytes: 8388608, maxAudioSeconds: 13107, markIntervalSec: 15 },
-        models: ['small', 'medium'], defaultModel: 'small',
-        busy: false, queueLength: 0, estimatedWaitSec: 0,
-        speedFactor: { small: 3, medium: 1.1 }
+        models: [
+          { id: 'small', label: 'small — balanced', englishOnly: false, speedFactor: 9, measured: false },
+          { id: 'medium', label: 'medium — most accurate, slowest', englishOnly: false, speedFactor: 3.3, measured: false },
+          { id: 'distil-small.en', label: 'distil-small.en — fastest (English only)', englishOnly: true, speedFactor: 22, measured: false },
+          { id: 'distil-large-v3', label: 'distil-large-v3 — accurate + fast', englishOnly: false, speedFactor: 6, measured: false }
+        ],
+        defaultModel: 'small',
+        batching: { enabled: true, batchSize: 8 },
+        threads: 8,
+        busy: false, queueLength: 0, estimatedWaitSec: 0
       });
     }
     if (u.includes('/api/owner/transcribe/transcripts/')) return json({ ok: true, transcript: FAKE_TRANSCRIPT });
@@ -163,7 +170,27 @@ const FAKE_TRANSCRIPT = {
   const gateHidden = await page.$eval('#tr-gate', (el) => el.hidden);
   check('no blocking banner when flag + engine are healthy', gateHidden === true);
   const modelOptions = await page.$$eval('#tr-model option', (els) => els.map((e) => e.value));
-  check('model choices populated from the server', modelOptions.join(',') === 'small,medium', modelOptions.join(','));
+  check('model choices populated from the server',
+    modelOptions.join(',') === 'small,medium,distil-small.en,distil-large-v3', modelOptions.join(','));
+  const modelLabels = await page.$$eval('#tr-model option', (els) => els.map((e) => e.textContent));
+  check('labels carry the speed factor', /9×\s*realtime/.test(modelLabels[0]), modelLabels[0]);
+
+  // Picking an English-only model must disable the non-English languages
+  // rather than let the user build a request the server will reject.
+  await page.select('#tr-model', 'distil-small.en');
+  await sleep(120);
+  const langState = await page.$$eval('#tr-language option', (els) =>
+    els.map((e) => ({ v: e.value, d: e.disabled })));
+  check('English-only model disables other languages',
+    langState.filter((o) => o.v && o.v !== 'en').every((o) => o.d === true), JSON.stringify(langState));
+  check('English-only model leaves auto-detect + English usable',
+    langState.find((o) => o.v === 'en').d === false, JSON.stringify(langState));
+  check('English-only model forces the language to English',
+    await page.$eval('#tr-language', (el) => el.value) === 'en');
+  await page.select('#tr-model', 'small');
+  await sleep(120);
+  const langBack = await page.$$eval('#tr-language option', (els) => els.map((e) => e.disabled));
+  check('switching back re-enables every language', langBack.every((d) => d === false), JSON.stringify(langBack));
   const privacy = await page.$eval('.tr-privacy', (el) => el.textContent.replace(/\s+/g, ' '));
   check('privacy contract is stated in the UI', /deleted the moment transcription finishes/.test(privacy));
   check('Transcribe link is present in the owner control panel',

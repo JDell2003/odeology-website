@@ -32,10 +32,12 @@ Optional:
 
 | Variable | Default | Notes |
 | --- | --- | --- |
-| `TRANSCRIBE_MODEL` | `small` | `small` or `medium` |
+| `TRANSCRIBE_MODEL` | `small` | `small`, `medium`, `distil-small.en` (fastest, English only), `distil-large-v3` |
+| `TRANSCRIBE_BATCH_SIZE` | `8` | batched-inference batch size; higher trades RAM for speed |
+| `TRANSCRIBE_NO_BATCH` | unset | set `true` to force sequential decoding (~3-4x slower; debugging only) |
 | `TRANSCRIBE_PYTHON` | `python3` | interpreter used to spawn the worker |
 | `TRANSCRIBE_COMPUTE_TYPE` | `int8` | ctranslate2 quantization |
-| `TRANSCRIBE_THREADS` | `4` | never `os.cpus()` — that reports the host's cores, not the container's share. Lower to `2` if site latency suffers during a job |
+| `TRANSCRIBE_THREADS` | `4` (set to `8` in prod) | never `os.cpus()` — that reports the host's cores, not the container's share. `8` is the Hobby ceiling and the fastest setting, but the worker shares CPU with the web server: lower to `2`–`4` if site latency during a job bothers you |
 | `TRANSCRIBE_MODEL_DIR` | HF cache | pre-baked model path (see Dockerfile) |
 | `TRANSCRIBE_MAX_AUDIO_BYTES` | `419430400` (400 MB ≈ 3h30m) | per-job ceiling |
 | `TRANSCRIBE_MAX_CHUNK_BYTES` | `8388608` | per-chunk ceiling |

@@ -73,15 +73,36 @@ const UPLOAD_IDLE_TIMEOUT_MS = Math.max(
 );
 const JOB_RETENTION_MS = 30 * 60 * 1000; // finished job records linger for polling only
 
-const MODELS = new Set(['small', 'medium']);
+// Model catalogue. The distil ".en" models are several times faster at
+// comparable quality but ENGLISH ONLY — englishOnly drives both the UI label
+// and the worker's refusal to run them against another language.
+const MODEL_CATALOG = {
+  'small': { label: 'small — balanced', englishOnly: false },
+  'medium': { label: 'medium — most accurate, slowest', englishOnly: false },
+  'distil-small.en': { label: 'distil-small.en — fastest (English only)', englishOnly: true },
+  'distil-large-v3': { label: 'distil-large-v3 — accurate + fast', englishOnly: false }
+};
+const MODELS = new Set(Object.keys(MODEL_CATALOG));
 const DEFAULT_MODEL = MODELS.has(String(process.env.TRANSCRIBE_MODEL || '').trim())
   ? String(process.env.TRANSCRIBE_MODEL).trim()
   : 'small';
 
+// Batched inference (faster-whisper >= 1.1) runs VAD-segmented pieces in
+// parallel — the biggest single speedup available on CPU.
+const BATCH_SIZE = Math.max(1, Math.min(32, Number(process.env.TRANSCRIBE_BATCH_SIZE || 8)));
+const BATCHING_DISABLED = String(process.env.TRANSCRIBE_NO_BATCH || '').trim().toLowerCase() === 'true';
+
 // Audio seconds transcribed per wall-clock second, per model, on a modest
-// shared-CPU container. Seeds the "estimated wait" until real jobs measure it.
-const SEED_SPEED = { small: 3.0, medium: 1.1 };
-const measuredSpeed = { small: null, medium: null };
+// shared-CPU container. Seeds the "estimated wait" until real jobs measure it;
+// runJob replaces these with observed throughput as jobs complete. Batched
+// inference is assumed on (~3-4x over sequential).
+const SEED_SPEED = {
+  'small': 9.0,
+  'medium': 3.3,
+  'distil-small.en': 22.0,
+  'distil-large-v3': 6.0
+};
+const measuredSpeed = {};
 
 const ID_RE = /^[0-9a-f]{32}$/;
 const UUID_RE = /^[0-9a-f-]{36}$/i;
@@ -292,6 +313,11 @@ function speedFor(model) {
   return measuredSpeed[model] || SEED_SPEED[model] || SEED_SPEED.small;
 }
 
+/** True when this model can only transcribe English. */
+function isEnglishOnly(model) {
+  return Boolean(MODEL_CATALOG[model] && MODEL_CATALOG[model].englishOnly);
+}
+
 function estimateSeconds(job) {
   return Math.round(Math.max(1, Number(job.durationSec) || 0) / speedFor(job.model));
 }
@@ -411,8 +437,10 @@ async function runJob(job) {
     '--sample-rate', String(SAMPLE_RATE),
     '--channels', String(CHANNELS),
     '--compute-type', String(process.env.TRANSCRIBE_COMPUTE_TYPE || 'int8'),
-    '--threads', String(resolveThreads())
+    '--threads', String(resolveThreads()),
+    '--batch-size', String(BATCH_SIZE)
   ];
+  if (BATCHING_DISABLED) args.push('--no-batch');
   if (process.env.TRANSCRIBE_MODEL_DIR) args.push('--model-dir', String(process.env.TRANSCRIBE_MODEL_DIR));
   if (job.language) args.push('--language', job.language);
 
@@ -647,12 +675,21 @@ async function handleStatus(res) {
       maxAudioSeconds: Math.floor(MAX_AUDIO_BYTES / BYTES_PER_SECOND),
       markIntervalSec: MARK_INTERVAL_SEC
     },
-    models: Array.from(MODELS),
+    models: Object.keys(MODEL_CATALOG).map((id) => ({
+      id,
+      label: MODEL_CATALOG[id].label,
+      englishOnly: MODEL_CATALOG[id].englishOnly,
+      // Audio seconds per wall second — lets the UI show a realistic estimate
+      // per model choice, and reflects real measurements once jobs have run.
+      speedFactor: Math.round(speedFor(id) * 10) / 10,
+      measured: Boolean(measuredSpeed[id])
+    })),
     defaultModel: DEFAULT_MODEL,
+    batching: { enabled: !BATCHING_DISABLED, batchSize: BATCH_SIZE },
+    threads: resolveThreads(),
     busy: Boolean(running),
     queueLength: queue.length,
-    estimatedWaitSec: running ? waitSecondsBefore({ id: '__new__', model: DEFAULT_MODEL, durationSec: 0 }) : 0,
-    speedFactor: { small: speedFor('small'), medium: speedFor('medium') }
+    estimatedWaitSec: running ? waitSecondsBefore({ id: '__new__', model: DEFAULT_MODEL, durationSec: 0 }) : 0
   });
 }
 
@@ -678,6 +715,17 @@ async function handleCreateJob(req, res, flags) {
   }
 
   const model = MODELS.has(String(payload.model)) ? String(payload.model) : DEFAULT_MODEL;
+  let language = cleanText(payload.language, 8);
+  if (isEnglishOnly(model)) {
+    if (language && language !== 'en') {
+      return sendJson(res, 400, {
+        ok: false,
+        code: 'model_english_only',
+        error: `${model} is English-only — pick "small" or "medium" for ${language.toUpperCase()} audio.`
+      });
+    }
+    language = 'en';
+  }
 
   // Queue guard: exactly one job may exist per owner at a time. A long file
   // can't stack behind another and double the container's CPU burn.
@@ -714,7 +762,7 @@ async function handleCreateJob(req, res, flags) {
     ownerUserId: flags.userId,
     status: 'uploading',
     model,
-    language: cleanText(payload.language, 8),
+    language,
     filename: cleanText(payload.filename, 200),
     title: cleanText(payload.title || payload.filename, 200),
     durationSec: Math.max(0, Math.round(Number(payload.durationSec) || totalBytes / BYTES_PER_SECOND)),

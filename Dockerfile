@@ -60,9 +60,18 @@ RUN pip3 install --no-cache-dir --break-system-packages -r /tmp/transcribe-requi
 # download — a missing transitive dep should fail here, cheaply and legibly.
 RUN python3 -c "from faster_whisper import WhisperModel; print('faster-whisper import OK')"
 
-# Pre-bake the model. Change this ARG and TRANSCRIBE_MODEL together.
-ARG WHISPER_MODEL=small
-RUN python3 -c "from faster_whisper import WhisperModel; WhisperModel('${WHISPER_MODEL}', device='cpu', compute_type='int8', download_root='/opt/whisper-models')"
+# Confirm batched inference is available — it is the main reason for the >=1.1
+# pin, and losing it silently would triple job times.
+RUN python3 -c "from faster_whisper import BatchedInferencePipeline; print('batched inference OK')"
+
+# Pre-bake the models so the first job doesn't stall on a download and so they
+# survive redeploys (ephemeral filesystem, no volume attached). Both of these
+# are ~250 MB int8. distil-large-v3 is deliberately NOT baked in: it is ~1.5 GB
+# and would bloat every deploy — it downloads on first use if selected.
+ARG WHISPER_MODELS="small Systran/faster-distil-whisper-small.en"
+RUN for m in ${WHISPER_MODELS}; do \
+      python3 -c "import sys; from faster_whisper import WhisperModel; WhisperModel(sys.argv[1], device='cpu', compute_type='int8', download_root='/opt/whisper-models')" "$m" || exit 1; \
+    done
 
 WORKDIR /app
 

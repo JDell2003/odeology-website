@@ -47,6 +47,23 @@ def fail(message, code=1):
     sys.exit(code)
 
 
+# Shorthand -> actual model id. The distil models are several times faster than
+# their plain counterparts at comparable quality, but the ".en" ones are
+# ENGLISH ONLY — the server labels them as such so a non-English recording
+# doesn't quietly get mangled.
+MODEL_IDS = {
+    "small": "small",
+    "medium": "medium",
+    "distil-small.en": "Systran/faster-distil-whisper-small.en",
+    "distil-large-v3": "Systran/faster-distil-whisper-large-v3",
+}
+ENGLISH_ONLY = {"distil-small.en"}
+
+
+def resolve_model_id(name):
+    return MODEL_IDS.get(name, name)
+
+
 def selfcheck():
     """Prove the runtime is installed without downloading or loading a model."""
     try:
@@ -56,11 +73,19 @@ def selfcheck():
     except Exception as exc:  # noqa: BLE001
         sys.stderr.write("faster-whisper not importable: %s\n" % exc)
         sys.exit(1)
+    batched = False
+    try:
+        from faster_whisper import BatchedInferencePipeline  # noqa: F401
+        batched = True
+    except Exception:  # noqa: BLE001
+        batched = False
     emit({
         "ok": True,
         "faster_whisper": getattr(faster_whisper, "__version__", "unknown"),
         "ctranslate2": getattr(ctranslate2, "__version__", "unknown"),
         "numpy": getattr(numpy, "__version__", "unknown"),
+        "batched": batched,
+        "models": sorted(MODEL_IDS.keys()),
         "python": "%d.%d.%d" % sys.version_info[:3],
     })
     sys.exit(0)
@@ -98,6 +123,8 @@ def main():
     parser.add_argument("--model-dir", default=None)
     parser.add_argument("--language", default=None)
     parser.add_argument("--beam-size", type=int, default=1)
+    parser.add_argument("--batch-size", type=int, default=8)
+    parser.add_argument("--no-batch", action="store_true")
     args = parser.parse_args()
 
     if args.selfcheck:
@@ -118,9 +145,18 @@ def main():
     audio, duration = read_pcm(args.audio, args.sample_rate, args.channels)
 
     threads = args.threads if args.threads and args.threads > 0 else (os.cpu_count() or 2)
+    model_id = resolve_model_id(args.model)
+    language = args.language or None
+    # An English-only model with a non-English language explicitly requested is
+    # a mistake worth refusing rather than silently producing garbage.
+    if args.model in ENGLISH_ONLY:
+        if language and language != "en":
+            fail("model '%s' is English-only but language '%s' was requested" % (args.model, language))
+        language = "en"
+
     try:
         model = WhisperModel(
-            args.model,
+            model_id,
             device="cpu",
             compute_type=args.compute_type,
             cpu_threads=threads,
@@ -130,28 +166,57 @@ def main():
     except Exception as exc:  # noqa: BLE001
         fail("could not load model '%s' (%s)" % (args.model, exc))
 
-    try:
-        # beam_size=1 (greedy) is roughly 2x faster than the default beam 5 on
-        # CPU for a small accuracy cost — the right trade for long-form content
-        # on a shared container. vad_filter skips silence outright.
-        segments, info = model.transcribe(
-            audio,
-            language=args.language or None,
-            beam_size=args.beam_size,
-            vad_filter=True,
-            vad_parameters={"min_silence_duration_ms": 500},
-            condition_on_previous_text=False,
-        )
-    except Exception as exc:  # noqa: BLE001
-        fail("transcription failed (%s)" % exc)
+    # Batched inference (faster-whisper >= 1.1) segments with VAD and runs the
+    # pieces in parallel — roughly 3-4x faster on CPU at the same model and
+    # accuracy. It's the single biggest win available, so try it first and fall
+    # back to sequential decoding if the installed version lacks it or rejects
+    # the arguments (the batched API doesn't accept every sequential param).
+    segments = None
+    info = None
+    mode = "sequential"
+    if not args.no_batch:
+        try:
+            from faster_whisper import BatchedInferencePipeline
+            pipeline = BatchedInferencePipeline(model=model)
+            segments, info = pipeline.transcribe(
+                audio,
+                language=language,
+                batch_size=max(1, args.batch_size),
+                vad_filter=True,
+                vad_parameters={"min_silence_duration_ms": 500},
+            )
+            mode = "batched"
+        except Exception:  # noqa: BLE001
+            segments = None
+            info = None
+
+    if segments is None:
+        try:
+            # beam_size=1 (greedy) is roughly 2x faster than the default beam 5
+            # on CPU for a small accuracy cost — the right trade for long-form
+            # content on a shared container. vad_filter skips silence outright.
+            segments, info = model.transcribe(
+                audio,
+                language=language,
+                beam_size=args.beam_size,
+                vad_filter=True,
+                vad_parameters={"min_silence_duration_ms": 500},
+                condition_on_previous_text=False,
+            )
+            mode = "sequential"
+        except Exception as exc:  # noqa: BLE001
+            fail("transcription failed (%s)" % exc)
 
     emit({
         "type": "meta",
         "language": getattr(info, "language", "") or "",
         "duration": float(getattr(info, "duration", duration) or duration),
         "model": args.model,
+        "model_id": model_id,
         "compute_type": args.compute_type,
         "threads": threads,
+        "mode": mode,
+        "batch_size": args.batch_size if mode == "batched" else None,
     })
 
     count = 0

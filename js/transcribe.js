@@ -42,7 +42,10 @@
     busy: false,
     canceled: false,
     lastTranscript: null,
-    extractionPath: ''
+    extractionPath: '',
+    models: [],
+    probedTrack: null,
+    probedDurationSec: 0
   };
 
   /* ---------------- small helpers ---------------- */
@@ -590,7 +593,7 @@
     var file = state.file;
     beginRun();
     setStatus('Inspecting "' + file.name + '"…', '');
-    var track = await probeStreamingTrack(file);
+    var track = state.probedTrack || await probeStreamingTrack(file);
     if (track) return runStreaming(file, track);
     return runBuffered(file);
   }
@@ -758,14 +761,22 @@
     }
     state.status = json;
 
+    // Tolerate both the old string list and the current {id,label,...} objects,
+    // so a stale cached copy of this file still renders a usable dropdown.
+    state.models = (json.models || ['small']).map(function (m) {
+      return typeof m === 'string' ? { id: m, label: m, englishOnly: false, speedFactor: 0 } : m;
+    });
     els.model.textContent = '';
-    (json.models || ['small']).forEach(function (m) {
+    state.models.forEach(function (m) {
       var option = document.createElement('option');
-      option.value = m;
-      option.textContent = m === 'medium' ? 'medium (slower, more accurate)' : 'small (faster)';
-      if (m === json.defaultModel) option.selected = true;
+      option.value = m.id;
+      var label = m.label || m.id;
+      if (m.speedFactor) label += ' · ~' + m.speedFactor + '× realtime';
+      option.textContent = label;
+      if (m.id === json.defaultModel) option.selected = true;
       els.model.appendChild(option);
     });
+    syncLanguageForModel();
 
     var blocked = '';
     if (!json.enabled) {
@@ -786,11 +797,48 @@
     }
   }
 
+  /* An English-only model plus a non-English language is a contradiction the
+     server rejects, so don't let the UI offer it in the first place. */
+  function currentModel() {
+    var id = els.model && els.model.value;
+    return (state.models || []).filter(function (m) { return m.id === id; })[0] || null;
+  }
+
+  function syncLanguageForModel() {
+    var model = currentModel();
+    if (!els.language) return;
+    var englishOnly = Boolean(model && model.englishOnly);
+    Array.prototype.forEach.call(els.language.options, function (opt) {
+      var blocked = englishOnly && opt.value && opt.value !== 'en';
+      opt.disabled = blocked;
+    });
+    if (englishOnly) {
+      els.language.value = 'en';
+      els.language.title = (model.id) + ' is English-only.';
+    } else {
+      els.language.title = '';
+    }
+    var eta = estimateNote();
+    if (eta && !state.busy) els.eta.textContent = eta;
+  }
+
+  /* Rough "this will take about" for the picked model, from the server's
+     measured-or-seeded throughput and the selected file's duration. */
+  function estimateNote() {
+    var model = currentModel();
+    if (!model || !model.speedFactor || !state.probedDurationSec) return '';
+    var seconds = state.probedDurationSec / model.speedFactor;
+    return 'Roughly ' + fmtWait(seconds) + ' of transcription'
+      + (model.measured ? ' (measured)' : ' (estimated)');
+  }
+
   /* ---------------- file selection ---------------- */
 
-  function chooseFile(file) {
+  async function chooseFile(file) {
     if (!file) return;
     state.file = file;
+    state.probedTrack = null;
+    state.probedDurationSec = 0;
     els.fileLabel.hidden = false;
     els.fileLabel.textContent = file.name + ' · ' + fmtBytes(file.size);
     if (!els.title.value.trim()) {
@@ -798,6 +846,18 @@
     }
     els.start.disabled = state.busy || Boolean(els.gate && !els.gate.hidden);
     setStatus('Ready. Press Transcribe — the audio is extracted here first, then only the audio uploads.', '');
+
+    // Read just the container tables so we can show the length and a realistic
+    // time estimate before committing to anything. Costs a few KB of reads.
+    var track = await probeStreamingTrack(file);
+    if (state.file !== file) return; // a different file was picked meanwhile
+    if (track) {
+      state.probedTrack = track;
+      state.probedDurationSec = track.durationSec;
+      els.fileLabel.textContent = file.name + ' · ' + fmtBytes(file.size)
+        + ' · ' + fmtClock(track.durationSec) + ' of audio';
+      syncLanguageForModel();
+    }
   }
 
   /* ---------------- wiring ---------------- */
@@ -850,6 +910,7 @@
     });
     els.fileInput.addEventListener('change', function () { chooseFile(els.fileInput.files && els.fileInput.files[0]); });
 
+    els.model.addEventListener('change', syncLanguageForModel);
     els.start.addEventListener('click', startRun);
     els.cancel.addEventListener('click', cancelRun);
     els.refresh.addEventListener('click', function () { loadStatus(); loadLibrary(); });

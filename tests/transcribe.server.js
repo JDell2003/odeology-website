@@ -205,6 +205,32 @@ async function waitForJob(id, wanted, timeoutMs = 4000) {
   r = await call('POST', '/api/owner/transcribe/jobs', { body: { sampleRate: 16000, channels: 1, totalBytes: 32001 } });
   check('rejects a partial 16-bit sample', r.status === 400, JSON.stringify(r.body));
 
+  console.log('\n--- model catalogue + speed settings ---');
+  r = await call('GET', '/api/owner/transcribe/status');
+  const catalog = (r.body.models || []);
+  const ids = catalog.map((m) => m.id);
+  check('status advertises the model catalogue as objects',
+    catalog.length === 4 && catalog.every((m) => m.id && m.label), JSON.stringify(ids));
+  check('distil models are offered', ids.includes('distil-small.en') && ids.includes('distil-large-v3'), ids.join(','));
+  check('distil-small.en is flagged English-only',
+    catalog.find((m) => m.id === 'distil-small.en').englishOnly === true);
+  check('small/medium are not English-only',
+    catalog.find((m) => m.id === 'small').englishOnly === false
+    && catalog.find((m) => m.id === 'medium').englishOnly === false);
+  check('every model reports a speed factor', catalog.every((m) => m.speedFactor > 0), JSON.stringify(catalog.map((m) => m.speedFactor)));
+  check('distil-small.en is the fastest advertised',
+    catalog.find((m) => m.id === 'distil-small.en').speedFactor > catalog.find((m) => m.id === 'small').speedFactor);
+  check('batching is reported as on', r.body.batching && r.body.batching.enabled === true && r.body.batching.batchSize >= 1,
+    JSON.stringify(r.body.batching));
+  check('thread count is reported', r.body.threads >= 1, String(r.body.threads));
+
+  r = await call('POST', '/api/owner/transcribe/jobs', {
+    body: { sampleRate: 16000, channels: 1, totalBytes: 32000, model: 'distil-small.en', language: 'es' }
+  });
+  check('English-only model + Spanish -> 400 model_english_only',
+    r.status === 400 && r.body.code === 'model_english_only', JSON.stringify(r.body));
+  check('rejected before any job was registered', P.jobs.size === 0);
+
   console.log('\n--- a video upload is refused and destroys the job ---');
   r = await call('POST', '/api/owner/transcribe/jobs', {
     body: { sampleRate: 16000, channels: 1, totalBytes: 32000 * 2, filename: 'clip.mov', durationSec: 2 }
@@ -258,11 +284,17 @@ async function waitForJob(id, wanted, timeoutMs = 4000) {
   check('transcript id returned', Boolean(done && done.transcriptId));
   check('worker was spawned with int8 + model + pcm path', spawnCalls.some((c) =>
     c.args.includes('--compute-type') && c.args.includes('int8') && c.args.some((a) => String(a).endsWith('audio.pcm'))));
-  check('worker thread count is capped, not host core count', (() => {
+  check('worker thread count is bounded', (() => {
     const run = spawnCalls.find((c) => c.args.includes('--threads'));
     const n = Number(run && run.args[run.args.indexOf('--threads') + 1]);
-    return n >= 1 && n <= 4;
+    return n >= 1 && n <= 32;
   })());
+  check('worker is told to use batched inference', (() => {
+    const run = spawnCalls.find((c) => c.args.includes('--batch-size'));
+    if (!run) return false;
+    const n = Number(run.args[run.args.indexOf('--batch-size') + 1]);
+    return n >= 1 && !run.args.includes('--no-batch');
+  })(), JSON.stringify(spawnCalls.map((c) => c.args.join(' ')).slice(-1)));
 
   await sleep(80);
   check('TEMP DIR WIPED after success', !fs.existsSync(dir), dir);

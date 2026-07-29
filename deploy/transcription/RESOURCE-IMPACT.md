@@ -23,6 +23,33 @@ job before trusting them for cost.
 
 ---
 
+## Speed settings now in effect
+
+Three changes were made specifically to cut job time, so the numbers further
+down this file are **conservative** — they predate all of them:
+
+1. **Batched inference** (`BatchedInferencePipeline`, faster-whisper >= 1.1):
+   VAD-segments the audio and decodes the pieces in parallel. ~3-4x, same model,
+   same accuracy. The build fails if the class isn't importable, and the worker
+   falls back to sequential decoding rather than erroring if the call signature
+   ever changes.
+2. **Distil models** offered alongside `small`/`medium`. `distil-small.en` is the
+   fastest option by a wide margin; it is **English only**, which both the UI and
+   the server enforce (`400 model_english_only`) instead of quietly mangling
+   other languages. `distil-large-v3` is multilingual and not baked into the
+   image (~1.5 GB), so it downloads on first use and again after each redeploy.
+3. **`TRANSCRIBE_THREADS=8`** — the Hobby ceiling, up from 4.
+
+Advertised throughput per model (audio seconds per wall second) is served from
+`/status` and **replaced by real measurements** as jobs complete, so the ETA the
+page shows gets more honest with use.
+
+The tradeoff to keep in mind: 8 threads is the fastest setting but the worker
+shares a container with the web server, so site latency during a job is worse
+than it would be at 4. Batching and distil shorten that window a lot, which is
+what makes 8 tolerable — but if the site feels sluggish while a job runs, drop
+`TRANSCRIBE_THREADS` to `4` first.
+
 ## Per-job envelope
 
 Assumptions: 90 minutes of audio, 16 kHz mono, `int8` on CPU, `beam_size=1`
