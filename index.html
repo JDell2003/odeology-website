@@ -8,7 +8,7 @@
     <meta name="google-site-verification" content="vRcaMhl7lrb1k1IWJHFo2IcW_z8qxfdFVHdSz1oPRoY" />
     <title>RiseForIt - Systems. Strength. Proof.</title>
     <link rel="stylesheet" href="css/main.css?v=2026-07-29-mobilecp-1">
-    <link rel="stylesheet" href="css/client-quiz.css?v=2026-07-17-strava-1">
+    <link rel="stylesheet" href="css/client-quiz.css?v=2026-07-29-entryescape-1">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
@@ -5874,13 +5874,13 @@
 
     <script type="module" src="js/usda.js"></script>
     <script src="data/dri-targets.js?v=2026-02-24-micros-1"></script>
-    <script src="js/main.js?v=2026-07-29-mobilecp-1"></script>
+    <script src="js/main.js?v=2026-07-29-entryescape-1"></script>
     <script src="js/identity-activity.js?v=2026-07-12-dash-1"></script>
     <script src="js/identity-engine.js?v=2026-07-15-glitchguard-1"></script>
     <script src="js/daily-recap.js?v=2026-07-13-recap-4"></script>
     <script src="js/cutscenes.js?v=2026-07-17-bgvideo-1"></script>
     <script src="js/overview-identity.js?v=2026-07-11-showcase-7"></script>
-    <script src="js/client-quiz.js?v=2026-07-24-quiztrim-1"></script>
+    <script src="js/client-quiz.js?v=2026-07-29-entryescape-1"></script>
     <!-- Meal Program (Part 2): picture-picker inside onboarding + finish-time plan generation -->
     <link rel="stylesheet" href="css/meal-program.css?v=2026-07-14-mp-4">
     <script src="core/mealProgramConstants.js?v=2026-07-13-mp-2"></script>
@@ -7847,17 +7847,19 @@ function formatWorkspaceLabel(workspace) {
           return FLOW_CONFIG[state.selectedPath] || null;
         }
 
-        /* Escape hatch offered throughout onboarding, for anyone who already has
-           an account and doesn't belong in the questions:
-             - not signed in            → "Have an account? Log in"
-             - signed in, already set up → "Back to my account" (Restart
-               onboarding, or a forced re-run — their app still exists)
-           Someone signed in who genuinely hasn't onboarded gets nothing: their
-           overview would just bounce them straight back here. */
+        /* Escape hatch offered throughout onboarding, for anyone who already owns
+           an account and doesn't belong in the questions. It ALWAYS routes to
+           the login screen, never straight to "their app": onboarding is only
+           reachable when it is incomplete or forced, and the page gate bounces
+           anyone in that state right back here. Logging in as the account they
+           actually own is the only exit that sticks — and once they do, the
+           normal post-auth routing lands them on their own overview.
+             - not signed in → log in inline (their setup is resumable)
+             - signed in     → this is the wrong account: drop the session and
+                               log in as the right one */
         function entryEscape() {
-          if (!hasAuthenticatedUser()) return { kind: 'login', lead: 'Have an account?', strong: 'Log in' };
-          if (isOnboardingDone()) return { kind: 'home', lead: 'Back to', strong: 'my account' };
-          return null;
+          if (hasAuthenticatedUser()) return { kind: 'switch', lead: 'Wrong account?', strong: 'Log in' };
+          return { kind: 'login', lead: 'Have an account?', strong: 'Log in' };
         }
         function syncEntryEscapeUi() {
           const esc = entryEscape();
@@ -13416,11 +13418,16 @@ function formatWorkspaceLabel(workspace) {
         window.odeEntryEscapeGo = () => {
           const esc = entryEscape();
           if (!esc) return;
-          if (esc.kind === 'home') {
-            const liveUser = window.__odeCurrentUser || readAuthUserHint() || null;
-            window.location.href = (typeof window.__odeHomeFor === 'function')
-              ? window.__odeHomeFor(liveUser)
-              : 'overview.html#control-panel';
+          if (esc.kind === 'switch') {
+            // Signed in as the wrong account: end this session and land on the
+            // login screen. Their real account is already set up, so the
+            // post-login routing takes them to their own home.
+            try { persistOnboardingDraft(); } catch {}
+            if (typeof window.odeAuthSwitchAccount === 'function') {
+              window.odeAuthSwitchAccount();
+              return;
+            }
+            window.location.href = '/?authMode=login';
             return;
           }
           window.odeEntryLogin();
