@@ -856,6 +856,58 @@
         justify-content: flex-start;
         gap: 10px;
       }
+      /* "Already have an account? Log in" — quiet on purpose: it must be findable
+         on every onboarding screen without competing with the actual question. */
+      .entry-login-link {
+        border: 0;
+        background: none;
+        padding: 6px 2px;
+        min-height: 44px;
+        font: inherit;
+        font-size: 0.82rem;
+        font-weight: 600;
+        line-height: 1.3;
+        color: rgba(13, 34, 50, 0.62);
+        cursor: pointer;
+        text-align: right;
+      }
+      .entry-login-link b {
+        color: #a87633;
+        font-weight: 800;
+        text-decoration: underline;
+        text-underline-offset: 3px;
+      }
+      .entry-login-link:hover b { color: #0d2232; }
+      .entry-login-link:focus-visible {
+        outline: 3px solid #a87633;
+        outline-offset: 2px;
+        border-radius: 10px;
+      }
+      .entry-auth-resume {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        align-self: flex-start;
+        border: 0;
+        background: none;
+        padding: 6px 2px;
+        min-height: 44px;
+        font: inherit;
+        font-size: 0.86rem;
+        font-weight: 700;
+        color: rgba(13, 34, 50, 0.66);
+        cursor: pointer;
+      }
+      .entry-auth-resume svg {
+        width: 16px;
+        height: 16px;
+        fill: none;
+        stroke: currentColor;
+        stroke-width: 2.2;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+      .entry-auth-resume:hover { color: #0d2232; }
       .entry-panel-icon-btn {
         display: inline-flex;
         align-items: center;
@@ -4924,6 +4976,10 @@
                         </div>
                         <div class="entry-auth-shell">
                             <div class="entry-auth-panel">
+                                <button type="button" class="entry-auth-resume entry-hidden" id="entry-auth-resume">
+                                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 18l-6-6 6-6"></path></svg>
+                                    Back to setup
+                                </button>
                                 <div class="entry-auth-mode" role="tablist" aria-label="Account access mode">
                                     <button class="entry-auth-mode-btn is-active" type="button" data-auth-mode="signup">Sign up</button>
                                     <button class="entry-auth-mode-btn" type="button" data-auth-mode="login">Log in</button>
@@ -5051,6 +5107,9 @@
                                 </button>
                             </div>
                             <span class="entry-kicker" id="entry-kicker">Onboarding</span>
+                            <button type="button" class="entry-login-link entry-hidden" data-entry-escape>
+                                <span data-entry-escape-lead></span> <b data-entry-escape-strong></b>
+                            </button>
                         </div>
                         <h3 id="entry-panel-title">Choose a path to get started.</h3>
                         <p id="entry-panel-subtitle">The next steps adapt to whether you are building workouts for yourself, for clients, or for a team.</p>
@@ -6050,6 +6109,11 @@
         const state = {
           authMode: 'signup',
           selectedPath: '',
+          // "Already have an account? Log in" from inside onboarding. Shows the
+          // auth stage WITHOUT clearing selectedPath, so backing out resumes the
+          // setup exactly where they left it (clearing it would wipe the draft —
+          // persistOnboardingDraft() treats "no path" as "nothing to save").
+          authInterrupt: false,
           currentStep: 0,
           inviteContext: {
             trainerInvite: '',
@@ -6472,6 +6536,9 @@
           clientQuizApi = window.OdeClientQuiz.mount(hostEl, {
             answers: quizUser.bmQuiz,
             startIndex: Number(quizUser.bmQuizIndex || 0),
+            // Same escape hatch the panel head shows, rendered in the quiz's
+            // own top bar (the quiz is a full-page takeover).
+            escape: () => entryEscape(),
             onProgress(answers, screenIndex) {
               quizUser.bmQuizIndex = screenIndex;
               persistOnboardingDraft();
@@ -7780,6 +7847,30 @@ function formatWorkspaceLabel(workspace) {
           return FLOW_CONFIG[state.selectedPath] || null;
         }
 
+        /* Escape hatch offered throughout onboarding, for anyone who already has
+           an account and doesn't belong in the questions:
+             - not signed in            → "Have an account? Log in"
+             - signed in, already set up → "Back to my account" (Restart
+               onboarding, or a forced re-run — their app still exists)
+           Someone signed in who genuinely hasn't onboarded gets nothing: their
+           overview would just bounce them straight back here. */
+        function entryEscape() {
+          if (!hasAuthenticatedUser()) return { kind: 'login', lead: 'Have an account?', strong: 'Log in' };
+          if (isOnboardingDone()) return { kind: 'home', lead: 'Back to', strong: 'my account' };
+          return null;
+        }
+        function syncEntryEscapeUi() {
+          const esc = entryEscape();
+          document.querySelectorAll('[data-entry-escape]').forEach((el) => {
+            el.classList.toggle('entry-hidden', !esc);
+            if (!esc) return;
+            const lead = el.querySelector('[data-entry-escape-lead]');
+            const strong = el.querySelector('[data-entry-escape-strong]');
+            if (lead) lead.textContent = esc.lead;
+            if (strong) strong.textContent = esc.strong;
+          });
+        }
+
         function hasAuthenticatedUser() {
           const liveUser = window.__odeCurrentUser || readAuthUserHint() || null;
           return Boolean(liveUser && (liveUser.id || liveUser.email || liveUser.username));
@@ -7935,6 +8026,9 @@ function formatWorkspaceLabel(workspace) {
 
         function currentEntryStage() {
           if (TEST_ONBOARDING_MODE) return state.selectedPath ? 'onboarding' : 'roles';
+          // Returning user who started onboarding by mistake: the log-in stage
+          // wins over the in-progress setup until they authenticate or back out.
+          if (state.authInterrupt && !hasAuthenticatedUser()) return 'auth';
           if (state.selectedPath) return 'onboarding';
           if (shouldRouteSignedInUserToOverview()) return 'overview';
           if (hasAuthenticatedUser()) return 'roles';
@@ -7959,6 +8053,11 @@ function formatWorkspaceLabel(workspace) {
           if (entryHome) entryHome.setAttribute('data-entry-stage', stage);
           authStage?.classList.toggle('is-active', stage === 'auth');
           roleStage?.classList.toggle('is-active', stage === 'roles');
+          // The onboarding escape hatch (log in / back to my account) and the
+          // auth stage's "Back to setup" both re-resolve on every stage render.
+          syncEntryEscapeUi();
+          document.getElementById('entry-auth-resume')
+            ?.classList.toggle('entry-hidden', !(state.authInterrupt && state.selectedPath));
           authModeButtons.forEach((button) => {
             button.classList.toggle('is-active', button.getAttribute('data-auth-mode') === state.authMode);
           });
@@ -11338,7 +11437,10 @@ function formatWorkspaceLabel(workspace) {
 
         function renderPanel() {
           syncTrainerManagerReviewState();
-          const hasPath = Boolean(state.selectedPath);
+          // While the log-in interrupt is up the setup stays in state (so it can
+          // resume) but must not paint over the auth stage — #onboarding-screen
+          // is absolutely positioned across the whole entry shell.
+          const hasPath = Boolean(state.selectedPath) && !state.authInterrupt;
           entryHome?.classList.toggle('is-onboarding-active', hasPath);
           onboardingPanel.classList.toggle('is-active', hasPath);
           const user = state.answers?.user || {};
@@ -13112,6 +13214,16 @@ function formatWorkspaceLabel(workspace) {
           }, 80);
         };
         const finishInlineAuth = (user) => {
+          // Logged in from the onboarding "Log in" link: their account is the
+          // source of truth now, so drop the guest setup and let the normal
+          // post-auth routing land them on their own home (overview for a
+          // client, content tool for a trainer — see __odeHomeFor).
+          if (state.authInterrupt) {
+            state.authInterrupt = false;
+            state.selectedPath = '';
+            state.currentStep = 0;
+            clearOnboardingDraft();
+          }
           if (typeof window.odeApplySignedInUser === 'function') {
             window.odeApplySignedInUser(user);
             return;
@@ -13296,6 +13408,58 @@ function formatWorkspaceLabel(workspace) {
           renderEntryStage();
           window.setTimeout(() => authEmailInput?.focus(), 120);
         };
+        /* Offered throughout onboarding so a returning user who landed in the
+           questions isn't stuck answering them again. Their in-progress answers
+           are saved first and survive a back-out; a successful login discards
+           them in favour of the account they logged into. */
+        window.odeEntryEscape = entryEscape;
+        window.odeEntryEscapeGo = () => {
+          const esc = entryEscape();
+          if (!esc) return;
+          if (esc.kind === 'home') {
+            const liveUser = window.__odeCurrentUser || readAuthUserHint() || null;
+            window.location.href = (typeof window.__odeHomeFor === 'function')
+              ? window.__odeHomeFor(liveUser)
+              : 'overview.html#control-panel';
+            return;
+          }
+          window.odeEntryLogin();
+        };
+        window.odeEntryLogin = () => {
+          try { persistOnboardingDraft(); } catch {}
+          state.authInterrupt = true;
+          state.authMode = 'login';
+          // The quiz is a full-page takeover (it restyles the entry shell via
+          // body.client-quiz-active), so it has to come down before the auth
+          // stage shows. It remounts at the saved question on the way back.
+          if (clientQuizApi) {
+            clientQuizApi.destroy();
+            clientQuizApi = null;
+          }
+          resetInlineAuthFlow();
+          renderPanel(); // drops is-onboarding-active, then re-renders the stage
+          window.setTimeout(() => authEmailInput?.focus(), 120);
+        };
+        window.odeEntryResumeSetup = () => {
+          state.authInterrupt = false;
+          resetInlineAuthFlow();
+          renderEntryStage();
+          renderPanel();
+        };
+        // Delegated so it works for the panel-head link and any surface the
+        // quiz renders its own copy into.
+        document.addEventListener('click', (event) => {
+          if (event.target.closest?.('[data-entry-escape]')) {
+            event.preventDefault();
+            window.odeEntryEscapeGo();
+          }
+        });
+        document.getElementById('entry-auth-resume')?.addEventListener('click', () => {
+          window.odeEntryResumeSetup();
+        });
+        // Whether there's a setup to go back to (drives the auth stage's
+        // "Back to setup" control).
+        window.odeEntryHasSetupInProgress = () => Boolean(state.authInterrupt && state.selectedPath);
         try {
           const _entryUrl = new URL(window.location.href);
           const requestedMode = _entryUrl.searchParams.get('authMode');

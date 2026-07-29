@@ -58,7 +58,9 @@ body.client-quiz-active .entry-hero {
     top: 0;
     z-index: 20;
     display: grid;
-    grid-template-columns: 44px 1fr 44px;
+    /* Third column sizes to the log-in link (it falls back to a 44px spacer
+       when there's nobody to log in), keeping the title optically centred. */
+    grid-template-columns: 44px 1fr minmax(44px, auto);
     align-items: center;
     padding: 10px 8px;
     background: rgba(253, 249, 240, 0.94);
@@ -86,6 +88,35 @@ body.client-quiz-active .entry-hero {
     stroke-linecap: round;
     stroke-linejoin: round;
 }
+/* Quiet by design — present on every screen, never competing with the question. */
+.bm-login {
+    justify-self: end;
+    border: 0;
+    background: none;
+    padding: 4px 6px;
+    min-height: 40px;
+    font: inherit;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--bm-muted);
+    cursor: pointer;
+    white-space: nowrap;
+}
+.bm-login b {
+    color: var(--bm-ink);
+    font-weight: 800;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+.bm-login:hover b { color: var(--bm-gold); }
+.bm-login:focus-visible { outline: 3px solid var(--bm-gold); outline-offset: 2px; border-radius: 8px; }
+.bm-login-short { display: none; }
+/* Narrow phones: the progress segments need the room, so drop to "Log in". */
+@media (max-width: 420px) {
+    .bm-login-long { display: none; }
+    .bm-login-short { display: inline; }
+}
+
 .bm-topbar-mid { text-align: center; display: grid; gap: 6px; justify-items: center; }
 .bm-topbar-title {
     font-size: 14px;

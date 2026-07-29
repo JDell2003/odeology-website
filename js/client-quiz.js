@@ -458,6 +458,22 @@
             }
         };
 
+        /* A returning user who landed in the quiz shouldn't have to answer 40
+           questions to reach their account. The host owns auth and decides what
+           the way out is ("Log in" vs "Back to my account") — we only render it;
+           the click is handled by the host's delegated [data-entry-escape]
+           listener. Hidden on the terminal screens, where the page is already
+           handing them off. */
+        function escapeHatch() {
+            const screen = SCREENS[idx] || {};
+            if (screen.type === 'loading' || screen.type === 'plan') return null;
+            if (typeof opts.escape !== 'function') return null;
+            try {
+                const esc = opts.escape();
+                return (esc && esc.strong) ? esc : null;
+            } catch { return null; }
+        }
+
         function topBar(screen) {
             const showBack = idx > 0 && screen.type !== 'loading' && screen.type !== 'plan';
             const sectionIdx = SECTIONS.findIndex((s) => s.id === screen.section);
@@ -480,7 +496,15 @@
                         <div class="bm-topbar-title">${esc(screen.section ? (SECTIONS[sectionIdx] || {}).label : 'RiseForIt')}</div>
                         ${screen.section ? `<div class="bm-segs">${segs}</div>` : ''}
                     </div>
-                    <span class="bm-topbar-spacer"></span>
+                    ${(() => {
+                        const hatch = escapeHatch();
+                        if (!hatch) return '<span class="bm-topbar-spacer"></span>';
+                        return `
+                        <button type="button" class="bm-login" data-entry-escape>
+                            <span class="bm-login-long">${esc(hatch.lead)} <b>${esc(hatch.strong)}</b></span>
+                            <span class="bm-login-short"><b>${esc(hatch.strong)}</b></span>
+                        </button>`;
+                    })()}
                 </div>`;
         }
 

@@ -2586,7 +2586,51 @@ function setupNav() {
 // Render the top nav from the role model. Safe to call repeatedly (auth
 // resolve, view switch, sign-out) — the delegated listeners on #nav-menu
 // survive innerHTML swaps.
+/* The RiseForIt wordmark IS the home button, and "home" depends on who you
+   are: signed out → the public site, client → their overview, trainer-only →
+   their content tool, manager/owner → theirs. odeHomeFor() is the single
+   source of truth, so this never grows its own role table. Handles both
+   markup shapes — an <a class="navbar-brand"> on app pages and the plain
+   <div> on index — and re-runs on every nav sync so it follows the account. */
+function syncBrandHome(user = null) {
+    const brand = document.querySelector('.navbar-brand');
+    if (!brand) return;
+    const known = odeRoleFlags(user).known;
+    const href = known ? odeHomeFor(user) : 'index.html';
+    brand.dataset.odeHome = href;
+    if (brand.tagName === 'A') {
+        brand.setAttribute('href', href);
+        return;
+    }
+    // Index renders the brand as a div — give it real link semantics.
+    brand.setAttribute('role', 'link');
+    brand.setAttribute('tabindex', '0');
+    if (!brand.getAttribute('aria-label')) brand.setAttribute('aria-label', 'RiseForIt home');
+    brand.style.cursor = 'pointer';
+    if (brand.__odeHomeBound) return;
+    brand.__odeHomeBound = true;
+    const go = () => {
+        const target = brand.dataset.odeHome || 'index.html';
+        let samePage = false;
+        try {
+            const url = new URL(target, window.location.href);
+            samePage = url.pathname === window.location.pathname && !url.hash;
+        } catch { /* ignore */ }
+        // Already home: scroll up instead of reloading the page under them.
+        if (samePage) { window.scrollTo({ top: 0, behavior: 'smooth' }); return; }
+        window.location.href = target;
+    };
+    brand.addEventListener('click', go);
+    brand.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); go(); }
+    });
+}
+try { window.__odeSyncBrandHome = syncBrandHome; } catch { /* ignore */ }
+
 function renderRoleNav(user = null) {
+    // The wordmark is part of the same role surface as the nav items, so it
+    // re-resolves on every nav render (including the pre-paint hint pass).
+    syncBrandHome(user);
     const navMenu = document.getElementById('nav-menu');
     if (!navMenu) return;
     const items = odeNavFor(user);
@@ -21926,6 +21970,14 @@ function syncControlPanelLabel(user) {
 window.odeAuthLogin = (args) => authLogin(args);
 window.odeAuthSignup = (args) => authSignup(args);
 window.odeAuthRequestPasswordReset = (args) => authRequestPasswordReset(args);
+// Drop the current session and land on the login screen. Used by the
+// onboarding "Have an account? Log in" hatch, where the person in the
+// questions turns out to already own a different account.
+window.odeAuthSwitchAccount = async () => {
+    try { await authLogout(); } catch { /* ignore */ }
+    try { clearAuthUserHint(); } catch { /* ignore */ }
+    window.location.replace('/?authMode=login');
+};
 
 async function authLogin({ username, password }) {
     try {
