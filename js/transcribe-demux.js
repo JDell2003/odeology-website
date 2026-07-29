@@ -511,7 +511,10 @@
 
     var samples = info.samples;
     var sourceRate = info.sampleRate;
-    var segmentTarget = Math.max(1, Math.round(SEGMENT_SECONDS * sourceRate));
+    // Tests shrink this to force a short clip down the many-segment path a long
+    // recording takes; production always uses SEGMENT_SECONDS.
+    var segmentSeconds = Number(window.__odeTranscribeSegmentSeconds) || SEGMENT_SECONDS;
+    var segmentTarget = Math.max(1, Math.round(segmentSeconds * sourceRate));
 
     var pending = [];          // decoded mono Float32 blocks awaiting resample
     var pendingFrames = 0;
@@ -540,7 +543,10 @@
         var resampled = await resampleMonoTo16k(merged.subarray(0, filled), sourceRate);
         var pcm = floatToPcm16(resampled);
         emittedSamples += pcm.length;
-        onPcm(pcm);
+        // MUST be awaited. The consumer uploads these blocks, and firing them
+        // concurrently both races the uploader's shared state and removes the
+        // backpressure that keeps `pending` (and therefore memory) bounded.
+        await onPcm(pcm);
         if (!force) continue;
         if (!pendingFrames) break;
       }

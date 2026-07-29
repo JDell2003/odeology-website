@@ -92,6 +92,7 @@ const FAKE_TRANSCRIPT = {
   fs.writeFileSync(tmpFile, wav);
 
   const uploaded = []; // every chunk body the page PUT
+  const chunkIndexes = []; // and the index each one claimed
   let jobState = 'uploading';
   let createBody = null;
   let completeBody = null;
@@ -142,6 +143,8 @@ const FAKE_TRANSCRIPT = {
       // the raw bytes Chromium gives us here).
       const data = req.postData() || '';
       uploaded.push(Buffer.from(data, 'binary'));
+      const m = /[?&]index=(\d+)/.exec(u);
+      chunkIndexes.push(m ? Number(m[1]) : -1);
       return json({ ok: true, job: { id: 'a'.repeat(32), status: 'uploading', receivedBytes: 0, totalBytes: createBody.totalBytes, uploadPercent: 50, processedSec: 0, transcribePercent: 0, estimatedTotalSec: 1, queuePosition: 0, durationSec: 3, model: 'small', filename: 'x', error: null, transcriptId: null, createdAt: new Date().toISOString() } });
     }
     if (isTranscribeApi && u.includes('/complete')) {
@@ -356,6 +359,82 @@ const FAKE_TRANSCRIPT = {
   check('complete reconciled the exact byte count via finalBytes',
     completeBody && completeBody.finalBytes === streamed.length,
     JSON.stringify(completeBody));
+
+  console.log('\n--- many-chunk streaming: no interleaving, no duplicate indexes ---');
+  // REGRESSION GUARD. The first streaming build fired onPcm without awaiting
+  // it, so every decoded segment started an upload concurrently: the shared
+  // staging buffer got interleaved and two chunks claimed the same index, which
+  // the server rejected with 409 partway through a long upload. A 17s clip only
+  // ever produced ONE chunk, so nothing caught it. Shrinking the chunk size
+  // forces the same many-chunk path a long recording takes.
+  await page.evaluate(() => { window.__odeTranscribeChunkBytes = 64 * 1024; });
+  uploaded.length = 0;
+  chunkIndexes.length = 0;
+  createBody = null;
+  completeBody = null;
+  jobState = 'uploading';
+  await page.evaluate(() => { document.getElementById('tr-status').textContent = ''; });
+  const input4 = await page.$('#tr-file-input');
+  await input4.uploadFile(MP4);
+  await sleep(300);
+  await page.click('#tr-start');
+  await page.waitForFunction(
+    () => /Done|failed|could not|cannot|Nothing/i.test(document.getElementById('tr-status').textContent),
+    { timeout: 60000 }
+  ).catch(() => {});
+  await sleep(700);
+
+  const manyStatus = await page.$eval('#tr-status', (el) => el.textContent);
+  check('many-chunk streaming run reached Done', /Done/i.test(manyStatus), manyStatus);
+  check('the clip really did split into many chunks', chunkIndexes.length >= 8, String(chunkIndexes.length));
+  check('chunk indexes are strictly sequential from 0',
+    chunkIndexes.every((n, i) => n === i),
+    chunkIndexes.join(','));
+  check('no duplicate chunk indexes', new Set(chunkIndexes).size === chunkIndexes.length, chunkIndexes.join(','));
+
+  const manyBytes = Buffer.concat(uploaded);
+  check('every chunk is full-size except the last', (() => {
+    for (let i = 0; i < uploaded.length - 1; i++) if (uploaded[i].length !== 64 * 1024) return false;
+    return uploaded.length > 1;
+  })(), uploaded.map((b) => b.length).slice(0, 6).join(',') + '…');
+  check('reassembled bytes still match the audio duration',
+    Math.abs(manyBytes.length - expectPcm) < expectPcm * 0.05,
+    `${manyBytes.length} vs ~${Math.round(expectPcm)}`);
+  check('reassembled stream is still container-free', !/ftyp|moov|mdat/.test(manyBytes.toString('latin1')));
+  check('finalBytes matches the reassembled total',
+    completeBody && completeBody.finalBytes === manyBytes.length, JSON.stringify(completeBody));
+  await page.evaluate(() => { delete window.__odeTranscribeChunkBytes; });
+
+  console.log('\n--- backpressure: streamPcm16k must await its consumer ---');
+  // The uploader is serialized defensively, so a missing `await onPcm(...)`
+  // no longer corrupts chunk order — but it DOES remove backpressure, letting
+  // decoded segments pile up in memory until a long recording OOMs the tab
+  // (which is how this failed on a phone at 116 MB of 142 MB). Assert the
+  // contract directly: never more than one consumer call in flight.
+  const backpressure = await page.evaluate(async (url) => {
+    const blob = await (await fetch(url)).blob();
+    const file = new File([blob], 'king.mp4', { type: 'video/mp4' });
+    let inFlight = 0;
+    let maxInFlight = 0;
+    let calls = 0;
+    window.__odeTranscribeSegmentSeconds = 2; // 17s clip -> ~9 segments
+    await window.OdeTranscribeDemux.streamPcm16k(file, {
+      onPcm: async () => {
+        calls++;
+        inFlight++;
+        maxInFlight = Math.max(maxInFlight, inFlight);
+        // A real upload takes time; that's when piling-up would show.
+        await new Promise((r) => setTimeout(r, 25));
+        inFlight--;
+      }
+    });
+    delete window.__odeTranscribeSegmentSeconds;
+    return { calls, maxInFlight };
+  }, `http://localhost:${PORT}/videos/bg-king-regular.mp4`);
+
+  check('consumer was called for many segments', backpressure.calls >= 5, JSON.stringify(backpressure));
+  check('NEVER more than one consumer call in flight (onPcm is awaited)',
+    backpressure.maxInFlight === 1, `maxInFlight=${backpressure.maxInFlight}`);
 
   check('no uncaught page errors', pageErrors.length === 0, pageErrors.join(' | '));
 

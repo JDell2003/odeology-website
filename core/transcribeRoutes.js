@@ -789,13 +789,29 @@ async function handleChunk(req, res, flags, jobId, url) {
 
   const index = Number(url.searchParams.get('index'));
   if (!Number.isInteger(index) || index < 0) return sendJson(res, 400, { ok: false, error: 'index required' });
-  if (index !== job.nextChunkIndex) {
-    return sendJson(res, 409, { ok: false, error: `Out-of-order chunk: expected ${job.nextChunkIndex}, got ${index}.`, expectedIndex: job.nextChunkIndex });
-  }
 
+  // Read the body BEFORE deciding anything else. Responding to a request whose
+  // body is still in flight gets the connection reset, which truncates the
+  // response — the client then sees a bare status code instead of the JSON
+  // explaining what went wrong. Draining first costs bandwidth already spent
+  // and buys a legible error.
   let buf;
   try { buf = await readRawBody(req, MAX_CHUNK_BYTES); }
   catch (err) { failJob(job, 'Upload chunk rejected.'); return sendJson(res, 413, { ok: false, error: err.message }); }
+
+  if (index !== job.nextChunkIndex) {
+    // Re-sending a chunk we already stored is harmless — treat it as a no-op so
+    // a retried request can't wedge an otherwise healthy upload.
+    if (index === job.nextChunkIndex - 1) {
+      return sendJson(res, 200, { ok: true, duplicate: true, job: publicJob(job) });
+    }
+    return sendJson(res, 409, {
+      ok: false,
+      code: 'out_of_order',
+      error: `Out-of-order chunk: expected ${job.nextChunkIndex}, got ${index}.`,
+      expectedIndex: job.nextChunkIndex
+    });
+  }
 
   // Backstop: if this is somehow a media container rather than raw PCM, the
   // client's audio extraction failed. Kill the job loudly — never let a video

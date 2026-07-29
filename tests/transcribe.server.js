@@ -262,7 +262,15 @@ async function waitForJob(id, wanted, timeoutMs = 4000) {
   r = await call('PUT', `/api/owner/transcribe/jobs/${jobId}/chunk`, { body: pcmSeconds(1), raw: true, qs: '?index=0' });
   check('chunk 0 accepted', r.status === 200 && r.body.job.receivedBytes === 32000, JSON.stringify(r.body));
   r = await call('PUT', `/api/owner/transcribe/jobs/${jobId}/chunk`, { body: pcmSeconds(1), raw: true, qs: '?index=5' });
-  check('out-of-order chunk -> 409', r.status === 409, JSON.stringify(r.body));
+  check('out-of-order chunk -> 409', r.status === 409 && r.body.code === 'out_of_order', JSON.stringify(r.body));
+  check('409 carries a readable reason and the expected index',
+    /expected 1, got 5/.test(String(r.body.error)) && r.body.expectedIndex === 1, JSON.stringify(r.body));
+  // A retried chunk must not wedge a healthy upload — the client may resend
+  // after a network blip, and killing a 70-minute upload over that is unusable.
+  r = await call('PUT', `/api/owner/transcribe/jobs/${jobId}/chunk`, { body: pcmSeconds(1), raw: true, qs: '?index=0' });
+  check('resending the previous chunk is a no-op, not a failure',
+    r.status === 200 && r.body.duplicate === true, JSON.stringify(r.body));
+  check('a duplicate does not double-count bytes', r.body.job.receivedBytes === 32000, String(r.body.job.receivedBytes));
   r = await call('PUT', `/api/owner/transcribe/jobs/${jobId}/chunk`, { body: pcmSeconds(1), raw: true, qs: '?index=1' });
   check('chunk 1 accepted', r.status === 200 && r.body.job.receivedBytes === 64000, JSON.stringify(r.body));
 

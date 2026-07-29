@@ -110,9 +110,18 @@
       signal: opts.signal
     });
     var json = null;
-    try { json = await resp.json(); } catch (err) { /* non-JSON error page */ }
+    var raw = '';
+    try {
+      raw = await resp.text();
+      json = raw ? JSON.parse(raw) : null;
+    } catch (err) { /* non-JSON error page or a truncated response */ }
     if (!resp.ok || !json || json.ok === false) {
-      var error = new Error((json && json.error) || ('Request failed (' + resp.status + ')'));
+      // Include a snippet when the body wasn't JSON — a bare status code is
+      // almost useless when diagnosing a failure mid-upload.
+      var detail = (json && json.error)
+        || (raw ? 'HTTP ' + resp.status + ': ' + String(raw).replace(/\s+/g, ' ').slice(0, 160)
+                : 'Request failed (' + resp.status + ')');
+      var error = new Error(detail);
       error.status = resp.status;
       error.code = json && json.code;
       error.payload = json;
@@ -312,12 +321,29 @@
      4 MB staging buffer, same as a 3-minute one. */
 
   function makeUploader(jobId, declaredBytes, onProgress) {
-    var staging = new Uint8Array(UPLOAD_CHUNK_BYTES);
+    // Tests shrink this to force many chunks out of a short clip.
+    var chunkBytes = Number(window.__odeTranscribeChunkBytes) || UPLOAD_CHUNK_BYTES;
+    var staging = new Uint8Array(chunkBytes);
     var used = 0;
     var index = 0;
     var sent = 0;
+    // Every mutation of staging/used/index happens inside this chain. Callers
+    // that forget to await push() still get correctly ordered, non-overlapping
+    // chunks instead of interleaved garbage and duplicate indexes.
+    var chain = Promise.resolve();
 
-    async function put(slice) {
+    function serialize(fn) {
+      var run = chain.then(fn, function (err) { throw err; });
+      // Keep the chain alive after a rejection so later calls fail fast on the
+      // same error rather than deadlocking.
+      chain = run.catch(function () {});
+      return run;
+    }
+
+    async function put(view) {
+      // Copy out of the staging buffer: fetch may read the body lazily, and we
+      // are about to reuse those bytes for the next chunk.
+      var slice = view.slice();
       var attempt = 0;
       for (;;) {
         try {
@@ -341,31 +367,35 @@
     }
 
     return {
-      async push(int16) {
-        if (state.canceled) throw new Error('Canceled');
-        var bytes = new Uint8Array(int16.buffer, int16.byteOffset, int16.byteLength);
-        var offset = 0;
-        while (offset < bytes.length) {
-          var room = UPLOAD_CHUNK_BYTES - used;
-          var take = Math.min(room, bytes.length - offset);
-          staging.set(bytes.subarray(offset, offset + take), used);
-          used += take;
-          offset += take;
-          if (used === UPLOAD_CHUNK_BYTES) {
+      push: function (int16) {
+        return serialize(async function () {
+          if (state.canceled) throw new Error('Canceled');
+          var bytes = new Uint8Array(int16.buffer, int16.byteOffset, int16.byteLength);
+          var offset = 0;
+          while (offset < bytes.length) {
+            var room = chunkBytes - used;
+            var take = Math.min(room, bytes.length - offset);
+            staging.set(bytes.subarray(offset, offset + take), used);
+            used += take;
+            offset += take;
+            if (used === chunkBytes) {
+              await put(staging.subarray(0, used));
+              used = 0;
+            }
+          }
+          if (sent + used > declaredBytes) {
+            throw new Error('Extracted audio ran past the declared size — job aborted before overrunning the server limit.');
+          }
+        });
+      },
+      finish: function () {
+        return serialize(async function () {
+          if (used > 0) {
             await put(staging.subarray(0, used));
             used = 0;
           }
-        }
-        if (sent + used > declaredBytes) {
-          throw new Error('Extracted audio ran past the declared size — job aborted before overrunning the server limit.');
-        }
-      },
-      async finish() {
-        if (used > 0) {
-          await put(staging.subarray(0, used));
-          used = 0;
-        }
-        return sent;
+          return sent;
+        });
       },
       sentBytes: function () { return sent; }
     };
