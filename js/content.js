@@ -1164,7 +1164,14 @@
     var titleRow = el('div'); titleRow.style.cssText = 'display:flex;align-items:baseline;justify-content:space-between;gap:10px;flex-wrap:wrap;';
     titleRow.appendChild(el('h1', 'cp-h1', 'Today'));
     var redo = el('button', 'cp-btn cp-btn-ghost sm', 'Redo my program'); redo.type = 'button'; redo.onclick = function () { renderPathChooser(); }; titleRow.appendChild(redo);
-    head.appendChild(titleRow); root.appendChild(head);
+    head.appendChild(titleRow);
+    // Read-only look-backs: their own onboarding answers, and every day the
+    // program has assigned or they've logged.
+    var tools = el('div', 'cp-toolrow');
+    var onbBtn = el('button', 'cp-btn cp-btn-ghost sm', 'My Onboarding'); onbBtn.type = 'button'; onbBtn.id = 'cp-my-onboarding-btn'; onbBtn.onclick = openMyOnboarding; tools.appendChild(onbBtn);
+    var prevBtn = el('button', 'cp-btn cp-btn-ghost sm', 'Previous Days'); prevBtn.type = 'button'; prevBtn.id = 'cp-previous-days-btn'; prevBtn.onclick = openPreviousDays; tools.appendChild(prevBtn);
+    head.appendChild(tools);
+    root.appendChild(head);
 
     renderBadgeHead();
     // v10 addendum A — account flagged by the bleed migration: their saved
@@ -1245,6 +1252,301 @@
       meta.appendChild(el('p', null, esc(lv.desc)));
       row.appendChild(meta); root.appendChild(row);
     });
+  }
+
+  /* ================= MY ONBOARDING (read-only) =================
+     The trainer's own content_program_v2 record, every question in the order
+     it was asked. Same shape as the owner "Information" modal (section title,
+     muted question line, answer under it) but strictly self-scoped: the
+     answers come from GET /api/profile, which is session-scoped server-side —
+     there is no user parameter to point at anyone else. Local state is only a
+     fallback when the fetch fails. */
+  var MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  function fmtWhen(v) {
+    if (!v) return '';
+    var d = new Date(v);
+    return isNaN(d.getTime()) ? String(v) : d.toLocaleString();
+  }
+  function humanKey(k) {
+    return String(k).replace(/_/g, ' ').replace(/([a-z])([A-Z])/g, '$1 $2').replace(/^./, function (c) { return c.toUpperCase(); });
+  }
+  // Render any stored answer shape as a readable line.
+  function answerText(q, val) {
+    if (val == null || val === '') return '';
+    if (q && q.type === 'choice' && q.choices) {
+      var hit = null;
+      q.choices.forEach(function (c) { if (c.v === val) hit = c; });
+      if (hit) return hit.label;
+    }
+    if (q && q.type === 'days' && val && typeof val === 'object') {
+      var arr = (val.days || []).map(function (n) { return DOW_FULL[n] || n; });
+      var cnt = val.count ? val.count + ' a week' : '';
+      return [cnt, arr.join(', ')].filter(Boolean).join(' · ');
+    }
+    if (Array.isArray(val)) return val.map(function (x) { return answerText(null, x); }).filter(Boolean).join(', ');
+    if (typeof val === 'object') { try { return JSON.stringify(val); } catch (e) { return String(val); } }
+    return String(val);
+  }
+  // showIf, evaluated against a saved record instead of live draft state — a
+  // question the branch never asked shouldn't show up as "not answered".
+  function askedInRecord(q, ans, meta) {
+    if (q.showIfSentence) {
+      var m = meta && meta[q.showIfSentence];
+      var t = m ? m.type : classifyAnswer(ans[q.showIfSentence]).type;
+      if (t !== 'SENTENCE') return false;
+    }
+    if (!q.showIf) return true;
+    return Object.keys(q.showIf).every(function (k) { return ans[k] === q.showIf[k]; });
+  }
+  function onboardingSections(rec) {
+    var ans = (rec && rec.answered) || {};
+    var meta = (rec && rec.answered_meta) || {};
+    var path = (rec && rec.path) || 'quick';
+    var sections = [];
+    var used = {};
+    var current = null;
+    CFG.questions.forEach(function (q) {
+      if (path !== 'detailed' && q.path !== 'quick') return;
+      if (!askedInRecord(q, ans, meta)) return;
+      used[q.id] = true;
+      var sec = (CFG.sections[q.section] && CFG.sections[q.section].title) || humanKey(q.section);
+      if (!current || current.title !== sec) { current = { title: sec, rows: [] }; sections.push(current); }
+      current.rows.push([q.label, answerText(q, ans[q.id])]);
+    });
+    // Anything stored that isn't a current question (older schema, extras) —
+    // fall through as-is rather than hiding it.
+    var extras = [];
+    Object.keys(ans).forEach(function (k) {
+      if (used[k]) return;
+      var v = answerText(null, ans[k]);
+      if (v) extras.push([humanKey(k), v]);
+    });
+    if (extras.length) sections.push({ title: 'Other saved answers', rows: extras });
+    return sections;
+  }
+  function onboardingCopyText(rec, sections) {
+    var out = ['My content program onboarding'];
+    if (rec && rec.path) out.push('Path: ' + (rec.path === 'detailed' ? 'Detailed' : 'Quick'));
+    if (rec && rec.updatedAt) out.push('Last updated: ' + fmtWhen(rec.updatedAt));
+    sections.forEach(function (sec) {
+      out.push(''); out.push(sec.title.toUpperCase());
+      sec.rows.forEach(function (r) { out.push(r[0] + '\n' + (r[1] || '— not answered')); });
+    });
+    return out.join('\n');
+  }
+  function openMyOnboarding() {
+    var node = el('div');
+    var head = el('div', 'cp-modal-head');
+    var headText = el('div');
+    headText.appendChild(el('h3', null, 'My onboarding'));
+    var sub = el('div', 'cp-modal-sub', 'Loading your answers…');
+    headText.appendChild(sub); head.appendChild(headText);
+    var headBtns = el('div', 'cp-modal-headbtns');
+    var copyBtn = el('button', 'cp-btn cp-btn-ghost sm', 'Copy'); copyBtn.type = 'button'; copyBtn.disabled = true;
+    var closeBtn = el('button', 'cp-btn cp-btn-ghost sm', 'Close'); closeBtn.type = 'button'; closeBtn.onclick = closeModal;
+    headBtns.appendChild(copyBtn); headBtns.appendChild(closeBtn); head.appendChild(headBtns);
+    node.appendChild(head);
+    var list = el('div', 'cp-info-list'); node.appendChild(list);
+    openModal(node);
+
+    var paint = function (rec, note) {
+      var sections = onboardingSections(rec);
+      var bits = [];
+      if (rec && rec.path) bits.push((rec.path === 'detailed' ? 'Detailed' : 'Quick') + ' path');
+      if (rec && rec.updatedAt) bits.push('Last updated ' + fmtWhen(rec.updatedAt));
+      if (note) bits.push(note);
+      sub.textContent = bits.join(' • ');
+      list.innerHTML = '';
+      if (!sections.length) { list.appendChild(el('p', 'cp-note', 'No onboarding answers on file yet.')); return; }
+      sections.forEach(function (sec) {
+        var item = el('article', 'cp-info-item');
+        item.appendChild(el('div', 'cp-info-sec', esc(sec.title)));
+        sec.rows.forEach(function (r) {
+          var row = el('div', 'cp-info-row');
+          row.appendChild(el('div', 'cp-info-q', esc(r[0])));
+          var a = el('div', 'cp-info-a' + (r[1] ? '' : ' empty'));
+          a.textContent = r[1] || 'Not answered';
+          row.appendChild(a); item.appendChild(row);
+        });
+        list.appendChild(item);
+      });
+      var copy = onboardingCopyText(rec, sections);
+      copyBtn.disabled = false;
+      copyBtn.onclick = function () { copyText(copy, 'Onboarding copied'); };
+    };
+
+    fetch('/api/profile', { credentials: 'include' })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (j) {
+        var cp = j && j.profile && j.profile.profile && j.profile.profile.content_program_v2;
+        if (cp && cp.answered) { paint(cp); return; }
+        paint(state, 'from this device');
+      })
+      .catch(function () { paint(state, 'offline — showing this device’s copy'); });
+  }
+
+  /* ================= PREVIOUS DAYS (read-only) =================
+     Every prior day the program assigned something or the trainer logged
+     something, newest first. Assignments come from the program itself
+     (scriptFor/assignedTasks over the local record); what actually happened
+     comes from the day check-ins plus GET /api/content/posts (session-scoped,
+     the same rows "I posted" writes). */
+  var PREV_DAYS_MAX = 180;
+  function dayLabel(d) {
+    var now = today();
+    var base = DOW[d.getDay()] + ' · ' + MONTHS[d.getMonth()] + ' ' + d.getDate();
+    return d.getFullYear() === now.getFullYear() ? base : base + ', ' + d.getFullYear();
+  }
+  function previousDayRows(serverPosts) {
+    var byDate = {};
+    (serverPosts || []).forEach(function (p) { (byDate[p.scheduledDate] = byDate[p.scheduledDate] || []).push(p); });
+    var rows = [];
+    var seen = {};
+    var end = addDays(today(), -1);
+    var start = programStart();
+    var floor = addDays(end, -(PREV_DAYS_MAX - 1));
+    if (start < floor) start = floor;
+    for (var c = new Date(end); c >= start; c = addDays(c, -1)) {
+      var key = ymd(c);
+      var ci = state.checkins[key] || null;
+      var posts = byDate[key] || [];
+      var s = scriptFor(c);
+      var assigned = assignedTasks(c);
+      var hasSomething = posts.length || ci || assigned.post || assigned.stories;
+      if (!hasSomething) continue;
+      seen[key] = true;
+      rows.push({ key: key, date: new Date(c), script: s, assigned: assigned, checkin: ci, posts: posts });
+    }
+    // Logged days outside the local program window (older account, reinstall,
+    // another device) still belong in the list.
+    Object.keys(byDate).forEach(function (k) {
+      if (seen[k] || !k) return;
+      var d = parseYmd(k);
+      if (d >= today()) return;
+      rows.push({ key: k, date: d, script: null, assigned: null, checkin: state.checkins[k] || null, posts: byDate[k] });
+    });
+    rows.sort(function (a, b) { return a.key < b.key ? 1 : a.key > b.key ? -1 : 0; });
+    return rows;
+  }
+  // What the day actually was: a logged post beats the assignment (they can
+  // swap the day), the assignment covers days with nothing logged.
+  function prevRowType(row) {
+    var logged = row.posts.filter(function (p) { return p.status === 'posted'; })[0] || row.posts[0];
+    if (logged && logged.postType) return logged.postType;
+    if (row.script && row.script.type) return row.script.type;
+    return 'stories';
+  }
+  function prevRowHeadline(row) {
+    var posted = row.posts.filter(function (p) { return p.hookText; })[0];
+    if (posted && posted.hookText) return posted.hookText;
+    if (row.script && row.script.hook) return row.script.hook;
+    if (row.script && row.script.title) return row.script.title;
+    return jobLabel(prevRowType(row));
+  }
+  function prevRowStatus(row) {
+    var ci = row.checkin || {};
+    var serverPosted = row.posts.some(function (p) { return p.status === 'posted'; });
+    var type = prevRowType(row);
+    var needsPost = row.assigned ? row.assigned.post : (type === 'win' || type === 'mistake' || type === 'app');
+    if (serverPosted || ci.posted) return { label: 'Posted', cls: 'done' };
+    if (!row.checkin && !row.posts.length) return { label: needsPost ? 'Not logged' : 'No log', cls: 'idle' };
+    if (needsPost && ci.posted === false) return { label: 'Missed', cls: 'missed' };
+    if (ci.stories === 'yes') return { label: 'Stories done', cls: 'done' };
+    if (ci.stories === 'partial') return { label: 'Stories partial', cls: 'idle' };
+    return { label: 'Logged', cls: 'idle' };
+  }
+  function prevDayDetails(row) {
+    var box = el('div', 'cp-dayrow-details');
+    var add = function (label, value) {
+      if (!String(value == null ? '' : value).trim()) return;
+      var r = el('div', 'cp-info-row');
+      r.appendChild(el('div', 'cp-info-q', esc(label)));
+      var v = el('div', 'cp-info-a'); v.textContent = value; r.appendChild(v);
+      box.appendChild(r);
+    };
+    var s = row.script;
+    if (s) {
+      add('Assigned', jobLabel(s.type) + (s.title && s.title !== jobLabel(s.type) ? ' — ' + s.title : ''));
+      if (s.hook) add('Hook for the day', s.hook);
+      if (s.angle && (s.angle.take || s.angle.topic)) add(labelForAngle(s.type), s.angle.take || s.angle.topic);
+      if (s.angle && s.angle.kind === 'proof') add('The proof', s.angle.text);
+      if (s.beats && s.beats.length) add('The shape', s.beats.map(function (b) { return b.t + ' — ' + b.job; }).join('\n'));
+      if (s.cta) add('CTA', s.cta);
+    }
+    row.posts.forEach(function (p) {
+      var bits = [jobLabel(p.postType), p.status === 'posted' ? 'posted' : p.status];
+      if (p.postedAt) bits.push(fmtWhen(p.postedAt));
+      add('Logged post', bits.filter(Boolean).join(' · '));
+      if (p.hookText) add('Hook used' + (p.hookSource === 'trainer' ? ' (yours)' : ''), p.hookText);
+      var stats = [];
+      if (p.views != null) stats.push(p.views + ' views');
+      if (p.dms != null) stats.push(p.dms + ' DMs');
+      if (p.clicks) stats.push(p.clicks + ' link clicks');
+      if (stats.length) add('Numbers', stats.join(' · '));
+    });
+    var ci = row.checkin;
+    if (ci) {
+      add('Check-in', (ci.posted ? 'Posted' : 'Did not post') + (ci.stories ? ' · stories: ' + ci.stories : ''));
+      if (ci.reason) add('Reason given', ci.reason);
+      if (ci.quality && ci.quality.length) add('Quality check', ci.quality.join(', '));
+    }
+    if (!box.childNodes.length) box.appendChild(el('p', 'cp-note', 'Nothing logged for this day.'));
+    return box;
+  }
+  function openPreviousDays() {
+    var node = el('div');
+    var head = el('div', 'cp-modal-head');
+    var headText = el('div');
+    headText.appendChild(el('h3', null, 'Previous days'));
+    var sub = el('div', 'cp-modal-sub', 'Loading your history…');
+    headText.appendChild(sub); head.appendChild(headText);
+    var headBtns = el('div', 'cp-modal-headbtns');
+    var closeBtn = el('button', 'cp-btn cp-btn-ghost sm', 'Close'); closeBtn.type = 'button'; closeBtn.onclick = closeModal;
+    headBtns.appendChild(closeBtn); head.appendChild(headBtns);
+    node.appendChild(head);
+    var list = el('div', 'cp-daylist'); node.appendChild(list);
+    openModal(node);
+
+    var paint = function (serverPosts, note) {
+      var rows = previousDayRows(serverPosts);
+      sub.textContent = (rows.length ? rows.length + ' day' + (rows.length === 1 ? '' : 's') + ' · newest first' : 'Nothing here yet')
+        + (note ? ' • ' + note : '');
+      list.innerHTML = '';
+      if (!rows.length) {
+        list.appendChild(el('p', 'cp-note', 'No previous days yet — your history starts the day after your program does.'));
+        return;
+      }
+      rows.forEach(function (row) {
+        var type = prevRowType(row);
+        var st = prevRowStatus(row);
+        var item = el('div', 'cp-dayrow');
+        var btn = el('button', 'cp-dayrow-head'); btn.type = 'button'; btn.setAttribute('aria-expanded', 'false');
+        var left = el('div', 'cp-dayrow-main');
+        var top = el('div', 'cp-dayrow-top');
+        top.appendChild(el('span', 'cp-dayrow-date', esc(dayLabel(row.date))));
+        top.appendChild(el('span', 'cp-jobtag ' + type, esc(jobLabel(type))));
+        left.appendChild(top);
+        var hook = el('div', 'cp-dayrow-hook'); hook.textContent = prevRowHeadline(row); left.appendChild(hook);
+        btn.appendChild(left);
+        var right = el('div', 'cp-dayrow-right');
+        right.appendChild(el('span', 'cp-daystat ' + st.cls, esc(st.label)));
+        right.appendChild(el('span', 'cp-dayrow-chev', '›'));
+        btn.appendChild(right);
+        item.appendChild(btn);
+        var details = null;
+        btn.onclick = function () {
+          var open = item.classList.toggle('open');
+          btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+          if (open && !details) { details = prevDayDetails(row); item.appendChild(details); }
+        };
+        list.appendChild(item);
+      });
+    };
+
+    fetch('/api/content/posts', { credentials: 'include' })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (j) { paint((j && j.posts) || []); })
+      .catch(function () { paint([], 'logged posts unavailable — showing this device’s record'); });
   }
 
   function renderUpgrade() {

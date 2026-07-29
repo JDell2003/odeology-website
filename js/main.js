@@ -2625,7 +2625,7 @@ const ODE_MANAGER_PAGES = new Set(['manager-trainers.html']);
 const ODE_OWNER_PAGES = new Set([
     'owner-accounts.html', 'owner-analytics.html', 'owner-doors.html',
     'owner-emails.html', 'owner-messaging.html', 'owner-websites.html',
-    'owner-calendar.html', 'workout-database.html', 'food-admin.html'
+    'owner-calendar.html', 'transcribe.html', 'workout-database.html', 'food-admin.html'
 ]);
 
 function odeCurrentPageFile() {
@@ -2900,6 +2900,7 @@ function ensureSharedControlPanel() {
             <a class="control-link" id="control-owner-doors-link" href="owner-doors.html"><span class="icon"><svg><use href="#icon-folder"></use></svg></span><span class="text">Doors</span></a>
             <a class="control-link" id="control-owner-accounts-link" href="owner-accounts.html"><span class="icon"><svg><use href="#icon-account"></use></svg></span><span class="text">Accounts</span></a>
             <a class="control-link" id="control-owner-analytics-link" href="owner-analytics.html"><span class="icon"><svg><use href="#icon-book"></use></svg></span><span class="text">Analytics</span></a>
+            <a class="control-link" id="control-owner-transcribe-link" href="transcribe.html"><span class="icon"><svg><use href="#icon-book"></use></svg></span><span class="text">Transcribe</span></a>
             <button class="control-link" id="control-owner-demo-btn" type="button"><span class="icon"><svg><use href="#icon-account"></use></svg></span><span class="text">Demo</span></button>
         </div>
     `.trim();
@@ -22647,6 +22648,24 @@ function injectOwnerCalendarLink(panel) {
     else ownerSection.appendChild(link);
 }
 
+/* Transcribe lives in the OWNER section on every page. Same runtime
+   injection as Calendar — pages ship their own static control-panel markup,
+   so add the link wherever it isn't already present. Owner-only visibility
+   comes free: #control-owner-section is hidden for everyone else. */
+function injectOwnerTranscribeLink(panel) {
+    if (!panel || panel.querySelector('a[href="transcribe.html"]')) return;
+    const ownerSection = panel.querySelector('#control-owner-section');
+    if (!ownerSection) return;
+    const link = document.createElement('a');
+    link.className = 'control-link';
+    link.id = 'control-owner-transcribe-link';
+    link.href = 'transcribe.html';
+    link.innerHTML = '<span class="icon"><svg><use href="#icon-book"></use></svg></span><span class="text">Transcribe</span>';
+    const calendarLink = ownerSection.querySelector('a[href="owner-calendar.html"]');
+    if (calendarLink) calendarLink.insertAdjacentElement('afterend', link);
+    else ownerSection.appendChild(link);
+}
+
 /* ---- Launch gating -------------------------------------------------
    Soft launch: clients get only the Website tab; every other control-panel
    tab is hidden. Trainers additionally get their live business tools —
@@ -22758,6 +22777,7 @@ function setupControlPanel() {
     if (!controlPanel) return;
     injectNutritionLink(controlPanel);
     injectOwnerCalendarLink(controlPanel);
+    injectOwnerTranscribeLink(controlPanel);
     const isStandaloneCoachRoute = /^\/coach\/[^/]+(?:\/[^/]+)?$/i.test(String(window.location.pathname || '').trim());
     if (isStandaloneCoachRoute) {
         controlPanel.setAttribute('hidden', '');
@@ -22846,15 +22866,13 @@ function setupControlPanel() {
         closeBtn.textContent = '×';
         closeBtn.addEventListener('click', toggleControlPanel);
 
-        // The mobile dock is client chrome (Training / Nutrition / Dashboard /
-        // Cardio / Check In). Trainer- and manager-only accounts never get it;
-        // the rest of the control-panel wiring still runs for them.
+        // Only the quick-nav strip inside the dock is client chrome (Training /
+        // Nutrition / Dashboard / Cardio / Check In) — trainer- and
+        // manager-only accounts never get that. The "Control Panel" button is
+        // the ONLY way to open the panel on a phone, so every role keeps it;
+        // what's inside the panel is already role-gated section by section.
         const dockRole = odeRoleFlags();
-        if (dockRole.known && !dockRole.clientAccess) {
-            document.getElementById('control-mobile-fab-dock')?.remove();
-            document.getElementById('control-mobile-fab')?.remove();
-            document.getElementById('control-mobile-fab-nav')?.remove();
-        } else {
+        const wantsClientNav = !(dockRole.known && !dockRole.clientAccess);
         let fab = document.getElementById('control-mobile-fab');
         if (!fab) {
             fab = document.createElement('button');
@@ -22865,16 +22883,26 @@ function setupControlPanel() {
             fab.setAttribute('aria-label', 'Open control panel');
         }
         const fabDock = ensureControlMobileFabDock();
-        const fabNav = ensureControlMobileFabNav();
+        let fabNav = null;
+        if (wantsClientNav) {
+            fabNav = ensureControlMobileFabNav();
+        } else {
+            document.getElementById('control-mobile-fab-nav')?.remove();
+        }
         fabDock.appendChild(fab);
-        fabDock.appendChild(fabNav.wrap);
+        if (fabNav) fabDock.appendChild(fabNav.wrap);
+        // No client nav strip => the dock is just the button; drop the nav
+        // backdrop rules so no stray bar renders under it.
+        fabDock.classList.toggle('fab-only', !fabNav);
         const syncFab = () => {
             const isOpen = controlPanel.classList.contains('open') && !controlPanel.classList.contains('collapsed');
             const hideFabButton = shouldHideControlMobileFabButton();
             fab.classList.toggle('hidden', isOpen || hideFabButton);
             fab.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
-            fabDock.classList.toggle('nav-only', !isOpen && hideFabButton);
-            fabDock.classList.toggle('hidden', isOpen);
+            fabDock.classList.toggle('nav-only', Boolean(fabNav) && !isOpen && hideFabButton);
+            // With no nav strip there's nothing left to show once the button
+            // itself is hidden, so the dock goes with it.
+            fabDock.classList.toggle('hidden', isOpen || (!fabNav && hideFabButton));
             fabNav?.wrap?.classList.toggle('hidden', isOpen);
         };
         fab.addEventListener('click', () => {
@@ -22894,7 +22922,6 @@ function setupControlPanel() {
                 observer.observe(trainingRoot, { childList: true, subtree: true, characterData: true });
                 trainingRoot.__odeControlFabObserver = observer;
             }
-        }
         }
     } else {
         // Desktop: keep pinned/open.
