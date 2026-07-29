@@ -262,11 +262,26 @@
     return { pcm: pcm, durationSec: pcm.length / TARGET_RATE, path: 'ffmpeg.wasm' };
   }
 
+  /* Can we stream this file instead of buffering it whole? MP4/MOV + WebCodecs
+     means yes, at any size — we read only the audio track's byte ranges. */
+  async function probeStreamingTrack(file) {
+    var demux = window.OdeTranscribeDemux;
+    if (!demux || !demux.isSupported()) return null;
+    try {
+      if (!(await demux.sniffMp4(file))) return null;
+      return await demux.probe(file);
+    } catch (err) {
+      return null; // unreadable tables — fall back to the buffered path
+    }
+  }
+
+  /* Buffered fallback: needs the whole file in an ArrayBuffer, hence the cap.
+     Only reached for containers the streaming demuxer doesn't handle. */
   async function extractAudio(file, onProgress) {
     if (file.size > SOFT_FILE_BYTES) {
       throw AudioExtractionError(
-        '"' + file.name + '" is ' + fmtBytes(file.size) + '. In-browser audio extraction tops out around ' + fmtBytes(SOFT_FILE_BYTES) + '.',
-        'Export a smaller/lower-bitrate version, or split the recording, then try again. The file was not uploaded.'
+        '"' + file.name + '" is ' + fmtBytes(file.size) + ', and it is not an MP4/MOV this browser can stream.',
+        'Files this large are only supported as .mp4/.mov (which stream without a size limit). Re-export it as MP4, or export audio-only (.m4a), and try again. The file was not uploaded.'
       );
     }
     try {
@@ -288,17 +303,18 @@
     }
   }
 
-  /* ---------------- upload ---------------- */
+  /* ---------------- upload ----------------
+     One uploader serves both paths. The streaming path pushes PCM into it as
+     the decoder produces it, so nothing accumulates: a 3-hour file holds one
+     4 MB staging buffer, same as a 3-minute one. */
 
-  async function uploadPcm(jobId, pcm, onProgress) {
-    var bytes = new Uint8Array(pcm.buffer, pcm.byteOffset, pcm.byteLength);
-    var total = bytes.byteLength;
-    var offset = 0;
+  function makeUploader(jobId, declaredBytes, onProgress) {
+    var staging = new Uint8Array(UPLOAD_CHUNK_BYTES);
+    var used = 0;
     var index = 0;
-    while (offset < total) {
-      if (state.canceled) throw new Error('Canceled');
-      var end = Math.min(total, offset + UPLOAD_CHUNK_BYTES);
-      var slice = bytes.subarray(offset, end);
+    var sent = 0;
+
+    async function put(slice) {
       var attempt = 0;
       for (;;) {
         try {
@@ -315,11 +331,41 @@
           await new Promise(function (r) { setTimeout(r, 800 * attempt); });
         }
       }
-      offset = end;
       index++;
-      onProgress((offset / total) * 100, fmtBytes(offset) + ' of ' + fmtBytes(total));
+      sent += slice.byteLength;
+      var pct = declaredBytes ? Math.min(100, (sent / declaredBytes) * 100) : 0;
+      onProgress(pct, fmtBytes(sent) + (declaredBytes ? ' of ~' + fmtBytes(declaredBytes) : ''));
     }
-    await api('/jobs/' + jobId + '/complete', { method: 'POST' });
+
+    return {
+      async push(int16) {
+        if (state.canceled) throw new Error('Canceled');
+        var bytes = new Uint8Array(int16.buffer, int16.byteOffset, int16.byteLength);
+        var offset = 0;
+        while (offset < bytes.length) {
+          var room = UPLOAD_CHUNK_BYTES - used;
+          var take = Math.min(room, bytes.length - offset);
+          staging.set(bytes.subarray(offset, offset + take), used);
+          used += take;
+          offset += take;
+          if (used === UPLOAD_CHUNK_BYTES) {
+            await put(staging.subarray(0, used));
+            used = 0;
+          }
+        }
+        if (sent + used > declaredBytes) {
+          throw new Error('Extracted audio ran past the declared size — job aborted before overrunning the server limit.');
+        }
+      },
+      async finish() {
+        if (used > 0) {
+          await put(staging.subarray(0, used));
+          used = 0;
+        }
+        return sent;
+      },
+      sentBytes: function () { return sent; }
+    };
   }
 
   /* ---------------- job polling ---------------- */
@@ -402,19 +448,107 @@
     els.start.disabled = !state.file;
   }
 
-  async function startRun() {
-    if (state.busy || !state.file) return;
-    var file = state.file;
-    beginRun();
+  async function createJob(file, durationSec, totalBytes) {
+    var created = await api('/jobs', {
+      method: 'POST',
+      body: JSON.stringify({
+        filename: file.name,
+        title: (els.title.value || '').trim() || file.name,
+        durationSec: Math.max(1, Math.round(durationSec)),
+        sampleRate: TARGET_RATE,
+        channels: 1,
+        totalBytes: totalBytes,
+        model: els.model.value || undefined,
+        language: els.language.value || ''
+      })
+    });
+    return created.job;
+  }
 
-    // 1. Extract in-browser. Nothing has touched the network yet.
+  function handleCreateFailure(err) {
+    setStatus(err.message, 'error');
+    if (err.code === 'job_in_progress' && err.payload && err.payload.job) {
+      state.job = err.payload.job;
+      els.cancel.hidden = false;
+      pollJob(err.payload.job.id);
+      return true; // took over polling the existing job
+    }
+    finishRun();
+    return false;
+  }
+
+  var uploadProgress = function (percent, note) {
+    setBar(els.uploadBar, percent);
+    els.uploadNote.textContent = note || '';
+  };
+  var extractProgress = function (percent, note) {
+    setBar(els.extractBar, percent);
+    els.extractNote.textContent = note || '';
+  };
+
+  /* STREAMING PATH — MP4/MOV of any size. Decode and upload run together, so
+     neither the video nor the full PCM is ever resident. */
+  async function runStreaming(file, track) {
+    var durationSec = track.durationSec;
+    // The PCM length is deterministic (duration x 32 kB/s); declare an upper
+    // bound with slack and reconcile the exact figure at /complete.
+    var estimate = Math.ceil(durationSec * TARGET_RATE * 2 * 1.15);
+    if (estimate % 2) estimate++;
+    var maxBytes = (state.status && state.status.limits && state.status.limits.maxAudioBytes) || estimate;
+    if (estimate > maxBytes) {
+      setBar(els.extractBar, 0);
+      els.extractNote.textContent = 'too long';
+      setStatus(
+        '"' + file.name + '" is ' + fmtClock(durationSec) + ' long — the per-job limit is about '
+        + Math.floor(maxBytes / (TARGET_RATE * 2) / 60) + ' minutes of audio. Split the recording and try again. Nothing was uploaded.',
+        'error'
+      );
+      finishRun();
+      return;
+    }
+
+    var job;
+    try {
+      job = await createJob(file, durationSec, estimate);
+    } catch (err) { handleCreateFailure(err); return; }
+    state.job = job;
+    state.extractionPath = 'WebCodecs streaming';
+
+    var uploader = makeUploader(job.id, estimate, uploadProgress);
+    try {
+      setStatus('Streaming audio out of "' + file.name + '" (' + fmtBytes(file.size) + ') — only the audio track is read, and only audio uploads.', '');
+      var result = await window.OdeTranscribeDemux.streamPcm16k(file, {
+        info: track,
+        onProgress: extractProgress,
+        onPcm: function (pcm) { return uploader.push(pcm); },
+        signal: { get aborted() { return state.canceled; } }
+      });
+      var finalBytes = await uploader.finish();
+      state.extractionPath = result.path;
+      markStepDone(els.stepExtract, true);
+      els.extractNote.textContent = result.path + ' · ' + fmtClock(result.durationSec)
+        + ' · read ' + fmtBytes(result.audioBytesRead) + ' of ' + fmtBytes(file.size);
+      await api('/jobs/' + job.id + '/complete', {
+        method: 'POST',
+        body: JSON.stringify({ finalBytes: finalBytes })
+      });
+      markStepDone(els.stepUpload, true);
+    } catch (err) {
+      if (state.canceled) { finishRun(); return; }
+      setStatus('Streaming extraction failed: ' + err.message + ' Nothing further was uploaded.', 'error');
+      try { await api('/jobs/' + job.id + '/cancel', { method: 'POST' }); } catch (e2) { /* ignore */ }
+      finishRun();
+      return;
+    }
+    pollJob(job.id);
+  }
+
+  /* BUFFERED PATH — everything the streaming demuxer can't open. */
+  async function runBuffered(file) {
     var extracted;
     try {
       setStatus('Extracting audio in your browser — the video stays on this device.', '');
-      extracted = await extractAudio(file, function (percent, note) {
-        setBar(els.extractBar, percent);
-        els.extractNote.textContent = note || '';
-      });
+      extracted = await extractAudio(file, extractProgress);
     } catch (err) {
       setBar(els.extractBar, 0);
       els.extractNote.textContent = 'failed';
@@ -426,45 +560,20 @@
     markStepDone(els.stepExtract, true);
     els.extractNote.textContent = extracted.path + ' · ' + fmtClock(extracted.durationSec) + ' · ' + fmtBytes(extracted.pcm.byteLength);
     state.pcm = extracted.pcm;
-
     if (state.canceled) { finishRun(); return; }
 
-    // 2. Claim the slot and upload audio only.
     var job;
     try {
-      var created = await api('/jobs', {
-        method: 'POST',
-        body: JSON.stringify({
-          filename: file.name,
-          title: (els.title.value || '').trim() || file.name,
-          durationSec: Math.round(extracted.durationSec),
-          sampleRate: TARGET_RATE,
-          channels: 1,
-          totalBytes: extracted.pcm.byteLength,
-          model: els.model.value || undefined,
-          language: els.language.value || ''
-        })
-      });
-      job = created.job;
-    } catch (err) {
-      setStatus(err.message, 'error');
-      if (err.code === 'job_in_progress' && err.payload && err.payload.job) {
-        state.job = err.payload.job;
-        els.cancel.hidden = false;
-        pollJob(err.payload.job.id);
-        return;
-      }
-      finishRun();
-      return;
-    }
+      job = await createJob(file, extracted.durationSec, extracted.pcm.byteLength);
+    } catch (err) { handleCreateFailure(err); return; }
     state.job = job;
 
+    var uploader = makeUploader(job.id, extracted.pcm.byteLength, uploadProgress);
     try {
       setStatus('Uploading extracted audio (' + fmtBytes(extracted.pcm.byteLength) + ') — audio only, no video.', '');
-      await uploadPcm(job.id, extracted.pcm, function (percent, note) {
-        setBar(els.uploadBar, percent);
-        els.uploadNote.textContent = note || '';
-      });
+      await uploader.push(extracted.pcm);
+      await uploader.finish();
+      await api('/jobs/' + job.id + '/complete', { method: 'POST' });
     } catch (err) {
       setStatus('Upload failed: ' + err.message, 'error');
       try { await api('/jobs/' + job.id + '/cancel', { method: 'POST' }); } catch (e2) { /* ignore */ }
@@ -473,9 +582,17 @@
     }
     markStepDone(els.stepUpload, true);
     state.pcm = null; // release the PCM copy; the server has it now
-
-    // 3. Wait on the queue + worker.
     pollJob(job.id);
+  }
+
+  async function startRun() {
+    if (state.busy || !state.file) return;
+    var file = state.file;
+    beginRun();
+    setStatus('Inspecting "' + file.name + '"…', '');
+    var track = await probeStreamingTrack(file);
+    if (track) return runStreaming(file, track);
+    return runBuffered(file);
   }
 
   async function cancelRun() {

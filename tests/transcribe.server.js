@@ -294,6 +294,32 @@ async function waitForJob(id, wanted, timeoutMs = 4000) {
   await sleep(60);
   check('TEMP DIR WIPED after cancel', !fs.existsSync(cancelDir), cancelDir);
 
+  console.log('\n--- streaming upload: over-declared size reconciled at complete ---');
+  // The streaming extractor can't know the exact PCM length up front, so it
+  // declares an upper bound and reports the real figure via finalBytes.
+  queries = [];
+  r = await call('POST', '/api/owner/transcribe/jobs', {
+    body: { sampleRate: 16000, channels: 1, totalBytes: 32000 * 4, filename: 'stream.mp4', durationSec: 4 }
+  });
+  const streamId = r.body.job.id;
+  const streamDir = P.jobDir(streamId);
+  await call('PUT', `/api/owner/transcribe/jobs/${streamId}/chunk`, { body: pcmSeconds(1), raw: true, qs: '?index=0' });
+  await call('PUT', `/api/owner/transcribe/jobs/${streamId}/chunk`, { body: pcmSeconds(1), raw: true, qs: '?index=1' });
+
+  r = await call('POST', `/api/owner/transcribe/jobs/${streamId}/complete`, { body: { finalBytes: 999 } });
+  check('finalBytes that disagrees with what arrived -> 400', r.status === 400 && r.body.code === 'upload_incomplete', JSON.stringify(r.body));
+  r = await call('POST', `/api/owner/transcribe/jobs/${streamId}/complete`, { body: { finalBytes: 32000 * 9 } });
+  check('finalBytes above the declared bound -> 400', r.status === 400, JSON.stringify(r.body));
+  r = await call('POST', `/api/owner/transcribe/jobs/${streamId}/complete`, { body: { finalBytes: 64000 } });
+  check('honest finalBytes below the declared bound -> accepted', r.status === 200 && ['queued', 'running'].includes(r.body.job.status), JSON.stringify(r.body));
+  check('duration is recomputed from the real byte count', r.body.job.durationSec === 2, JSON.stringify(r.body.job.durationSec));
+  check('totalBytes shrinks to what actually arrived', r.body.job.totalBytes === 64000, String(r.body.job.totalBytes));
+
+  const streamDone = await waitForJob(streamId, ['done', 'error']);
+  check('streamed job transcribes to done', streamDone && streamDone.status === 'done', JSON.stringify(streamDone));
+  await sleep(80);
+  check('TEMP DIR WIPED after a streamed job', !fs.existsSync(streamDir), streamDir);
+
   console.log('\n--- cross-owner isolation ---');
   fakeFlags = { ...OWNER, userId: '88888888-8888-4888-8888-888888888888' };
   r = await call('GET', `/api/owner/transcribe/jobs/${jobId}`);

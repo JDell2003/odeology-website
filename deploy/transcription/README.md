@@ -84,6 +84,27 @@ See `RESOURCE-IMPACT.md` in this folder. Read it before promoting — a 60–90
 minute job is a **sustained multi-core CPU burn for 10–60 minutes**, which is a
 different cost shape from anything else this service does.
 
+## 3a. How audio extraction picks a path
+
+Three paths, tried in this order:
+
+1. **WebCodecs streaming** (`js/transcribe-demux.js`) — for MP4/MOV. Parses the
+   container's sample tables, then reads *only the audio track's byte ranges*
+   via `File.slice()` and decodes them incrementally. Peak browser memory is a
+   ~4 MB staging buffer plus one 20-second resample segment, **regardless of
+   file size** — a 3-hour, 12 GB recording uses the same memory as a 3-minute
+   clip, and typically touches under 15% of the file's bytes. No size cap.
+   Because the exact PCM length isn't known until decoding finishes, the client
+   declares an upper bound at job creation and reconciles the real figure with
+   `finalBytes` at `/complete`.
+2. **Web Audio** (`decodeAudioData`) — for anything else the browser can decode.
+   Needs the whole file in an `ArrayBuffer`, so it is capped at 1.5 GB.
+3. **ffmpeg.wasm** — only if vendored (see below). Otherwise the page fails
+   loudly and says to re-export as MP4 or audio-only.
+
+The per-job ceiling is `TRANSCRIBE_MAX_AUDIO_BYTES` (400 MB of 16 kHz mono PCM
+≈ **3h30m of audio**), which is a limit on *duration*, not on file size.
+
 ## 4. Optional: ffmpeg.wasm browser fallback
 
 The browser's own decoder (Web Audio) handles the formats phones actually

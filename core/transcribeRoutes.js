@@ -602,7 +602,7 @@ async function transcribeRoutes(req, res, url) {
     if (chunkMatch && req.method === 'PUT') return await handleChunk(req, res, flags, chunkMatch[1], url), true;
 
     const completeMatch = sub.match(/^\/jobs\/([0-9a-f]{32})\/complete$/);
-    if (completeMatch && req.method === 'POST') return await handleComplete(res, flags, completeMatch[1]), true;
+    if (completeMatch && req.method === 'POST') return await handleComplete(req, res, flags, completeMatch[1]), true;
 
     const cancelMatch = sub.match(/^\/jobs\/([0-9a-f]{32})\/cancel$/);
     if (cancelMatch && req.method === 'POST') return await handleCancel(res, flags, cancelMatch[1]), true;
@@ -786,10 +786,31 @@ async function handleChunk(req, res, flags, jobId, url) {
   sendJson(res, 200, { ok: true, job: publicJob(job) });
 }
 
-async function handleComplete(res, flags, jobId) {
+async function handleComplete(req, res, flags, jobId) {
   const job = jobs.get(jobId);
   if (!job || job.ownerUserId !== flags.userId) return sendJson(res, 404, { ok: false, error: 'Job not found' });
   if (job.status !== 'uploading') return sendJson(res, 409, { ok: false, error: `Job is ${job.status}.` });
+
+  // Streaming extraction can't know the exact PCM length before it has decoded
+  // the whole file, so the client declares an upper bound at creation and
+  // reconciles here. finalBytes must match what we actually received and must
+  // not exceed the declared bound — so this loosens the ceiling, never the
+  // integrity check.
+  let payload = {};
+  try { payload = await readJsonBody(req); } catch { payload = {}; }
+  const finalBytes = Number(payload.finalBytes);
+  if (
+    job.receivedBytes !== job.totalBytes
+    && Number.isInteger(finalBytes)
+    && finalBytes === job.receivedBytes
+    && finalBytes > 0
+    && finalBytes <= job.totalBytes
+    && finalBytes % (BYTES_PER_SAMPLE * CHANNELS) === 0
+  ) {
+    job.totalBytes = job.receivedBytes;
+    job.durationSec = Math.max(1, Math.round(job.receivedBytes / BYTES_PER_SECOND));
+  }
+
   if (job.receivedBytes !== job.totalBytes) {
     // Recoverable, so do NOT destroy the job: a dropped connection or a
     // duplicated complete shouldn't cost the user a re-extract of a 90-minute

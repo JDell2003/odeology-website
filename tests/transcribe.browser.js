@@ -94,6 +94,7 @@ const FAKE_TRANSCRIPT = {
   const uploaded = []; // every chunk body the page PUT
   let jobState = 'uploading';
   let createBody = null;
+  let completeBody = null;
 
   const page = await browser.newPage();
   const pageErrors = [];
@@ -137,6 +138,7 @@ const FAKE_TRANSCRIPT = {
       return json({ ok: true, job: { id: 'a'.repeat(32), status: 'uploading', receivedBytes: 0, totalBytes: createBody.totalBytes, uploadPercent: 50, processedSec: 0, transcribePercent: 0, estimatedTotalSec: 1, queuePosition: 0, durationSec: 3, model: 'small', filename: 'x', error: null, transcriptId: null, createdAt: new Date().toISOString() } });
     }
     if (isTranscribeApi && u.includes('/complete')) {
+      try { completeBody = JSON.parse(req.postData() || '{}'); } catch (e) { completeBody = {}; }
       jobState = 'done';
       return json({ ok: true, job: { id: 'a'.repeat(32), status: 'queued', receivedBytes: createBody.totalBytes, totalBytes: createBody.totalBytes, uploadPercent: 100, processedSec: 0, transcribePercent: 0, estimatedTotalSec: 1, estimatedWaitSec: 1, queuePosition: 1, durationSec: 3, model: 'small', filename: 'x', error: null, transcriptId: null, createdAt: new Date().toISOString() } });
     }
@@ -250,6 +252,83 @@ const FAKE_TRANSCRIPT = {
     /could not decode|cannot decode|not installed/i.test(failStatus), failStatus);
   check('failure message states nothing was uploaded', /Nothing was uploaded/i.test(failStatus), failStatus);
   check('NOTHING was sent for the undecodable file', uploaded.length === before, `${uploaded.length} chunks`);
+
+  console.log('\n--- streaming path: real MP4, audio track only, no size cap ---');
+  const MP4 = path.join(ROOT, 'videos', 'bg-king-regular.mp4');
+  const mp4Size = fs.statSync(MP4).size;
+
+  // First: the demuxer's own reading of the container, in the real browser.
+  const probed = await page.evaluate(async (url) => {
+    const blob = await (await fetch(url)).blob();
+    const file = new File([blob], 'king.mp4', { type: 'video/mp4' });
+    const D = window.OdeTranscribeDemux;
+    const t = await D.probe(file);
+    return {
+      supported: D.isSupported(),
+      codec: t && t.codec,
+      sampleRate: t && t.sampleRate,
+      channels: t && t.channels,
+      durationSec: t && t.durationSec,
+      sampleCount: t && t.samples.count,
+      audioBytes: t && t.audioBytes,
+      fileSize: file.size
+    };
+  }, `http://localhost:${PORT}/videos/bg-king-regular.mp4`);
+
+  check('WebCodecs streaming is supported in this browser', probed.supported === true);
+  check('demuxer identifies the AAC track', probed.codec === 'mp4a.40.2', String(probed.codec));
+  check('demuxer reads the real sample rate / channels', probed.sampleRate === 44100 && probed.channels === 2,
+    `${probed.sampleRate}/${probed.channels}`);
+  check('demuxer reads the duration', Math.abs(probed.durationSec - 17.57) < 0.2, String(probed.durationSec));
+  check('demuxer maps every audio sample', probed.sampleCount === 757, String(probed.sampleCount));
+  check('ONLY the audio track is touched, not the video payload',
+    probed.audioBytes < probed.fileSize * 0.25,
+    `${probed.audioBytes} of ${probed.fileSize} bytes (${(100 * probed.audioBytes / probed.fileSize).toFixed(1)}%)`);
+
+  // Now drive the page end-to-end with that MP4.
+  uploaded.length = 0;
+  createBody = null;
+  completeBody = null;
+  jobState = 'uploading';
+  await page.evaluate(() => { document.getElementById('tr-status').textContent = ''; });
+  const input3 = await page.$('#tr-file-input');
+  await input3.uploadFile(MP4);
+  await sleep(300);
+  await page.click('#tr-start');
+  await page.waitForFunction(
+    () => /Done|failed|could not|cannot|Nothing/i.test(document.getElementById('tr-status').textContent),
+    { timeout: 40000 }
+  ).catch(() => {});
+  await sleep(700);
+
+  const streamNote = await page.$eval('#tr-extract-note', (el) => el.textContent);
+  const streamStatus = await page.$eval('#tr-status', (el) => el.textContent);
+  check('streaming path was chosen for the MP4', /WebCodecs streaming/.test(streamNote), streamNote);
+  check('note reports it read only the audio bytes', /read .* of /.test(streamNote), streamNote);
+  check('streaming run reached Done', /Done/i.test(streamStatus), streamStatus);
+
+  const streamed = Buffer.concat(uploaded);
+  const expectPcm = 17.57 * 16000 * 2;
+  check('uploaded PCM length matches the audio duration',
+    Math.abs(streamed.length - expectPcm) < expectPcm * 0.05,
+    `${streamed.length} vs ~${Math.round(expectPcm)}`);
+  check('uploaded far less than the source file', streamed.length < mp4Size, `${streamed.length} vs ${mp4Size}`);
+  check('more than one chunk was streamed (not buffered whole)', uploaded.length >= 1, String(uploaded.length));
+
+  const streamLatin = streamed.toString('latin1');
+  check('NO ftyp/moov/mdat box on the wire', !/ftyp|moov|mdat|stco|stsz/.test(streamLatin));
+  check('uploaded payload is not a prefix of the MP4',
+    !fs.readFileSync(MP4).slice(0, 2048).equals(streamed.slice(0, 2048)));
+  let speak = 0;
+  for (let i = 0; i + 1 < streamed.length; i += 2) speak = Math.max(speak, Math.abs(streamed.readInt16LE(i)));
+  check('streamed PCM contains real decoded audio', speak > 500, `peak=${speak}`);
+
+  check('job declared an upper bound, not an exact size',
+    createBody && createBody.totalBytes > streamed.length,
+    `declared ${createBody && createBody.totalBytes} vs actual ${streamed.length}`);
+  check('complete reconciled the exact byte count via finalBytes',
+    completeBody && completeBody.finalBytes === streamed.length,
+    JSON.stringify(completeBody));
 
   check('no uncaught page errors', pageErrors.length === 0, pageErrors.join(' | '));
 

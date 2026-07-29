@@ -46,6 +46,27 @@ memory. That term scales linearly with duration and is why `medium` on a
 Cost math uses Railway's usage rates (~$20/vCPU-month, ~$10/GB-month):
 4 vCPU × 18 min ≈ 72 vCPU-min ≈ $0.033, plus ~1.3 GB × 18 min ≈ $0.005.
 
+## A 3-hour job
+
+The browser side no longer scales with file size (see README §3a — MP4/MOV
+streams with flat memory), so the binding limit is the server ceiling of
+3h30m of audio. Extrapolating the table above:
+
+| | `small` | `medium` |
+| --- | --- | --- |
+| Wall time, 3 hours of audio | **~30–45 min** | **~90–120 min** |
+| Peak worker RSS | ~1.4–2.0 GB | ~2.9–3.8 GB |
+| Est. cost / job | ~$0.07–0.10 | ~$0.25–0.32 |
+
+RSS grows with duration because faster-whisper needs the decoded audio as one
+float32 array: 3 hours is 346 MB of PCM on disk → ~692 MB in memory. `medium`
+on a 3h30m file is the worst realistic case and would approach ~4 GB — still
+inside the 8 GB ceiling, but it is the configuration to actually measure before
+relying on it.
+
+A 3-hour job also holds the transcription slot for 30–45 minutes on `small`.
+Anything else you start meanwhile queues behind it and shows an estimated wait.
+
 ## Disk
 
 * 60 min of audio → **115 MB** of PCM in the job's temp dir

@@ -198,6 +198,7 @@
       <div class="tr-drop" id="tr-drop" role="button" tabindex="0" aria-controls="tr-file-input">
         <h3>Choose a video or audio file</h3>
         <p>Drop it here, or click to browse. Nothing uploads until you press Transcribe.</p>
+        <p style="margin-top:6px;">MP4 and MOV stream at any file size &mdash; only the audio track is read, so a 3-hour recording works. Up to 3h30m of audio per job.</p>
         <div class="tr-file" id="tr-file-label" hidden></div>
       </div>
       <input type="file" id="tr-file-input" accept="video/*,audio/*" hidden>
@@ -275,6 +276,7 @@
   </main>
 
   <script src="js/main.js?v=2026-07-29-entryescape-1"></script>
-  <script src="js/transcribe.js?v=2026-07-29-transcribe-1"></script>
+  <script src="js/transcribe-demux.js?v=2026-07-29-stream-1"></script>
+  <script src="js/transcribe.js?v=2026-07-29-stream-1"></script>
 </body>
 </html>
