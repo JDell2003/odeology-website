@@ -1,0 +1,17 @@
+# Python runtime for scripts/transcribe_worker.py — faster-whisper on CPU.
+# Single source of truth: the Dockerfile installs from this file so the root
+# and deploy/transcription/ copies can never drift apart.
+#
+# Pinned deliberately, not loosely. faster-whisper 1.0.3 imports `requests`
+# without declaring it, and relied on huggingface-hub pulling it in; hub 1.x
+# switched to httpx and dropped requests, which broke the import outright.
+# So: hold hub on 0.x AND name requests explicitly.
+
+faster-whisper==1.0.3
+huggingface-hub>=0.23,<1.0
+requests>=2.31,<3
+ctranslate2>=4.0,<5
+tokenizers>=0.13,<1
+onnxruntime>=1.14,<2
+av>=11,<13
+numpy>=1.24,<2

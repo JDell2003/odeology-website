@@ -50,10 +50,15 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 # faster-whisper (MIT) + ctranslate2 (MIT). CPU wheels only — no CUDA, no torch.
+# Versions are pinned in the requirements file, which is the single source of
+# truth for both this and the repo-root copy of the Dockerfile.
 # --break-system-packages is required on bookworm (PEP 668).
-RUN pip3 install --no-cache-dir --break-system-packages \
-        "faster-whisper==1.0.3" \
-        "numpy>=1.24,<2"
+COPY scripts/transcribe-requirements.txt /tmp/transcribe-requirements.txt
+RUN pip3 install --no-cache-dir --break-system-packages -r /tmp/transcribe-requirements.txt
+
+# Prove the import graph resolves before spending build time on the model
+# download — a missing transitive dep should fail here, cheaply and legibly.
+RUN python3 -c "from faster_whisper import WhisperModel; print('faster-whisper import OK')"
 
 # Pre-bake the model. Change this ARG and TRANSCRIBE_MODEL together.
 ARG WHISPER_MODEL=small
