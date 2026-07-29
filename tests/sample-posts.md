@@ -21,6 +21,13 @@ core:     lift heavy and eat enough
 - 0:55–1:00 — CTA
 CTA: I’m Coach QA. I help men over 35 get strong again. Link’s in my bio — drop your name and I’ll build you a plan.
 
+**app** — hook: “Not ready to hire a coach? Fine. Don't start with nothing either.”
+- 0:00–0:05 — Hook aimed at people not ready to hire anyone. “Not everyone’s ready for a coach. That doesn’t mean you start with nothing.”
+- 0:05–0:30 — What it does: a free workout with the equipment you have, a nutrition plan, a grocery list in your budget, and it gamifies progress so you level up.
+- 0:30–0:45 — Honest framing — a coach is still best. This is second best, and it’s free. Only catch is the onboarding takes a minute.
+- 0:45–1:00 — CTA to the link
+CTA: I’m Coach QA. I help men over 35 get strong again. Link’s in my bio — drop your name and I’ll build you a plan.
+
 **mistake** — hook: “Most men over 35 are stuck. One reason: they do endless cardio.”
 _angle: Doing endless cardio thinking it burns fat, when all it leaves you with is loose skin and no shape._
 - 0:00–0:05 — Hook — name the group and the mistake
@@ -28,13 +35,6 @@ _angle: Doing endless cardio thinking it burns fat, when all it leaves you with 
 - 0:20–0:40 — Why they’re stuck. It’s not effort. Nobody told them lift heavy and eat enough.
 - 0:40–0:50 — Hint the fix. Name what the fix IS. Do not explain how.
 - 0:50–1:00 — CTA
-CTA: I’m Coach QA. I help men over 35 get strong again. Link’s in my bio — drop your name and I’ll build you a plan.
-
-**app** — hook: “Not ready to hire a coach? Fine. Don't start with nothing either.”
-- 0:00–0:05 — Hook aimed at people not ready to hire anyone. “Not everyone’s ready for a coach. That doesn’t mean you start with nothing.”
-- 0:05–0:30 — What it does: a free workout with the equipment you have, a nutrition plan, a grocery list in your budget, and it gamifies progress so you level up.
-- 0:30–0:45 — Honest framing — a coach is still best. This is second best, and it’s free. Only catch is the onboarding takes a minute.
-- 0:45–1:00 — CTA to the link
 CTA: I’m Coach QA. I help men over 35 get strong again. Link’s in my bio — drop your name and I’ll build you a plan.
 
 **mistake** — hook: “Three mistakes. Every one of the men over 35 I meet makes them.”
@@ -46,6 +46,13 @@ _angle: Four hours on the stairmaster because it feels like work. Effort isn’t
 - 0:50–1:00 — CTA
 CTA: I’m Coach QA. I help men over 35 get strong again. Link’s in my bio — drop your name and I’ll build you a plan.
 
+**app** — hook: “Not ready to hire a coach? Fine. Don't start with nothing either.”
+- 0:00–0:05 — Hook aimed at people not ready to hire anyone. “Not everyone’s ready for a coach. That doesn’t mean you start with nothing.”
+- 0:05–0:30 — What it does: a free workout with the equipment you have, a nutrition plan, a grocery list in your budget, and it gamifies progress so you level up.
+- 0:30–0:45 — Honest framing — a coach is still best. This is second best, and it’s free. Only catch is the onboarding takes a minute.
+- 0:45–1:00 — CTA to the link
+CTA: I’m Coach QA. I help men over 35 get strong again. Link’s in my bio — drop your name and I’ll build you a plan.
+
 **myth** — hook: “Most people believe: “Soreness means it worked.” — here’s why that’s wrong.”
 _angle: Soreness means it worked._
 - 0:00–0:05 — Say the thing most people won’t. State the myth, then reject it.
@@ -53,13 +60,6 @@ _angle: Soreness means it worked._
 - 0:20–0:40 — What’s actually true, and the mechanism. Your take, your words.
 - 0:40–0:55 — What changes for them if they get this right.
 - 0:55–1:00 — CTA
-CTA: I’m Coach QA. I help men over 35 get strong again. Link’s in my bio — drop your name and I’ll build you a plan.
-
-**app** — hook: “Not ready to hire a coach? Fine. Don't start with nothing either.”
-- 0:00–0:05 — Hook aimed at people not ready to hire anyone. “Not everyone’s ready for a coach. That doesn’t mean you start with nothing.”
-- 0:05–0:30 — What it does: a free workout with the equipment you have, a nutrition plan, a grocery list in your budget, and it gamifies progress so you level up.
-- 0:30–0:45 — Honest framing — a coach is still best. This is second best, and it’s free. Only catch is the onboarding takes a minute.
-- 0:45–1:00 — CTA to the link
 CTA: I’m Coach QA. I help men over 35 get strong again. Link’s in my bio — drop your name and I’ll build you a plan.
 
 
@@ -73,6 +73,13 @@ CTA: I’m Coach QA. I help men over 35 get strong again. Link’s in my bio —
 - 0:55–1:00 — CTA
 CTA: I’m Coach QA, and I help men over 35 get strong again. If that’s you, drop your name at the link in my bio and I’ll put a plan together for you.
 
+**app** — hook: “If hiring a coach isn't in the cards right now, that's completely okay — but please don't start with nothing.”
+- 0:00–0:05 — Hook aimed at people not ready to hire anyone. “Not everyone’s ready for a coach. That doesn’t mean you start with nothing.”
+- 0:05–0:30 — What it does: a free workout with the equipment you have, a nutrition plan, a grocery list in your budget, and it gamifies progress so you level up.
+- 0:30–0:45 — Honest framing — a coach is still best. This is second best, and it’s free. Only catch is the onboarding takes a minute.
+- 0:45–1:00 — CTA to the link
+CTA: I’m Coach QA, and I help men over 35 get strong again. If that’s you, drop your name at the link in my bio and I’ll put a plan together for you.
+
 **mistake** — hook: “If you're one of the men over 35 who feels stuck, there's usually one thing behind it — do endless cardio.”
 _angle: Doing endless cardio thinking it burns fat, when all it leaves you with is loose skin and no shape._
 - 0:00–0:05 — Hook — name the group and the mistake
@@ -80,13 +87,6 @@ _angle: Doing endless cardio thinking it burns fat, when all it leaves you with 
 - 0:20–0:40 — Why they’re stuck. It’s not effort. Nobody told them lift heavy and eat enough.
 - 0:40–0:50 — Hint the fix. Name what the fix IS. Do not explain how.
 - 0:50–1:00 — CTA
-CTA: I’m Coach QA, and I help men over 35 get strong again. If that’s you, drop your name at the link in my bio and I’ll put a plan together for you.
-
-**app** — hook: “If hiring a coach isn't in the cards right now, that's completely okay — but please don't start with nothing.”
-- 0:00–0:05 — Hook aimed at people not ready to hire anyone. “Not everyone’s ready for a coach. That doesn’t mean you start with nothing.”
-- 0:05–0:30 — What it does: a free workout with the equipment you have, a nutrition plan, a grocery list in your budget, and it gamifies progress so you level up.
-- 0:30–0:45 — Honest framing — a coach is still best. This is second best, and it’s free. Only catch is the onboarding takes a minute.
-- 0:45–1:00 — CTA to the link
 CTA: I’m Coach QA, and I help men over 35 get strong again. If that’s you, drop your name at the link in my bio and I’ll put a plan together for you.
 
 **mistake** — hook: “There are three small things I watch men over 35 trip over — and every one is fixable.”
@@ -98,6 +98,13 @@ _angle: Four hours on the stairmaster because it feels like work. Effort isn’t
 - 0:50–1:00 — CTA
 CTA: I’m Coach QA, and I help men over 35 get strong again. If that’s you, drop your name at the link in my bio and I’ll put a plan together for you.
 
+**app** — hook: “If hiring a coach isn't in the cards right now, that's completely okay — but please don't start with nothing.”
+- 0:00–0:05 — Hook aimed at people not ready to hire anyone. “Not everyone’s ready for a coach. That doesn’t mean you start with nothing.”
+- 0:05–0:30 — What it does: a free workout with the equipment you have, a nutrition plan, a grocery list in your budget, and it gamifies progress so you level up.
+- 0:30–0:45 — Honest framing — a coach is still best. This is second best, and it’s free. Only catch is the onboarding takes a minute.
+- 0:45–1:00 — CTA to the link
+CTA: I’m Coach QA, and I help men over 35 get strong again. If that’s you, drop your name at the link in my bio and I’ll put a plan together for you.
+
 **myth** — hook: “A lot of people believe “Soreness means it worked.” — let’s talk about why it keeps you stuck.”
 _angle: Soreness means it worked._
 - 0:00–0:05 — Say the thing most people won’t. State the myth, then reject it.
@@ -105,13 +112,6 @@ _angle: Soreness means it worked._
 - 0:20–0:40 — What’s actually true, and the mechanism. Your take, your words.
 - 0:40–0:55 — What changes for them if they get this right.
 - 0:55–1:00 — CTA
-CTA: I’m Coach QA, and I help men over 35 get strong again. If that’s you, drop your name at the link in my bio and I’ll put a plan together for you.
-
-**app** — hook: “If hiring a coach isn't in the cards right now, that's completely okay — but please don't start with nothing.”
-- 0:00–0:05 — Hook aimed at people not ready to hire anyone. “Not everyone’s ready for a coach. That doesn’t mean you start with nothing.”
-- 0:05–0:30 — What it does: a free workout with the equipment you have, a nutrition plan, a grocery list in your budget, and it gamifies progress so you level up.
-- 0:30–0:45 — Honest framing — a coach is still best. This is second best, and it’s free. Only catch is the onboarding takes a minute.
-- 0:45–1:00 — CTA to the link
 CTA: I’m Coach QA, and I help men over 35 get strong again. If that’s you, drop your name at the link in my bio and I’ll put a plan together for you.
 
 
@@ -125,6 +125,13 @@ CTA: I’m Coach QA, and I help men over 35 get strong again. If that’s you, d
 - 0:55–1:00 — CTA
 CTA: I’m Coach QA. I help men over 35 get strong again, mostly by telling them things they don’t want to hear. Link’s in my bio.
 
+**app** — hook: “Not everyone's ready to hire a coach. Some of you have made that extremely clear. So here's plan B, and it's free.”
+- 0:00–0:05 — Hook aimed at people not ready to hire anyone. “Not everyone’s ready for a coach. That doesn’t mean you start with nothing.”
+- 0:05–0:30 — What it does: a free workout with the equipment you have, a nutrition plan, a grocery list in your budget, and it gamifies progress so you level up.
+- 0:30–0:45 — Honest framing — a coach is still best. This is second best, and it’s free. Only catch is the onboarding takes a minute.
+- 0:45–1:00 — CTA to the link
+CTA: I’m Coach QA. I help men over 35 get strong again, mostly by telling them things they don’t want to hear. Link’s in my bio.
+
 **mistake** — hook: “men over 35 have a favorite way to stay stuck, and it's do endless cardio.”
 _angle: Doing endless cardio thinking it burns fat, when all it leaves you with is loose skin and no shape._
 - 0:00–0:05 — Hook — name the group and the mistake
@@ -132,13 +139,6 @@ _angle: Doing endless cardio thinking it burns fat, when all it leaves you with 
 - 0:20–0:40 — Why they’re stuck. It’s not effort. Nobody told them lift heavy and eat enough.
 - 0:40–0:50 — Hint the fix. Name what the fix IS. Do not explain how.
 - 0:50–1:00 — CTA
-CTA: I’m Coach QA. I help men over 35 get strong again, mostly by telling them things they don’t want to hear. Link’s in my bio.
-
-**app** — hook: “Not everyone's ready to hire a coach. Some of you have made that extremely clear. So here's plan B, and it's free.”
-- 0:00–0:05 — Hook aimed at people not ready to hire anyone. “Not everyone’s ready for a coach. That doesn’t mean you start with nothing.”
-- 0:05–0:30 — What it does: a free workout with the equipment you have, a nutrition plan, a grocery list in your budget, and it gamifies progress so you level up.
-- 0:30–0:45 — Honest framing — a coach is still best. This is second best, and it’s free. Only catch is the onboarding takes a minute.
-- 0:45–1:00 — CTA to the link
 CTA: I’m Coach QA. I help men over 35 get strong again, mostly by telling them things they don’t want to hear. Link’s in my bio.
 
 **mistake** — hook: “I could set my watch by the three mistakes men over 35 make. Let's ruin that.”
@@ -150,6 +150,13 @@ _angle: Four hours on the stairmaster because it feels like work. Effort isn’t
 - 0:50–1:00 — CTA
 CTA: I’m Coach QA. I help men over 35 get strong again, mostly by telling them things they don’t want to hear. Link’s in my bio.
 
+**app** — hook: “Not everyone's ready to hire a coach. Some of you have made that extremely clear. So here's plan B, and it's free.”
+- 0:00–0:05 — Hook aimed at people not ready to hire anyone. “Not everyone’s ready for a coach. That doesn’t mean you start with nothing.”
+- 0:05–0:30 — What it does: a free workout with the equipment you have, a nutrition plan, a grocery list in your budget, and it gamifies progress so you level up.
+- 0:30–0:45 — Honest framing — a coach is still best. This is second best, and it’s free. Only catch is the onboarding takes a minute.
+- 0:45–1:00 — CTA to the link
+CTA: I’m Coach QA. I help men over 35 get strong again, mostly by telling them things they don’t want to hear. Link’s in my bio.
+
 **myth** — hook: ““Soreness means it worked.” — sure. And I’m the tooth fairy.”
 _angle: Soreness means it worked._
 - 0:00–0:05 — Say the thing most people won’t. State the myth, then reject it.
@@ -157,13 +164,6 @@ _angle: Soreness means it worked._
 - 0:20–0:40 — What’s actually true, and the mechanism. Your take, your words.
 - 0:40–0:55 — What changes for them if they get this right.
 - 0:55–1:00 — CTA
-CTA: I’m Coach QA. I help men over 35 get strong again, mostly by telling them things they don’t want to hear. Link’s in my bio.
-
-**app** — hook: “Not everyone's ready to hire a coach. Some of you have made that extremely clear. So here's plan B, and it's free.”
-- 0:00–0:05 — Hook aimed at people not ready to hire anyone. “Not everyone’s ready for a coach. That doesn’t mean you start with nothing.”
-- 0:05–0:30 — What it does: a free workout with the equipment you have, a nutrition plan, a grocery list in your budget, and it gamifies progress so you level up.
-- 0:30–0:45 — Honest framing — a coach is still best. This is second best, and it’s free. Only catch is the onboarding takes a minute.
-- 0:45–1:00 — CTA to the link
 CTA: I’m Coach QA. I help men over 35 get strong again, mostly by telling them things they don’t want to hear. Link’s in my bio.
 
 
@@ -177,6 +177,13 @@ CTA: I’m Coach QA. I help men over 35 get strong again, mostly by telling them
 - 0:55–1:00 — CTA
 CTA: I’m Coach QA. I help men over 35 get strong again. If you want the plan built around your situation, the link’s in my bio.
 
+**app** — hook: “If coaching isn't accessible right now, the next-best option needs three things: a plan, tracking, and structure. This has all three, free.”
+- 0:00–0:05 — Hook aimed at people not ready to hire anyone. “Not everyone’s ready for a coach. That doesn’t mean you start with nothing.”
+- 0:05–0:30 — What it does: a free workout with the equipment you have, a nutrition plan, a grocery list in your budget, and it gamifies progress so you level up.
+- 0:30–0:45 — Honest framing — a coach is still best. This is second best, and it’s free. Only catch is the onboarding takes a minute.
+- 0:45–1:00 — CTA to the link
+CTA: I’m Coach QA. I help men over 35 get strong again. If you want the plan built around your situation, the link’s in my bio.
+
 **mistake** — hook: “When men over 35 plateau, the most common cause is simple: they do endless cardio.”
 _angle: Doing endless cardio thinking it burns fat, when all it leaves you with is loose skin and no shape._
 - 0:00–0:05 — Hook — name the group and the mistake
@@ -184,13 +191,6 @@ _angle: Doing endless cardio thinking it burns fat, when all it leaves you with 
 - 0:20–0:40 — Why they’re stuck. It’s not effort. Nobody told them lift heavy and eat enough.
 - 0:40–0:50 — Hint the fix. Name what the fix IS. Do not explain how.
 - 0:50–1:00 — CTA
-CTA: I’m Coach QA. I help men over 35 get strong again. If you want the plan built around your situation, the link’s in my bio.
-
-**app** — hook: “If coaching isn't accessible right now, the next-best option needs three things: a plan, tracking, and structure. This has all three, free.”
-- 0:00–0:05 — Hook aimed at people not ready to hire anyone. “Not everyone’s ready for a coach. That doesn’t mean you start with nothing.”
-- 0:05–0:30 — What it does: a free workout with the equipment you have, a nutrition plan, a grocery list in your budget, and it gamifies progress so you level up.
-- 0:30–0:45 — Honest framing — a coach is still best. This is second best, and it’s free. Only catch is the onboarding takes a minute.
-- 0:45–1:00 — CTA to the link
 CTA: I’m Coach QA. I help men over 35 get strong again. If you want the plan built around your situation, the link’s in my bio.
 
 **mistake** — hook: “Three recurring errors explain most stalled progress in men over 35. In order:”
@@ -202,6 +202,13 @@ _angle: Four hours on the stairmaster because it feels like work. Effort isn’t
 - 0:50–1:00 — CTA
 CTA: I’m Coach QA. I help men over 35 get strong again. If you want the plan built around your situation, the link’s in my bio.
 
+**app** — hook: “If coaching isn't accessible right now, the next-best option needs three things: a plan, tracking, and structure. This has all three, free.”
+- 0:00–0:05 — Hook aimed at people not ready to hire anyone. “Not everyone’s ready for a coach. That doesn’t mean you start with nothing.”
+- 0:05–0:30 — What it does: a free workout with the equipment you have, a nutrition plan, a grocery list in your budget, and it gamifies progress so you level up.
+- 0:30–0:45 — Honest framing — a coach is still best. This is second best, and it’s free. Only catch is the onboarding takes a minute.
+- 0:45–1:00 — CTA to the link
+CTA: I’m Coach QA. I help men over 35 get strong again. If you want the plan built around your situation, the link’s in my bio.
+
 **myth** — hook: “Claim: “Soreness means it worked.”. The evidence points the other way.”
 _angle: Soreness means it worked._
 - 0:00–0:05 — Say the thing most people won’t. State the myth, then reject it.
@@ -209,13 +216,6 @@ _angle: Soreness means it worked._
 - 0:20–0:40 — What’s actually true, and the mechanism. Your take, your words.
 - 0:40–0:55 — What changes for them if they get this right.
 - 0:55–1:00 — CTA
-CTA: I’m Coach QA. I help men over 35 get strong again. If you want the plan built around your situation, the link’s in my bio.
-
-**app** — hook: “If coaching isn't accessible right now, the next-best option needs three things: a plan, tracking, and structure. This has all three, free.”
-- 0:00–0:05 — Hook aimed at people not ready to hire anyone. “Not everyone’s ready for a coach. That doesn’t mean you start with nothing.”
-- 0:05–0:30 — What it does: a free workout with the equipment you have, a nutrition plan, a grocery list in your budget, and it gamifies progress so you level up.
-- 0:30–0:45 — Honest framing — a coach is still best. This is second best, and it’s free. Only catch is the onboarding takes a minute.
-- 0:45–1:00 — CTA to the link
 CTA: I’m Coach QA. I help men over 35 get strong again. If you want the plan built around your situation, the link’s in my bio.
 
 _voice overlap blunt↔technical: 29%_
@@ -239,6 +239,13 @@ core:     the thing I care about most is helping them eat enough protein and tra
 - 0:55–1:00 — CTA
 CTA: I’m Coach QA. / I train men over 35. / What you get: finally get strong again without wrecking their knees or living in the gym. / Drop your name at the link in my bio and I’ll build you a plan.
 
+**app** — hook: “Not ready to hire a coach? Fine. Don't start with nothing either.”
+- 0:00–0:05 — Hook aimed at people not ready to hire anyone. “Not everyone’s ready for a coach. That doesn’t mean you start with nothing.”
+- 0:05–0:30 — What it does: a free workout with the equipment you have, a nutrition plan, a grocery list in your budget, and it gamifies progress so you level up.
+- 0:30–0:45 — Honest framing — a coach is still best. This is second best, and it’s free. Only catch is the onboarding takes a minute.
+- 0:45–1:00 — CTA to the link
+CTA: I’m Coach QA. / I train men over 35. / What you get: finally get strong again without wrecking their knees or living in the gym. / Drop your name at the link in my bio and I’ll build you a plan.
+
 **mistake** — hook: “Here’s what I keep seeing: they train really hard in the gym and then eat like they didn’t do anything at all.”
 _angle: Doing endless cardio thinking it burns fat, when all it leaves you with is loose skin and no shape._
 - 0:00–0:05 — Hook — name the group and the mistake
@@ -246,13 +253,6 @@ _angle: Doing endless cardio thinking it burns fat, when all it leaves you with 
 - 0:20–0:40 — Why they’re stuck. It’s not effort. Nobody told them the thing I care about most is helping them eat enough protein and train with actual intent.
 - 0:40–0:50 — Hint the fix. Name what the fix IS. Do not explain how.
 - 0:50–1:00 — CTA
-CTA: I’m Coach QA. / I train men over 35. / What you get: finally get strong again without wrecking their knees or living in the gym. / Drop your name at the link in my bio and I’ll build you a plan.
-
-**app** — hook: “Not ready to hire a coach? Fine. Don't start with nothing either.”
-- 0:00–0:05 — Hook aimed at people not ready to hire anyone. “Not everyone’s ready for a coach. That doesn’t mean you start with nothing.”
-- 0:05–0:30 — What it does: a free workout with the equipment you have, a nutrition plan, a grocery list in your budget, and it gamifies progress so you level up.
-- 0:30–0:45 — Honest framing — a coach is still best. This is second best, and it’s free. Only catch is the onboarding takes a minute.
-- 0:45–1:00 — CTA to the link
 CTA: I’m Coach QA. / I train men over 35. / What you get: finally get strong again without wrecking their knees or living in the gym. / Drop your name at the link in my bio and I’ll build you a plan.
 
 **mistake** — hook: “Three mistakes. Every one of the men over 35 I meet makes them.”
@@ -264,6 +264,13 @@ _angle: Four hours on the stairmaster because it feels like work. Effort isn’t
 - 0:50–1:00 — CTA
 CTA: I’m Coach QA. / I train men over 35. / What you get: finally get strong again without wrecking their knees or living in the gym. / Drop your name at the link in my bio and I’ll build you a plan.
 
+**app** — hook: “Not ready to hire a coach? Fine. Don't start with nothing either.”
+- 0:00–0:05 — Hook aimed at people not ready to hire anyone. “Not everyone’s ready for a coach. That doesn’t mean you start with nothing.”
+- 0:05–0:30 — What it does: a free workout with the equipment you have, a nutrition plan, a grocery list in your budget, and it gamifies progress so you level up.
+- 0:30–0:45 — Honest framing — a coach is still best. This is second best, and it’s free. Only catch is the onboarding takes a minute.
+- 0:45–1:00 — CTA to the link
+CTA: I’m Coach QA. / I train men over 35. / What you get: finally get strong again without wrecking their knees or living in the gym. / Drop your name at the link in my bio and I’ll build you a plan.
+
 **myth** — hook: “Most people believe: “Soreness means it worked.” — here’s why that’s wrong.”
 _angle: Soreness means it worked._
 - 0:00–0:05 — Say the thing most people won’t. State the myth, then reject it.
@@ -271,13 +278,6 @@ _angle: Soreness means it worked._
 - 0:20–0:40 — What’s actually true, and the mechanism. Your take, your words.
 - 0:40–0:55 — What changes for them if they get this right.
 - 0:55–1:00 — CTA
-CTA: I’m Coach QA. / I train men over 35. / What you get: finally get strong again without wrecking their knees or living in the gym. / Drop your name at the link in my bio and I’ll build you a plan.
-
-**app** — hook: “Not ready to hire a coach? Fine. Don't start with nothing either.”
-- 0:00–0:05 — Hook aimed at people not ready to hire anyone. “Not everyone’s ready for a coach. That doesn’t mean you start with nothing.”
-- 0:05–0:30 — What it does: a free workout with the equipment you have, a nutrition plan, a grocery list in your budget, and it gamifies progress so you level up.
-- 0:30–0:45 — Honest framing — a coach is still best. This is second best, and it’s free. Only catch is the onboarding takes a minute.
-- 0:45–1:00 — CTA to the link
 CTA: I’m Coach QA. / I train men over 35. / What you get: finally get strong again without wrecking their knees or living in the gym. / Drop your name at the link in my bio and I’ll build you a plan.
 
 
@@ -291,6 +291,13 @@ CTA: I’m Coach QA. / I train men over 35. / What you get: finally get strong a
 - 0:55–1:00 — CTA
 CTA: I’m Coach QA. / I train men over 35. / What you get: finally get strong again without wrecking their knees or living in the gym. / Drop your name at the link in my bio and I’ll build you a plan.
 
+**app** — hook: “If hiring a coach isn't in the cards right now, that's completely okay — but please don't start with nothing.”
+- 0:00–0:05 — Hook aimed at people not ready to hire anyone. “Not everyone’s ready for a coach. That doesn’t mean you start with nothing.”
+- 0:05–0:30 — What it does: a free workout with the equipment you have, a nutrition plan, a grocery list in your budget, and it gamifies progress so you level up.
+- 0:30–0:45 — Honest framing — a coach is still best. This is second best, and it’s free. Only catch is the onboarding takes a minute.
+- 0:45–1:00 — CTA to the link
+CTA: I’m Coach QA. / I train men over 35. / What you get: finally get strong again without wrecking their knees or living in the gym. / Drop your name at the link in my bio and I’ll build you a plan.
+
 **mistake** — hook: “Can I share the pattern I keep seeing? they train really hard in the gym and then eat like they didn’t do anything at all.”
 _angle: Doing endless cardio thinking it burns fat, when all it leaves you with is loose skin and no shape._
 - 0:00–0:05 — Hook — name the group and the mistake
@@ -298,13 +305,6 @@ _angle: Doing endless cardio thinking it burns fat, when all it leaves you with 
 - 0:20–0:40 — Why they’re stuck. It’s not effort. Nobody told them the thing I care about most is helping them eat enough protein and train with actual intent.
 - 0:40–0:50 — Hint the fix. Name what the fix IS. Do not explain how.
 - 0:50–1:00 — CTA
-CTA: I’m Coach QA. / I train men over 35. / What you get: finally get strong again without wrecking their knees or living in the gym. / Drop your name at the link in my bio and I’ll build you a plan.
-
-**app** — hook: “If hiring a coach isn't in the cards right now, that's completely okay — but please don't start with nothing.”
-- 0:00–0:05 — Hook aimed at people not ready to hire anyone. “Not everyone’s ready for a coach. That doesn’t mean you start with nothing.”
-- 0:05–0:30 — What it does: a free workout with the equipment you have, a nutrition plan, a grocery list in your budget, and it gamifies progress so you level up.
-- 0:30–0:45 — Honest framing — a coach is still best. This is second best, and it’s free. Only catch is the onboarding takes a minute.
-- 0:45–1:00 — CTA to the link
 CTA: I’m Coach QA. / I train men over 35. / What you get: finally get strong again without wrecking their knees or living in the gym. / Drop your name at the link in my bio and I’ll build you a plan.
 
 **mistake** — hook: “There are three small things I watch men over 35 trip over — and every one is fixable.”
@@ -316,6 +316,13 @@ _angle: Four hours on the stairmaster because it feels like work. Effort isn’t
 - 0:50–1:00 — CTA
 CTA: I’m Coach QA. / I train men over 35. / What you get: finally get strong again without wrecking their knees or living in the gym. / Drop your name at the link in my bio and I’ll build you a plan.
 
+**app** — hook: “If hiring a coach isn't in the cards right now, that's completely okay — but please don't start with nothing.”
+- 0:00–0:05 — Hook aimed at people not ready to hire anyone. “Not everyone’s ready for a coach. That doesn’t mean you start with nothing.”
+- 0:05–0:30 — What it does: a free workout with the equipment you have, a nutrition plan, a grocery list in your budget, and it gamifies progress so you level up.
+- 0:30–0:45 — Honest framing — a coach is still best. This is second best, and it’s free. Only catch is the onboarding takes a minute.
+- 0:45–1:00 — CTA to the link
+CTA: I’m Coach QA. / I train men over 35. / What you get: finally get strong again without wrecking their knees or living in the gym. / Drop your name at the link in my bio and I’ll build you a plan.
+
 **myth** — hook: “A lot of people believe “Soreness means it worked.” — let’s talk about why it keeps you stuck.”
 _angle: Soreness means it worked._
 - 0:00–0:05 — Say the thing most people won’t. State the myth, then reject it.
@@ -323,13 +330,6 @@ _angle: Soreness means it worked._
 - 0:20–0:40 — What’s actually true, and the mechanism. Your take, your words.
 - 0:40–0:55 — What changes for them if they get this right.
 - 0:55–1:00 — CTA
-CTA: I’m Coach QA. / I train men over 35. / What you get: finally get strong again without wrecking their knees or living in the gym. / Drop your name at the link in my bio and I’ll build you a plan.
-
-**app** — hook: “If hiring a coach isn't in the cards right now, that's completely okay — but please don't start with nothing.”
-- 0:00–0:05 — Hook aimed at people not ready to hire anyone. “Not everyone’s ready for a coach. That doesn’t mean you start with nothing.”
-- 0:05–0:30 — What it does: a free workout with the equipment you have, a nutrition plan, a grocery list in your budget, and it gamifies progress so you level up.
-- 0:30–0:45 — Honest framing — a coach is still best. This is second best, and it’s free. Only catch is the onboarding takes a minute.
-- 0:45–1:00 — CTA to the link
 CTA: I’m Coach QA. / I train men over 35. / What you get: finally get strong again without wrecking their knees or living in the gym. / Drop your name at the link in my bio and I’ll build you a plan.
 
 
@@ -343,6 +343,13 @@ CTA: I’m Coach QA. / I train men over 35. / What you get: finally get strong a
 - 0:55–1:00 — CTA
 CTA: I’m Coach QA. / I train men over 35. / What you get: finally get strong again without wrecking their knees or living in the gym. / Drop your name at the link in my bio and I’ll build you a plan.
 
+**app** — hook: “Not everyone's ready to hire a coach. Some of you have made that extremely clear. So here's plan B, and it's free.”
+- 0:00–0:05 — Hook aimed at people not ready to hire anyone. “Not everyone’s ready for a coach. That doesn’t mean you start with nothing.”
+- 0:05–0:30 — What it does: a free workout with the equipment you have, a nutrition plan, a grocery list in your budget, and it gamifies progress so you level up.
+- 0:30–0:45 — Honest framing — a coach is still best. This is second best, and it’s free. Only catch is the onboarding takes a minute.
+- 0:45–1:00 — CTA to the link
+CTA: I’m Coach QA. / I train men over 35. / What you get: finally get strong again without wrecking their knees or living in the gym. / Drop your name at the link in my bio and I’ll build you a plan.
+
 **mistake** — hook: “Same movie, every single week: they train really hard in the gym and then eat like they didn’t do anything at all.”
 _angle: Doing endless cardio thinking it burns fat, when all it leaves you with is loose skin and no shape._
 - 0:00–0:05 — Hook — name the group and the mistake
@@ -350,13 +357,6 @@ _angle: Doing endless cardio thinking it burns fat, when all it leaves you with 
 - 0:20–0:40 — Why they’re stuck. It’s not effort. Nobody told them the thing I care about most is helping them eat enough protein and train with actual intent.
 - 0:40–0:50 — Hint the fix. Name what the fix IS. Do not explain how.
 - 0:50–1:00 — CTA
-CTA: I’m Coach QA. / I train men over 35. / What you get: finally get strong again without wrecking their knees or living in the gym. / Drop your name at the link in my bio and I’ll build you a plan.
-
-**app** — hook: “Not everyone's ready to hire a coach. Some of you have made that extremely clear. So here's plan B, and it's free.”
-- 0:00–0:05 — Hook aimed at people not ready to hire anyone. “Not everyone’s ready for a coach. That doesn’t mean you start with nothing.”
-- 0:05–0:30 — What it does: a free workout with the equipment you have, a nutrition plan, a grocery list in your budget, and it gamifies progress so you level up.
-- 0:30–0:45 — Honest framing — a coach is still best. This is second best, and it’s free. Only catch is the onboarding takes a minute.
-- 0:45–1:00 — CTA to the link
 CTA: I’m Coach QA. / I train men over 35. / What you get: finally get strong again without wrecking their knees or living in the gym. / Drop your name at the link in my bio and I’ll build you a plan.
 
 **mistake** — hook: “I could set my watch by the three mistakes men over 35 make. Let's ruin that.”
@@ -368,6 +368,13 @@ _angle: Four hours on the stairmaster because it feels like work. Effort isn’t
 - 0:50–1:00 — CTA
 CTA: I’m Coach QA. / I train men over 35. / What you get: finally get strong again without wrecking their knees or living in the gym. / Drop your name at the link in my bio and I’ll build you a plan.
 
+**app** — hook: “Not everyone's ready to hire a coach. Some of you have made that extremely clear. So here's plan B, and it's free.”
+- 0:00–0:05 — Hook aimed at people not ready to hire anyone. “Not everyone’s ready for a coach. That doesn’t mean you start with nothing.”
+- 0:05–0:30 — What it does: a free workout with the equipment you have, a nutrition plan, a grocery list in your budget, and it gamifies progress so you level up.
+- 0:30–0:45 — Honest framing — a coach is still best. This is second best, and it’s free. Only catch is the onboarding takes a minute.
+- 0:45–1:00 — CTA to the link
+CTA: I’m Coach QA. / I train men over 35. / What you get: finally get strong again without wrecking their knees or living in the gym. / Drop your name at the link in my bio and I’ll build you a plan.
+
 **myth** — hook: ““Soreness means it worked.” — sure. And I’m the tooth fairy.”
 _angle: Soreness means it worked._
 - 0:00–0:05 — Say the thing most people won’t. State the myth, then reject it.
@@ -375,13 +382,6 @@ _angle: Soreness means it worked._
 - 0:20–0:40 — What’s actually true, and the mechanism. Your take, your words.
 - 0:40–0:55 — What changes for them if they get this right.
 - 0:55–1:00 — CTA
-CTA: I’m Coach QA. / I train men over 35. / What you get: finally get strong again without wrecking their knees or living in the gym. / Drop your name at the link in my bio and I’ll build you a plan.
-
-**app** — hook: “Not everyone's ready to hire a coach. Some of you have made that extremely clear. So here's plan B, and it's free.”
-- 0:00–0:05 — Hook aimed at people not ready to hire anyone. “Not everyone’s ready for a coach. That doesn’t mean you start with nothing.”
-- 0:05–0:30 — What it does: a free workout with the equipment you have, a nutrition plan, a grocery list in your budget, and it gamifies progress so you level up.
-- 0:30–0:45 — Honest framing — a coach is still best. This is second best, and it’s free. Only catch is the onboarding takes a minute.
-- 0:45–1:00 — CTA to the link
 CTA: I’m Coach QA. / I train men over 35. / What you get: finally get strong again without wrecking their knees or living in the gym. / Drop your name at the link in my bio and I’ll build you a plan.
 
 
@@ -395,6 +395,13 @@ CTA: I’m Coach QA. / I train men over 35. / What you get: finally get strong a
 - 0:55–1:00 — CTA
 CTA: I’m Coach QA. / I train men over 35. / What you get: finally get strong again without wrecking their knees or living in the gym. / Drop your name at the link in my bio and I’ll build you a plan.
 
+**app** — hook: “If coaching isn't accessible right now, the next-best option needs three things: a plan, tracking, and structure. This has all three, free.”
+- 0:00–0:05 — Hook aimed at people not ready to hire anyone. “Not everyone’s ready for a coach. That doesn’t mean you start with nothing.”
+- 0:05–0:30 — What it does: a free workout with the equipment you have, a nutrition plan, a grocery list in your budget, and it gamifies progress so you level up.
+- 0:30–0:45 — Honest framing — a coach is still best. This is second best, and it’s free. Only catch is the onboarding takes a minute.
+- 0:45–1:00 — CTA to the link
+CTA: I’m Coach QA. / I train men over 35. / What you get: finally get strong again without wrecking their knees or living in the gym. / Drop your name at the link in my bio and I’ll build you a plan.
+
 **mistake** — hook: “The most common pattern in the people I coach: they train really hard in the gym and then eat like they didn’t do anything at all.”
 _angle: Doing endless cardio thinking it burns fat, when all it leaves you with is loose skin and no shape._
 - 0:00–0:05 — Hook — name the group and the mistake
@@ -402,13 +409,6 @@ _angle: Doing endless cardio thinking it burns fat, when all it leaves you with 
 - 0:20–0:40 — Why they’re stuck. It’s not effort. Nobody told them the thing I care about most is helping them eat enough protein and train with actual intent.
 - 0:40–0:50 — Hint the fix. Name what the fix IS. Do not explain how.
 - 0:50–1:00 — CTA
-CTA: I’m Coach QA. / I train men over 35. / What you get: finally get strong again without wrecking their knees or living in the gym. / Drop your name at the link in my bio and I’ll build you a plan.
-
-**app** — hook: “If coaching isn't accessible right now, the next-best option needs three things: a plan, tracking, and structure. This has all three, free.”
-- 0:00–0:05 — Hook aimed at people not ready to hire anyone. “Not everyone’s ready for a coach. That doesn’t mean you start with nothing.”
-- 0:05–0:30 — What it does: a free workout with the equipment you have, a nutrition plan, a grocery list in your budget, and it gamifies progress so you level up.
-- 0:30–0:45 — Honest framing — a coach is still best. This is second best, and it’s free. Only catch is the onboarding takes a minute.
-- 0:45–1:00 — CTA to the link
 CTA: I’m Coach QA. / I train men over 35. / What you get: finally get strong again without wrecking their knees or living in the gym. / Drop your name at the link in my bio and I’ll build you a plan.
 
 **mistake** — hook: “Three recurring errors explain most stalled progress in men over 35. In order:”
@@ -420,6 +420,13 @@ _angle: Four hours on the stairmaster because it feels like work. Effort isn’t
 - 0:50–1:00 — CTA
 CTA: I’m Coach QA. / I train men over 35. / What you get: finally get strong again without wrecking their knees or living in the gym. / Drop your name at the link in my bio and I’ll build you a plan.
 
+**app** — hook: “If coaching isn't accessible right now, the next-best option needs three things: a plan, tracking, and structure. This has all three, free.”
+- 0:00–0:05 — Hook aimed at people not ready to hire anyone. “Not everyone’s ready for a coach. That doesn’t mean you start with nothing.”
+- 0:05–0:30 — What it does: a free workout with the equipment you have, a nutrition plan, a grocery list in your budget, and it gamifies progress so you level up.
+- 0:30–0:45 — Honest framing — a coach is still best. This is second best, and it’s free. Only catch is the onboarding takes a minute.
+- 0:45–1:00 — CTA to the link
+CTA: I’m Coach QA. / I train men over 35. / What you get: finally get strong again without wrecking their knees or living in the gym. / Drop your name at the link in my bio and I’ll build you a plan.
+
 **myth** — hook: “Claim: “Soreness means it worked.”. The evidence points the other way.”
 _angle: Soreness means it worked._
 - 0:00–0:05 — Say the thing most people won’t. State the myth, then reject it.
@@ -427,13 +434,6 @@ _angle: Soreness means it worked._
 - 0:20–0:40 — What’s actually true, and the mechanism. Your take, your words.
 - 0:40–0:55 — What changes for them if they get this right.
 - 0:55–1:00 — CTA
-CTA: I’m Coach QA. / I train men over 35. / What you get: finally get strong again without wrecking their knees or living in the gym. / Drop your name at the link in my bio and I’ll build you a plan.
-
-**app** — hook: “If coaching isn't accessible right now, the next-best option needs three things: a plan, tracking, and structure. This has all three, free.”
-- 0:00–0:05 — Hook aimed at people not ready to hire anyone. “Not everyone’s ready for a coach. That doesn’t mean you start with nothing.”
-- 0:05–0:30 — What it does: a free workout with the equipment you have, a nutrition plan, a grocery list in your budget, and it gamifies progress so you level up.
-- 0:30–0:45 — Honest framing — a coach is still best. This is second best, and it’s free. Only catch is the onboarding takes a minute.
-- 0:45–1:00 — CTA to the link
 CTA: I’m Coach QA. / I train men over 35. / What you get: finally get strong again without wrecking their knees or living in the gym. / Drop your name at the link in my bio and I’ll build you a plan.
 
 _voice overlap blunt↔technical: 53%_
@@ -457,6 +457,13 @@ core:     consistency, not intensity, and eating enough
 - 0:55–1:00 — CTA
 CTA: I’m Coach QA. / I train busy moms over 40. / What you get: lose the weight, keep their energy, and not hate the process. / Drop your name at the link in my bio and I’ll build you a plan.
 
+**app** — hook: “Not ready to hire a coach? Fine. Don't start with nothing either.”
+- 0:00–0:05 — Hook aimed at people not ready to hire anyone. “Not everyone’s ready for a coach. That doesn’t mean you start with nothing.”
+- 0:05–0:30 — What it does: a free workout with the equipment you have, a nutrition plan, a grocery list in your budget, and it gamifies progress so you level up.
+- 0:30–0:45 — Honest framing — a coach is still best. This is second best, and it’s free. Only catch is the onboarding takes a minute.
+- 0:45–1:00 — CTA to the link
+CTA: I’m Coach QA. / I train busy moms over 40. / What you get: lose the weight, keep their energy, and not hate the process. / Drop your name at the link in my bio and I’ll build you a plan.
+
 **mistake** — hook: “Here’s what I keep seeing: they starve all day, then binge at night, and blame themselves.”
 _angle: Doing endless cardio thinking it burns fat, when all it leaves you with is loose skin and no shape._
 - 0:00–0:05 — Hook — name the group and the mistake
@@ -464,13 +471,6 @@ _angle: Doing endless cardio thinking it burns fat, when all it leaves you with 
 - 0:20–0:40 — Why they’re stuck. It’s not effort. Nobody told them consistency, not intensity, and eating enough.
 - 0:40–0:50 — Hint the fix. Name what the fix IS. Do not explain how.
 - 0:50–1:00 — CTA
-CTA: I’m Coach QA. / I train busy moms over 40. / What you get: lose the weight, keep their energy, and not hate the process. / Drop your name at the link in my bio and I’ll build you a plan.
-
-**app** — hook: “Not ready to hire a coach? Fine. Don't start with nothing either.”
-- 0:00–0:05 — Hook aimed at people not ready to hire anyone. “Not everyone’s ready for a coach. That doesn’t mean you start with nothing.”
-- 0:05–0:30 — What it does: a free workout with the equipment you have, a nutrition plan, a grocery list in your budget, and it gamifies progress so you level up.
-- 0:30–0:45 — Honest framing — a coach is still best. This is second best, and it’s free. Only catch is the onboarding takes a minute.
-- 0:45–1:00 — CTA to the link
 CTA: I’m Coach QA. / I train busy moms over 40. / What you get: lose the weight, keep their energy, and not hate the process. / Drop your name at the link in my bio and I’ll build you a plan.
 
 **mistake** — hook: “Three mistakes. Every one of the busy moms over 40 I meet makes them.”
@@ -482,6 +482,13 @@ _angle: Four hours on the stairmaster because it feels like work. Effort isn’t
 - 0:50–1:00 — CTA
 CTA: I’m Coach QA. / I train busy moms over 40. / What you get: lose the weight, keep their energy, and not hate the process. / Drop your name at the link in my bio and I’ll build you a plan.
 
+**app** — hook: “Not ready to hire a coach? Fine. Don't start with nothing either.”
+- 0:00–0:05 — Hook aimed at people not ready to hire anyone. “Not everyone’s ready for a coach. That doesn’t mean you start with nothing.”
+- 0:05–0:30 — What it does: a free workout with the equipment you have, a nutrition plan, a grocery list in your budget, and it gamifies progress so you level up.
+- 0:30–0:45 — Honest framing — a coach is still best. This is second best, and it’s free. Only catch is the onboarding takes a minute.
+- 0:45–1:00 — CTA to the link
+CTA: I’m Coach QA. / I train busy moms over 40. / What you get: lose the weight, keep their energy, and not hate the process. / Drop your name at the link in my bio and I’ll build you a plan.
+
 **myth** — hook: “Most people believe: “Soreness means it worked.” — here’s why that’s wrong.”
 _angle: Soreness means it worked._
 - 0:00–0:05 — Say the thing most people won’t. State the myth, then reject it.
@@ -489,13 +496,6 @@ _angle: Soreness means it worked._
 - 0:20–0:40 — What’s actually true, and the mechanism. Your take, your words.
 - 0:40–0:55 — What changes for them if they get this right.
 - 0:55–1:00 — CTA
-CTA: I’m Coach QA. / I train busy moms over 40. / What you get: lose the weight, keep their energy, and not hate the process. / Drop your name at the link in my bio and I’ll build you a plan.
-
-**app** — hook: “Not ready to hire a coach? Fine. Don't start with nothing either.”
-- 0:00–0:05 — Hook aimed at people not ready to hire anyone. “Not everyone’s ready for a coach. That doesn’t mean you start with nothing.”
-- 0:05–0:30 — What it does: a free workout with the equipment you have, a nutrition plan, a grocery list in your budget, and it gamifies progress so you level up.
-- 0:30–0:45 — Honest framing — a coach is still best. This is second best, and it’s free. Only catch is the onboarding takes a minute.
-- 0:45–1:00 — CTA to the link
 CTA: I’m Coach QA. / I train busy moms over 40. / What you get: lose the weight, keep their energy, and not hate the process. / Drop your name at the link in my bio and I’ll build you a plan.
 
 
@@ -509,6 +509,13 @@ CTA: I’m Coach QA. / I train busy moms over 40. / What you get: lose the weigh
 - 0:55–1:00 — CTA
 CTA: I’m Coach QA. / I train busy moms over 40. / What you get: lose the weight, keep their energy, and not hate the process. / Drop your name at the link in my bio and I’ll build you a plan.
 
+**app** — hook: “If hiring a coach isn't in the cards right now, that's completely okay — but please don't start with nothing.”
+- 0:00–0:05 — Hook aimed at people not ready to hire anyone. “Not everyone’s ready for a coach. That doesn’t mean you start with nothing.”
+- 0:05–0:30 — What it does: a free workout with the equipment you have, a nutrition plan, a grocery list in your budget, and it gamifies progress so you level up.
+- 0:30–0:45 — Honest framing — a coach is still best. This is second best, and it’s free. Only catch is the onboarding takes a minute.
+- 0:45–1:00 — CTA to the link
+CTA: I’m Coach QA. / I train busy moms over 40. / What you get: lose the weight, keep their energy, and not hate the process. / Drop your name at the link in my bio and I’ll build you a plan.
+
 **mistake** — hook: “Can I share the pattern I keep seeing? they starve all day, then binge at night, and blame themselves.”
 _angle: Doing endless cardio thinking it burns fat, when all it leaves you with is loose skin and no shape._
 - 0:00–0:05 — Hook — name the group and the mistake
@@ -516,13 +523,6 @@ _angle: Doing endless cardio thinking it burns fat, when all it leaves you with 
 - 0:20–0:40 — Why they’re stuck. It’s not effort. Nobody told them consistency, not intensity, and eating enough.
 - 0:40–0:50 — Hint the fix. Name what the fix IS. Do not explain how.
 - 0:50–1:00 — CTA
-CTA: I’m Coach QA. / I train busy moms over 40. / What you get: lose the weight, keep their energy, and not hate the process. / Drop your name at the link in my bio and I’ll build you a plan.
-
-**app** — hook: “If hiring a coach isn't in the cards right now, that's completely okay — but please don't start with nothing.”
-- 0:00–0:05 — Hook aimed at people not ready to hire anyone. “Not everyone’s ready for a coach. That doesn’t mean you start with nothing.”
-- 0:05–0:30 — What it does: a free workout with the equipment you have, a nutrition plan, a grocery list in your budget, and it gamifies progress so you level up.
-- 0:30–0:45 — Honest framing — a coach is still best. This is second best, and it’s free. Only catch is the onboarding takes a minute.
-- 0:45–1:00 — CTA to the link
 CTA: I’m Coach QA. / I train busy moms over 40. / What you get: lose the weight, keep their energy, and not hate the process. / Drop your name at the link in my bio and I’ll build you a plan.
 
 **mistake** — hook: “There are three small things I watch busy moms over 40 trip over — and every one is fixable.”
@@ -534,6 +534,13 @@ _angle: Four hours on the stairmaster because it feels like work. Effort isn’t
 - 0:50–1:00 — CTA
 CTA: I’m Coach QA. / I train busy moms over 40. / What you get: lose the weight, keep their energy, and not hate the process. / Drop your name at the link in my bio and I’ll build you a plan.
 
+**app** — hook: “If hiring a coach isn't in the cards right now, that's completely okay — but please don't start with nothing.”
+- 0:00–0:05 — Hook aimed at people not ready to hire anyone. “Not everyone’s ready for a coach. That doesn’t mean you start with nothing.”
+- 0:05–0:30 — What it does: a free workout with the equipment you have, a nutrition plan, a grocery list in your budget, and it gamifies progress so you level up.
+- 0:30–0:45 — Honest framing — a coach is still best. This is second best, and it’s free. Only catch is the onboarding takes a minute.
+- 0:45–1:00 — CTA to the link
+CTA: I’m Coach QA. / I train busy moms over 40. / What you get: lose the weight, keep their energy, and not hate the process. / Drop your name at the link in my bio and I’ll build you a plan.
+
 **myth** — hook: “A lot of people believe “Soreness means it worked.” — let’s talk about why it keeps you stuck.”
 _angle: Soreness means it worked._
 - 0:00–0:05 — Say the thing most people won’t. State the myth, then reject it.
@@ -541,13 +548,6 @@ _angle: Soreness means it worked._
 - 0:20–0:40 — What’s actually true, and the mechanism. Your take, your words.
 - 0:40–0:55 — What changes for them if they get this right.
 - 0:55–1:00 — CTA
-CTA: I’m Coach QA. / I train busy moms over 40. / What you get: lose the weight, keep their energy, and not hate the process. / Drop your name at the link in my bio and I’ll build you a plan.
-
-**app** — hook: “If hiring a coach isn't in the cards right now, that's completely okay — but please don't start with nothing.”
-- 0:00–0:05 — Hook aimed at people not ready to hire anyone. “Not everyone’s ready for a coach. That doesn’t mean you start with nothing.”
-- 0:05–0:30 — What it does: a free workout with the equipment you have, a nutrition plan, a grocery list in your budget, and it gamifies progress so you level up.
-- 0:30–0:45 — Honest framing — a coach is still best. This is second best, and it’s free. Only catch is the onboarding takes a minute.
-- 0:45–1:00 — CTA to the link
 CTA: I’m Coach QA. / I train busy moms over 40. / What you get: lose the weight, keep their energy, and not hate the process. / Drop your name at the link in my bio and I’ll build you a plan.
 
 
@@ -561,6 +561,13 @@ CTA: I’m Coach QA. / I train busy moms over 40. / What you get: lose the weigh
 - 0:55–1:00 — CTA
 CTA: I’m Coach QA. / I train busy moms over 40. / What you get: lose the weight, keep their energy, and not hate the process. / Drop your name at the link in my bio and I’ll build you a plan.
 
+**app** — hook: “Not everyone's ready to hire a coach. Some of you have made that extremely clear. So here's plan B, and it's free.”
+- 0:00–0:05 — Hook aimed at people not ready to hire anyone. “Not everyone’s ready for a coach. That doesn’t mean you start with nothing.”
+- 0:05–0:30 — What it does: a free workout with the equipment you have, a nutrition plan, a grocery list in your budget, and it gamifies progress so you level up.
+- 0:30–0:45 — Honest framing — a coach is still best. This is second best, and it’s free. Only catch is the onboarding takes a minute.
+- 0:45–1:00 — CTA to the link
+CTA: I’m Coach QA. / I train busy moms over 40. / What you get: lose the weight, keep their energy, and not hate the process. / Drop your name at the link in my bio and I’ll build you a plan.
+
 **mistake** — hook: “Same movie, every single week: they starve all day, then binge at night, and blame themselves.”
 _angle: Doing endless cardio thinking it burns fat, when all it leaves you with is loose skin and no shape._
 - 0:00–0:05 — Hook — name the group and the mistake
@@ -568,13 +575,6 @@ _angle: Doing endless cardio thinking it burns fat, when all it leaves you with 
 - 0:20–0:40 — Why they’re stuck. It’s not effort. Nobody told them consistency, not intensity, and eating enough.
 - 0:40–0:50 — Hint the fix. Name what the fix IS. Do not explain how.
 - 0:50–1:00 — CTA
-CTA: I’m Coach QA. / I train busy moms over 40. / What you get: lose the weight, keep their energy, and not hate the process. / Drop your name at the link in my bio and I’ll build you a plan.
-
-**app** — hook: “Not everyone's ready to hire a coach. Some of you have made that extremely clear. So here's plan B, and it's free.”
-- 0:00–0:05 — Hook aimed at people not ready to hire anyone. “Not everyone’s ready for a coach. That doesn’t mean you start with nothing.”
-- 0:05–0:30 — What it does: a free workout with the equipment you have, a nutrition plan, a grocery list in your budget, and it gamifies progress so you level up.
-- 0:30–0:45 — Honest framing — a coach is still best. This is second best, and it’s free. Only catch is the onboarding takes a minute.
-- 0:45–1:00 — CTA to the link
 CTA: I’m Coach QA. / I train busy moms over 40. / What you get: lose the weight, keep their energy, and not hate the process. / Drop your name at the link in my bio and I’ll build you a plan.
 
 **mistake** — hook: “I could set my watch by the three mistakes busy moms over 40 make. Let's ruin that.”
@@ -586,6 +586,13 @@ _angle: Four hours on the stairmaster because it feels like work. Effort isn’t
 - 0:50–1:00 — CTA
 CTA: I’m Coach QA. / I train busy moms over 40. / What you get: lose the weight, keep their energy, and not hate the process. / Drop your name at the link in my bio and I’ll build you a plan.
 
+**app** — hook: “Not everyone's ready to hire a coach. Some of you have made that extremely clear. So here's plan B, and it's free.”
+- 0:00–0:05 — Hook aimed at people not ready to hire anyone. “Not everyone’s ready for a coach. That doesn’t mean you start with nothing.”
+- 0:05–0:30 — What it does: a free workout with the equipment you have, a nutrition plan, a grocery list in your budget, and it gamifies progress so you level up.
+- 0:30–0:45 — Honest framing — a coach is still best. This is second best, and it’s free. Only catch is the onboarding takes a minute.
+- 0:45–1:00 — CTA to the link
+CTA: I’m Coach QA. / I train busy moms over 40. / What you get: lose the weight, keep their energy, and not hate the process. / Drop your name at the link in my bio and I’ll build you a plan.
+
 **myth** — hook: ““Soreness means it worked.” — sure. And I’m the tooth fairy.”
 _angle: Soreness means it worked._
 - 0:00–0:05 — Say the thing most people won’t. State the myth, then reject it.
@@ -593,13 +600,6 @@ _angle: Soreness means it worked._
 - 0:20–0:40 — What’s actually true, and the mechanism. Your take, your words.
 - 0:40–0:55 — What changes for them if they get this right.
 - 0:55–1:00 — CTA
-CTA: I’m Coach QA. / I train busy moms over 40. / What you get: lose the weight, keep their energy, and not hate the process. / Drop your name at the link in my bio and I’ll build you a plan.
-
-**app** — hook: “Not everyone's ready to hire a coach. Some of you have made that extremely clear. So here's plan B, and it's free.”
-- 0:00–0:05 — Hook aimed at people not ready to hire anyone. “Not everyone’s ready for a coach. That doesn’t mean you start with nothing.”
-- 0:05–0:30 — What it does: a free workout with the equipment you have, a nutrition plan, a grocery list in your budget, and it gamifies progress so you level up.
-- 0:30–0:45 — Honest framing — a coach is still best. This is second best, and it’s free. Only catch is the onboarding takes a minute.
-- 0:45–1:00 — CTA to the link
 CTA: I’m Coach QA. / I train busy moms over 40. / What you get: lose the weight, keep their energy, and not hate the process. / Drop your name at the link in my bio and I’ll build you a plan.
 
 
@@ -613,6 +613,13 @@ CTA: I’m Coach QA. / I train busy moms over 40. / What you get: lose the weigh
 - 0:55–1:00 — CTA
 CTA: I’m Coach QA. / I train busy moms over 40. / What you get: lose the weight, keep their energy, and not hate the process. / Drop your name at the link in my bio and I’ll build you a plan.
 
+**app** — hook: “If coaching isn't accessible right now, the next-best option needs three things: a plan, tracking, and structure. This has all three, free.”
+- 0:00–0:05 — Hook aimed at people not ready to hire anyone. “Not everyone’s ready for a coach. That doesn’t mean you start with nothing.”
+- 0:05–0:30 — What it does: a free workout with the equipment you have, a nutrition plan, a grocery list in your budget, and it gamifies progress so you level up.
+- 0:30–0:45 — Honest framing — a coach is still best. This is second best, and it’s free. Only catch is the onboarding takes a minute.
+- 0:45–1:00 — CTA to the link
+CTA: I’m Coach QA. / I train busy moms over 40. / What you get: lose the weight, keep their energy, and not hate the process. / Drop your name at the link in my bio and I’ll build you a plan.
+
 **mistake** — hook: “The most common pattern in the people I coach: they starve all day, then binge at night, and blame themselves.”
 _angle: Doing endless cardio thinking it burns fat, when all it leaves you with is loose skin and no shape._
 - 0:00–0:05 — Hook — name the group and the mistake
@@ -620,13 +627,6 @@ _angle: Doing endless cardio thinking it burns fat, when all it leaves you with 
 - 0:20–0:40 — Why they’re stuck. It’s not effort. Nobody told them consistency, not intensity, and eating enough.
 - 0:40–0:50 — Hint the fix. Name what the fix IS. Do not explain how.
 - 0:50–1:00 — CTA
-CTA: I’m Coach QA. / I train busy moms over 40. / What you get: lose the weight, keep their energy, and not hate the process. / Drop your name at the link in my bio and I’ll build you a plan.
-
-**app** — hook: “If coaching isn't accessible right now, the next-best option needs three things: a plan, tracking, and structure. This has all three, free.”
-- 0:00–0:05 — Hook aimed at people not ready to hire anyone. “Not everyone’s ready for a coach. That doesn’t mean you start with nothing.”
-- 0:05–0:30 — What it does: a free workout with the equipment you have, a nutrition plan, a grocery list in your budget, and it gamifies progress so you level up.
-- 0:30–0:45 — Honest framing — a coach is still best. This is second best, and it’s free. Only catch is the onboarding takes a minute.
-- 0:45–1:00 — CTA to the link
 CTA: I’m Coach QA. / I train busy moms over 40. / What you get: lose the weight, keep their energy, and not hate the process. / Drop your name at the link in my bio and I’ll build you a plan.
 
 **mistake** — hook: “Three recurring errors explain most stalled progress in busy moms over 40. In order:”
@@ -638,6 +638,13 @@ _angle: Four hours on the stairmaster because it feels like work. Effort isn’t
 - 0:50–1:00 — CTA
 CTA: I’m Coach QA. / I train busy moms over 40. / What you get: lose the weight, keep their energy, and not hate the process. / Drop your name at the link in my bio and I’ll build you a plan.
 
+**app** — hook: “If coaching isn't accessible right now, the next-best option needs three things: a plan, tracking, and structure. This has all three, free.”
+- 0:00–0:05 — Hook aimed at people not ready to hire anyone. “Not everyone’s ready for a coach. That doesn’t mean you start with nothing.”
+- 0:05–0:30 — What it does: a free workout with the equipment you have, a nutrition plan, a grocery list in your budget, and it gamifies progress so you level up.
+- 0:30–0:45 — Honest framing — a coach is still best. This is second best, and it’s free. Only catch is the onboarding takes a minute.
+- 0:45–1:00 — CTA to the link
+CTA: I’m Coach QA. / I train busy moms over 40. / What you get: lose the weight, keep their energy, and not hate the process. / Drop your name at the link in my bio and I’ll build you a plan.
+
 **myth** — hook: “Claim: “Soreness means it worked.”. The evidence points the other way.”
 _angle: Soreness means it worked._
 - 0:00–0:05 — Say the thing most people won’t. State the myth, then reject it.
@@ -645,13 +652,6 @@ _angle: Soreness means it worked._
 - 0:20–0:40 — What’s actually true, and the mechanism. Your take, your words.
 - 0:40–0:55 — What changes for them if they get this right.
 - 0:55–1:00 — CTA
-CTA: I’m Coach QA. / I train busy moms over 40. / What you get: lose the weight, keep their energy, and not hate the process. / Drop your name at the link in my bio and I’ll build you a plan.
-
-**app** — hook: “If coaching isn't accessible right now, the next-best option needs three things: a plan, tracking, and structure. This has all three, free.”
-- 0:00–0:05 — Hook aimed at people not ready to hire anyone. “Not everyone’s ready for a coach. That doesn’t mean you start with nothing.”
-- 0:05–0:30 — What it does: a free workout with the equipment you have, a nutrition plan, a grocery list in your budget, and it gamifies progress so you level up.
-- 0:30–0:45 — Honest framing — a coach is still best. This is second best, and it’s free. Only catch is the onboarding takes a minute.
-- 0:45–1:00 — CTA to the link
 CTA: I’m Coach QA. / I train busy moms over 40. / What you get: lose the weight, keep their energy, and not hate the process. / Drop your name at the link in my bio and I’ll build you a plan.
 
 _voice overlap blunt↔technical: 42%_

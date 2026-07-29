@@ -1,0 +1,37 @@
+# Nixpacks alternative to the Dockerfile: keeps the existing Node build and
+# layers Python + faster-whisper on top.
+#
+# STAGED — this is NOT the live build. Copy to the repo root to promote; see
+# deploy/transcription/README.md.
+#
+# Trade-off vs. the Dockerfile: the whisper model is NOT baked in, so the first
+# job after every deploy pays a ~500 MB (small) / ~1.5 GB (medium) download
+# before it transcribes anything, and that download repeats on each redeploy
+# because Railway's container filesystem is ephemeral. Prefer the Dockerfile
+# unless you specifically want to stay on Nixpacks.
+
+providers = ["node", "python"]
+
+[phases.setup]
+nixPkgs = ["nodejs_20", "python311", "python311Packages.pip", "gcc-unwrapped"]
+# ctranslate2 links against libgomp at runtime.
+nixLibs = ["gcc-unwrapped"]
+
+[phases.install]
+cmds = [
+  "npm ci --omit=dev || npm install --omit=dev",
+  "python3 -m pip install --upgrade pip",
+  "python3 -m pip install 'faster-whisper==1.0.3' 'numpy>=1.24,<2'"
+]
+
+[phases.build]
+# Fail the build rather than the first job if the runtime is wrong.
+cmds = ["python3 scripts/transcribe_worker.py --selfcheck"]
+
+[start]
+cmd = "node server.js"
+
+[variables]
+PYTHONUNBUFFERED = "1"
+TRANSCRIBE_PYTHON = "python3"
+HF_HUB_DISABLE_TELEMETRY = "1"

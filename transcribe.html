@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#140f0b">
+  <script src="js/theme-color.js?v=2026-07-13-themebar-1" defer></script>
+  <title>Transcribe · RiseForIt</title>
+  <link rel="stylesheet" href="css/main.css?v=2026-07-29-mobilecp-1">
+  <style>
+    body.transcribe-page { overflow: auto !important; }
+    .tr-wrap {
+      max-width: 1100px;
+      margin: calc(var(--navbar-height, 72px) + 24px) auto 40px;
+      padding: 0 16px 24px;
+      display: grid;
+      gap: 12px;
+    }
+    .tr-card {
+      background: rgba(255, 255, 255, 0.93);
+      border: 1px solid rgba(0, 0, 0, 0.08);
+      border-radius: 14px;
+      padding: 16px;
+    }
+    .tr-title { font-weight: 800; font-size: 18px; color: #0f2435; margin: 0; }
+    .tr-sub { margin: 6px 0 0; font-size: 13px; color: #5a6b7a; line-height: 1.5; }
+    .tr-head { display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-start; justify-content: space-between; }
+
+    .tr-btn {
+      min-height: 38px; padding: 0.5rem 1rem; border-radius: 999px;
+      border: 1px solid rgba(10, 31, 47, 0.12); background: rgba(15, 36, 53, 0.04);
+      color: #0f2435; font-size: 0.84rem; font-weight: 900; cursor: pointer;
+    }
+    .tr-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+    .tr-btn.primary {
+      background: linear-gradient(135deg, rgba(15, 36, 53, 0.95), rgba(34, 71, 98, 0.95));
+      color: #f7fbff; border-color: rgba(15, 36, 53, 0.18);
+    }
+    .tr-btn.danger { color: #8f1d1d; border-color: rgba(143, 29, 29, 0.25); background: rgba(143, 29, 29, 0.05); }
+    .tr-actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+
+    .tr-banner { border-radius: 12px; padding: 12px 14px; font-size: 13px; font-weight: 700; line-height: 1.5; }
+    .tr-banner.warn { background: #fff6e5; border: 1px solid #f0d08a; color: #6d4b06; }
+    .tr-banner.error { background: #fdecec; border: 1px solid #f0a9a9; color: #8f1d1d; }
+    .tr-banner.ok { background: #eaf7ee; border: 1px solid #a7d8b6; color: #1f6c2f; }
+    .tr-banner[hidden] { display: none !important; }
+
+    .tr-privacy {
+      display: flex; gap: 10px; align-items: flex-start;
+      background: rgba(15, 36, 53, 0.04); border: 1px dashed rgba(15, 36, 53, 0.18);
+      border-radius: 12px; padding: 11px 13px; font-size: 12.5px; color: #33495c; line-height: 1.5;
+    }
+    .tr-privacy b { color: #0f2435; }
+
+    .tr-drop {
+      border: 2px dashed rgba(15, 36, 53, 0.22); border-radius: 14px; background: #fff;
+      padding: 26px 18px; text-align: center; cursor: pointer; transition: border-color .15s ease, background .15s ease;
+    }
+    .tr-drop:hover, .tr-drop.is-over { border-color: #b98a2b; background: #fffaf0; }
+    .tr-drop h3 { margin: 0 0 6px; font-size: 15px; color: #0f2435; }
+    .tr-drop p { margin: 0; font-size: 12.5px; color: #6b7c8a; }
+    .tr-file { font-size: 13px; font-weight: 800; color: #0f2435; margin-top: 10px; }
+
+    .tr-field { display: grid; gap: 5px; }
+    .tr-field label { font-size: 11.5px; font-weight: 800; color: #55697a; text-transform: uppercase; letter-spacing: .04em; }
+    .tr-field select, .tr-field input[type="text"] {
+      min-height: 38px; padding: 0.4rem 0.6rem; border-radius: 10px;
+      border: 1px solid rgba(10, 31, 47, 0.16); background: #fff; color: #0f2435; font-size: 14px; font-family: inherit;
+    }
+    .tr-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 10px; margin-top: 12px; }
+
+    .tr-stage { display: grid; gap: 10px; margin-top: 12px; }
+    .tr-step { display: grid; gap: 5px; }
+    .tr-step-head { display: flex; justify-content: space-between; gap: 10px; font-size: 12.5px; font-weight: 800; color: #33495c; }
+    .tr-step-note { font-weight: 600; color: #6b7c8a; }
+    .tr-bar { height: 8px; border-radius: 999px; background: rgba(15, 36, 53, 0.09); overflow: hidden; }
+    .tr-bar i { display: block; height: 100%; width: 0%; border-radius: 999px; background: linear-gradient(90deg, #b98a2b, #e0b25c); transition: width .25s ease; }
+    .tr-step.is-done .tr-bar i { background: linear-gradient(90deg, #1f8f52, #4bbd7d); }
+
+    .tr-eta { font-size: 12.5px; color: #5a6b7a; font-weight: 700; }
+
+    .tr-list { display: grid; gap: 8px; margin-top: 10px; }
+    .tr-item {
+      display: flex; gap: 10px; align-items: center; flex-wrap: wrap;
+      border: 1px solid rgba(0,0,0,0.08); border-radius: 11px; background: #fff; padding: 10px 12px;
+    }
+    .tr-item .t { flex: 1; min-width: 160px; font-size: 13.5px; font-weight: 800; color: #0f2435; }
+    .tr-item .m { font-size: 11.5px; color: #6b7c8a; font-weight: 700; }
+    .tr-empty { font-size: 13px; color: #6b7c8a; padding: 8px 2px; }
+
+    .tr-transcript { margin-top: 12px; display: grid; gap: 2px; max-height: 60vh; overflow: auto; padding-right: 4px; }
+    .tr-block { display: grid; grid-template-columns: 62px 1fr; gap: 10px; padding: 5px 4px; border-radius: 8px; }
+    .tr-block:hover { background: rgba(15, 36, 53, 0.035); }
+    .tr-at {
+      font-variant-numeric: tabular-nums; font-size: 11.5px; font-weight: 800; color: #8a6414;
+      padding-top: 3px; user-select: all;
+    }
+    .tr-text { font-size: 14px; line-height: 1.6; color: #1d2c38; }
+
+    .tr-status { min-height: 18px; font-size: 13px; color: #555; margin-top: 8px; }
+    .tr-status.error { color: #8f1d1d; }
+    .tr-status.ok { color: #1f6c2f; }
+
+    @media (max-width: 560px) {
+      .tr-block { grid-template-columns: 54px 1fr; }
+    }
+  </style>
+</head>
+<body class="transcribe-page" data-require-auth="1">
+  <div class="grain"></div>
+
+  <svg aria-hidden="true" class="icon-sprite">
+    <symbol id="icon-account" viewBox="0 0 24 24">
+      <path d="M4.75 5.75a1 1 0 0 1 1-1h6.5a1 1 0 0 1 1 1v2.5"></path>
+      <path d="M13.25 15.75v3a1 1 0 0 1-1 1h-6.5a1 1 0 0 1-1-1v-13"></path>
+      <path d="M15.5 12H7.5"></path>
+      <path d="m12 9.5 3.5 2.5-3.5 2.5"></path>
+    </symbol>
+    <symbol id="icon-calendar-check" viewBox="0 0 24 24">
+      <rect x="4.5" y="6.5" width="15" height="12" rx="2"></rect>
+      <path d="M9 4.5v3M15 4.5v3M8.75 12.5l2.25 2 4-4"></path>
+    </symbol>
+    <symbol id="icon-users" viewBox="0 0 24 24">
+      <circle cx="10" cy="9" r="2.5"></circle>
+      <path d="M5.5 16.5a4.5 4.5 0 0 1 9 0"></path>
+      <circle cx="16.5" cy="10.5" r="2"></circle>
+      <path d="M14.5 15a3.5 3.5 0 0 1 5 1.5"></path>
+    </symbol>
+    <symbol id="icon-book" viewBox="0 0 24 24">
+      <path d="M8 6.5h7.5a1 1 0 0 1 1 1v11l-3-2-3 2v-12a1 1 0 0 0-1-1H8a2.5 2.5 0 0 0-2.5 2.5v10.5"></path>
+    </symbol>
+    <symbol id="icon-folder" viewBox="0 0 24 24">
+      <path d="M4.5 7.5a2 2 0 0 1 2-2h4l2 2H17.5a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-11a2 2 0 0 1-2-2v-11Z"></path>
+    </symbol>
+    <symbol id="icon-mic" viewBox="0 0 24 24">
+      <rect x="9.5" y="3.5" width="5" height="10" rx="2.5"></rect>
+      <path d="M6.5 11.5a5.5 5.5 0 0 0 11 0M12 17v3.5M9 20.5h6"></path>
+    </symbol>
+  </svg>
+
+  <nav class="navbar">
+    <div class="navbar-container">
+      <div class="navbar-brand"><span class="brand-wordmark" aria-label="RiseForIt"><span class="brand-char">R</span><span class="brand-char">i</span><span class="brand-char">s</span><span class="brand-char">e</span><span class="brand-char">F</span><span class="brand-char">o</span><span class="brand-char">r</span><span class="brand-char">I</span><span class="brand-char">t</span></span><span class="brand-dot"></span></div>
+      <button class="hamburger" id="hamburger" aria-label="Toggle navigation">
+        <span></span><span></span><span></span>
+      </button>
+      <ul class="nav-menu" id="nav-menu">
+        <li><a href="index.html#resources">Home</a></li>
+        <li><a href="overview.html">Overview</a></li>
+        <li><a class="nav-training" href="training.html"><span class="nav-training-main">Training</span><span class="nav-training-sub">30 days free</span></a></li>
+        <li><a href="store.html">Store</a></li>
+      </ul>
+      <button class="theme-toggle" id="theme-toggle" aria-label="Toggle theme"><span class="theme-icon">&#x1F319;</span></button>
+    </div>
+  </nav>
+
+  <aside class="control-panel" id="control-panel">
+    <div class="control-panel-header"></div>
+    <div class="control-section"><p class="section-label section-label-help">HELP</p><button class="control-link" id="control-tour" type="button"><span class="icon"><svg><use href="#icon-book"></use></svg></span><span class="text">Quick tour</span></button></div>
+    <div class="control-section"><p class="section-label">DASH</p><div class="control-pill-row"><button class="control-link control-checkin-pill" id="control-checkin" type="button"><span class="icon"><svg><use href="#icon-calendar-check"></use></svg></span><span class="text">Dash</span></button></div></div>
+    <div class="control-section"><p class="section-label">TRAINING PORTAL</p><a class="control-link" href="overview.html"><span class="icon"><svg><use href="#icon-book"></use></svg></span><span class="text">Overview</span></a><a class="control-link" href="training.html"><span class="icon"><svg><use href="#icon-folder"></use></svg></span><span class="text">Training Program</span></a><a class="control-link" href="grocery-calendar.html"><span class="icon"><svg><use href="#icon-calendar-check"></use></svg></span><span class="text">Grocery Calendar</span></a><a class="control-link" id="control-trainer-coaches-link" href="coaches.html"><span class="icon"><svg><use href="#icon-users"></use></svg></span><span class="text">Coaches page</span></a></div>
+    <div class="control-section"><p class="section-label">COMMUNITY</p><a class="control-link" href="leaderboard.html"><span class="icon"><svg><use href="#icon-users"></use></svg></span><span class="text">Leaderboard</span></a><a class="control-link" href="friends.html"><span class="icon"><svg><use href="#icon-users"></use></svg></span><span class="text">Messages</span></a><a class="control-link" href="coaches.html"><span class="icon"><svg><use href="#icon-users"></use></svg></span><span class="text">Coaches</span></a></div>
+    <div class="control-section hidden" id="control-trainer-section"><p class="section-label">TRAINER</p><a class="control-link" id="control-trainer-dashboard-link" href="trainer-dashboard.html"><span class="icon"><svg><use href="#icon-users"></use></svg></span><span class="text">Trainer Dashboard</span></a></div>
+    <div class="control-section" id="control-owner-section">
+      <p class="section-label">OWNER</p>
+      <a class="control-link" id="control-workout-db-link" href="workout-database.html"><span class="icon"><svg><use href="#icon-folder"></use></svg></span><span class="text">Workout Database</span></a>
+      <a class="control-link" id="control-owner-messaging-link" href="owner-messaging.html"><span class="icon"><svg><use href="#icon-book"></use></svg></span><span class="text">Outreach</span></a>
+      <a class="control-link" id="control-owner-doors-link" href="owner-doors.html"><span class="icon"><svg><use href="#icon-folder"></use></svg></span><span class="text">Doors</span></a>
+      <a class="control-link" id="control-owner-accounts-link" href="owner-accounts.html"><span class="icon"><svg><use href="#icon-account"></use></svg></span><span class="text">Accounts</span></a>
+      <a class="control-link" id="control-owner-calendar-link" href="owner-calendar.html"><span class="icon"><svg><use href="#icon-calendar-check"></use></svg></span><span class="text">Calendar</span></a>
+      <a class="control-link active" id="control-owner-transcribe-link" href="transcribe.html" aria-current="true"><span class="icon"><svg><use href="#icon-mic"></use></svg></span><span class="text">Transcribe</span></a>
+    </div>
+  </aside>
+
+  <main class="tr-wrap">
+    <div class="tr-card">
+      <div class="tr-head">
+        <div>
+          <h1 class="tr-title">Transcribe</h1>
+          <p class="tr-sub">Pick a video from this device. The audio is extracted in your browser and only the audio is sent — the video file never leaves this machine.</p>
+        </div>
+        <div class="tr-actions">
+          <button class="tr-btn" id="tr-refresh" type="button">Refresh</button>
+        </div>
+      </div>
+
+      <div class="tr-banner error" id="tr-gate" hidden></div>
+
+      <div class="tr-privacy" style="margin-top:12px;">
+        <span aria-hidden="true">&#128274;</span>
+        <span>
+          <b>What actually gets uploaded:</b> a 16 kHz mono audio stream extracted from your file in this browser tab.
+          The video is never read by the server and never stored. The extracted audio is held in a scratch folder for the
+          length of the job and <b>deleted the moment transcription finishes</b> — success or failure. Only the transcript text is saved.
+        </span>
+      </div>
+
+      <div class="tr-drop" id="tr-drop" role="button" tabindex="0" aria-controls="tr-file-input">
+        <h3>Choose a video or audio file</h3>
+        <p>Drop it here, or click to browse. Nothing uploads until you press Transcribe.</p>
+        <div class="tr-file" id="tr-file-label" hidden></div>
+      </div>
+      <input type="file" id="tr-file-input" accept="video/*,audio/*" hidden>
+
+      <div class="tr-row">
+        <div class="tr-field">
+          <label for="tr-title">Title</label>
+          <input type="text" id="tr-title" maxlength="200" placeholder="Untitled recording">
+        </div>
+        <div class="tr-field">
+          <label for="tr-model">Model</label>
+          <select id="tr-model"></select>
+        </div>
+        <div class="tr-field">
+          <label for="tr-language">Language</label>
+          <select id="tr-language">
+            <option value="">Detect automatically</option>
+            <option value="en">English</option>
+            <option value="es">Spanish</option>
+            <option value="fr">French</option>
+            <option value="de">German</option>
+            <option value="pt">Portuguese</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="tr-actions" style="margin-top:12px;">
+        <button class="tr-btn primary" id="tr-start" type="button" disabled>Transcribe</button>
+        <button class="tr-btn danger" id="tr-cancel" type="button" hidden>Cancel job</button>
+        <span class="tr-eta" id="tr-eta"></span>
+      </div>
+
+      <div class="tr-stage" id="tr-stage" hidden>
+        <div class="tr-step" id="tr-step-extract">
+          <div class="tr-step-head"><span>1 &middot; Extract audio (in this browser)</span><span class="tr-step-note" id="tr-extract-note"></span></div>
+          <div class="tr-bar"><i id="tr-extract-bar"></i></div>
+        </div>
+        <div class="tr-step" id="tr-step-upload">
+          <div class="tr-step-head"><span>2 &middot; Upload audio only</span><span class="tr-step-note" id="tr-upload-note"></span></div>
+          <div class="tr-bar"><i id="tr-upload-bar"></i></div>
+        </div>
+        <div class="tr-step" id="tr-step-work">
+          <div class="tr-step-head"><span>3 &middot; Transcribe on the server</span><span class="tr-step-note" id="tr-work-note"></span></div>
+          <div class="tr-bar"><i id="tr-work-bar"></i></div>
+        </div>
+      </div>
+
+      <div class="tr-status" id="tr-status"></div>
+    </div>
+
+    <div class="tr-card" id="tr-result-card" hidden>
+      <div class="tr-head">
+        <div>
+          <h2 class="tr-title" id="tr-result-title">Transcript</h2>
+          <p class="tr-sub" id="tr-result-meta"></p>
+        </div>
+        <div class="tr-actions">
+          <button class="tr-btn" id="tr-copy-plain" type="button">Copy text</button>
+          <button class="tr-btn" id="tr-copy-stamped" type="button">Copy with timestamps</button>
+          <button class="tr-btn" id="tr-download" type="button">Download .txt</button>
+        </div>
+      </div>
+      <div class="tr-transcript" id="tr-transcript"></div>
+    </div>
+
+    <div class="tr-card">
+      <div class="tr-head">
+        <div>
+          <h2 class="tr-title">Saved transcripts</h2>
+          <p class="tr-sub">Stored on your account. Audio is not kept — only this text.</p>
+        </div>
+      </div>
+      <div class="tr-list" id="tr-library"><div class="tr-empty">Loading&hellip;</div></div>
+    </div>
+  </main>
+
+  <script src="js/main.js?v=2026-07-29-mobilecp-1"></script>
+  <script src="js/transcribe.js?v=2026-07-29-transcribe-1"></script>
+</body>
+</html>

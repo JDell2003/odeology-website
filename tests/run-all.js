@@ -39,6 +39,18 @@ const SUITES = [
     cmd: process.execPath,
     args: ['tests/owner-calendar.server.js'],
     needsServer: false
+  },
+  {
+    name: 'transcription — server routes (flag, owner-only, no-video, temp wipe)',
+    cmd: process.execPath,
+    args: ['tests/transcribe.server.js'],
+    needsServer: false
+  },
+  {
+    name: 'transcription — browser (audio extraction, no container bytes on the wire)',
+    cmd: process.execPath,
+    args: ['tests/transcribe.browser.js'],
+    needsServer: false
   }
 ];
 

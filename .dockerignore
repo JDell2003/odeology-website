@@ -1,0 +1,21 @@
+# Keep the build context lean and never let a locally-built (Windows)
+# node_modules overwrite the Linux one installed inside the image.
+node_modules
+.git
+.env
+
+# Local scratch / debug artifacts
+tmp/
+tmp-*
+tmp_*
+mp-*
+pb-*
+rw-*
+*.log
+*.patch
+snapshots/
+reports/
+tests/
+
+# Large media that the server does not need to boot
+videos/world/*-hq.mp4
