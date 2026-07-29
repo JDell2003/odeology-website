@@ -12125,6 +12125,23 @@ body.friends-page main.friends-main {
         padding-top: 0;
     }
 
+    /* Trainer/manager accounts get the Control Panel button with no client
+       quick-nav strip — drop the strip's backdrop bars so nothing renders
+       under a lone button. */
+    .control-mobile-fab-dock.fab-only {
+        gap: 0;
+        pointer-events: none;
+    }
+
+    .control-mobile-fab-dock.fab-only::before,
+    .control-mobile-fab-dock.fab-only::after {
+        content: none;
+    }
+
+    .control-mobile-fab-dock.fab-only .control-mobile-fab {
+        pointer-events: auto;
+    }
+
     .control-mobile-fab-dock::before,
     .control-mobile-fab-dock::after {
         content: "";

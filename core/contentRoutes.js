@@ -158,6 +158,41 @@ module.exports = async function contentRoutes(req, res, url) {
     return sendJson(res, 200, { ok: true, id: row.id, trackCode: row.track_code });
   }
 
+  // --- the CURRENT trainer's own logged/scheduled posts -------------------
+  // Feeds the content page's "Previous Days" popup. Session-scoped only —
+  // there is no userId param, so a trainer can only ever read their own days.
+  if (p === '/api/content/posts' && req.method === 'GET') {
+    const user = await getUserFromRequest(req);
+    if (!user) return sendJson(res, 401, { ok: false, error: 'UNAUTHORIZED' });
+    await ensureSchema();
+    const limitRaw = Number(url.searchParams.get('limit'));
+    const limit = Number.isFinite(limitRaw) ? Math.min(Math.max(limitRaw, 1), 400) : 200;
+    const r = await db.query(`
+      SELECT cp.id, cp.scheduled_date, cp.post_type, cp.hook_text, cp.hook_source, cp.status,
+             cp.posted_at, cp.track_code, cp.script_json, cp.views, cp.dms, cp.link_clicks_manual,
+             COALESCE((SELECT COUNT(*)::int FROM app_content_post_clicks c WHERE c.post_id = cp.id), 0) AS clicks
+      FROM app_content_posts cp
+      WHERE cp.trainer_user_id = $1
+      ORDER BY cp.scheduled_date DESC, cp.id DESC
+      LIMIT $2;`, [user.id, limit]);
+    const posts = (r.rows || []).map((row) => ({
+      id: row.id,
+      scheduledDate: row.scheduled_date instanceof Date ? row.scheduled_date.toISOString().slice(0, 10) : String(row.scheduled_date || '').slice(0, 10),
+      postType: row.post_type,
+      hookText: row.hook_text || '',
+      hookSource: row.hook_source || 'house',
+      status: row.status,
+      postedAt: row.posted_at,
+      trackCode: row.track_code,
+      script: row.script_json || null,
+      views: row.views,
+      dms: row.dms,
+      linkClicks: row.link_clicks_manual,
+      clicks: row.clicks
+    }));
+    return sendJson(res, 200, { ok: true, posts });
+  }
+
   // --- trainer hooks: create + list --------------------------------------
   if (p === '/api/content/hooks' && req.method === 'POST') {
     const user = await getUserFromRequest(req);

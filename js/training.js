@@ -3793,8 +3793,30 @@
     }
   }
 
+  // Live-update the in-column "Start rest" / "Rest M:SS" buttons. Previously the
+  // 250ms tick only drove the floating dock, so the column button was computed
+  // once at render and never counted down — that's why the column timer looked
+  // dead. Active exercise's button counts down; all others read "Start rest".
+  function updateWorkoutRestButtons() {
+    const buttons = document.querySelectorAll('.btn-rest-timer[data-rest-exercise]');
+    if (!buttons.length) return;
+    const activeName = restTimer.running ? String(restTimer.context?.exerciseName || '').trim().toLowerCase() : '';
+    const remainingMs = restTimer.running ? getWorkoutRestRemainingMs() : 0;
+    buttons.forEach((btn) => {
+      const name = String(btn.getAttribute('data-rest-exercise') || '').trim().toLowerCase();
+      if (activeName && name === activeName && remainingMs > 0) {
+        btn.textContent = `Rest ${formatRestCountdown(remainingMs)}`;
+        btn.classList.add('is-resting');
+      } else {
+        btn.textContent = 'Start rest';
+        btn.classList.remove('is-resting');
+      }
+    });
+  }
+
   function updateWorkoutRestTimerDisplay() {
     if (!restTimer.running) {
+      updateWorkoutRestButtons();
       scheduleFloatingWorkoutTimerSync();
       return;
     }
@@ -3803,6 +3825,7 @@
       completeWorkoutRestTimer({ fireAlert: true });
       return;
     }
+    updateWorkoutRestButtons();
     scheduleFloatingWorkoutTimerSync();
   }
 
@@ -16033,6 +16056,7 @@ function toggleSharePopover(force) {
                 el('button', {
                   type: 'button',
                   class: 'btn btn-rest-timer btn-compact',
+                  dataset: { restExercise: ex.displayName || ex.name || 'Exercise' },
                   onclick: () => {
                     if (!workoutTimer.running) {
                       showWorkoutInputGateToast();
