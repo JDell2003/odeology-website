@@ -8689,11 +8689,14 @@ footer{padding:34px 0;text-align:center;font-size:13px;color:var(--muted);}
     const qualificationMarkup = publicView && typeof renderQualificationGate === 'function'
       ? renderQualificationGate(page)
       : '';
-    const navMarkup = !publicView || !isStandalonePublicCoachRoute()
-      ? (typeof renderBuilderNavigation === 'function'
+    // A standalone /coach/:slug route is the trainer's real website — the
+    // builder's own nav never belongs on it, whether it's a visitor looking or
+    // the owner previewing their own page.
+    const navMarkup = isStandalonePublicCoachRoute()
+      ? ''
+      : (typeof renderBuilderNavigation === 'function'
         ? renderBuilderNavigation(page, { publicView })
-        : '')
-      : '';
+        : '');
     return `
       <section class="trainer-builder-public-shell">
         ${navMarkup}
@@ -11894,10 +11897,17 @@ footer{padding:34px 0;text-align:center;font-size:13px;color:var(--muted);}
         }
       }
       if (heroEl) {
+        // A live coach page must go through renderBuilderPublicShell: that's
+        // what attaches the qualification gate (the pre-visit consult
+        // questions) and blurs the page behind it. Rendering the iframe
+        // directly here skipped the gate entirely, so every visitor to a
+        // /coach/:slug site walked straight in and no lead was ever captured.
+        // The shell already omits its nav on this route and body
+        // .trainer-public-standalone-route styles it full-bleed.
         heroEl.innerHTML = showStandaloneEditor
           ? renderStandaloneBuilderSetup(builderPage, trainer)
           : `${renderStandaloneNoticeToast()}${hasSavedCode
-            ? renderActiveBuilderPage(builderPage, { publicView: renderStandaloneAsPublic })
+            ? renderBuilderPublicShell(builderPage, trainer, { publicView: renderStandaloneAsPublic })
             : renderBuilderUnavailableShell(trainer)}`;
       }
       if (contentEl) {

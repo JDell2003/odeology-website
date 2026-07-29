@@ -5,6 +5,9 @@ const { spawn } = require('child_process');
 const { Worker } = require('worker_threads');
 const db = require('./db');
 const jsonStore = require('./jsonStore');
+// Used by the public website-funnel link to fall back to a trainer's own
+// published coach page when they haven't pasted an external site.
+const trainerPages = require('./trainerPages');
 const { DbUnavailableError, isTransientPgError } = require('./dbErrors');
 const { generatePlan, applyLogAdjustments, normalizeExperience, assertBodybuildingPlanIntegrity, estimateExerciseMinutes } = require('./trainingEngine');
 const { buildOblueprintPlan, preprocessExercises, normalizeUserInput } = require('../generator/trainingEngine.oblueprint');
@@ -11988,13 +11991,30 @@ async function trainingRoutes(req, res, url) {
 
   if (pathname === '/api/training/website-funnel' && req.method === 'GET') {
     // PUBLIC: visitors clicking a trainer link have no account.
-    const entry = await findWebsiteByHandle(url.searchParams.get('t'));
-    if (!entry) return sendJson(res, 404, { error: 'Unknown trainer link' });
+    const handle = String(url.searchParams.get('t') || '').trim().toLowerCase();
+    const entry = await findWebsiteByHandle(handle);
+    let displayName = String(entry?.displayName || '').trim();
+    let siteUrl = String(entry?.siteUrl || '').trim();
+    // The Website tab hands every trainer this link ("Link you attach to your
+    // videos") the moment they have an account — long before they paste an
+    // external site. With no destination it used to 404 into "This link is not
+    // active", i.e. we shipped trainers a dead link to put in their bios. Fall
+    // back to their own published RiseForIt coach page, which IS their website.
+    if (!siteUrl && handle) {
+      try {
+        const live = await trainerPages.getPublicTrainerPage(db, handle, '');
+        if (live) {
+          siteUrl = `/coach/${encodeURIComponent(handle)}`;
+          if (!displayName) displayName = String(live.trainer?.displayName || '').trim();
+        }
+      } catch { /* DB hiccup: fall through to the 404 below */ }
+    }
+    if (!entry && !siteUrl) return sendJson(res, 404, { error: 'Unknown trainer link' });
     return sendJson(res, 200, {
       ok: true,
-      displayName: entry.displayName || 'Coach',
-      siteUrl: entry.siteUrl || '',
-      variants: (entry.variants || []).filter((v) => (v.questions || []).length && v.weight > 0)
+      displayName: displayName || 'Coach',
+      siteUrl,
+      variants: (entry?.variants || []).filter((v) => (v.questions || []).length && v.weight > 0)
     });
   }
 
