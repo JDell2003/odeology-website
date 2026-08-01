@@ -15592,6 +15592,21 @@ function initAuthUi() {
         if (websitesLink && emailEventsLink && websitesLink.nextElementSibling !== emailEventsLink) {
             websitesLink.insertAdjacentElement('afterend', emailEventsLink);
         }
+        // Trainer Landing (/partner) — the public trainer pitch page, one click
+        // away from anywhere. Built here as well as in
+        // injectOwnerTrainerLandingLink so it still shows up on pages whose
+        // static control-panel markup has no OWNER section until this runs.
+        let trainerLandingLink = panel.querySelector('#control-owner-trainer-landing-link');
+        if (!trainerLandingLink) {
+            trainerLandingLink = document.createElement('a');
+            trainerLandingLink.className = 'control-link';
+            trainerLandingLink.id = 'control-owner-trainer-landing-link';
+            trainerLandingLink.href = '/partner';
+            trainerLandingLink.innerHTML = '<span class="icon"><svg><use href="#icon-folder"></use></svg></span><span class="text">Trainer Landing</span>';
+        }
+        if (emailEventsLink && trainerLandingLink && emailEventsLink.nextElementSibling !== trainerLandingLink) {
+            emailEventsLink.insertAdjacentElement('afterend', trainerLandingLink);
+        }
         if (demoBtn && demoBtn.dataset.demoBound !== '1') {
             demoBtn.dataset.demoBound = '1';
             demoBtn.addEventListener('click', () => {
@@ -22718,6 +22733,25 @@ function injectOwnerTranscribeLink(panel) {
     else ownerSection.appendChild(link);
 }
 
+/* The trainer pitch page (/partner) is public, but the owner needs to reach
+   it from anywhere without remembering the URL — so it sits in the OWNER
+   section alongside Calendar and Transcribe. Same runtime injection: pages
+   ship their own static control-panel markup, and owner-only visibility comes
+   free because #control-owner-section is hidden for everyone else. */
+function injectOwnerTrainerLandingLink(panel) {
+    if (!panel || panel.querySelector('a[href="/partner"]')) return;
+    const ownerSection = panel.querySelector('#control-owner-section');
+    if (!ownerSection) return;
+    const link = document.createElement('a');
+    link.className = 'control-link';
+    link.id = 'control-owner-trainer-landing-link';
+    link.href = '/partner';
+    link.innerHTML = '<span class="icon"><svg><use href="#icon-folder"></use></svg></span><span class="text">Trainer Landing</span>';
+    // Last in the OWNER list — syncOwnerWorkoutDbLink parks it in the same
+    // spot once auth resolves, so the order never shifts under the cursor.
+    ownerSection.appendChild(link);
+}
+
 /* ---- Launch gating -------------------------------------------------
    Soft launch: clients get only the Website tab; every other control-panel
    tab is hidden. Trainers additionally get their live business tools —
@@ -22824,14 +22858,25 @@ function applyLaunchGating(user, meta) {
     });
 }
 
+/* Pages that must render with no app chrome at all — no control panel, no
+   mobile dock. These are standalone pages a stranger lands on cold (a coach's
+   public page, the trainer pitch page at /partner), where a signed-in owner's
+   dashboard framing would be noise at best and confusing at worst. They also
+   ship no navbar in their own markup. */
+function odeIsChromelessPage() {
+    const path = String(window.location.pathname || '').trim();
+    if (/^\/coach\/[^/]+(?:\/[^/]+)?$/i.test(path)) return true;
+    return /^\/partner(?:\.html)?$/i.test(path);
+}
+
 function setupControlPanel() {
     controlPanel = ensureSharedControlPanel();
     if (!controlPanel) return;
     injectNutritionLink(controlPanel);
     injectOwnerCalendarLink(controlPanel);
     injectOwnerTranscribeLink(controlPanel);
-    const isStandaloneCoachRoute = /^\/coach\/[^/]+(?:\/[^/]+)?$/i.test(String(window.location.pathname || '').trim());
-    if (isStandaloneCoachRoute) {
+    injectOwnerTrainerLandingLink(controlPanel);
+    if (odeIsChromelessPage()) {
         controlPanel.setAttribute('hidden', '');
         controlPanel.style.display = 'none';
         controlPanel.classList.remove('open');

@@ -34,12 +34,16 @@
       background: var(--pt-cream);
       color: var(--pt-ink);
       font-family: var(--font-body);
+      /* main.css reserves --navbar-height on every body; this page has no
+         navbar, so that space would just be a cream strip above the hero. */
+      padding-top: 0;
     }
 
     /* ============ section rhythm ============ */
+    /* no navbar on this page — the hero starts at the very top */
     .pt-main {
       width: 100%;
-      padding-top: var(--navbar-height, 72px);
+      padding-top: 0;
     }
     .pt-section {
       position: relative;
@@ -468,25 +472,10 @@
 <body class="partner-page">
   <div class="grain"></div>
 
-  <nav class="navbar">
-    <div class="navbar-container">
-      <a class="navbar-brand" href="index.html" aria-label="RiseForIt home"><span class="brand-wordmark" aria-label="RiseForIt"><span class="brand-char">R</span><span class="brand-char">i</span><span class="brand-char">s</span><span class="brand-char">e</span><span class="brand-char">F</span><span class="brand-char">o</span><span class="brand-char">r</span><span class="brand-char">I</span><span class="brand-char">t</span></span><span class="brand-dot"></span></a>
-      <button class="hamburger" id="hamburger" aria-label="Toggle navigation">
-        <span></span>
-        <span></span>
-        <span></span>
-      </button>
-      <ul class="nav-menu" id="nav-menu">
-        <li><a href="index.html#resources">Home</a></li>
-        <li><a href="overview.html">Overview</a></li>
-        <li><a href="training.html">Training</a></li>
-        <li><a href="forum.html">FORUM</a></li>
-      </ul>
-      <button class="theme-toggle" id="theme-toggle" aria-label="Toggle theme">
-        <span class="theme-icon">&#x1F319;</span>
-      </button>
-    </div>
-  </nav>
+  <!-- No navbar and no control panel here on purpose: this is a standalone
+       pitch page a trainer lands on cold, so nothing app-shaped frames it.
+       main.js suppresses the control panel for this page (see
+       odeIsChromelessPage). -->
 
   <main class="pt-main">
 
@@ -745,7 +734,7 @@
     </div>
   </footer>
 
-  <script src="js/main.js?v=2026-07-29-entryescape-1"></script>
+  <script src="js/main.js?v=2026-07-31-partnerchrome-1"></script>
   <script>
   (function () {
     'use strict';
