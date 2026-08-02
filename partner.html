@@ -1,935 +1,508 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="theme-color" content="#141414">
-  <script src="js/theme-color.js?v=2026-07-13-themebar-1" defer></script>
-  <title>Partner with RiseForIt · For Personal Trainers</title>
-  <meta name="description" content="You post it. They watch it. Then they vanish. I fix the leak and close your leads for you — you don't pay unless I sell.">
-  <script src="js/external-keydown-shield.js?v=2026-03-29-keydown-shield-3"></script>
-  <link rel="stylesheet" href="css/main.css?v=2026-07-29-mobilecp-1">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
-  <style>
-    /* ============ committed palette (theme-independent) ============ */
-    body.partner-page {
-      --pt-cream: #f4efe6;
-      --pt-cream-2: #ffffff;
-      --pt-ink: #17130f;
-      --pt-ink-soft: #6d6154;
-      --pt-dark: #141414;
-      --pt-dark-2: #0d0d0d;
-      --pt-dark-ink: #f8f3ec;
-      --pt-dark-soft: #9d9285;
-      --pt-accent: #ff8f1f;
-      --pt-accent-deep: #e56f00;
-      --pt-accent-soft: rgba(255, 143, 31, 0.14);
-      --pt-accent-line: rgba(255, 143, 31, 0.42);
-      --pt-line-light: rgba(23, 19, 15, 0.10);
-      --pt-line-dark: rgba(255, 255, 255, 0.10);
-      --pt-mono: 'Space Grotesk', ui-monospace, monospace;
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#0d0c0a">
+<title>RiseForIt — Partner With Me | For Personal Trainers</title>
+<meta name="description" content="You post it. They watch it. Then they vanish. I build the system, you keep training — the tools are free and the closing is performance-only.">
+<script>
+/* Signed-in visitors never see the lead gate. The auth hint is written by
+   main.js on every other page, so read it before first paint — the
+   authoritative /api/auth/me check runs later in the page script. */
+(function(){
+  try{
+    var raw=localStorage.getItem('ode_auth_user_hint_v1');
+    if(!raw)return;
+    var p=JSON.parse(raw), ts=Number(p&&p.ts||0);
+    var id=p&&p.user&&String(p.user.id||'').trim();
+    if(id&&ts>0&&(Date.now()-ts)<1000*60*60*24*14){
+      document.documentElement.className+=' rfi-authed';
+    }
+  }catch(e){}
+})();
+</script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-text-size-adjust:100%}
+:root{
+--ink:#0d0c0a;--ink2:#161412;--line:#2b2823;
+--cream:#f5f1e8;--cream2:#efe9dd;--cream-line:#ddd5c4;
+--paper:#f2ede3;--mute:#9b937f;--dark-mute:#6f6a5e;
+--amber:#f59e0b;--amber-lt:#fbbf24;--amber-glow:rgba(245,158,11,.16);
+--warn:#e0562f;
+--serif:Georgia,'Times New Roman',serif;
+--sans:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;
+}
+html{scroll-behavior:smooth}
+body{background:var(--ink);color:var(--paper);font-family:var(--sans);line-height:1.6;overflow-x:hidden}
+body.locked{overflow:hidden;height:100vh}
+/* pre-paint skip: signed in => no gate, no scroll lock, no flash */
+html.rfi-authed #gate{display:none}
+html.rfi-authed body.locked{overflow:visible;height:auto}
+.wrap{width:100%;max-width:1160px;margin:0 auto;padding:0 22px}
+::selection{background:var(--amber);color:var(--ink)}
+.rv{opacity:0;transform:translateY(24px);transition:opacity .7s cubic-bezier(.16,1,.3,1),transform .7s cubic-bezier(.16,1,.3,1)}
+.rv.in{opacity:1;transform:none}
 
-      background: var(--pt-cream);
-      color: var(--pt-ink);
-      font-family: var(--font-body);
-      /* main.css reserves --navbar-height on every body; this page has no
-         navbar, so that space would just be a cream strip above the hero. */
-      padding-top: 0;
-    }
+/* ---------- GATE ---------- */
+#gate{position:fixed;inset:0;z-index:9999;background:var(--ink);display:flex;align-items:center;justify-content:center;padding:20px;overflow-y:auto}
+#gate.hidden{display:none}
+.gate-glow{position:absolute;top:-25%;left:50%;transform:translateX(-50%);width:800px;height:800px;background:radial-gradient(circle,var(--amber-glow) 0%,transparent 62%);pointer-events:none}
+.gate-card{position:relative;width:100%;max-width:500px;background:var(--ink2);border:1px solid var(--line);border-radius:18px;padding:36px 28px;margin:auto}
+#gateHot{position:absolute;top:0;left:0;width:72px;height:72px;cursor:default;z-index:5}
+.pill{display:inline-flex;align-items:center;gap:8px;font-size:10.5px;letter-spacing:.22em;text-transform:uppercase;color:var(--amber);font-weight:800;border:1px solid rgba(245,158,11,.4);padding:7px 14px;border-radius:99px;margin-bottom:18px}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--amber);animation:pulse 1.6s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.25}}
+.gate-card h1{font-family:var(--serif);font-weight:400;font-size:clamp(25px,6vw,33px);line-height:1.18;letter-spacing:-.01em;margin-bottom:12px;color:#fff}
+.gate-card h1 i{font-style:italic;color:var(--amber)}
+.g-sub{color:var(--mute);font-size:15px;margin-bottom:24px}
+.frow{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.field{margin-bottom:13px}
+.field label{display:block;font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--mute);font-weight:700;margin-bottom:6px}
+.field input{width:100%;background:#0a0908;border:1px solid var(--line);border-radius:10px;padding:14px 15px;color:var(--paper);font-size:16px;font-family:var(--sans);transition:border-color .15s}
+.field input:focus{outline:none;border-color:var(--amber)}
+.field input.err{border-color:var(--warn)}
+.err-msg{color:#ff8a63;font-size:12.5px;margin:2px 0 12px;display:none;font-weight:600}
+.err-msg.show{display:block}
+.btn{display:block;width:100%;background:var(--amber);color:var(--ink);border:none;border-radius:10px;padding:17px;font-size:14.5px;font-weight:900;letter-spacing:.05em;text-transform:uppercase;cursor:pointer;font-family:var(--sans);transition:transform .12s,background .15s;box-shadow:0 0 34px rgba(245,158,11,.35)}
+.btn:hover{background:var(--amber-lt)}
+.btn:active{transform:scale(.985)}
+.btn[disabled]{opacity:.62;cursor:default}
+.g-fine{text-align:center;font-size:11.5px;color:#6f6a5e;margin-top:14px;line-height:1.5}
 
-    /* ============ section rhythm ============ */
-    /* no navbar on this page — the hero starts at the very top */
-    .pt-main {
-      width: 100%;
-      padding-top: 0;
-    }
-    .pt-section {
-      position: relative;
-      /* context vars: light section defaults */
-      --ctx-ink: var(--pt-ink);
-      --ctx-soft: var(--pt-ink-soft);
-      --ctx-line: var(--pt-line-light);
-      --ctx-panel: var(--pt-cream-2);
-      --ctx-panel-2: #faf5ec;
-    }
-    /* content is width-limited and centered; the dark band is full-bleed */
-    .pt-inner {
-      width: min(1080px, calc(100vw - 40px));
-      margin: 0 auto;
-      padding: clamp(56px, 10vw, 108px) 0;
-      position: relative;
-      z-index: 1;
-    }
-    .pt-section--dark {
-      --ctx-ink: var(--pt-dark-ink);
-      --ctx-soft: var(--pt-dark-soft);
-      --ctx-line: var(--pt-line-dark);
-      --ctx-panel: #1c1c1c;
-      --ctx-panel-2: #191919;
-      color: var(--pt-dark-ink);
-      /* the section is already full-viewport-width, so the band is just a bg */
-      background: var(--pt-dark);
-    }
-    .pt-section--deeper { background: var(--pt-dark-2); }
+/* ---------- SUCCESS ---------- */
+#success{position:fixed;inset:0;z-index:9998;background:rgba(13,12,10,.97);display:none;align-items:center;justify-content:center;padding:20px}
+#success.show{display:flex}
+.s-card{text-align:center;max-width:430px}
+.check{width:94px;height:94px;border-radius:50%;border:3px solid var(--amber);margin:0 auto 26px;position:relative;animation:pop .5s cubic-bezier(.16,1,.3,1);box-shadow:0 0 44px rgba(245,158,11,.3)}
+@keyframes pop{from{transform:scale(.4);opacity:0}to{transform:scale(1);opacity:1}}
+.check:after{content:'';position:absolute;left:30px;top:22px;width:19px;height:38px;border:solid var(--amber);border-width:0 5px 5px 0;transform:rotate(43deg);animation:draw .4s .3s both}
+@keyframes draw{from{opacity:0}to{opacity:1}}
+.s-card b{display:block;font-family:var(--serif);font-weight:400;font-size:30px;margin-bottom:10px;color:#fff}
+.s-card p{color:var(--mute);font-size:15px;margin-bottom:26px}
+.btn-ghost{display:inline-block;background:none;border:1.5px solid var(--amber);color:var(--amber);border-radius:10px;padding:14px 32px;font-size:12.5px;font-weight:900;letter-spacing:.08em;text-transform:uppercase;cursor:pointer;font-family:var(--sans);transition:background .15s,color .15s}
+.btn-ghost:hover{background:var(--amber);color:var(--ink)}
 
-    /* ============ shared type ============ */
-    .pt-kicker {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      padding: 0.4rem 0.82rem;
-      border-radius: 999px;
-      background: var(--pt-accent-soft);
-      border: 1px solid var(--pt-accent-line);
-      color: var(--pt-accent);
-      font-family: var(--pt-mono);
-      font-size: 0.68rem;
-      font-weight: 700;
-      letter-spacing: 0.22em;
-      text-transform: uppercase;
-    }
-    .pt-h2 {
-      font-family: var(--font-display);
-      font-weight: 900;
-      font-size: clamp(1.9rem, 6.4vw, 3.1rem);
-      line-height: 1.0;
-      letter-spacing: -0.025em;
-      margin: 18px 0 0;
-      color: var(--ctx-ink);
-    }
-    .pt-lead {
-      margin: 14px 0 0;
-      max-width: 44ch;
-      color: var(--ctx-soft);
-      font-size: clamp(0.98rem, 2.5vw, 1.1rem);
-      line-height: 1.62;
-      font-weight: 500;
-    }
-    .pt-accent { color: var(--pt-accent); }
+/* ---------- NAV ---------- */
+.band{position:sticky;top:0;z-index:60;background:rgba(13,12,10,.92);backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
+.band-in{display:flex;align-items:center;justify-content:space-between;padding:15px 0}
+.mark{font-family:var(--serif);font-size:17px;letter-spacing:.06em;color:#fff;text-decoration:none}
+.mark i{font-style:italic;color:var(--amber)}
+.band-cta{font-size:10.5px;letter-spacing:.22em;text-transform:uppercase;color:var(--amber);text-decoration:none;font-weight:800}
 
-    /* ============ buttons ============ */
-    .pt-cta-row { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 28px; }
-    .pt-btn {
-      display: inline-flex; align-items: center; justify-content: center; gap: 8px;
-      min-height: 54px; padding: 0 30px;
-      border-radius: 14px;
-      font-family: var(--font-body);
-      font-size: 1.02rem; font-weight: 700; letter-spacing: 0.01em;
-      text-decoration: none; cursor: pointer;
-      border: 1px solid transparent;
-      transition: transform 0.14s ease, box-shadow 0.14s ease, filter 0.14s ease;
-    }
-    .pt-btn-primary {
-      background: linear-gradient(135deg, var(--pt-accent), var(--pt-accent-deep));
-      color: #1a1103;
-      box-shadow: 0 16px 34px rgba(255, 143, 31, 0.34);
-    }
-    .pt-btn-primary:hover { filter: brightness(1.06); transform: translateY(-2px); }
-    .pt-btn-ghost { background: transparent; border-color: var(--ctx-line); color: var(--ctx-ink); }
-    .pt-btn-ghost:hover { border-color: var(--pt-accent); color: var(--pt-accent); }
-    .pt-btn:focus-visible { outline: 3px solid var(--pt-accent); outline-offset: 3px; }
+/* ---------- SPLIT ---------- */
+.split{display:grid;grid-template-columns:1fr 1.05fr;gap:clamp(28px,4vw,58px);align-items:start;padding:60px 0 90px}
+.vsl-col{position:sticky;top:84px}
+.vsl{position:relative;width:100%;aspect-ratio:16/9;background:var(--ink2);border:1px solid var(--line);border-radius:16px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;overflow:hidden;box-shadow:0 30px 70px rgba(0,0,0,.5),0 0 60px rgba(245,158,11,.07)}
+.play{width:72px;height:72px;border-radius:50%;background:var(--amber);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:transform .2s;box-shadow:0 0 40px rgba(245,158,11,.4)}
+.play:hover{transform:scale(1.07)}
+.play:after{content:'';border-left:21px solid var(--ink);border-top:12px solid transparent;border-bottom:12px solid transparent;margin-left:5px}
+.vsl small{font-size:10px;letter-spacing:.26em;text-transform:uppercase;color:#6f6a5e;font-weight:700;text-align:center;padding:0 20px}
+.vsl-cap{margin-top:14px;font-size:12.5px;color:var(--mute);text-align:center}
+.vsl-cap b{color:var(--amber)}
 
-    /* ============ hero ============ */
-    .pt-hero, .pt-final { overflow: hidden; }
-    .pt-hero .pt-inner { padding-top: clamp(44px, 8vw, 76px); }
-    .pt-hero::after,
-    .pt-final::after {
-      content: '';
-      position: absolute; z-index: 0; pointer-events: none;
-      left: 50%; top: 2%;
-      width: min(1000px, 120%); height: 620px;
-      transform: translateX(-50%);
-    }
-    /* left-aligned hero → glow sits behind the headline mass; centered final → centered glow */
-    .pt-hero::after { background: radial-gradient(ellipse 60% 58% at 38% 44%, rgba(255, 143, 31, 0.30), rgba(255, 143, 31, 0.06) 46%, transparent 72%); }
-    .pt-final::after { background: radial-gradient(ellipse 60% 60% at 50% 42%, rgba(255, 143, 31, 0.30), rgba(255, 143, 31, 0.07) 46%, transparent 72%); }
-    .pt-hero-h1 {
-      font-family: var(--font-display);
-      font-weight: 900;
-      font-size: clamp(2.5rem, 10vw, 5.6rem);
-      line-height: 0.98;
-      letter-spacing: -0.035em;
-      margin: 20px 0 0;
-      max-width: 16ch;
-      text-wrap: balance;
-      color: var(--pt-dark-ink);
-    }
-    .pt-hero-h1 .pt-vanish { color: var(--pt-accent); }
-    .pt-hero-sub {
-      margin: 22px 0 0;
-      max-width: 40ch;
-      color: var(--pt-dark-soft);
-      font-size: clamp(1rem, 2.9vw, 1.22rem);
-      line-height: 1.55; font-weight: 500;
-      text-wrap: balance;
-    }
-    .pt-hero-sub b { color: var(--pt-dark-ink); font-weight: 700; }
+/* ---------- RAIL ---------- */
+.sec{margin-bottom:54px}
+h1.big{font-family:var(--serif);font-weight:400;font-size:clamp(34px,5.6vw,56px);line-height:1.06;letter-spacing:-.015em;margin-bottom:22px;color:#fff}
+h1.big i{font-style:italic;color:var(--amber)}
+h2{font-family:var(--serif);font-weight:400;font-size:clamp(24px,3.6vw,34px);line-height:1.15;letter-spacing:-.01em;margin-bottom:16px;color:#fff}
+h2 i{font-style:italic;color:var(--amber)}
+.lede{font-size:clamp(15.5px,1.9vw,17px);color:#c9c2b2;line-height:1.75;margin-bottom:30px}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.stat{background:var(--ink2);border:1px solid var(--line);border-radius:12px;padding:15px 10px;text-align:center}
+.stat b{display:block;font-family:var(--serif);font-size:clamp(17px,2.2vw,22px);color:var(--amber);line-height:1.1;margin-bottom:5px}
+.stat span{font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--mute);font-weight:700;line-height:1.4}
 
-    /* ---- stat strip (hero anchor) ---- */
-    .pt-stats {
-      margin-top: 34px;
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 10px;
-    }
-    .pt-stat {
-      padding: 20px 16px 16px;
-      border-radius: var(--radius-md, 18px);
-      background: rgba(255, 255, 255, 0.03);
-      border: 1px solid var(--pt-line-dark);
-    }
-    .pt-stat-num {
-      font-family: var(--font-display);
-      font-weight: 900;
-      font-size: clamp(2.1rem, 9vw, 3.3rem);
-      color: var(--pt-accent);
-      line-height: 0.9;
-      letter-spacing: -0.02em;
-    }
-    .pt-stat-label {
-      margin-top: 10px;
-      font-family: var(--pt-mono);
-      font-size: 0.62rem; font-weight: 700;
-      letter-spacing: 0.16em; text-transform: uppercase;
-      color: var(--pt-dark-soft); line-height: 1.3;
-    }
+/* cream cards */
+.cream-card{background:var(--cream);color:#1f1c17;border-radius:16px;padding:26px 24px}
+.cream-card h2{color:#1f1c17}
+.cream-card h2 i{color:#c07a08}
+.leak-steps{counter-reset:lk;display:grid;gap:0;margin-top:8px}
+.lk{display:flex;gap:16px;align-items:baseline;padding:15px 2px;border-bottom:1px solid var(--cream-line)}
+.lk:last-child{border-bottom:none}
+.lk:before{counter-increment:lk;content:counter(lk);min-width:26px;height:26px;border-radius:50%;background:var(--amber);color:var(--ink);font-weight:900;font-size:13px;display:flex;align-items:center;justify-content:center;font-family:var(--sans)}
+.lk p{font-size:14.5px;color:#4a443a;line-height:1.6}
+.lk p b{color:#1f1c17}
 
-    /* ============ the leak ============ */
-    .pt-leak-grid { margin-top: 30px; display: grid; gap: 12px; grid-template-columns: 1fr; }
-    .pt-leak-step {
-      display: flex; align-items: flex-start; gap: 14px;
-      padding: 18px; border-radius: var(--radius-md, 18px);
-      background: var(--ctx-panel); border: 1px solid var(--ctx-line);
-    }
-    .pt-leak-step-num {
-      flex: 0 0 auto; width: 36px; height: 36px; border-radius: 11px;
-      display: grid; place-items: center;
-      background: var(--pt-accent); color: #1a1103;
-      font-family: var(--font-display); font-weight: 900; font-size: 1.05rem;
-    }
-    .pt-leak-step h3 { margin: 0; font-size: 1.05rem; font-weight: 700; color: var(--ctx-ink); }
-    .pt-leak-step p { margin: 5px 0 0; color: var(--ctx-soft); font-size: 0.92rem; line-height: 1.5; }
-    .pt-leak-punch {
-      margin-top: 22px;
-      font-family: var(--font-display); font-weight: 700;
-      font-size: clamp(1.2rem, 4vw, 1.6rem); line-height: 1.28; color: var(--ctx-ink);
-    }
-    .pt-leak-punch b { color: var(--pt-accent); }
+.free-tag{display:inline-block;background:var(--amber-glow);border:1px solid rgba(245,158,11,.45);color:var(--amber);font-size:10px;font-weight:900;letter-spacing:.2em;text-transform:uppercase;padding:6px 12px;border-radius:99px;margin-bottom:16px}
+.stack{display:grid;gap:13px;margin-top:20px}
+.item{background:var(--ink2);border:1px solid var(--line);border-radius:14px;padding:21px 20px;transition:border-color .2s,transform .2s}
+.item:hover{border-color:#3d3931;transform:translateY(-2px)}
+.item .n{font-size:10.5px;font-weight:800;letter-spacing:.22em;color:var(--amber);margin-bottom:9px}
+.item h3{font-size:16.5px;font-weight:800;margin-bottom:7px}
+.item p{font-size:14px;color:#a49c89;line-height:1.65}
 
-    /* ============ offer builder + earnings slider ============ */
-    .pt-builder { margin-top: 30px; display: grid; grid-template-columns: 1fr; gap: 24px; }
-    .pt-builder-form { display: grid; gap: 18px; align-content: start; }
-    .pt-field { display: grid; gap: 8px; }
-    .pt-field label {
-      font-family: var(--pt-mono); font-size: 0.72rem; font-weight: 700;
-      letter-spacing: 0.14em; text-transform: uppercase; color: var(--ctx-soft);
-    }
-    .pt-input {
-      width: 100%; min-height: 54px; padding: 0 16px;
-      border-radius: 14px; border: 1px solid var(--ctx-line);
-      background: var(--ctx-panel); color: var(--ctx-ink);
-      font-family: var(--font-body); font-size: 1.02rem; font-weight: 600; outline: none;
-      transition: border-color 0.15s ease, box-shadow 0.15s ease;
-    }
-    .pt-input:focus { border-color: var(--pt-accent); box-shadow: 0 0 0 3px var(--pt-accent-soft); }
-    .pt-input-price-wrap { position: relative; }
-    .pt-input-price-wrap::before {
-      content: '$'; position: absolute; left: 16px; top: 50%; transform: translateY(-50%);
-      color: var(--pt-accent); font-weight: 700; pointer-events: none;
-    }
-    .pt-input-price { padding-left: 30px; }
+/* calculator */
+.calc{background:var(--ink2);border:1px solid var(--line);border-radius:16px;padding:26px 22px}
+.calc label{display:block;font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--mute);font-weight:700;margin:16px 0 8px}
+.calc input[type=number]{width:100%;background:#0a0908;border:1px solid var(--line);border-radius:10px;padding:13px 14px;color:var(--paper);font-size:16px;font-family:var(--sans)}
+.calc input[type=number]:focus{outline:none;border-color:var(--amber)}
+.calc input[type=range]{width:100%;accent-color:var(--amber);margin-top:4px}
+.calc .cl-n{font-family:var(--serif);font-size:20px;color:var(--amber)}
+.calc-out{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:20px}
+.co{background:#0a0908;border:1px solid var(--line);border-radius:12px;padding:16px 14px;text-align:center}
+.co b{display:block;font-family:var(--serif);font-size:clamp(20px,3vw,27px);line-height:1.1;margin-bottom:5px}
+.co.you b{color:var(--amber)}
+.co.me b{color:var(--paper)}
+.co span{font-size:9.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--mute);font-weight:700}
+.calc-note{font-size:11.5px;color:#6f6a5e;margin-top:12px;line-height:1.6}
 
-    /* slider */
-    .pt-slider-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
-    .pt-slider-val { font-family: var(--font-display); font-weight: 900; font-size: 1.35rem; color: var(--pt-accent); }
-    .pt-range {
-      -webkit-appearance: none; appearance: none;
-      width: 100%; height: 8px; border-radius: 999px; outline: none;
-      background: var(--ctx-line);
-      margin: 2px 0 0;
-    }
-    .pt-range:focus-visible { box-shadow: 0 0 0 3px var(--pt-accent-soft); }
-    .pt-range::-webkit-slider-thumb {
-      -webkit-appearance: none; appearance: none;
-      width: 26px; height: 26px; border-radius: 999px; cursor: pointer;
-      background: var(--pt-accent); border: 3px solid var(--ctx-panel);
-      box-shadow: 0 4px 14px rgba(255, 143, 31, 0.5);
-    }
-    .pt-range::-moz-range-thumb {
-      width: 22px; height: 22px; border-radius: 999px; cursor: pointer;
-      background: var(--pt-accent); border: 3px solid var(--ctx-panel);
-      box-shadow: 0 4px 14px rgba(255, 143, 31, 0.5);
-    }
-    .pt-builder-hint { font-size: 0.82rem; color: var(--ctx-soft); line-height: 1.5; }
+.quote{background:var(--ink2);border-left:3px solid var(--amber);border-radius:0 12px 12px 0;padding:20px 20px;margin:16px 0}
+.quote p{font-size:16px;font-weight:700;line-height:1.5;margin-bottom:7px}
+.quote span{font-size:10.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--mute);font-weight:700}
 
-    /* earnings readout */
-    .pt-earn {
-      display: grid; gap: 12px;
-      padding: 20px; border-radius: var(--radius-lg, 26px);
-      background: var(--ctx-panel-2); border: 1px solid var(--ctx-line);
-    }
-    .pt-earn-top { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-    .pt-earn-cell { display: grid; gap: 3px; }
-    .pt-earn-cell.keep .pt-earn-num { color: var(--pt-accent); }
-    .pt-earn-label {
-      font-family: var(--pt-mono); font-size: 0.6rem; font-weight: 700;
-      letter-spacing: 0.14em; text-transform: uppercase; color: var(--ctx-soft);
-    }
-    .pt-earn-num {
-      font-family: var(--font-display); font-weight: 900;
-      font-size: clamp(1.7rem, 7vw, 2.4rem); line-height: 0.95; color: var(--ctx-ink);
-    }
-    .pt-earn-split {
-      display: flex; justify-content: space-between; gap: 10px;
-      padding-top: 12px; border-top: 1px solid var(--ctx-line);
-      font-size: 0.82rem; font-weight: 700; color: var(--ctx-soft);
-    }
-    .pt-earn-split b { color: var(--ctx-ink); }
-    .pt-earn-note { font-size: 0.72rem; color: var(--ctx-soft); line-height: 1.45; }
+.deal-rows{display:grid;gap:0;margin-top:8px}
+.dr{display:flex;gap:14px;align-items:baseline;padding:13px 2px;border-bottom:1px solid var(--cream-line)}
+.dr:last-child{border-bottom:none}
+.dr b{font-family:var(--serif);color:#c07a08;font-size:17px;min-width:86px}
+.dr p{font-size:14px;color:#4a443a}
 
-    /* mini capture-page preview (a "phone") */
-    .pt-preview-col { display: grid; justify-items: center; gap: 12px; align-content: start; }
-    .pt-phone {
-      width: min(320px, 100%);
-      border-radius: 30px; padding: 12px;
-      background: linear-gradient(180deg, #1b1b1b, #0d0d0d);
-      border: 1px solid var(--pt-accent-line);
-      box-shadow: 0 30px 60px rgba(0, 0, 0, 0.5);
-    }
-    .pt-phone-screen {
-      border-radius: 20px; overflow: hidden;
-      background: radial-gradient(circle at 50% -10%, rgba(255, 143, 31, 0.24), transparent 55%), #0b0b0b;
-      padding: 26px 20px 22px; min-height: 420px;
-      display: grid; align-content: start; gap: 12px;
-    }
-    .pt-cap-brand {
-      font-family: var(--pt-mono);
-      font-size: 0.64rem; font-weight: 700; letter-spacing: 0.24em;
-      text-transform: uppercase; color: var(--pt-accent);
-    }
-    .pt-cap-offer {
-      font-family: var(--font-display); font-weight: 900;
-      font-size: 1.75rem; line-height: 1.04; letter-spacing: -0.02em;
-      color: #f8f3ec; margin: 2px 0 0; min-height: 1.1em; word-break: break-word;
-    }
-    .pt-cap-price { font-size: 0.95rem; font-weight: 600; color: #9d9285; }
-    .pt-cap-price b { color: var(--pt-accent); font-size: 1.15rem; }
-    .pt-cap-form { display: grid; gap: 9px; margin-top: 6px; }
-    .pt-cap-input {
-      min-height: 46px; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.14);
-      background: rgba(255, 255, 255, 0.05); color: #f8f3ec; padding: 0 14px; font-size: 0.92rem; font-weight: 600;
-    }
-    .pt-cap-input::placeholder { color: rgba(248, 243, 236, 0.42); }
-    .pt-cap-btn {
-      min-height: 48px; border-radius: 12px; border: 0;
-      background: linear-gradient(135deg, var(--pt-accent), var(--pt-accent-deep));
-      color: #1a1103; font-weight: 700; font-size: 0.98rem; margin-top: 2px;
-    }
-    .pt-cap-fineprint { font-size: 0.66rem; color: rgba(248, 243, 236, 0.4); text-align: center; margin-top: 2px; }
-    .pt-preview-tag {
-      display: inline-flex; align-items: center; gap: 6px;
-      font-family: var(--pt-mono); font-size: 0.7rem; font-weight: 700;
-      letter-spacing: 0.12em; text-transform: uppercase; color: var(--ctx-soft);
-    }
+.dfy{background:linear-gradient(180deg,var(--amber-glow),var(--ink2));border:1.5px solid rgba(245,158,11,.45);border-radius:16px;padding:27px 24px}
+.dfy p{font-size:15px;color:#c9c2b2;line-height:1.75;margin-bottom:13px}
+.dfy p b{color:#fff}
+.eat{font-family:var(--serif);font-style:italic;font-size:clamp(18px,2.6vw,23px);color:var(--amber)}
 
-    /* ============ radar ============ */
-    .pt-radar-wrap { margin-top: 32px; display: grid; grid-template-columns: 1fr; gap: 26px; align-items: center; }
-    .pt-radar-stage { justify-self: center; width: min(360px, 100%); }
-    .pt-radar-svg { width: 100%; height: auto; display: block; overflow: visible; }
-    .pt-radar-ring { fill: none; stroke: var(--ctx-line); stroke-width: 1; }
-    .pt-radar-spoke { stroke: var(--ctx-line); stroke-width: 1; }
-    .pt-radar-shape {
-      fill: url(#ptRadarFill); stroke: var(--pt-accent); stroke-width: 2.5; stroke-linejoin: round;
-      filter: drop-shadow(0 0 12px rgba(255, 143, 31, 0.55));
-    }
-    .pt-radar-dot { fill: var(--pt-accent); }
-    .pt-radar-label { fill: var(--ctx-soft); font-size: 9px; font-weight: 700; font-family: var(--font-body); }
-    .pt-retention-points { display: grid; gap: 14px; }
-    .pt-retention-point { display: flex; gap: 12px; align-items: flex-start; }
-    .pt-retention-point .pt-check {
-      flex: 0 0 auto; width: 26px; height: 26px; border-radius: 999px;
-      background: var(--pt-accent); color: #1a1103;
-      display: grid; place-items: center; font-weight: 900; font-size: 0.82rem;
-    }
-    .pt-retention-point p { margin: 0; color: var(--ctx-soft); font-size: 0.95rem; line-height: 1.5; }
-    .pt-retention-point b { color: var(--ctx-ink); font-weight: 700; }
+.steps{counter-reset:st;margin-top:18px}
+.step{display:flex;gap:16px;align-items:baseline;padding:15px 2px;border-bottom:1px solid var(--line)}
+.step:first-child{border-top:1px solid var(--line)}
+.step:before{counter-increment:st;content:counter(st,decimal-leading-zero);font-weight:900;color:var(--amber);font-size:12.5px}
+.step p{font-size:14.5px;color:#c9c2b2}
+.step p b{color:#fff}
+.cta-big{display:block;text-align:center;background:var(--amber);color:var(--ink);border-radius:12px;padding:19px;font-size:14.5px;font-weight:900;letter-spacing:.05em;text-transform:uppercase;text-decoration:none;margin-top:24px;transition:background .15s,transform .12s;box-shadow:0 0 40px rgba(245,158,11,.3)}
+.cta-big:hover{background:var(--amber-lt)}
+.cta-big:active{transform:scale(.99)}
+.scarce{text-align:center;font-size:11.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--mute);font-weight:700;margin-top:15px}
+.scarce b{color:var(--amber)}
 
-    /* ============ workout builder preview ============ */
-    .pt-workout {
-      margin-top: 30px; max-width: 470px;
-      border-radius: var(--radius-lg, 26px);
-      border: 1px solid var(--ctx-line); background: var(--ctx-panel);
-      overflow: hidden; box-shadow: 0 24px 50px rgba(0, 0, 0, 0.4);
-    }
-    .pt-workout-head {
-      display: flex; align-items: center; gap: 10px;
-      padding: 16px 18px; border-bottom: 1px solid var(--ctx-line);
-      background: var(--ctx-panel-2);
-    }
-    .pt-workout-spark {
-      width: 32px; height: 32px; border-radius: 10px;
-      background: var(--pt-accent); color: #1a1103;
-      display: grid; place-items: center; font-size: 1rem;
-    }
-    .pt-workout-head-txt { display: grid; gap: 2px; }
-    .pt-workout-head-txt strong { font-size: 0.98rem; color: var(--ctx-ink); }
-    .pt-workout-head-txt span { font-size: 0.76rem; color: var(--ctx-soft); font-weight: 600; }
-    .pt-workout-body { padding: 8px 0; }
-    .pt-ex {
-      display: grid; grid-template-columns: 36px minmax(0, 1fr) auto; align-items: center; gap: 12px;
-      padding: 13px 18px; opacity: 0; transform: translateY(10px);
-    }
-    .pt-ex.in { animation: ptExIn 0.5s ease forwards; }
-    @keyframes ptExIn { to { opacity: 1; transform: translateY(0); } }
-    .pt-ex-num {
-      width: 36px; height: 36px; border-radius: 11px;
-      background: var(--pt-accent-soft); border: 1px solid var(--pt-accent-line);
-      display: grid; place-items: center; font-weight: 900; color: var(--pt-accent); font-size: 0.92rem;
-    }
-    .pt-ex-name { font-weight: 700; font-size: 0.95rem; min-width: 0; color: var(--ctx-ink); }
-    .pt-ex-name span { display: block; font-weight: 600; font-size: 0.76rem; color: var(--ctx-soft); }
-    .pt-ex-sets {
-      font-weight: 900; font-size: 0.9rem; color: var(--pt-accent);
-      background: var(--pt-accent-soft); border-radius: 999px; padding: 6px 13px; white-space: nowrap;
-    }
-    .pt-workout-foot {
-      padding: 14px 18px; border-top: 1px solid var(--ctx-line);
-      font-size: 0.82rem; color: var(--ctx-soft); font-weight: 600;
-      display: flex; align-items: center; gap: 8px;
-    }
+footer{padding:40px 0 50px;text-align:center;border-top:1px solid var(--line)}
+footer .mark{display:block;margin-bottom:12px}
+footer p{font-size:10.5px;letter-spacing:.18em;text-transform:uppercase;color:#6f6a5e;line-height:2.2}
 
-    /* ============ the deal ============ */
-    .pt-deal-card {
-      margin-top: 30px; border-radius: var(--radius-lg, 26px);
-      border: 1px solid var(--pt-accent-line);
-      background: radial-gradient(circle at 100% 0%, rgba(255, 143, 31, 0.1), transparent 46%), var(--ctx-panel);
-      box-shadow: 0 26px 54px rgba(23, 19, 15, 0.1); overflow: hidden;
-    }
-    .pt-deal-head { padding: 24px 24px 22px; border-bottom: 1px solid var(--ctx-line); }
-    .pt-deal-head h3 { margin: 0; font-family: var(--font-display); font-weight: 900; font-size: 1.6rem; color: var(--ctx-ink); }
-    .pt-deal-head p { margin: 7px 0 0; color: var(--ctx-soft); font-size: 0.92rem; }
-    .pt-deal-terms { list-style: none; margin: 0; padding: 8px 0; }
-    .pt-deal-term { display: flex; gap: 15px; align-items: flex-start; padding: 15px 24px; }
-    .pt-deal-term + .pt-deal-term { border-top: 1px solid var(--ctx-line); }
-    .pt-deal-term .pt-dot {
-      flex: 0 0 auto; margin-top: 2px;
-      width: 32px; height: 32px; border-radius: 10px;
-      background: var(--pt-accent); color: #1a1103;
-      display: grid; place-items: center; font-size: 0.82rem; font-weight: 900;
-      box-shadow: 0 6px 16px rgba(255, 143, 31, 0.36);
-    }
-    .pt-deal-term strong { font-size: 1rem; color: var(--ctx-ink); }
-    .pt-deal-term p { margin: 3px 0 0; color: var(--ctx-soft); font-size: 0.9rem; line-height: 1.5; }
-
-    /* ============ posting recipe ============ */
-    .pt-recipe { margin-top: 30px; display: grid; grid-template-columns: 1fr; gap: 12px; }
-    .pt-recipe-step { padding: 20px; border-radius: var(--radius-md, 18px); border: 1px solid var(--ctx-line); background: var(--ctx-panel); }
-    .pt-recipe-step .pt-recipe-tag {
-      font-family: var(--pt-mono); font-size: 0.68rem; font-weight: 700;
-      letter-spacing: 0.16em; text-transform: uppercase; color: var(--pt-accent);
-    }
-    .pt-recipe-step h3 { margin: 9px 0 0; font-size: 1.08rem; color: var(--ctx-ink); }
-    .pt-recipe-step p { margin: 6px 0 0; color: var(--ctx-soft); font-size: 0.9rem; line-height: 1.5; }
-
-    /* ============ final CTA ============ */
-    .pt-final .pt-inner { text-align: center; padding: clamp(72px, 13vw, 132px) 0; }
-    .pt-final h2 {
-      font-family: var(--font-display); font-weight: 900;
-      font-size: clamp(2.2rem, 8.4vw, 4rem); line-height: 1.0; letter-spacing: -0.03em;
-      max-width: 15ch; margin: 16px auto 0; color: var(--pt-dark-ink);
-    }
-    .pt-final .pt-cta-row { justify-content: center; }
-
-    /* ============ scroll reveal ============ */
-    .pt-reveal {
-      opacity: 0; transform: translateY(30px);
-      transition: opacity 0.72s cubic-bezier(.2,.7,.3,1), transform 0.72s cubic-bezier(.2,.7,.3,1);
-      transition-delay: var(--pt-delay, 0s); will-change: opacity, transform;
-    }
-    .pt-reveal.in { opacity: 1; transform: none; }
-
-    /* ============ desktop scale-up ============ */
-    @media (min-width: 720px) {
-      .pt-stats { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-      .pt-builder { grid-template-columns: 1.05fr 0.95fr; align-items: start; }
-      .pt-radar-wrap { grid-template-columns: 1fr 1fr; }
-      .pt-recipe { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    }
-    @media (min-width: 960px) {
-      .pt-recipe { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-    }
-
-    @media (prefers-reduced-motion: reduce) {
-      .pt-reveal { opacity: 1; transform: none; transition: none; }
-      .pt-ex { opacity: 1; transform: none; }
-      .pt-ex.in { animation: none; }
-      .pt-btn { transition: none; }
-    }
-  </style>
+@media(max-width:920px){
+.split{grid-template-columns:1fr;padding:38px 0 60px}
+.vsl-col{position:relative;top:0}
+.stats{grid-template-columns:repeat(2,1fr)}
+}
+@media(max-width:560px){
+.wrap{padding:0 17px}
+.frow{grid-template-columns:1fr}
+.gate-card{padding:28px 20px}
+.cream-card,.calc,.dfy{padding:22px 18px}
+}
+@media(prefers-reduced-motion:reduce){
+.rv{opacity:1;transform:none;transition:none}
+.dot,.check,.check:after{animation:none}
+.play:hover,.item:hover{transform:none}
+html{scroll-behavior:auto}
+}
+</style>
 </head>
-<body class="partner-page">
-  <div class="grain"></div>
+<body class="locked">
 
-  <!-- No navbar and no control panel here on purpose: this is a standalone
-       pitch page a trainer lands on cold, so nothing app-shaped frames it.
-       main.js suppresses the control panel for this page (see
-       odeIsChromelessPage). -->
-
-  <main class="pt-main">
-
-    <!-- 1. HERO (dark) -->
-    <section class="pt-section pt-section--dark pt-hero" aria-labelledby="pt-hero-h1">
-      <div class="pt-inner">
-        <div class="pt-reveal in">
-          <span class="pt-kicker">For personal trainers</span>
-          <h1 class="pt-hero-h1" id="pt-hero-h1">You post it.<br>They watch it.<br>Then they <span class="pt-vanish">vanish.</span></h1>
-          <p class="pt-hero-sub">I fix the leak and close your leads for you — <b>you don't pay unless I sell.</b></p>
-        </div>
-        <div class="pt-stats pt-reveal">
-          <div class="pt-stat"><div class="pt-stat-num">$0</div><div class="pt-stat-label">upfront</div></div>
-          <div class="pt-stat"><div class="pt-stat-num">50/50</div><div class="pt-stat-label">while I ramp</div></div>
-          <div class="pt-stat"><div class="pt-stat-num">25%</div><div class="pt-stat-label">my cut after</div></div>
-          <div class="pt-stat"><div class="pt-stat-num">100%</div><div class="pt-stat-label">your leads</div></div>
-        </div>
-        <div class="pt-cta-row pt-reveal">
-          <a href="index.html" class="pt-btn pt-btn-primary" data-auth="signup">Start free</a>
-          <a href="index.html" class="pt-btn pt-btn-ghost" data-auth="login">Log in</a>
-        </div>
-      </div>
-    </section>
-
-    <!-- 2. THE LEAK (light) -->
-    <section class="pt-section" aria-labelledby="pt-leak-h">
-      <div class="pt-inner">
-        <div class="pt-reveal">
-          <span class="pt-kicker">The leak</span>
-          <h2 class="pt-h2" id="pt-leak-h">The interest is there. The <span class="pt-accent">catch</span> isn't.</h2>
-          <p class="pt-lead">Someone watches your video, wants in, taps your link — and hits a dead end. No offer, no form, nowhere to leave their number. They move on and never come back.</p>
-        </div>
-        <div class="pt-leak-grid">
-          <div class="pt-leak-step pt-reveal" style="--pt-delay:.05s">
-            <span class="pt-leak-step-num">1</span>
-            <div><h3>They see you</h3><p>A good post lands. A stranger decides you might be the one.</p></div>
-          </div>
-          <div class="pt-leak-step pt-reveal" style="--pt-delay:.12s">
-            <span class="pt-leak-step-num">2</span>
-            <div><h3>They reach for you</h3><p>They tap the link in your bio — ready, motivated, hand raised.</p></div>
-          </div>
-          <div class="pt-leak-step pt-reveal" style="--pt-delay:.19s">
-            <span class="pt-leak-step-num">3</span>
-            <div><h3>They vanish</h3><p>Nothing catches them. The moment passes. That lead is gone for good.</p></div>
-          </div>
-        </div>
-        <p class="pt-leak-punch pt-reveal">It's not a one-time miss. It's a <b>compounding loss</b> — every day it stays broken, more paying clients slip through.</p>
-      </div>
-    </section>
-
-    <!-- 3. INTERACTIVE OFFER BUILDER + EARNINGS SLIDER (dark) -->
-    <section class="pt-section pt-section--dark" aria-labelledby="pt-builder-h">
-      <div class="pt-inner">
-        <div class="pt-reveal">
-          <span class="pt-kicker">Build it live</span>
-          <h2 class="pt-h2" id="pt-builder-h">Type your offer. Watch it become a <span class="pt-accent">catch page.</span></h2>
-          <p class="pt-lead">This is what a lead sees the second they tap your link — an offer they want and one box to leave their name and number.</p>
-        </div>
-        <div class="pt-builder">
-          <div class="pt-builder-form pt-reveal">
-            <div class="pt-field">
-              <label for="pt-offer-input">Your offer</label>
-              <input id="pt-offer-input" class="pt-input" type="text" maxlength="48" value="Get fit in 30 days" placeholder="e.g. Get fit in 30 days" autocomplete="off">
-            </div>
-            <div class="pt-field">
-              <label for="pt-price-input">Your price per client</label>
-              <div class="pt-input-price-wrap">
-                <input id="pt-price-input" class="pt-input pt-input-price" type="text" inputmode="numeric" maxlength="5" value="149" placeholder="149" autocomplete="off">
-              </div>
-            </div>
-            <div class="pt-field">
-              <div class="pt-slider-head">
-                <label for="pt-clients-slider">How much I sell for you</label>
-                <span class="pt-slider-val"><span id="pt-clients-out">8</span> clients</span>
-              </div>
-              <input id="pt-clients-slider" class="pt-range" type="range" min="0" max="30" step="1" value="8" aria-label="Clients I close for you">
-            </div>
-            <div class="pt-earn" aria-live="polite">
-              <div class="pt-earn-top">
-                <div class="pt-earn-cell keep">
-                  <span class="pt-earn-label">You keep</span>
-                  <span class="pt-earn-num" id="pt-calc-keep">$596</span>
-                </div>
-                <div class="pt-earn-cell">
-                  <span class="pt-earn-label">Total sold</span>
-                  <span class="pt-earn-num" id="pt-calc-total">$1,192</span>
-                </div>
-              </div>
-              <div class="pt-earn-split"><span>My cut</span><b id="pt-calc-cut">$596</b></div>
-              <p class="pt-earn-note">50/50 until my half hits $500, then you keep 75% of everything I close after. Slide to see your take grow.</p>
-            </div>
-            <p class="pt-builder-hint">Preview updates as you type. Nothing here saves or sends — it's just to show you the page your leads would land on.</p>
-          </div>
-          <div class="pt-preview-col pt-reveal" style="--pt-delay:.08s">
-            <div class="pt-phone" role="img" aria-label="Preview of a mobile capture page showing your offer and a name-and-number form">
-              <div class="pt-phone-screen">
-                <span class="pt-cap-brand">Coached on RiseForIt</span>
-                <h3 class="pt-cap-offer" id="pt-cap-offer">Get fit in 30 days</h3>
-                <p class="pt-cap-price">Spots from <b id="pt-cap-price">$149</b></p>
-                <div class="pt-cap-form" aria-hidden="true">
-                  <input class="pt-cap-input" type="text" placeholder="Your name" tabindex="-1" readonly>
-                  <input class="pt-cap-input" type="tel" placeholder="Phone number" tabindex="-1" readonly>
-                  <button class="pt-cap-btn" type="button" tabindex="-1" disabled>Claim my spot</button>
-                </div>
-                <p class="pt-cap-fineprint">Preview only — no info is collected here.</p>
-              </div>
-            </div>
-            <span class="pt-preview-tag">● Live preview</span>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- 4. CLIENT RETENTION — RADAR (light) -->
-    <section class="pt-section" aria-labelledby="pt-radar-h">
-      <div class="pt-inner">
-        <div class="pt-reveal">
-          <span class="pt-kicker">Why they stay</span>
-          <h2 class="pt-h2" id="pt-radar-h">Their progress becomes a <span class="pt-accent">game they don't quit.</span></h2>
-          <p class="pt-lead">Every client gets a live profile that fills in as they train. Watching the shape grow is what pulls them back — day after day, week after week.</p>
-        </div>
-        <div class="pt-radar-wrap">
-          <div class="pt-radar-stage pt-reveal">
-            <svg class="pt-radar-svg" id="pt-radar" viewBox="0 0 240 240" role="img" aria-label="Radar chart with six axes — Strength, Cardio, Nutrition, Consistency, Recovery and Mobility — filling in as the client progresses">
-              <defs>
-                <radialGradient id="ptRadarFill" cx="50%" cy="50%" r="50%">
-                  <stop offset="0%" stop-color="rgba(255,143,31,0.55)"/>
-                  <stop offset="100%" stop-color="rgba(255,143,31,0.12)"/>
-                </radialGradient>
-              </defs>
-              <g id="pt-radar-grid"></g>
-              <polygon id="pt-radar-shape" class="pt-radar-shape" points=""></polygon>
-              <g id="pt-radar-dots"></g>
-              <g id="pt-radar-labels"></g>
-            </svg>
-          </div>
-          <div class="pt-retention-points pt-reveal" style="--pt-delay:.08s">
-            <div class="pt-retention-point"><span class="pt-check">✓</span><p><b>Six axes, one identity.</b> Strength, Cardio, Nutrition, Consistency, Recovery, Mobility — their whole self, at a glance.</p></div>
-            <div class="pt-retention-point"><span class="pt-check">✓</span><p><b>Every session moves the shape.</b> Real progress they can see, not a number buried in a spreadsheet.</p></div>
-            <div class="pt-retention-point"><span class="pt-check">✓</span><p><b>Retention on autopilot.</b> Clients who watch themselves level up don't cancel — they show up.</p></div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- 5. WORKOUT BUILDER PREVIEW (dark) -->
-    <section class="pt-section pt-section--dark" aria-labelledby="pt-workout-h">
-      <div class="pt-inner">
-        <div class="pt-reveal">
-          <span class="pt-kicker">Zero busywork</span>
-          <h2 class="pt-h2" id="pt-workout-h">Their plan builds itself in <span class="pt-accent">seconds.</span></h2>
-          <p class="pt-lead">You set the direction; the app assembles the workout — sets, reps and all — so you spend your time coaching, not typing.</p>
-        </div>
-        <div class="pt-workout pt-reveal" id="pt-workout">
-          <div class="pt-workout-head">
-            <span class="pt-workout-spark">✦</span>
-            <div class="pt-workout-head-txt">
-              <strong>Building today's session…</strong>
-              <span>Upper body · hypertrophy · 45 min</span>
-            </div>
-          </div>
-          <div class="pt-workout-body" id="pt-workout-body">
-            <div class="pt-ex" style="--pt-i:0"><span class="pt-ex-num">1</span><span class="pt-ex-name">Incline DB Press<span>Chest · upper</span></span><span class="pt-ex-sets">4 × 10</span></div>
-            <div class="pt-ex" style="--pt-i:1"><span class="pt-ex-num">2</span><span class="pt-ex-name">Lat Pulldown<span>Back · lats</span></span><span class="pt-ex-sets">3 × 12</span></div>
-            <div class="pt-ex" style="--pt-i:2"><span class="pt-ex-num">3</span><span class="pt-ex-name">Seated Shoulder Press<span>Delts</span></span><span class="pt-ex-sets">3 × 10</span></div>
-            <div class="pt-ex" style="--pt-i:3"><span class="pt-ex-num">4</span><span class="pt-ex-name">Cable Row<span>Back · mid</span></span><span class="pt-ex-sets">3 × 12</span></div>
-            <div class="pt-ex" style="--pt-i:4"><span class="pt-ex-num">5</span><span class="pt-ex-name">Face Pull<span>Rear delts</span></span><span class="pt-ex-sets">3 × 15</span></div>
-          </div>
-          <div class="pt-workout-foot"><span class="pt-accent">✓</span> Plan ready — pushed to your client's app.</div>
-        </div>
-      </div>
-    </section>
-
-    <!-- 6. THE DEAL (light) -->
-    <section class="pt-section" aria-labelledby="pt-deal-h">
-      <div class="pt-inner">
-        <div class="pt-reveal">
-          <span class="pt-kicker">The deal</span>
-          <h2 class="pt-h2" id="pt-deal-h">Plain terms. <span class="pt-accent">No surprises.</span></h2>
-          <p class="pt-lead">I only make money when you make money. Here's exactly how it works.</p>
-        </div>
-        <div class="pt-deal-card pt-reveal">
-          <div class="pt-deal-head">
-            <h3>You don't pay unless I sell.</h3>
-            <p>Month-to-month. Cancel-proof by design — my cut ends the moment a client leaves.</p>
-          </div>
-          <ul class="pt-deal-terms">
-            <li class="pt-deal-term"><span class="pt-dot">$0</span><div><strong>$0 upfront</strong><p>No setup fee, no monthly software bill, no risk to start.</p></div></li>
-            <li class="pt-deal-term"><span class="pt-dot">½</span><div><strong>50/50 until my half hits $500</strong><p>We split evenly on your first $1,000 in sales while I prove it works.</p></div></li>
-            <li class="pt-deal-term"><span class="pt-dot">25</span><div><strong>Then 25% of every client I personally close</strong><p>After the ramp, I only earn on the clients I bring in and close for you.</p></div></li>
-            <li class="pt-deal-term"><span class="pt-dot">↺</span><div><strong>Month-to-month</strong><p>My cut ends when the client leaves. I stay motivated to keep them happy.</p></div></li>
-            <li class="pt-deal-term"><span class="pt-dot">↧</span><div><strong>Your leads are always yours</strong><p>Every name and number is exportable, anytime. You own your list — full stop.</p></div></li>
-          </ul>
-        </div>
-      </div>
-    </section>
-
-    <!-- 7. POSTING RECIPE (light) -->
-    <section class="pt-section" aria-labelledby="pt-recipe-h">
-      <div class="pt-inner">
-        <div class="pt-reveal">
-          <span class="pt-kicker">Grow your following</span>
-          <h2 class="pt-h2" id="pt-recipe-h">Don't know what to post? <span class="pt-accent">Here's the formula.</span></h2>
-          <p class="pt-lead">You bring the reps on camera. I hand you a repeatable recipe so posting never means staring at a blank screen.</p>
-        </div>
-        <div class="pt-recipe">
-          <div class="pt-recipe-step pt-reveal" style="--pt-delay:.05s"><span class="pt-recipe-tag">Hook</span><h3>Reveal a problem</h3><p>Open with the mistake or myth your ideal client is living right now.</p></div>
-          <div class="pt-recipe-step pt-reveal" style="--pt-delay:.1s"><span class="pt-recipe-tag">Body</span><h3>Talk about the one thing</h3><p>One idea per video. Go deep on a single fix — not ten tips.</p></div>
-          <div class="pt-recipe-step pt-reveal" style="--pt-delay:.15s"><span class="pt-recipe-tag">Close</span><h3>Same CTA every time</h3><p>End with the identical call to action so it sticks and compounds.</p></div>
-          <div class="pt-recipe-step pt-reveal" style="--pt-delay:.2s"><span class="pt-recipe-tag">Cadence</span><h3>1 a day, 1 weekly for the free app</h3><p>One post daily, plus one a week pointing people to the free app.</p></div>
-        </div>
-      </div>
-    </section>
-
-    <!-- 8. FINAL CTA (deep dark) -->
-    <section class="pt-section pt-section--dark pt-section--deeper pt-final" aria-labelledby="pt-final-h">
-      <div class="pt-inner">
-        <div class="pt-reveal">
-          <span class="pt-kicker">Let's go</span>
-          <h2 id="pt-final-h">You bring the reps. I'll bring the clients.</h2>
-          <div class="pt-cta-row">
-            <a href="index.html" class="pt-btn pt-btn-primary" data-auth="signup">Start free</a>
-          </div>
-        </div>
-      </div>
-    </section>
-  </main>
-
-  <footer class="footer">
-    <div class="container">
-      <div class="footer-content">
-        <div class="footer-section">
-          <h4>RiseForIt</h4>
-          <p>Systems-first training, luxury presentation, relentless execution.</p>
-        </div>
-        <div class="footer-section">
-          <h4>Links</h4>
-          <ul>
-            <li><a href="index.html">Home</a></li>
-            <li><a href="training.html">Training</a></li>
-            <li><a href="macro-calculator.html">Macro Calculator</a></li>
-            <li><a href="trainers.html">Trainers</a></li>
-          </ul>
-        </div>
-        <div class="footer-section">
-          <h4>Legal</h4>
-          <ul>
-            <li><a href="privacy-policy.html">Privacy Policy</a></li>
-            <li><a href="terms.html">Terms of Service</a></li>
-          </ul>
-        </div>
-      </div>
-      <div class="footer-bottom">
-        <p>&copy; 2026 RiseForIt. All rights reserved.</p>
-      </div>
+<!-- ============ GATE (first visit only) ============ -->
+<div id="gate">
+  <div class="gate-glow"></div>
+  <div class="gate-card">
+    <div id="gateHot"></div>
+    <div class="pill"><span class="dot"></span>For personal trainers</div>
+    <h1>The script that writes your first <i>client-getting video</i> in 15 minutes.</h1>
+    <p class="g-sub">The PDF, the video, and free beta access to the whole trainer stack — on the other side of this. Tell me where to send it.</p>
+    <div class="frow">
+      <div class="field"><label for="gFirst">First name</label><input type="text" id="gFirst" autocomplete="given-name" placeholder="First"></div>
+      <div class="field"><label for="gLast">Last name</label><input type="text" id="gLast" autocomplete="family-name" placeholder="Last"></div>
     </div>
-  </footer>
+    <div class="field"><label for="gPhone">Phone</label><input type="tel" id="gPhone" autocomplete="tel" placeholder="(555) 000-0000"></div>
+    <div class="field"><label for="gEmail">Email</label><input type="email" id="gEmail" autocomplete="email" placeholder="you@email.com"></div>
+    <div class="err-msg" id="gErr">All four, please — so I know where to send it.</div>
+    <button class="btn" id="gBtn">Send me the script &rarr;</button>
+    <p class="g-fine">No spam. No selling your info. Built by the guy who closes leads for trainers — not an agency.</p>
+  </div>
+</div>
 
-  <script src="js/main.js?v=2026-07-31-partnerchrome-1"></script>
-  <script>
-  (function () {
-    'use strict';
-    var reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+<!-- ============ SUCCESS ============ -->
+<div id="success">
+  <div class="s-card">
+    <div class="check"></div>
+    <b>You're in.</b>
+    <p id="sCopy">Your PDF will download shortly. Watch the video first — it's the whole system in four minutes.</p>
+    <button class="btn-ghost" id="sBtn">Take me to it &rarr;</button>
+  </div>
+</div>
 
-    /* ---- CTA wiring: open the site's inline auth, fall back to index ---- */
-    document.querySelectorAll('[data-auth]').forEach(function (el) {
-      el.addEventListener('click', function (e) {
-        var mode = el.getAttribute('data-auth');
-        if (typeof window.odeOpenAuthModal === 'function') {
-          e.preventDefault();
-          try { window.odeOpenAuthModal(mode); } catch (err) { window.location.href = 'index.html'; }
-        }
-      });
-    });
+<!-- ============ NAV ============ -->
+<div class="band">
+  <div class="wrap band-in">
+    <a class="mark" href="/">Rise<i>ForIt</i></a>
+    <a class="band-cta" href="#start">Start onboarding</a>
+  </div>
+</div>
 
-    /* ---- Scroll reveals (IntersectionObserver + a scroll-sweep safety net so
-           a fast fling or a deep-link to the bottom never leaves one hidden) ---- */
-    var reveals = Array.prototype.slice.call(document.querySelectorAll('.pt-reveal'));
-    if (reduced || !('IntersectionObserver' in window)) {
-      reveals.forEach(function (r) { r.classList.add('in'); });
-    } else {
-      var io = new IntersectionObserver(function (entries) {
-        entries.forEach(function (en) {
-          if (en.isIntersecting) { en.target.classList.add('in'); io.unobserve(en.target); }
-        });
-      }, { threshold: 0.16, rootMargin: '0px 0px -8% 0px' });
-      reveals.forEach(function (r) { if (!r.classList.contains('in')) io.observe(r); });
+<!-- ============ SPLIT ============ -->
+<main class="wrap split">
 
-      // Fallback: reveal anything already within the viewport, in case the
-      // observer misses an element during a very fast programmatic scroll.
-      var sweeping = false;
-      function sweep() {
-        sweeping = false;
-        var vh = window.innerHeight || 0;
-        reveals.forEach(function (r) {
-          if (r.classList.contains('in')) return;
-          var rect = r.getBoundingClientRect();
-          if (rect.top < vh * 0.92 && rect.bottom > 0) { r.classList.add('in'); io.unobserve(r); }
-        });
-      }
-      window.addEventListener('scroll', function () {
-        if (!sweeping) { sweeping = true; requestAnimationFrame(sweep); }
-      }, { passive: true });
-      window.addEventListener('resize', sweep);
-    }
+  <div class="vsl-col">
+    <div class="vsl" id="vsl">
+      <div class="play"></div>
+      <small>VSL PLACEHOLDER &mdash; replace this block with the video embed</small>
+    </div>
+    <p class="vsl-cap"><b>Watch this first.</b> How trainers on here get clients without selling &mdash; 4 minutes.</p>
+  </div>
 
-    /* ---- Offer builder + earnings slider ---- */
-    var offerIn = document.getElementById('pt-offer-input');
-    var priceIn = document.getElementById('pt-price-input');
-    var clientsIn = document.getElementById('pt-clients-slider');
-    var offerOut = document.getElementById('pt-cap-offer');
-    var priceOut = document.getElementById('pt-cap-price');
-    var clientsOut = document.getElementById('pt-clients-out');
-    var totalOut = document.getElementById('pt-calc-total');
-    var keepOut = document.getElementById('pt-calc-keep');
-    var cutOut = document.getElementById('pt-calc-cut');
+  <div>
+    <section class="sec">
+      <h1 class="big">You post it. They watch it. Then they <i>vanish.</i></h1>
+      <p class="lede">You're a real trainer with real skill — and a bio link that leads nowhere. The problem was never your coaching. It's that nobody built you the system: what to post, where leads land, and who closes them. I built it. The tools are free. The closing is performance-only.</p>
+      <div class="stats">
+        <div class="stat"><b>$0</b><span>Upfront</span></div>
+        <div class="stat"><b>50/50</b><span>While I ramp</span></div>
+        <div class="stat"><b>25%</b><span>My cut after</span></div>
+        <div class="stat"><b>100%</b><span>Your leads</span></div>
+      </div>
+    </section>
 
-    function money(n) { return '$' + Math.round(n).toLocaleString('en-US'); }
+    <section class="sec rv">
+      <div class="cream-card">
+        <h2>The <i>leak.</i></h2>
+        <div class="leak-steps">
+          <div class="lk"><p><b>They see you.</b> Your reel lands. They're interested.</p></div>
+          <div class="lk"><p><b>They reach for you.</b> Tap the bio link&hellip; and hit a dead end.</p></div>
+          <div class="lk"><p><b>They vanish.</b> No page, no capture, no follow-up. A compounding loss — every single post.</p></div>
+        </div>
+      </div>
+    </section>
 
-    // Deal math: 50/50 on the first $1,000 in sales (my half caps at $500),
-    // then the trainer keeps 75% (my cut = 25%) on everything above that.
-    function split(total) {
-      var RAMP = 1000;
-      var trainer, mine;
-      if (total <= RAMP) { trainer = total * 0.5; mine = total * 0.5; }
-      else { trainer = RAMP * 0.5 + (total - RAMP) * 0.75; mine = total - trainer; }
-      return { trainer: trainer, mine: mine };
-    }
+    <section class="sec rv">
+      <span class="free-tag">Free &mdash; beta access</span>
+      <h2>The Trainer Stack. <i>All of it, $0.</i></h2>
+      <div class="stack">
+        <div class="item"><div class="n">01</div><h3>The full app — free</h3><p>Upload your clients. The engine builds each a custom workout and meal plan, tracks results and compliance, and shows you exactly where every client stands. Software trainers pay monthly for — free, because you're early.</p></div>
+        <div class="item"><div class="n">02</div><h3>The Content Adviser (beta)</h3><p>Tells you what to post and when — built on the Attack-Relate-Resolve framework with a cadence that fits your real life. No more staring at the camera wondering what to say.</p></div>
+        <div class="item"><div class="n">03</div><h3>The 15-Minute Client-Getting Script</h3><p>The PDF that just hit your downloads. Your controversial take, your story, your close — first client-getting video written in fifteen minutes.</p></div>
+        <div class="item"><div class="n">04</div><h3>A direct line to me</h3><p>You're a beta tester — your feedback shapes the build. Something breaks or something's missing, you text me and I fix it. That's the whole trade.</p></div>
+      </div>
+    </section>
 
-    function priceVal() {
-      var digits = (priceIn.value || '').replace(/[^0-9]/g, '');
-      return digits ? parseInt(digits, 10) : 0;
-    }
+    <section class="sec rv">
+      <h2>Run <i>your</i> numbers.</h2>
+      <div class="calc">
+        <label for="cPrice">What you charge per client (monthly)</label>
+        <input type="number" id="cPrice" value="149" min="20" max="2000" inputmode="numeric">
+        <label for="cClients">Clients I close for you: <span class="cl-n" id="clN">8</span></label>
+        <input type="range" id="cClients" min="1" max="30" value="8">
+        <div class="calc-out">
+          <div class="co you"><b id="oYou">$&mdash;</b><span>You keep</span></div>
+          <div class="co me"><b id="oMe">$&mdash;</b><span>My cut</span></div>
+        </div>
+        <p class="calc-note">Split is 50/50 only until my half hits $500 total — then it drops to 25% of every client I close, forever. Month to month. Your leads are always yours.</p>
+      </div>
+    </section>
 
-    function syncOffer() {
-      var v = (offerIn.value || '').trim();
-      offerOut.textContent = v || 'Your offer here';
-    }
-    function syncPrice() {
-      var digits = (priceIn.value || '').replace(/[^0-9]/g, '');
-      priceIn.value = digits;
-      priceOut.textContent = digits ? '$' + parseInt(digits, 10).toLocaleString('en-US') : '$—';
-    }
-    function syncEarnings() {
-      var clients = parseInt(clientsIn.value, 10) || 0;
-      var total = priceVal() * clients;
-      var s = split(total);
-      clientsOut.textContent = clients;
-      totalOut.textContent = money(total);
-      keepOut.textContent = money(s.trainer);
-      cutOut.textContent = money(s.mine);
-    }
+    <section class="sec rv">
+      <h2>It's already <i>working.</i></h2>
+      <div class="quote"><p>"He went from zero to 3,000 views. Don't be vague. Be specific. Use the loop."</p><span>Trainer on the system &mdash; first month</span></div>
+      <div class="quote"><p>Site built, brand voice locked, four videos posted — in his first week.</p><span>Remote coach &mdash; Augusta, GA</span></div>
+    </section>
 
-    if (offerIn && priceIn && clientsIn) {
-      offerIn.addEventListener('input', syncOffer);
-      priceIn.addEventListener('input', function () { syncPrice(); syncEarnings(); });
-      clientsIn.addEventListener('input', syncEarnings);
-      syncOffer(); syncPrice(); syncEarnings();
-    }
+    <section class="sec rv">
+      <div class="cream-card">
+        <h2>The <i>deal.</i></h2>
+        <div class="deal-rows">
+          <div class="dr"><b>$0</b><p>Upfront. No software fees. Ever.</p></div>
+          <div class="dr"><b>50/50</b><p>We split what I close — until my half reaches $500.</p></div>
+          <div class="dr"><b>25%</b><p>Then my cut drops — for every client I close after.</p></div>
+          <div class="dr"><b>M2M</b><p>Month to month. No contracts, no lock-in.</p></div>
+          <div class="dr"><b>Yours</b><p>Your leads, always. Exportable anytime.</p></div>
+        </div>
+      </div>
+    </section>
 
-    /* ---- Radar chart (matches the app's spider style) ---- */
-    var AXES = [
-      { label: 'Strength', value: 78 },
-      { label: 'Cardio', value: 62 },
-      { label: 'Nutrition', value: 55 },
-      { label: 'Consistency', value: 88 },
-      { label: 'Recovery', value: 50 },
-      { label: 'Mobility', value: 68 }
-    ];
-    var CX = 120, CY = 120, R = 82, N = AXES.length;
-    function pt(i, radius) {
-      var ang = (Math.PI * 2 * i) / N - Math.PI / 2;
-      return [CX + Math.cos(ang) * radius, CY + Math.sin(ang) * radius];
-    }
-    var SVGNS = 'http://www.w3.org/2000/svg';
-    function mk(tag, attrs) {
-      var el = document.createElementNS(SVGNS, tag);
-      for (var k in attrs) el.setAttribute(k, attrs[k]);
-      return el;
-    }
-    var gridG = document.getElementById('pt-radar-grid');
-    var dotsG = document.getElementById('pt-radar-dots');
-    var labelsG = document.getElementById('pt-radar-labels');
-    var shape = document.getElementById('pt-radar-shape');
-    if (gridG && shape) {
-      [0.25, 0.5, 0.75, 1].forEach(function (ring) {
-        var pts = AXES.map(function (a, i) { return pt(i, R * ring).map(function (n) { return n.toFixed(1); }).join(','); }).join(' ');
-        gridG.appendChild(mk('polygon', { points: pts, class: 'pt-radar-ring' }));
-      });
-      AXES.forEach(function (a, i) {
-        var edge = pt(i, R);
-        gridG.appendChild(mk('line', { x1: CX, y1: CY, x2: edge[0].toFixed(1), y2: edge[1].toFixed(1), class: 'pt-radar-spoke' }));
-        var lp = pt(i, R + 22);
-        var anchor = Math.abs(lp[0] - CX) < 4 ? 'middle' : (lp[0] > CX ? 'start' : 'end');
-        var t = mk('text', { x: lp[0].toFixed(1), y: (lp[1] + 3).toFixed(1), 'text-anchor': anchor, class: 'pt-radar-label' });
-        t.textContent = a.label;
-        labelsG.appendChild(t);
-      });
-      var dots = AXES.map(function () { var d = mk('circle', { r: 3, class: 'pt-radar-dot' }); dotsG.appendChild(d); return d; });
+    <section class="sec rv">
+      <h2>Or hand me <i>the whole thing.</i></h2>
+      <div class="dfy">
+        <p><b>I build your client-getting website.</b> I hand you exactly what to post. And when leads come in, <b>I'm the one on the phone closing them</b> — you literally just train.</p>
+        <p>It costs you nothing until you're landing clients. Partners get a weekly strategy call with me, and the app keeps you accountable every day in between.</p>
+        <p class="eat">I only eat when you eat.</p>
+      </div>
+    </section>
 
-      function drawShape(t) {
-        var pts = AXES.map(function (a, i) {
-          var p = pt(i, R * (a.value / 100) * t);
-          return p.map(function (n) { return n.toFixed(1); }).join(',');
-        });
-        shape.setAttribute('points', pts.join(' '));
-        pts.forEach(function (p, i) {
-          var xy = p.split(',');
-          dots[i].setAttribute('cx', xy[0]);
-          dots[i].setAttribute('cy', xy[1]);
-        });
-      }
-      function animateRadar() {
-        if (reduced) { drawShape(1); return; }
-        var start = null, dur = 1100;
-        function ease(x) { return 1 - Math.pow(1 - x, 3); }
-        function step(ts) {
-          if (start === null) start = ts;
-          var k = Math.min(1, (ts - start) / dur);
-          drawShape(ease(k));
-          if (k < 1) requestAnimationFrame(step);
-        }
-        requestAnimationFrame(step);
-      }
-      drawShape(0);
-      var stage = document.getElementById('pt-radar');
-      if (reduced || !('IntersectionObserver' in window)) {
-        drawShape(1);
-      } else {
-        var rio = new IntersectionObserver(function (entries) {
-          entries.forEach(function (en) { if (en.isIntersecting) { animateRadar(); rio.disconnect(); } });
-        }, { threshold: 0.4 });
-        rio.observe(stage);
-      }
-    }
+    <section class="sec rv" id="start">
+      <h2>Here's how we <i>start.</i></h2>
+      <div class="steps">
+        <div class="step"><p><b>Create your account</b> — two minutes, free forever.</p></div>
+        <div class="step"><p><b>Finish trainer + content onboarding</b> — ~20 minutes of questions that become your website and posting plan. Answer rough; we sharpen together.</p></div>
+        <div class="step"><p><b>Book your call with me</b> — right in the app. We walk your site, lock your first posts, and go live.</p></div>
+      </div>
+      <a class="cta-big" href="/?authMode=signup" id="ctaStart">Start my onboarding &rarr;</a>
+      <p class="scarce">Beta capped at the first <b>12 trainers</b> &mdash; it's what I can personally support.</p>
+    </section>
+  </div>
+</main>
 
-    /* ---- Workout builder: exercises appear in sequence ---- */
-    var workout = document.getElementById('pt-workout');
-    var rows = Array.prototype.slice.call(document.querySelectorAll('#pt-workout-body .pt-ex'));
-    function revealRows() {
-      if (reduced) { rows.forEach(function (r) { r.classList.add('in'); }); return; }
-      rows.forEach(function (r, i) { setTimeout(function () { r.classList.add('in'); }, i * 280); });
-    }
-    if (workout && rows.length) {
-      if (reduced || !('IntersectionObserver' in window)) {
-        rows.forEach(function (r) { r.classList.add('in'); });
-      } else {
-        var wio = new IntersectionObserver(function (entries) {
-          entries.forEach(function (en) { if (en.isIntersecting) { revealRows(); wio.disconnect(); } });
-        }, { threshold: 0.3 });
-        wio.observe(workout);
-      }
-    }
-  })();
-  </script>
+<footer>
+  <div class="wrap">
+    <a class="mark" href="/">Rise<i>ForIt</i></a>
+    <p>You bring the reps. I'll bring the clients.<br>@odeology_ &middot; questions straight to me &middot; &copy; 2026 RiseForIt</p>
+  </div>
+</footer>
+
+<script>
+(function(){
+/* ============ CONFIG ============ */
+/* PDF_URL: drop the file in /assets and point here, e.g.
+   "/assets/the-15-minute-client-getting-script.pdf". While it's empty the
+   success card drops the download promise instead of making one it can't keep. */
+var PDF_URL     = "";
+/* Inline auth on the entry page; the trainer picks "I'm a Trainer" on the
+   role card straight after signup (there is no public role= preselect param). */
+var SIGNUP_URL  = "/?authMode=signup";
+/* Real lead endpoint — writes app_leads, fires a lead_submitted event and
+   syncs to Klaviyo/MailerLite. source:'trainer_gate' tags these in the owner table. */
+var API_URL     = "/api/track/lead";
+var WEBHOOK_URL = "";
+
+var STORE_KEY="rfi_t_seen", LIST_KEY="rfi_t_leads", OWNER_KEY="rfi_owner";
+
+window.RFILeads=[];
+try{ window.RFILeads=JSON.parse(localStorage.getItem(LIST_KEY))||[]; }catch(e){}
+
+/* The server takes firstName/lastName/email/phone/source/wants/snapshot/path —
+   map to that shape, and keep the flat local copy as the offline backup. */
+function saveLead(lead){
+  window.RFILeads.push(lead);
+  try{ localStorage.setItem(LIST_KEY,JSON.stringify(window.RFILeads)); }catch(e){}
+  try{ localStorage.setItem(STORE_KEY,"1"); }catch(e){}
+  try{ document.body.setAttribute('data-leads',JSON.stringify(window.RFILeads)); }catch(e){}
+  console.log('%c TRAINER LEAD ','background:#f59e0b;color:#0d0c0a;font-weight:bold',lead);
+
+  var payload={
+    source:'trainer_gate',
+    firstName:lead.first, lastName:lead.last,
+    email:lead.email, phone:lead.phone,
+    emailOptIn:true,
+    wants:['trainer_script_pdf'],
+    path:location.pathname+location.search+location.hash,
+    snapshot:{flow:'trainer_gate',page:lead.page,ts:lead.ts}
+  };
+  var body=JSON.stringify(payload);
+  if(API_URL){ try{ fetch(API_URL,{method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',body:body})
+    .then(function(r){console.log(r.ok?'API OK':'API '+r.status);})
+    .catch(function(e){console.warn('API failed - saved locally.',e);}); }catch(e){} }
+  if(WEBHOOK_URL){ try{ fetch(WEBHOOK_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(lead)}).catch(function(){}); }catch(e){} }
+}
+window.RFIExport=function(){ console.log(JSON.stringify(window.RFILeads,null,2)); return window.RFILeads; };
+window.RFIClear=function(){ window.RFILeads=[]; try{localStorage.removeItem(LIST_KEY);localStorage.removeItem(STORE_KEY);}catch(e){} console.log('Cleared.'); };
+
+var gate=document.getElementById('gate'), succ=document.getElementById('success');
+var gBtn=document.getElementById('gBtn'), gErr=document.getElementById('gErr');
+var f=[document.getElementById('gFirst'),document.getElementById('gLast'),
+       document.getElementById('gPhone'),document.getElementById('gEmail')];
+
+function openSite(){
+  gate.classList.add('hidden');
+  succ.classList.remove('show');
+  document.body.classList.remove('locked');
+  revealCheck();
+}
+function valid(el){
+  var v=el.value.trim();
+  if(!v)return false;
+  if(el.type==='email')return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
+  if(el.type==='tel')return v.replace(/\D/g,'').length>=10;
+  return v.length>=2;
+}
+
+/* returning visitor skips gate */
+var seen=false;
+try{ seen=localStorage.getItem(STORE_KEY)==="1"; }catch(e){}
+var isOwner=false;
+try{ isOwner=localStorage.getItem(OWNER_KEY)==='1'; }catch(e){}
+if(location.search.indexOf('preview=1')!==-1)isOwner=true;
+/* signed in (pre-paint hint) => never gated */
+var authed=document.documentElement.classList.contains('rfi-authed');
+if(seen||isOwner||authed){
+  openSite();
+  if(isOwner)console.log('%c OWNER PREVIEW — RFIOwnerOff() to restore ','background:#e0562f;color:#fff;font-weight:bold');
+}
+/* authoritative check: catches a signed-in user whose local hint expired or
+   who has never loaded the app on this browser. Never re-locks the page. */
+if(!authed){
+  try{
+    fetch('/api/auth/me',{credentials:'include'})
+      .then(function(r){return r.ok?r.json():null;})
+      .then(function(j){ if(j&&j.user){ document.documentElement.classList.add('rfi-authed'); openSite(); } })
+      .catch(function(){});
+  }catch(e){}
+}
+
+/* owner bypass: 4 taps top-left in 3s */
+var taps=0,tapTimer=null,hot=document.getElementById('gateHot');
+if(hot){hot.addEventListener('click',function(e){
+  e.stopPropagation(); taps++;
+  clearTimeout(tapTimer);
+  tapTimer=setTimeout(function(){taps=0;},3000);
+  if(taps>=4){taps=0;try{localStorage.setItem(OWNER_KEY,'1');}catch(e){}openSite();
+    console.log('%c OWNER BYPASS UNLOCKED ','background:#f59e0b;color:#0d0c0a;font-weight:bold');}
+});}
+window.RFIOwnerOff=function(){try{localStorage.removeItem(OWNER_KEY);}catch(e){}console.log('Owner off. Reload.');};
+
+/* gate submit → checkmark → PDF download */
+f.forEach(function(el){
+  el.addEventListener('input',function(){el.classList.remove('err');});
+  el.addEventListener('keydown',function(e){if(e.key==='Enter')gBtn.click();});
+});
+gBtn.addEventListener('click',function(){
+  var ok=true;
+  f.forEach(function(el){if(!valid(el)){el.classList.add('err');ok=false;}});
+  if(!ok){gErr.classList.add('show');return;}
+  gErr.classList.remove('show');
+  gBtn.disabled=true;
+  saveLead({first:f[0].value.trim(),last:f[1].value.trim(),phone:f[2].value.trim(),
+            email:f[3].value.trim(),source:'trainer_gate',page:location.href,ts:new Date().toISOString()});
+  gate.classList.add('hidden');
+  succ.classList.add('show');
+  if(PDF_URL){
+    setTimeout(function(){
+      var a=document.createElement('a');
+      a.href=PDF_URL; a.download='The-15-Minute-Client-Getting-Script.pdf';
+      document.body.appendChild(a); a.click(); a.remove();
+    },900);
+  }else{
+    var sc=document.getElementById('sCopy');
+    if(sc)sc.textContent="Watch the video first — it's the whole system in four minutes.";
+  }
+});
+document.getElementById('sBtn').addEventListener('click',openSite);
+
+/* CTA → signup */
+document.getElementById('ctaStart').addEventListener('click',function(e){
+  if(SIGNUP_URL){ this.href=SIGNUP_URL; } else { e.preventDefault(); console.warn('SIGNUP_URL not set'); }
+});
+
+/* earnings calculator — 50/50 until my half = $500, then 25% */
+var cP=document.getElementById('cPrice'), cC=document.getElementById('cClients');
+var clN=document.getElementById('clN'), oYou=document.getElementById('oYou'), oMe=document.getElementById('oMe');
+function money(n){ return '$'+Math.round(n).toLocaleString(); }
+function calc(){
+  var price=parseFloat(cP.value)||0, n=parseInt(cC.value,10)||0;
+  clN.textContent=n;
+  var R=price*n, me;
+  if(R<=1000){ me=R/2; } else { me=500+0.25*(R-1000); }
+  oYou.textContent=money(R-me);
+  oMe.textContent=money(me);
+}
+cP.addEventListener('input',calc); cC.addEventListener('input',calc); calc();
+
+/* scroll reveal */
+function revealCheck(){
+  var h=window.innerHeight;
+  document.querySelectorAll('.rv:not(.in)').forEach(function(el){
+    if(el.getBoundingClientRect().top<h-60)el.classList.add('in');
+  });
+}
+window.addEventListener('scroll',revealCheck,{passive:true});
+window.addEventListener('resize',revealCheck);
+setTimeout(revealCheck,120);
+})();
+</script>
 </body>
 </html>
