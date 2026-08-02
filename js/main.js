@@ -14948,6 +14948,17 @@ function initAuthUi() {
 
         if (trainerClientsLink) trainerClientsLink.classList.toggle('hidden', !isTrainerClientUser(user));
         trainerSection.classList.toggle('hidden', !trainerMode);
+        // Resources are trainer material, so they follow the trainer section.
+        // The owner sees them too — they're the one handing the files out.
+        // Reposition here rather than at injection time: this runs after the
+        // trainer section exists, which it doesn't when the panel is first built.
+        const resourcesSection = panel.querySelector('#control-resources-section');
+        if (resourcesSection) {
+            if (trainerSection.nextElementSibling !== resourcesSection) {
+                trainerSection.insertAdjacentElement('afterend', resourcesSection);
+            }
+            resourcesSection.classList.toggle('hidden', !(trainerMode || isOwnerClientUser(user, meta)));
+        }
         if (communitySection) communitySection.classList.toggle('hidden', trainerMode);
 
         if (originalMessagesLink) originalMessagesLink.classList.toggle('hidden', trainerMode);
@@ -22720,6 +22731,48 @@ function injectOwnerTrainerLandingLink(panel) {
     ownerSection.appendChild(link);
 }
 
+/* RESOURCES — the downloadables a trainer keeps. Driven by a list so adding
+   the next PDF is one line here, not another injector. Files live in /assets
+   and the download attribute forces a save rather than an in-tab preview. */
+const ODE_TRAINER_RESOURCES = [
+    {
+        id: 'control-resource-content-framework',
+        label: '15-Minute Framework',
+        title: 'The 15-Minute Client-Getting Script (PDF)',
+        href: '/assets/the-15-minute-client-getting-script.pdf',
+        filename: 'The-15-Minute-Client-Getting-Script.pdf',
+        icon: '#icon-book'
+    }
+];
+
+function injectResourcesSection(panel) {
+    if (!panel) return;
+    let section = panel.querySelector('#control-resources-section');
+    if (!section) {
+        section = document.createElement('div');
+        section.className = 'control-section hidden';
+        section.id = 'control-resources-section';
+        section.innerHTML = '<p class="section-label">RESOURCES</p>';
+        // Sits under the trainer's own tools, above the owner-only block.
+        const trainerSection = panel.querySelector('#control-trainer-section');
+        const ownerSection = panel.querySelector('#control-owner-section');
+        if (trainerSection?.parentElement) trainerSection.insertAdjacentElement('afterend', section);
+        else if (ownerSection?.parentElement) ownerSection.insertAdjacentElement('beforebegin', section);
+        else panel.appendChild(section);
+    }
+    ODE_TRAINER_RESOURCES.forEach((res) => {
+        if (section.querySelector(`#${res.id}`)) return;
+        const link = document.createElement('a');
+        link.className = 'control-link';
+        link.id = res.id;
+        link.href = res.href;
+        link.setAttribute('download', res.filename);
+        link.setAttribute('title', res.title);
+        link.innerHTML = `<span class="icon"><svg><use href="${res.icon}"></use></svg></span><span class="text">${res.label}</span>`;
+        section.appendChild(link);
+    });
+}
+
 /* Owner Form Hits sits directly under Trainer Landing: the page, then who
    landed on it. Same runtime injection as the links above. */
 function injectOwnerFormHitsLink(panel) {
@@ -22811,10 +22864,14 @@ function applyLaunchGating(user, meta) {
         var href = String(link.getAttribute('href') || '').trim();
         var inAccount = !!link.closest('[data-auth-section]');
         var inOwnerSection = !!link.closest('#control-owner-section');
+        // Resources are plain downloads, already hidden from non-trainers by
+        // the section itself. Exempting the whole section means every future
+        // file is live the moment it's added, with no gating list to update.
+        var inResources = !!link.closest('#control-resources-section');
         var isWebsite = LAUNCH_LIVE_TRAINER_IDS.indexOf(link.id) >= 0 || LAUNCH_LIVE_HREFS.indexOf(href) >= 0;
         // Account controls (sign in/out) and the live trainer tabs (Website,
         // Clients, Consult Form Hits, Payments, Calendar) are never gated.
-        if (inAccount || isWebsite) {
+        if (inAccount || inResources || isWebsite) {
             link.classList.remove('launch-hidden');
             setLaunchHiddenBadge(link, false);
             return;
@@ -22861,6 +22918,7 @@ function setupControlPanel() {
     injectOwnerTranscribeLink(controlPanel);
     injectOwnerTrainerLandingLink(controlPanel);
     injectOwnerFormHitsLink(controlPanel);
+    injectResourcesSection(controlPanel);
     if (odeIsChromelessPage()) {
         controlPanel.setAttribute('hidden', '');
         controlPanel.style.display = 'none';
