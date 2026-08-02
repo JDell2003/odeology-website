@@ -39,7 +39,8 @@ body.locked{overflow:hidden;height:100vh}
 /* pre-paint skip: signed in => no gate, no scroll lock, no flash */
 html.rfi-authed #gate{display:none}
 html.rfi-authed body.locked{overflow:visible;height:auto}
-.wrap{width:100%;max-width:1160px;margin:0 auto;padding:0 22px}
+.wrap{width:100%;max-width:1100px;margin:0 auto;padding:0 22px}
+.wrap-mid{max-width:900px}
 ::selection{background:var(--amber);color:var(--ink)}
 .rv{opacity:0;transform:translateY(24px);transition:opacity .7s cubic-bezier(.16,1,.3,1),transform .7s cubic-bezier(.16,1,.3,1)}
 .rv.in{opacity:1;transform:none}
@@ -49,13 +50,17 @@ html.rfi-authed body.locked{overflow:visible;height:auto}
 #gate.hidden{display:none}
 .gate-glow{position:absolute;top:-25%;left:50%;transform:translateX(-50%);width:800px;height:800px;background:radial-gradient(circle,var(--amber-glow) 0%,transparent 62%);pointer-events:none}
 .gate-card{position:relative;width:100%;max-width:500px;background:var(--ink2);border:1px solid var(--line);border-radius:18px;padding:36px 28px;margin:auto}
-#gateHot{position:absolute;top:0;left:0;width:72px;height:72px;cursor:default;z-index:5}
+/* owner bypass hotspot — 4 taps here inside 5s opens the page */
+#gateHot{position:absolute;top:0;left:0;width:84px;height:84px;cursor:default;z-index:5;border-radius:18px 0 0 0}
 .pill{display:inline-flex;align-items:center;gap:8px;font-size:10.5px;letter-spacing:.22em;text-transform:uppercase;color:var(--amber);font-weight:800;border:1px solid rgba(245,158,11,.4);padding:7px 14px;border-radius:99px;margin-bottom:18px}
 .dot{width:7px;height:7px;border-radius:50%;background:var(--amber);animation:pulse 1.6s infinite}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.25}}
 .gate-card h1{font-family:var(--serif);font-weight:400;font-size:clamp(25px,6vw,33px);line-height:1.18;letter-spacing:-.01em;margin-bottom:12px;color:#fff}
 .gate-card h1 i{font-style:italic;color:var(--amber)}
-.g-sub{color:var(--mute);font-size:15px;margin-bottom:24px}
+.g-sub{color:var(--mute);font-size:15px;margin-bottom:10px}
+.g-what{display:grid;gap:7px;margin:0 0 22px;padding:14px 16px;background:#0a0908;border:1px solid var(--line);border-radius:12px}
+.g-what li{list-style:none;display:flex;gap:10px;align-items:baseline;font-size:13.5px;color:#c9c2b2;line-height:1.5}
+.g-what li:before{content:'';flex:0 0 auto;width:5px;height:5px;border-radius:50%;background:var(--amber);transform:translateY(-2px)}
 .frow{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .field{margin-bottom:13px}
 .field label{display:block;font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--mute);font-weight:700;margin-bottom:6px}
@@ -90,9 +95,25 @@ html.rfi-authed body.locked{overflow:visible;height:auto}
 .mark i{font-style:italic;color:var(--amber)}
 .band-cta{font-size:10.5px;letter-spacing:.22em;text-transform:uppercase;color:var(--amber);text-decoration:none;font-weight:800}
 
-/* ---------- SPLIT ---------- */
-.split{display:grid;grid-template-columns:1fr 1.05fr;gap:clamp(28px,4vw,58px);align-items:start;padding:60px 0 90px}
-.vsl-col{position:sticky;top:84px}
+/* ---------- SECTION BANDS ---------- */
+/* Every idea gets its own full-bleed band; the content inside is what's
+   width-limited. No sticky side column, so no dead space beside it. */
+.s{position:relative;padding:clamp(54px,8vw,96px) 0;border-top:1px solid var(--line)}
+.s-cream{background:var(--cream);color:#1f1c17;border-top-color:transparent}
+.s-deep{background:#0a0908}
+.s-hero{border-top:none;overflow:hidden;padding-top:clamp(38px,6vw,62px)}
+.s-hero:before{content:'';position:absolute;top:-30%;left:50%;transform:translateX(-50%);width:980px;height:760px;max-width:150%;background:radial-gradient(circle,var(--amber-glow) 0%,transparent 62%);pointer-events:none}
+.s-hero .wrap{position:relative;z-index:1}
+.eyebrow{display:block;font-size:10.5px;letter-spacing:.24em;text-transform:uppercase;color:var(--amber);font-weight:800;margin-bottom:14px}
+.s-cream .eyebrow{color:#b8790a}
+
+/* ---------- HERO ---------- */
+.hero-in{text-align:center}
+h1.big{font-family:var(--serif);font-weight:400;font-size:clamp(33px,6.4vw,60px);line-height:1.05;letter-spacing:-.015em;margin:0 auto 20px;max-width:15ch;color:#fff}
+h1.big i{font-style:italic;color:var(--amber)}
+.lede{font-size:clamp(15.5px,1.9vw,17.5px);color:#c9c2b2;line-height:1.75;margin:0 auto;max-width:60ch}
+.hero-in .lede{margin-bottom:34px}
+.vsl-stage{max-width:780px;margin:0 auto 30px}
 .vsl{position:relative;width:100%;aspect-ratio:16/9;background:var(--ink2);border:1px solid var(--line);border-radius:16px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;overflow:hidden;box-shadow:0 30px 70px rgba(0,0,0,.5),0 0 60px rgba(245,158,11,.07)}
 .play{width:72px;height:72px;border-radius:50%;background:var(--amber);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:transform .2s;box-shadow:0 0 40px rgba(245,158,11,.4)}
 .play:hover{transform:scale(1.07)}
@@ -100,41 +121,42 @@ html.rfi-authed body.locked{overflow:visible;height:auto}
 .vsl small{font-size:10px;letter-spacing:.26em;text-transform:uppercase;color:#6f6a5e;font-weight:700;text-align:center;padding:0 20px}
 .vsl-cap{margin-top:14px;font-size:12.5px;color:var(--mute);text-align:center}
 .vsl-cap b{color:var(--amber)}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;max-width:820px;margin:0 auto}
+.stat{background:var(--ink2);border:1px solid var(--line);border-radius:12px;padding:16px 10px;text-align:center}
+.stat b{display:block;font-family:var(--serif);font-size:clamp(18px,2.4vw,24px);color:var(--amber);line-height:1.1;margin-bottom:6px}
+.stat span{font-size:9px;letter-spacing:.13em;text-transform:uppercase;color:var(--mute);font-weight:700;line-height:1.45;display:block}
 
-/* ---------- RAIL ---------- */
-.sec{margin-bottom:54px}
-h1.big{font-family:var(--serif);font-weight:400;font-size:clamp(34px,5.6vw,56px);line-height:1.06;letter-spacing:-.015em;margin-bottom:22px;color:#fff}
-h1.big i{font-style:italic;color:var(--amber)}
-h2{font-family:var(--serif);font-weight:400;font-size:clamp(24px,3.6vw,34px);line-height:1.15;letter-spacing:-.01em;margin-bottom:16px;color:#fff}
+/* ---------- SHARED HEADINGS ---------- */
+h2{font-family:var(--serif);font-weight:400;font-size:clamp(26px,4vw,40px);line-height:1.12;letter-spacing:-.012em;margin-bottom:16px;color:#fff}
 h2 i{font-style:italic;color:var(--amber)}
-.lede{font-size:clamp(15.5px,1.9vw,17px);color:#c9c2b2;line-height:1.75;margin-bottom:30px}
-.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
-.stat{background:var(--ink2);border:1px solid var(--line);border-radius:12px;padding:15px 10px;text-align:center}
-.stat b{display:block;font-family:var(--serif);font-size:clamp(17px,2.2vw,22px);color:var(--amber);line-height:1.1;margin-bottom:5px}
-.stat span{font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--mute);font-weight:700;line-height:1.4}
+.s-cream h2{color:#1f1c17}
+.s-cream h2 i{color:#c07a08}
+.s-cream .lede{color:#4a443a}
+.s-head{margin-bottom:30px}
+.s-head .lede{margin-left:0}
 
-/* cream cards */
-.cream-card{background:var(--cream);color:#1f1c17;border-radius:16px;padding:26px 24px}
-.cream-card h2{color:#1f1c17}
-.cream-card h2 i{color:#c07a08}
-.leak-steps{counter-reset:lk;display:grid;gap:0;margin-top:8px}
-.lk{display:flex;gap:16px;align-items:baseline;padding:15px 2px;border-bottom:1px solid var(--cream-line)}
+/* ---------- THE LEAK ---------- */
+.leak-steps{counter-reset:lk;display:grid;gap:0}
+.lk{display:flex;gap:16px;align-items:baseline;padding:17px 2px;border-bottom:1px solid var(--cream-line)}
+.lk:first-child{border-top:1px solid var(--cream-line)}
 .lk:last-child{border-bottom:none}
 .lk:before{counter-increment:lk;content:counter(lk);min-width:26px;height:26px;border-radius:50%;background:var(--amber);color:var(--ink);font-weight:900;font-size:13px;display:flex;align-items:center;justify-content:center;font-family:var(--sans)}
-.lk p{font-size:14.5px;color:#4a443a;line-height:1.6}
+.lk p{font-size:15px;color:#4a443a;line-height:1.6}
 .lk p b{color:#1f1c17}
 
+/* ---------- THE STACK ---------- */
 .free-tag{display:inline-block;background:var(--amber-glow);border:1px solid rgba(245,158,11,.45);color:var(--amber);font-size:10px;font-weight:900;letter-spacing:.2em;text-transform:uppercase;padding:6px 12px;border-radius:99px;margin-bottom:16px}
-.stack{display:grid;gap:13px;margin-top:20px}
-.item{background:var(--ink2);border:1px solid var(--line);border-radius:14px;padding:21px 20px;transition:border-color .2s,transform .2s}
+.stack{display:grid;gap:13px;grid-template-columns:repeat(2,1fr)}
+.item{background:var(--ink2);border:1px solid var(--line);border-radius:14px;padding:22px 21px;transition:border-color .2s,transform .2s}
 .item:hover{border-color:#3d3931;transform:translateY(-2px)}
 .item .n{font-size:10.5px;font-weight:800;letter-spacing:.22em;color:var(--amber);margin-bottom:9px}
 .item h3{font-size:16.5px;font-weight:800;margin-bottom:7px}
 .item p{font-size:14px;color:#a49c89;line-height:1.65}
 
-/* calculator */
-.calc{background:var(--ink2);border:1px solid var(--line);border-radius:16px;padding:26px 22px}
+/* ---------- CALCULATOR ---------- */
+.calc{background:var(--ink2);border:1px solid var(--line);border-radius:16px;padding:26px 24px;max-width:620px}
 .calc label{display:block;font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--mute);font-weight:700;margin:16px 0 8px}
+.calc label:first-child{margin-top:0}
 .calc input[type=number]{width:100%;background:#0a0908;border:1px solid var(--line);border-radius:10px;padding:13px 14px;color:var(--paper);font-size:16px;font-family:var(--sans)}
 .calc input[type=number]:focus{outline:none;border-color:var(--amber)}
 .calc input[type=range]{width:100%;accent-color:var(--amber);margin-top:4px}
@@ -147,28 +169,37 @@ h2 i{font-style:italic;color:var(--amber)}
 .co span{font-size:9.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--mute);font-weight:700}
 .calc-note{font-size:11.5px;color:#6f6a5e;margin-top:12px;line-height:1.6}
 
-.quote{background:var(--ink2);border-left:3px solid var(--amber);border-radius:0 12px 12px 0;padding:20px 20px;margin:16px 0}
-.quote p{font-size:16px;font-weight:700;line-height:1.5;margin-bottom:7px}
+/* ---------- PROOF ---------- */
+.quotes{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}
+.quote{background:var(--ink2);border-left:3px solid var(--amber);border-radius:0 12px 12px 0;padding:22px 22px}
+.quote p{font-size:16px;font-weight:700;line-height:1.5;margin-bottom:9px}
 .quote span{font-size:10.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--mute);font-weight:700}
 
-.deal-rows{display:grid;gap:0;margin-top:8px}
-.dr{display:flex;gap:14px;align-items:baseline;padding:13px 2px;border-bottom:1px solid var(--cream-line)}
+/* ---------- THE DEAL ---------- */
+.deal-rows{display:grid;gap:0}
+.dr{display:flex;gap:16px;align-items:baseline;padding:15px 2px;border-bottom:1px solid var(--cream-line)}
+.dr:first-child{border-top:1px solid var(--cream-line)}
 .dr:last-child{border-bottom:none}
-.dr b{font-family:var(--serif);color:#c07a08;font-size:17px;min-width:86px}
-.dr p{font-size:14px;color:#4a443a}
+.dr b{font-family:var(--serif);color:#c07a08;font-size:18px;min-width:92px}
+.dr p{font-size:14.5px;color:#4a443a}
 
-.dfy{background:linear-gradient(180deg,var(--amber-glow),var(--ink2));border:1.5px solid rgba(245,158,11,.45);border-radius:16px;padding:27px 24px}
+/* ---------- DFY ---------- */
+.dfy{background:linear-gradient(180deg,var(--amber-glow),var(--ink2));border:1.5px solid rgba(245,158,11,.45);border-radius:16px;padding:28px 26px}
 .dfy p{font-size:15px;color:#c9c2b2;line-height:1.75;margin-bottom:13px}
 .dfy p b{color:#fff}
-.eat{font-family:var(--serif);font-style:italic;font-size:clamp(18px,2.6vw,23px);color:var(--amber)}
+.eat{font-family:var(--serif);font-style:italic;font-size:clamp(18px,2.6vw,24px);color:var(--amber);margin-bottom:0}
 
-.steps{counter-reset:st;margin-top:18px}
-.step{display:flex;gap:16px;align-items:baseline;padding:15px 2px;border-bottom:1px solid var(--line)}
+/* ---------- START ---------- */
+.s-start{text-align:center}
+.s-start h2{margin-bottom:8px}
+.s-start .lede{margin-bottom:26px}
+.steps{counter-reset:st;text-align:left;max-width:620px;margin:0 auto}
+.step{display:flex;gap:16px;align-items:baseline;padding:16px 2px;border-bottom:1px solid var(--line)}
 .step:first-child{border-top:1px solid var(--line)}
 .step:before{counter-increment:st;content:counter(st,decimal-leading-zero);font-weight:900;color:var(--amber);font-size:12.5px}
 .step p{font-size:14.5px;color:#c9c2b2}
 .step p b{color:#fff}
-.cta-big{display:block;text-align:center;background:var(--amber);color:var(--ink);border-radius:12px;padding:19px;font-size:14.5px;font-weight:900;letter-spacing:.05em;text-transform:uppercase;text-decoration:none;margin-top:24px;transition:background .15s,transform .12s;box-shadow:0 0 40px rgba(245,158,11,.3)}
+.cta-big{display:block;text-align:center;background:var(--amber);color:var(--ink);border-radius:12px;padding:19px;font-size:14.5px;font-weight:900;letter-spacing:.05em;text-transform:uppercase;text-decoration:none;margin:26px auto 0;max-width:420px;transition:background .15s,transform .12s;box-shadow:0 0 40px rgba(245,158,11,.3)}
 .cta-big:hover{background:var(--amber-lt)}
 .cta-big:active{transform:scale(.99)}
 .scarce{text-align:center;font-size:11.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--mute);font-weight:700;margin-top:15px}
@@ -178,16 +209,18 @@ footer{padding:40px 0 50px;text-align:center;border-top:1px solid var(--line)}
 footer .mark{display:block;margin-bottom:12px}
 footer p{font-size:10.5px;letter-spacing:.18em;text-transform:uppercase;color:#6f6a5e;line-height:2.2}
 
-@media(max-width:920px){
-.split{grid-template-columns:1fr;padding:38px 0 60px}
-.vsl-col{position:relative;top:0}
+@media(max-width:820px){
+.stack,.quotes{grid-template-columns:1fr}
 .stats{grid-template-columns:repeat(2,1fr)}
+h1.big{max-width:none}
 }
 @media(max-width:560px){
 .wrap{padding:0 17px}
 .frow{grid-template-columns:1fr}
 .gate-card{padding:28px 20px}
-.cream-card,.calc,.dfy{padding:22px 18px}
+.calc,.dfy{padding:22px 18px}
+.dr{flex-direction:column;gap:4px}
+.dr b{min-width:0}
 }
 @media(prefers-reduced-motion:reduce){
 .rv{opacity:1;transform:none;transition:none}
@@ -204,9 +237,14 @@ html{scroll-behavior:auto}
   <div class="gate-glow"></div>
   <div class="gate-card">
     <div id="gateHot"></div>
-    <div class="pill"><span class="dot"></span>For personal trainers</div>
+    <div class="pill"><span class="dot"></span>Free PDF for personal trainers</div>
     <h1>The script that writes your first <i>client-getting video</i> in 15 minutes.</h1>
-    <p class="g-sub">The PDF, the video, and free beta access to the whole trainer stack — on the other side of this. Tell me where to send it.</p>
+    <p class="g-sub">One PDF. Fill this in and it's yours — straight to your downloads, nothing to wait on.</p>
+    <ul class="g-what">
+      <li>The exact structure: your controversial take, your story, your close.</li>
+      <li>Fill-in-the-blank lines — you're writing, not staring at a blank page.</li>
+      <li>Built to be filmed the same day you write it.</li>
+    </ul>
     <div class="frow">
       <div class="field"><label for="gFirst">First name</label><input type="text" id="gFirst" autocomplete="given-name" placeholder="First"></div>
       <div class="field"><label for="gLast">Last name</label><input type="text" id="gLast" autocomplete="family-name" placeholder="Last"></div>
@@ -214,7 +252,7 @@ html{scroll-behavior:auto}
     <div class="field"><label for="gPhone">Phone</label><input type="tel" id="gPhone" autocomplete="tel" placeholder="(555) 000-0000"></div>
     <div class="field"><label for="gEmail">Email</label><input type="email" id="gEmail" autocomplete="email" placeholder="you@email.com"></div>
     <div class="err-msg" id="gErr">All four, please — so I know where to send it.</div>
-    <button class="btn" id="gBtn">Send me the script &rarr;</button>
+    <button class="btn" id="gBtn">Send me the PDF &rarr;</button>
     <p class="g-fine">No spam. No selling your info. Built by the guy who closes leads for trainers — not an agency.</p>
   </div>
 </div>
@@ -224,7 +262,7 @@ html{scroll-behavior:auto}
   <div class="s-card">
     <div class="check"></div>
     <b>You're in.</b>
-    <p id="sCopy">Your PDF will download shortly. Watch the video first — it's the whole system in four minutes.</p>
+    <p id="sCopy">Your PDF is downloading now. Have a look around while it lands.</p>
     <button class="btn-ghost" id="sBtn">Take me to it &rarr;</button>
   </div>
 </div>
@@ -237,106 +275,147 @@ html{scroll-behavior:auto}
   </div>
 </div>
 
-<!-- ============ SPLIT ============ -->
-<main class="wrap split">
+<!-- ============ 1. HERO ============ -->
+<section class="s s-hero">
+  <div class="wrap hero-in">
+    <span class="eyebrow">For personal trainers</span>
+    <h1 class="big">You post it. They watch it. Then they <i>vanish.</i></h1>
+    <p class="lede">You're a real trainer with real skill — and a bio link that leads nowhere. The problem was never your coaching. It's that nobody built you the system: what to post, where leads land, and who closes them. I built it. The tools are free. The closing is performance-only.</p>
 
-  <div class="vsl-col">
-    <div class="vsl" id="vsl">
-      <div class="play"></div>
-      <small>VSL PLACEHOLDER &mdash; replace this block with the video embed</small>
+    <div class="vsl-stage">
+      <div class="vsl" id="vsl">
+        <div class="play"></div>
+        <small>VSL PLACEHOLDER &mdash; replace this block with the video embed</small>
+      </div>
+      <p class="vsl-cap"><b>Watch this first.</b> How trainers on here get clients without selling &mdash; 4 minutes.</p>
     </div>
-    <p class="vsl-cap"><b>Watch this first.</b> How trainers on here get clients without selling &mdash; 4 minutes.</p>
+
+    <div class="stats">
+      <div class="stat"><b>$0</b><span>Upfront, ever</span></div>
+      <div class="stat"><b>50/50</b><span>On the first $1,000</span></div>
+      <div class="stat"><b>25%</b><span>My cut after that</span></div>
+      <div class="stat"><b>100%</b><span>Your leads</span></div>
+    </div>
   </div>
+</section>
 
-  <div>
-    <section class="sec">
-      <h1 class="big">You post it. They watch it. Then they <i>vanish.</i></h1>
-      <p class="lede">You're a real trainer with real skill — and a bio link that leads nowhere. The problem was never your coaching. It's that nobody built you the system: what to post, where leads land, and who closes them. I built it. The tools are free. The closing is performance-only.</p>
-      <div class="stats">
-        <div class="stat"><b>$0</b><span>Upfront</span></div>
-        <div class="stat"><b>50/50</b><span>While I ramp</span></div>
-        <div class="stat"><b>25%</b><span>My cut after</span></div>
-        <div class="stat"><b>100%</b><span>Your leads</span></div>
-      </div>
-    </section>
+<!-- ============ 2. THE LEAK ============ -->
+<section class="s s-cream">
+  <div class="wrap wrap-mid rv">
+    <div class="s-head">
+      <span class="eyebrow">The problem</span>
+      <h2>The <i>leak.</i></h2>
+      <p class="lede">Interest isn't your issue. Catching it is.</p>
+    </div>
+    <div class="leak-steps">
+      <div class="lk"><p><b>They see you.</b> Your reel lands. They're interested.</p></div>
+      <div class="lk"><p><b>They reach for you.</b> Tap the bio link&hellip; and hit a dead end.</p></div>
+      <div class="lk"><p><b>They vanish.</b> No page, no capture, no follow-up. A compounding loss — every single post.</p></div>
+    </div>
+  </div>
+</section>
 
-    <section class="sec rv">
-      <div class="cream-card">
-        <h2>The <i>leak.</i></h2>
-        <div class="leak-steps">
-          <div class="lk"><p><b>They see you.</b> Your reel lands. They're interested.</p></div>
-          <div class="lk"><p><b>They reach for you.</b> Tap the bio link&hellip; and hit a dead end.</p></div>
-          <div class="lk"><p><b>They vanish.</b> No page, no capture, no follow-up. A compounding loss — every single post.</p></div>
-        </div>
-      </div>
-    </section>
-
-    <section class="sec rv">
+<!-- ============ 3. THE STACK ============ -->
+<section class="s">
+  <div class="wrap rv">
+    <div class="s-head">
       <span class="free-tag">Free &mdash; beta access</span>
       <h2>The Trainer Stack. <i>All of it, $0.</i></h2>
-      <div class="stack">
-        <div class="item"><div class="n">01</div><h3>The full app — free</h3><p>Upload your clients. The engine builds each a custom workout and meal plan, tracks results and compliance, and shows you exactly where every client stands. Software trainers pay monthly for — free, because you're early.</p></div>
-        <div class="item"><div class="n">02</div><h3>The Content Adviser (beta)</h3><p>Tells you what to post and when — built on the Attack-Relate-Resolve framework with a cadence that fits your real life. No more staring at the camera wondering what to say.</p></div>
-        <div class="item"><div class="n">03</div><h3>The 15-Minute Client-Getting Script</h3><p>The PDF that just hit your downloads. Your controversial take, your story, your close — first client-getting video written in fifteen minutes.</p></div>
-        <div class="item"><div class="n">04</div><h3>A direct line to me</h3><p>You're a beta tester — your feedback shapes the build. Something breaks or something's missing, you text me and I fix it. That's the whole trade.</p></div>
-      </div>
-    </section>
+      <p class="lede">Everything below is yours the day you sign up. No card, no trial clock.</p>
+    </div>
+    <div class="stack">
+      <div class="item"><div class="n">01</div><h3>The full app — free</h3><p>Upload your clients. The engine builds each a custom workout and meal plan, tracks results and compliance, and shows you exactly where every client stands. Software trainers pay monthly for — free, because you're early.</p></div>
+      <div class="item"><div class="n">02</div><h3>The Content Adviser (beta)</h3><p>Tells you what to post and when — built on the Attack-Relate-Resolve framework with a cadence that fits your real life. No more staring at the camera wondering what to say.</p></div>
+      <div class="item"><div class="n">03</div><h3>The 15-Minute Client-Getting Script</h3><p>The PDF that just hit your downloads. Your controversial take, your story, your close — first client-getting video written in fifteen minutes.</p></div>
+      <div class="item"><div class="n">04</div><h3>A direct line to me</h3><p>You're a beta tester — your feedback shapes the build. Something breaks or something's missing, you text me and I fix it. That's the whole trade.</p></div>
+    </div>
+  </div>
+</section>
 
-    <section class="sec rv">
+<!-- ============ 4. CALCULATOR ============ -->
+<section class="s s-deep">
+  <div class="wrap wrap-mid rv">
+    <div class="s-head">
+      <span class="eyebrow">The math</span>
       <h2>Run <i>your</i> numbers.</h2>
-      <div class="calc">
-        <label for="cPrice">What you charge per client (monthly)</label>
-        <input type="number" id="cPrice" value="149" min="20" max="2000" inputmode="numeric">
-        <label for="cClients">Clients I close for you: <span class="cl-n" id="clN">8</span></label>
-        <input type="range" id="cClients" min="1" max="30" value="8">
-        <div class="calc-out">
-          <div class="co you"><b id="oYou">$&mdash;</b><span>You keep</span></div>
-          <div class="co me"><b id="oMe">$&mdash;</b><span>My cut</span></div>
-        </div>
-        <p class="calc-note">Split is 50/50 only until my half hits $500 total — then it drops to 25% of every client I close, forever. Month to month. Your leads are always yours.</p>
+      <p class="lede">Move the slider. This is what lands in your account versus mine.</p>
+    </div>
+    <div class="calc">
+      <label for="cPrice">What you charge per client (monthly)</label>
+      <input type="number" id="cPrice" value="149" min="20" max="2000" inputmode="numeric">
+      <label for="cClients">Clients I close for you: <span class="cl-n" id="clN">8</span></label>
+      <input type="range" id="cClients" min="1" max="30" value="8">
+      <div class="calc-out">
+        <div class="co you"><b id="oYou">$&mdash;</b><span>You keep</span></div>
+        <div class="co me"><b id="oMe">$&mdash;</b><span>My cut</span></div>
       </div>
-    </section>
+      <p class="calc-note">We split 50/50 only on the first $1,000 you collect — my half caps at $500. After that my cut drops to 25% of every client I close, forever. Month to month. Your leads are always yours.</p>
+    </div>
+  </div>
+</section>
 
-    <section class="sec rv">
+<!-- ============ 5. PROOF ============ -->
+<section class="s">
+  <div class="wrap rv">
+    <div class="s-head">
+      <span class="eyebrow">Proof</span>
       <h2>It's already <i>working.</i></h2>
+    </div>
+    <div class="quotes">
       <div class="quote"><p>"He went from zero to 3,000 views. Don't be vague. Be specific. Use the loop."</p><span>Trainer on the system &mdash; first month</span></div>
       <div class="quote"><p>Site built, brand voice locked, four videos posted — in his first week.</p><span>Remote coach &mdash; Augusta, GA</span></div>
-    </section>
-
-    <section class="sec rv">
-      <div class="cream-card">
-        <h2>The <i>deal.</i></h2>
-        <div class="deal-rows">
-          <div class="dr"><b>$0</b><p>Upfront. No software fees. Ever.</p></div>
-          <div class="dr"><b>50/50</b><p>We split what I close — until my half reaches $500.</p></div>
-          <div class="dr"><b>25%</b><p>Then my cut drops — for every client I close after.</p></div>
-          <div class="dr"><b>M2M</b><p>Month to month. No contracts, no lock-in.</p></div>
-          <div class="dr"><b>Yours</b><p>Your leads, always. Exportable anytime.</p></div>
-        </div>
-      </div>
-    </section>
-
-    <section class="sec rv">
-      <h2>Or hand me <i>the whole thing.</i></h2>
-      <div class="dfy">
-        <p><b>I build your client-getting website.</b> I hand you exactly what to post. And when leads come in, <b>I'm the one on the phone closing them</b> — you literally just train.</p>
-        <p>It costs you nothing until you're landing clients. Partners get a weekly strategy call with me, and the app keeps you accountable every day in between.</p>
-        <p class="eat">I only eat when you eat.</p>
-      </div>
-    </section>
-
-    <section class="sec rv" id="start">
-      <h2>Here's how we <i>start.</i></h2>
-      <div class="steps">
-        <div class="step"><p><b>Create your account</b> — two minutes, free forever.</p></div>
-        <div class="step"><p><b>Finish trainer + content onboarding</b> — ~20 minutes of questions that become your website and posting plan. Answer rough; we sharpen together.</p></div>
-        <div class="step"><p><b>Book your call with me</b> — right in the app. We walk your site, lock your first posts, and go live.</p></div>
-      </div>
-      <a class="cta-big" href="/?authMode=signup" id="ctaStart">Start my onboarding &rarr;</a>
-      <p class="scarce">Beta capped at the first <b>12 trainers</b> &mdash; it's what I can personally support.</p>
-    </section>
+    </div>
   </div>
-</main>
+</section>
+
+<!-- ============ 6. THE DEAL ============ -->
+<section class="s s-cream">
+  <div class="wrap wrap-mid rv">
+    <div class="s-head">
+      <span class="eyebrow">Plain terms</span>
+      <h2>The <i>deal.</i></h2>
+      <p class="lede">I only make money when you make money. That's the whole agreement.</p>
+    </div>
+    <div class="deal-rows">
+      <div class="dr"><b>$0</b><p>Upfront. No software fees. Ever.</p></div>
+      <div class="dr"><b>50/50</b><p>We split what I close — on your first $1,000 collected.</p></div>
+      <div class="dr"><b>25%</b><p>Then my cut drops — for every client I close after.</p></div>
+      <div class="dr"><b>M2M</b><p>Month to month. No contracts, no lock-in.</p></div>
+      <div class="dr"><b>Yours</b><p>Your leads, always. Exportable anytime.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 7. DONE FOR YOU ============ -->
+<section class="s">
+  <div class="wrap wrap-mid rv">
+    <div class="s-head">
+      <span class="eyebrow">Or go further</span>
+      <h2>Or hand me <i>the whole thing.</i></h2>
+    </div>
+    <div class="dfy">
+      <p><b>I build your client-getting website.</b> I hand you exactly what to post. And when leads come in, <b>I'm the one on the phone closing them</b> — you literally just train.</p>
+      <p>It costs you nothing until you're landing clients. Partners get a weekly strategy call with me, and the app keeps you accountable every day in between.</p>
+      <p class="eat">I only eat when you eat.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 8. START ============ -->
+<section class="s s-deep s-start" id="start">
+  <div class="wrap wrap-mid rv">
+    <span class="eyebrow">Let's go</span>
+    <h2>Here's how we <i>start.</i></h2>
+    <p class="lede">Three steps. You can be posting by the end of the week.</p>
+    <div class="steps">
+      <div class="step"><p><b>Create your account</b> — two minutes, free forever.</p></div>
+      <div class="step"><p><b>Finish trainer + content onboarding</b> — ~20 minutes of questions that become your website and posting plan. Answer rough; we sharpen together.</p></div>
+      <div class="step"><p><b>Book your call with me</b> — right in the app. We walk your site, lock your first posts, and go live.</p></div>
+    </div>
+    <a class="cta-big" href="/?authMode=signup" id="ctaStart">Start my onboarding &rarr;</a>
+    <p class="scarce">Beta capped at the first <b>12 trainers</b> &mdash; it's what I can personally support.</p>
+  </div>
+</section>
 
 <footer>
   <div class="wrap">
@@ -355,15 +434,23 @@ var PDF_URL     = "";
 /* Inline auth on the entry page; the trainer picks "I'm a Trainer" on the
    role card straight after signup (there is no public role= preselect param). */
 var SIGNUP_URL  = "/?authMode=signup";
-/* Real lead endpoint — writes app_leads, fires a lead_submitted event and
-   syncs to Klaviyo/MailerLite. source:'trainer_gate' tags these in the owner table. */
+/* Real lead endpoint — writes app_leads, fires a lead_submitted event, emails
+   the owner a rundown, and syncs to Klaviyo/MailerLite. source:'trainer_gate'
+   is what Owner Form Hits filters on. */
 var API_URL     = "/api/track/lead";
+var EVENT_URL   = "/api/track/event";
 var WEBHOOK_URL = "";
 
 var STORE_KEY="rfi_t_seen", LIST_KEY="rfi_t_leads", OWNER_KEY="rfi_owner";
 
 window.RFILeads=[];
 try{ window.RFILeads=JSON.parse(localStorage.getItem(LIST_KEY))||[]; }catch(e){}
+
+/* Page hit — this is the "hit" half of Owner Form Hits (the fills are leads). */
+try{
+  fetch(EVENT_URL,{method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',
+    body:JSON.stringify({event:'partner_page_view',path:'/partner',props:{ref:document.referrer||''}})}).catch(function(){});
+}catch(e){}
 
 /* The server takes firstName/lastName/email/phone/source/wants/snapshot/path —
    map to that shape, and keep the flat local copy as the offline backup. */
@@ -381,7 +468,7 @@ function saveLead(lead){
     emailOptIn:true,
     wants:['trainer_script_pdf'],
     path:location.pathname+location.search+location.hash,
-    snapshot:{flow:'trainer_gate',page:lead.page,ts:lead.ts}
+    snapshot:{flow:'trainer_gate',page:lead.page,ts:lead.ts,ref:document.referrer||''}
   };
   var body=JSON.stringify(payload);
   if(API_URL){ try{ fetch(API_URL,{method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',body:body})
@@ -434,12 +521,12 @@ if(!authed){
   }catch(e){}
 }
 
-/* owner bypass: 4 taps top-left in 3s */
+/* owner bypass: 4 taps on the top-left corner of the card within 5s */
 var taps=0,tapTimer=null,hot=document.getElementById('gateHot');
 if(hot){hot.addEventListener('click',function(e){
   e.stopPropagation(); taps++;
   clearTimeout(tapTimer);
-  tapTimer=setTimeout(function(){taps=0;},3000);
+  tapTimer=setTimeout(function(){taps=0;},5000);
   if(taps>=4){taps=0;try{localStorage.setItem(OWNER_KEY,'1');}catch(e){}openSite();
     console.log('%c OWNER BYPASS UNLOCKED ','background:#f59e0b;color:#0d0c0a;font-weight:bold');}
 });}
@@ -468,7 +555,7 @@ gBtn.addEventListener('click',function(){
     },900);
   }else{
     var sc=document.getElementById('sCopy');
-    if(sc)sc.textContent="Watch the video first — it's the whole system in four minutes.";
+    if(sc)sc.textContent="I've got your details — the script lands in your inbox as soon as it's finished. Have a look around in the meantime.";
   }
 });
 document.getElementById('sBtn').addEventListener('click',openSite);

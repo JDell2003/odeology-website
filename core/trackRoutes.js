@@ -2,7 +2,7 @@ const crypto = require('crypto');
 const db = require('./db');
 const { isTransientPgError } = require('./dbErrors');
 const { isKlaviyoConfigured } = require('./klaviyoClient');
-const { emitKlaviyoEvent } = require('./emailEvents');
+const { emitKlaviyoEvent, sendOwnerLeadAlert } = require('./emailEvents');
 
 const GUEST_COOKIE_NAME = process.env.GUEST_COOKIE_NAME || 'gid';
 const MAX_BODY_BYTES = Math.max(10_000, Number(process.env.TRACK_MAX_BODY_BYTES || 400_000));
@@ -104,6 +104,14 @@ function logKlaviyoError(err, context) {
   lastKlaviyoErrorLogAt = now;
   console.warn('[track][klaviyo]', {
     context,
+    code: err?.code || null,
+    status: err?.status || null,
+    message: err?.message || String(err)
+  });
+}
+
+function logEmailAlertError(err) {
+  console.warn('[track][owner-alert]', {
     code: err?.code || null,
     status: err?.status || null,
     message: err?.message || String(err)
@@ -719,11 +727,17 @@ module.exports = async function trackRoutes(req, res, url) {
 
     try {
       await createOrUpdateLead({ lead: payload, userId, guestId });
-      await insertEvent({ eventName: 'lead_submitted', path: payload?.path || url.pathname, userId, guestId, props: { wants: payload?.wants || [] } });
+      await insertEvent({ eventName: 'lead_submitted', path: payload?.path || url.pathname, userId, guestId, props: { wants: payload?.wants || [], source: payload?.source || '' } });
       await syncLeadToKlaviyo(payload);
     } catch (err) {
       return sendJson(res, 500, { error: 'Failed to save lead' }, setCookie ? { 'Set-Cookie': setCookie } : {});
     }
+
+    // Owner notification, after the lead is safely stored. Deliberately not
+    // awaited into the response path: a mail outage must not cost us the lead
+    // or show the visitor an error.
+    sendOwnerLeadAlert({ lead: payload, source: payload?.source })
+      .catch((err) => logEmailAlertError(err));
 
     return sendJson(res, 200, { ok: true }, setCookie ? { 'Set-Cookie': setCookie } : {});
   }

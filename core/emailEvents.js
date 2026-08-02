@@ -323,12 +323,84 @@ async function sendInviteEmail({ email, displayName = '', roleLabel = 'trainer',
   });
 }
 
+/* ------------------------------------------------------------------
+   OWNER LEAD ALERT — a real email to the owner the moment someone fills
+   out a landing-page form. This is a notification, not marketing: it goes
+   to one fixed inbox, so it deliberately skips the plan allowlist that
+   gates emitKlaviyoEvent.
+   ------------------------------------------------------------------ */
+const OWNER_ALERT_SOURCES = new Set(['trainer_gate']);
+
+function ownerAlertRecipient() {
+  return String(process.env.OWNER_LEAD_ALERT_EMAIL || 'jodellpersonal@gmail.com').trim();
+}
+
+function buildOwnerLeadAlertHtml({ lead = {}, sourceLabel = 'Landing page', when = '' } = {}) {
+  const name = [lead.firstName, lead.lastName].filter(Boolean).join(' ').trim() || 'No name given';
+  const email = String(lead.email || '').trim();
+  const phone = String(lead.phone || '').trim();
+  const row = (label, value, href) => {
+    if (!String(value || '').trim()) return '';
+    const inner = href
+      ? `<a href="${escapeHtml(href)}" style="color:#b8790a;text-decoration:none">${escapeHtml(value)}</a>`
+      : escapeHtml(value);
+    return `<tr>
+      <td style="padding:9px 0;border-bottom:1px solid #ece7dc;font:700 11px/1.4 system-ui,Arial,sans-serif;letter-spacing:.08em;text-transform:uppercase;color:#9b937f;width:120px;vertical-align:top">${escapeHtml(label)}</td>
+      <td style="padding:9px 0;border-bottom:1px solid #ece7dc;font:600 15px/1.5 system-ui,Arial,sans-serif;color:#1f1c17">${inner}</td>
+    </tr>`;
+  };
+  const snapshot = lead.snapshot && typeof lead.snapshot === 'object' ? lead.snapshot : {};
+  return `<div style="background:#f5f1e8;padding:28px 0;font-family:system-ui,Segoe UI,Arial,sans-serif">
+    <div style="max-width:540px;margin:0 auto;background:#fff;border-radius:16px;overflow:hidden;border:1px solid #e4ddcd">
+      <div style="background:#0d0c0a;padding:20px 26px">
+        <div style="font:800 13px/1 system-ui,Arial,sans-serif;letter-spacing:.22em;text-transform:uppercase;color:#f59e0b">New form hit</div>
+        <div style="font:400 22px/1.3 Georgia,serif;color:#fff;margin-top:6px">${escapeHtml(name)}</div>
+      </div>
+      <div style="padding:22px 26px">
+        <table style="width:100%;border-collapse:collapse">
+          ${row('Name', name)}
+          ${row('Email', email, email ? `mailto:${email}` : '')}
+          ${row('Phone', phone, phone ? `tel:${phone}` : '')}
+          ${row('Source', sourceLabel)}
+          ${row('Page', lead.path || snapshot.page || '')}
+          ${row('Referrer', snapshot.ref || '')}
+          ${row('Submitted', when)}
+        </table>
+        <p style="margin:20px 0 0;font:400 13px/1.6 system-ui,Arial,sans-serif;color:#6f6a5e">
+          They asked for the 15-Minute Client-Getting Script. Everyone who hits the page is listed under
+          <b style="color:#1f1c17">Owner Form Hits</b> in your control panel.
+        </p>
+      </div>
+    </div>
+  </div>`;
+}
+
+// Fire-and-forget: a failed notification must never fail the visitor's submit.
+async function sendOwnerLeadAlert({ lead = {}, source = '' } = {}) {
+  const src = String(source || lead.source || '').trim().toLowerCase();
+  if (!OWNER_ALERT_SOURCES.has(src)) return { ok: false, skipped: 'source_not_alertable' };
+  const to = ownerAlertRecipient();
+  if (!to) return { ok: false, skipped: 'no_recipient' };
+
+  const name = [lead.firstName, lead.lastName].filter(Boolean).join(' ').trim() || 'Someone';
+  const when = new Date().toLocaleString('en-US', { timeZone: 'America/New_York', dateStyle: 'medium', timeStyle: 'short' }) + ' ET';
+  return sendCampaignEmail({
+    email: to,
+    subject: `New trainer lead — ${name}`,
+    html: buildOwnerLeadAlertHtml({ lead, sourceLabel: 'Trainer landing page (/partner)', when }),
+    tag: 'owner-lead-alert'
+  });
+}
+
 module.exports = {
   emitKlaviyoEvent,
   emitUserEvent,
   buildOnboardingEmailPayload,
   buildInviteEmailHtml,
   sendInviteEmail,
+  sendOwnerLeadAlert,
+  buildOwnerLeadAlertHtml,
+  OWNER_ALERT_SOURCES,
   FREE_PLAN_EVENT_ALLOWLIST,
   isEventAllowedByPlan
 };

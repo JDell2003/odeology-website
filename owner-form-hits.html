@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#140f0b">
+  <script src="js/theme-color.js?v=2026-07-13-themebar-1" defer></script>
+  <title>Owner Form Hits — RiseForIt</title>
+  <link rel="stylesheet" href="css/main.css?v=2026-07-29-mobilecp-1">
+  <style>
+    body.owner-hits-page { overflow: auto !important; }
+
+    .ofh-wrap {
+      max-width: 1080px;
+      margin: calc(var(--navbar-height, 72px) + 24px) auto 40px;
+      padding: 0 16px 24px;
+      display: grid;
+      gap: 12px;
+      align-items: start;
+    }
+    .ofh-head h1 { margin: 0; }
+    .ofh-muted { color: #666; font-size: 13px; }
+
+    .ofh-card {
+      background: rgba(255, 255, 255, 0.93);
+      border: 1px solid rgba(0, 0, 0, 0.08);
+      border-radius: 14px;
+      padding: 14px;
+    }
+
+    /* funnel counters */
+    .ofh-totals {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+    .ofh-total {
+      border: 1px solid rgba(0, 0, 0, 0.08);
+      border-radius: 12px;
+      background: #fff;
+      padding: 12px 14px;
+    }
+    .ofh-total b {
+      display: block;
+      font-size: 24px;
+      font-weight: 900;
+      color: #0f2435;
+      line-height: 1.1;
+    }
+    .ofh-total span {
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: #8a8375;
+    }
+    .ofh-total.rate b { color: #b98a2b; }
+
+    .ofh-controls {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+    }
+    .ofh-filters { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+    .ofh-select {
+      min-height: 38px;
+      border-radius: 10px;
+      border: 1px solid rgba(0, 0, 0, 0.14);
+      background: #fff;
+      padding: 0 10px;
+      font-size: 13px;
+      font-weight: 600;
+      color: #0f2435;
+    }
+
+    .ofh-list { display: grid; gap: 10px; margin-top: 12px; }
+
+    .ofh-hit {
+      border: 1px solid rgba(0, 0, 0, 0.08);
+      border-radius: 14px;
+      background: #fff;
+      padding: 14px;
+      display: grid;
+      gap: 10px;
+    }
+    .ofh-hit-top { display: flex; align-items: center; gap: 10px; min-width: 0; }
+    .ofh-ava {
+      width: 42px; height: 42px; flex: 0 0 42px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #d4a537, #b98a2b);
+      color: #1a1206;
+      font-weight: 900; font-size: 15px;
+      display: grid; place-items: center;
+    }
+    .ofh-who { min-width: 0; flex: 1 1 auto; }
+    .ofh-name { font-weight: 800; font-size: 15px; color: #0f2435; }
+    .ofh-contact { font-size: 12.5px; color: #4a5560; display: flex; gap: 8px; flex-wrap: wrap; }
+    .ofh-contact a { color: #b98a2b; text-decoration: none; font-weight: 700; }
+    .ofh-contact a:hover { text-decoration: underline; }
+
+    .ofh-meta {
+      display: flex; gap: 10px; flex-wrap: wrap;
+      font-size: 12px; color: #6f6a5e;
+      border-top: 1px solid rgba(0, 0, 0, 0.06);
+      padding-top: 9px;
+    }
+    .ofh-meta b { color: #0f2435; font-weight: 700; }
+
+    .ofh-actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+    .ofh-notes {
+      width: 100%;
+      min-height: 38px;
+      border-radius: 10px;
+      border: 1px solid rgba(0, 0, 0, 0.14);
+      padding: 9px 11px;
+      font-family: inherit;
+      font-size: 13px;
+      color: #0f2435;
+      resize: vertical;
+    }
+    .ofh-save {
+      min-height: 36px;
+      padding: 0 16px;
+      border-radius: 999px;
+      border: 0;
+      background: linear-gradient(135deg, #d4a537, #b98a2b);
+      color: #1a1206;
+      font-weight: 800;
+      font-size: 12.5px;
+      cursor: pointer;
+    }
+    .ofh-save[disabled] { opacity: 0.6; cursor: default; }
+    .ofh-saved { font-size: 12px; font-weight: 700; color: #2f7d4f; }
+
+    .ofh-pill {
+      font-size: 10px; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase;
+      padding: 4px 9px; border-radius: 999px;
+      background: rgba(212, 165, 55, 0.18); color: #8a6516;
+    }
+    .ofh-pill.repeat { background: rgba(47, 125, 79, 0.15); color: #2f7d4f; }
+
+    .ofh-status { margin-top: 10px; font-size: 13px; color: #666; }
+
+    .ofh-empty { text-align: center; padding: 26px 14px; color: #6f6a5e; }
+    .ofh-empty strong { display: block; font-size: 15px; color: #0f2435; margin-bottom: 6px; }
+
+    @media (max-width: 620px) {
+      .ofh-totals { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body class="owner-hits-page" data-require-auth="1">
+  <div class="grain"></div>
+
+  <svg aria-hidden="true" class="icon-sprite">
+    <symbol id="icon-account" viewBox="0 0 24 24">
+      <path d="M4.75 5.75a1 1 0 0 1 1-1h6.5a1 1 0 0 1 1 1v2.5"></path>
+      <path d="M13.25 15.75v3a1 1 0 0 1-1 1h-6.5a1 1 0 0 1-1-1v-13"></path>
+      <path d="M15.5 12H7.5"></path>
+      <path d="m12 9.5 3.5 2.5-3.5 2.5"></path>
+    </symbol>
+    <symbol id="icon-calendar-check" viewBox="0 0 24 24">
+      <rect x="4.5" y="6.5" width="15" height="12" rx="2"></rect>
+      <path d="M9 4.5v3M15 4.5v3M8.75 12.5l2.25 2 4-4"></path>
+    </symbol>
+    <symbol id="icon-users" viewBox="0 0 24 24">
+      <circle cx="10" cy="9" r="2.5"></circle>
+      <path d="M5.5 16.5a4.5 4.5 0 0 1 9 0"></path>
+      <circle cx="16.5" cy="10.5" r="2"></circle>
+      <path d="M14.5 15a3.5 3.5 0 0 1 5 1.5"></path>
+    </symbol>
+    <symbol id="icon-book" viewBox="0 0 24 24">
+      <path d="M8 6.5h7.5a1 1 0 0 1 1 1v11l-3-2-3 2v-12a1 1 0 0 0-1-1H8a2.5 2.5 0 0 0-2.5 2.5v10.5"></path>
+    </symbol>
+    <symbol id="icon-folder" viewBox="0 0 24 24">
+      <path d="M4.5 7.5a2 2 0 0 1 2-2h4l2 2H17.5a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-11a2 2 0 0 1-2-2v-11Z"></path>
+    </symbol>
+  </svg>
+
+  <nav class="navbar">
+    <div class="navbar-container">
+      <div class="navbar-brand"><span class="brand-wordmark" aria-label="RiseForIt"><span class="brand-char">R</span><span class="brand-char">i</span><span class="brand-char">s</span><span class="brand-char">e</span><span class="brand-char">F</span><span class="brand-char">o</span><span class="brand-char">r</span><span class="brand-char">I</span><span class="brand-char">t</span></span><span class="brand-dot"></span></div>
+      <button class="hamburger" id="hamburger" aria-label="Toggle navigation">
+        <span></span><span></span><span></span>
+      </button>
+      <ul class="nav-menu" id="nav-menu">
+        <li><a href="index.html#resources">Home</a></li>
+        <li><a href="overview.html">Overview</a></li>
+        <li><a href="training.html">Training</a></li>
+      </ul>
+      <button class="theme-toggle" id="theme-toggle" aria-label="Toggle theme"><span class="theme-icon">&#x1F319;</span></button>
+    </div>
+  </nav>
+
+  <aside class="control-panel" id="control-panel">
+    <div class="control-panel-header"></div>
+    <div class="control-section"><p class="section-label section-label-help">HELP</p><button class="control-link" id="control-tour" type="button"><span class="icon"><svg><use href="#icon-book"></use></svg></span><span class="text">Quick tour</span></button></div>
+    <div class="control-section"><p class="section-label">DASH</p><div class="control-pill-row"><button class="control-link control-checkin-pill" id="control-checkin" type="button"><span class="icon"><svg><use href="#icon-calendar-check"></use></svg></span><span class="text">Dash</span></button></div></div>
+    <div class="control-section"><p class="section-label">TRAINING PORTAL</p><a class="control-link" href="overview.html"><span class="icon"><svg><use href="#icon-book"></use></svg></span><span class="text">Overview</span></a><a class="control-link" href="training.html"><span class="icon"><svg><use href="#icon-folder"></use></svg></span><span class="text">Training Program</span></a><a class="control-link" href="grocery-calendar.html"><span class="icon"><svg><use href="#icon-calendar-check"></use></svg></span><span class="text">Grocery Calendar</span></a></div>
+    <div class="control-section"><p class="section-label">COMMUNITY</p><a class="control-link" href="leaderboard.html"><span class="icon"><svg><use href="#icon-users"></use></svg></span><span class="text">Leaderboard</span></a><a class="control-link" href="friends.html"><span class="icon"><svg><use href="#icon-users"></use></svg></span><span class="text">Messages</span></a></div>
+    <div class="control-section hidden" id="control-trainer-section"><p class="section-label">TRAINER</p><a class="control-link" id="control-trainer-dashboard-link" href="trainer-dashboard.html"><span class="icon"><svg><use href="#icon-users"></use></svg></span><span class="text">Trainer Dashboard</span></a></div>
+    <div class="control-section" id="control-owner-section">
+      <p class="section-label">OWNER</p>
+      <a class="control-link" id="control-workout-db-link" href="workout-database.html"><span class="icon"><svg><use href="#icon-folder"></use></svg></span><span class="text">Workout Database</span></a>
+      <a class="control-link" id="control-owner-messaging-link" href="owner-messaging.html"><span class="icon"><svg><use href="#icon-book"></use></svg></span><span class="text">Outreach</span></a>
+      <a class="control-link" id="control-owner-doors-link" href="owner-doors.html"><span class="icon"><svg><use href="#icon-folder"></use></svg></span><span class="text">Doors</span></a>
+      <a class="control-link" id="control-owner-accounts-link" href="owner-accounts.html"><span class="icon"><svg><use href="#icon-account"></use></svg></span><span class="text">Accounts</span></a>
+      <button class="control-link" id="control-owner-demo-btn" type="button"><span class="icon"><svg><use href="#icon-account"></use></svg></span><span class="text">Demo</span></button>
+    </div>
+  </aside>
+
+  <main class="ofh-wrap">
+    <header class="ofh-head">
+      <h1>Owner Form Hits</h1>
+      <div class="ofh-muted">Everyone who landed on your trainer landing page and everyone who filled the form. Owner access only.</div>
+    </header>
+
+    <section class="ofh-card">
+      <div class="ofh-totals" id="ofh-totals"></div>
+
+      <div class="ofh-controls">
+        <input id="ofh-search" class="auth-input" placeholder="Search name, email or phone" style="max-width:340px;">
+        <div class="ofh-filters">
+          <select class="ofh-select" id="ofh-status">
+            <option value="">All statuses</option>
+            <option value="new">New</option>
+            <option value="contacted">Contacted</option>
+            <option value="booked">Booked</option>
+            <option value="client">Client</option>
+            <option value="dead">Dead</option>
+          </select>
+          <select class="ofh-select" id="ofh-days">
+            <option value="30">Last 30 days</option>
+            <option value="90" selected>Last 90 days</option>
+            <option value="365">Last year</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="ofh-status" id="ofh-msg">Loading form hits…</div>
+      <div class="ofh-list" id="ofh-list"></div>
+    </section>
+  </main>
+
+  <script src="js/main.js?v=2026-08-02-formhits-1"></script>
+  <script>
+    (function () {
+      'use strict';
+      var listEl = document.getElementById('ofh-list');
+      var msgEl = document.getElementById('ofh-msg');
+      var totalsEl = document.getElementById('ofh-totals');
+      var searchEl = document.getElementById('ofh-search');
+      var statusEl = document.getElementById('ofh-status');
+      var daysEl = document.getElementById('ofh-days');
+      var searchTimer = 0;
+      var reqSeq = 0;
+
+      function esc(v) {
+        return String(v == null ? '' : v)
+          .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+      }
+      function initialsOf(name) {
+        var parts = String(name || '').trim().split(/\s+/).filter(Boolean);
+        if (!parts.length) return '?';
+        return ((parts[0][0] || '') + (parts.length > 1 ? parts[parts.length - 1][0] || '' : '')).toUpperCase();
+      }
+      function fmtWhen(v) {
+        if (!v) return '';
+        try {
+          return new Date(v).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+        } catch (e) { return ''; }
+      }
+
+      function renderTotals(t, days) {
+        var hits = Number(t && t.hits || 0);
+        var visitors = Number(t && t.visitors || 0);
+        var fills = Number(t && t.fills || 0);
+        var rate = visitors > 0 ? Math.round((fills / visitors) * 100) : 0;
+        totalsEl.innerHTML =
+          '<div class="ofh-total"><b>' + visitors + '</b><span>Visitors · ' + hits + ' page hits</span></div>' +
+          '<div class="ofh-total"><b>' + fills + '</b><span>Filled the form</span></div>' +
+          '<div class="ofh-total rate"><b>' + rate + '%</b><span>Converted · last ' + days + ' days</span></div>';
+      }
+
+      function statusOptions(current) {
+        return ['new', 'contacted', 'booked', 'client', 'dead'].map(function (s) {
+          return '<option value="' + s + '"' + (s === current ? ' selected' : '') + '>' +
+            s.charAt(0).toUpperCase() + s.slice(1) + '</option>';
+        }).join('');
+      }
+
+      function renderHits(hits) {
+        if (!hits.length) {
+          listEl.innerHTML =
+            '<div class="ofh-empty"><strong>No form hits yet</strong>' +
+            '<p>When someone fills out the form on your trainer landing page, their name, email and phone land here — and you get an email.</p></div>';
+          msgEl.textContent = '';
+          return;
+        }
+        msgEl.textContent = '';
+        listEl.innerHTML = hits.map(function (h) {
+          var name = h.fullName || 'Anonymous visitor';
+          var contact = [];
+          if (h.email) contact.push('<a href="mailto:' + esc(h.email) + '">' + esc(h.email) + '</a>');
+          if (h.phone) contact.push('<a href="tel:' + esc(h.phone) + '">' + esc(h.phone) + '</a>');
+          var meta = [];
+          meta.push('<span><b>' + esc(fmtWhen(h.createdAt)) + '</b></span>');
+          if (h.views > 1) meta.push('<span class="ofh-pill repeat">Looked ' + h.views + '&times; first</span>');
+          if (h.referrer) meta.push('<span>from ' + esc(h.referrer.replace(/^https?:\/\//, '').slice(0, 48)) + '</span>');
+          if (h.linkedUserId) meta.push('<span class="ofh-pill">Has an account</span>');
+
+          return '<article class="ofh-hit" data-id="' + esc(h.id) + '">' +
+            '<div class="ofh-hit-top">' +
+            '  <span class="ofh-ava">' + esc(initialsOf(name)) + '</span>' +
+            '  <div class="ofh-who">' +
+            '    <div class="ofh-name">' + esc(name) + '</div>' +
+            '    <div class="ofh-contact">' + (contact.join('<span aria-hidden="true">&middot;</span>') || '<span>No contact given</span>') + '</div>' +
+            '  </div>' +
+            '  <select class="ofh-select" data-status>' + statusOptions(h.status) + '</select>' +
+            '</div>' +
+            '<textarea class="ofh-notes" data-notes placeholder="Notes — what you said, what they wanted, next step">' + esc(h.notes) + '</textarea>' +
+            '<div class="ofh-actions">' +
+            '  <button class="ofh-save" type="button" data-save>Save</button>' +
+            '  <span class="ofh-saved" data-saved hidden>Saved</span>' +
+            '</div>' +
+            '<div class="ofh-meta">' + meta.join('') + '</div>' +
+            '</article>';
+        }).join('');
+      }
+
+      listEl.addEventListener('click', async function (e) {
+        var btn = e.target.closest('[data-save]');
+        if (!btn) return;
+        var card = btn.closest('.ofh-hit');
+        if (!card) return;
+        var id = card.getAttribute('data-id');
+        var status = card.querySelector('[data-status]').value;
+        var notes = card.querySelector('[data-notes]').value;
+        var savedEl = card.querySelector('[data-saved]');
+        btn.disabled = true;
+        try {
+          var resp = await fetch('/api/owner/form-hits/' + encodeURIComponent(id), {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({ status: status, notes: notes })
+          });
+          var json = await resp.json().catch(function () { return null; });
+          if (resp.ok && json && json.ok) {
+            savedEl.hidden = false;
+            window.setTimeout(function () { savedEl.hidden = true; }, 1800);
+          } else {
+            window.alert((json && json.error) || 'Could not save that.');
+          }
+        } catch (err) {
+          window.alert('Could not save that. Try again in a moment.');
+        }
+        btn.disabled = false;
+      });
+
+      async function load() {
+        var seq = ++reqSeq;
+        msgEl.textContent = 'Loading form hits…';
+        var params = new URLSearchParams();
+        if (searchEl.value.trim()) params.set('q', searchEl.value.trim());
+        if (statusEl.value) params.set('status', statusEl.value);
+        params.set('days', daysEl.value || '90');
+        try {
+          var resp = await fetch('/api/owner/form-hits?' + params.toString(), { credentials: 'include' });
+          if (seq !== reqSeq) return;
+          if (resp.status === 401 || resp.status === 403) {
+            listEl.innerHTML = '';
+            totalsEl.innerHTML = '';
+            msgEl.textContent = 'Owner access only — this list is not available on your account.';
+            return;
+          }
+          var json = await resp.json();
+          if (seq !== reqSeq) return;
+          if (!json || json.ok !== true) {
+            msgEl.textContent = 'Could not load form hits. Try again in a moment.';
+            return;
+          }
+          renderTotals(json.totals, json.days);
+          renderHits(Array.isArray(json.hits) ? json.hits : []);
+        } catch (e) {
+          if (seq !== reqSeq) return;
+          msgEl.textContent = 'Could not load form hits. Try again in a moment.';
+        }
+      }
+
+      searchEl.addEventListener('input', function () {
+        window.clearTimeout(searchTimer);
+        searchTimer = window.setTimeout(load, 280);
+      });
+      statusEl.addEventListener('change', load);
+      daysEl.addEventListener('change', load);
+
+      load();
+    })();
+  </script>
+</body>
+</html>

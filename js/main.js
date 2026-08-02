@@ -2669,7 +2669,8 @@ const ODE_MANAGER_PAGES = new Set(['manager-trainers.html']);
 const ODE_OWNER_PAGES = new Set([
     'owner-accounts.html', 'owner-analytics.html', 'owner-doors.html',
     'owner-emails.html', 'owner-messaging.html', 'owner-websites.html',
-    'owner-calendar.html', 'transcribe.html', 'workout-database.html', 'food-admin.html'
+    'owner-calendar.html', 'owner-form-hits.html', 'transcribe.html',
+    'workout-database.html', 'food-admin.html'
 ]);
 
 function odeCurrentPageFile() {
@@ -15607,6 +15608,19 @@ function initAuthUi() {
         if (emailEventsLink && trainerLandingLink && emailEventsLink.nextElementSibling !== trainerLandingLink) {
             emailEventsLink.insertAdjacentElement('afterend', trainerLandingLink);
         }
+        // Owner Form Hits reads the landing page's traffic, so it lives
+        // directly under the landing page link itself.
+        let ownerFormHitsLink = panel.querySelector('#control-owner-form-hits-link');
+        if (!ownerFormHitsLink) {
+            ownerFormHitsLink = document.createElement('a');
+            ownerFormHitsLink.className = 'control-link';
+            ownerFormHitsLink.id = 'control-owner-form-hits-link';
+            ownerFormHitsLink.href = 'owner-form-hits.html';
+            ownerFormHitsLink.innerHTML = '<span class="icon"><svg><use href="#icon-users"></use></svg></span><span class="text">Owner Form Hits</span>';
+        }
+        if (trainerLandingLink && ownerFormHitsLink && trainerLandingLink.nextElementSibling !== ownerFormHitsLink) {
+            trainerLandingLink.insertAdjacentElement('afterend', ownerFormHitsLink);
+        }
         if (demoBtn && demoBtn.dataset.demoBound !== '1') {
             demoBtn.dataset.demoBound = '1';
             demoBtn.addEventListener('click', () => {
@@ -22752,6 +22766,22 @@ function injectOwnerTrainerLandingLink(panel) {
     ownerSection.appendChild(link);
 }
 
+/* Owner Form Hits sits directly under Trainer Landing: the page, then who
+   landed on it. Same runtime injection as the links above. */
+function injectOwnerFormHitsLink(panel) {
+    if (!panel || panel.querySelector('a[href="owner-form-hits.html"]')) return;
+    const ownerSection = panel.querySelector('#control-owner-section');
+    if (!ownerSection) return;
+    const link = document.createElement('a');
+    link.className = 'control-link';
+    link.id = 'control-owner-form-hits-link';
+    link.href = 'owner-form-hits.html';
+    link.innerHTML = '<span class="icon"><svg><use href="#icon-users"></use></svg></span><span class="text">Owner Form Hits</span>';
+    const landingLink = ownerSection.querySelector('a[href="/partner"]');
+    if (landingLink) landingLink.insertAdjacentElement('afterend', link);
+    else ownerSection.appendChild(link);
+}
+
 /* ---- Launch gating -------------------------------------------------
    Soft launch: clients get only the Website tab; every other control-panel
    tab is hidden. Trainers additionally get their live business tools —
@@ -22876,6 +22906,7 @@ function setupControlPanel() {
     injectOwnerCalendarLink(controlPanel);
     injectOwnerTranscribeLink(controlPanel);
     injectOwnerTrainerLandingLink(controlPanel);
+    injectOwnerFormHitsLink(controlPanel);
     if (odeIsChromelessPage()) {
         controlPanel.setAttribute('hidden', '');
         controlPanel.style.display = 'none';
