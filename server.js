@@ -68,6 +68,7 @@ const mime = {
     '.svg': 'image/svg+xml',
     '.ico': 'image/x-icon',
     '.pdf': 'application/pdf',
+    '.mp4': 'video/mp4',
     '.woff': 'font/woff',
     '.woff2': 'font/woff2'
 };
