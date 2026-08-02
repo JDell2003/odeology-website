@@ -555,7 +555,7 @@ function renderEmailText(spec) {
   ].join('\n').trim();
 }
 
-function buildKlaviyoEmailTemplate({
+function buildEmailTemplate({
   eventName,
   displayName = '',
   eventProps = {}
@@ -605,7 +605,7 @@ const EMAIL_EVENT_NAMES = [
 ];
 
 module.exports = {
-  buildKlaviyoEmailTemplate,
+  buildEmailTemplate,
   eventTemplateSpec,
   renderEmailHtml,
   renderEmailText,

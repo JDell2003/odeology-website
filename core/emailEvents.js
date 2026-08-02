@@ -1,10 +1,5 @@
 const db = require('./db');
-const {
-  isKlaviyoConfigured,
-  createOrUpdateKlaviyoProfile,
-  createKlaviyoEvent
-} = require('./klaviyoClient');
-const { buildKlaviyoEmailTemplate } = require('./klaviyoEmailTemplates');
+const { buildEmailTemplate } = require('./emailTemplates');
 const { isMailerLiteConfigured, recordMailerLiteEvent, sendCampaignEmail } = require('./mailerLiteClient');
 const { applyOwnerEmailOverride } = require('./emailTemplateOverrides');
 
@@ -12,8 +7,9 @@ const { applyOwnerEmailOverride } = require('./emailTemplateOverrides');
    Deactivated by default (they'd burn the send quota and annoy people):
    Message Received, Daily Check-In Saved, Weekly Weigh-In Logged, Workout
    Logged, Pain Report Submitted, Pain Follow-Up Submitted, and everything
-   else not listed. Re-enable any of them with the KLAVIYO_ENABLED_EVENTS
-   env var (comma-separated event names) or KLAVIYO_EVENT_PROFILE=all. */
+   else not listed. Re-enable any of them with the EMAIL_ENABLED_EVENTS
+   env var (comma-separated event names) or EMAIL_EVENT_PROFILE=all.
+   The old KLAVIYO_* names still work so nothing set in Railway breaks. */
 const FREE_PLAN_EVENT_ALLOWLIST = new Set([
   'Account Created',
   'Lead Submitted',
@@ -42,10 +38,14 @@ function isEventAllowedByPlan(eventName) {
   const metric = String(eventName || '').trim();
   if (!metric) return false;
 
-  const enabledOverride = parseEventList(process.env.KLAVIYO_ENABLED_EVENTS || '');
+  const enabledOverride = parseEventList(
+    process.env.EMAIL_ENABLED_EVENTS || process.env.KLAVIYO_ENABLED_EVENTS || ''
+  );
   if (enabledOverride.size) return enabledOverride.has(metric);
 
-  const mode = String(process.env.KLAVIYO_EVENT_PROFILE || 'free').trim().toLowerCase();
+  const mode = String(
+    process.env.EMAIL_EVENT_PROFILE || process.env.KLAVIYO_EVENT_PROFILE || 'free'
+  ).trim().toLowerCase();
   if (mode === 'all' || mode === 'full' || mode === 'unlimited') return true;
   if (mode === 'none' || mode === 'off' || mode === 'disabled') return false;
 
@@ -93,7 +93,7 @@ function buildTemplateBackedProps({
   const safeProps = baseEventProps && typeof baseEventProps === 'object' && !Array.isArray(baseEventProps)
     ? { ...baseEventProps }
     : {};
-  const template = buildKlaviyoEmailTemplate({
+  const template = buildEmailTemplate({
     eventName: metric,
     displayName,
     eventProps: safeProps
@@ -112,7 +112,11 @@ function buildTemplateBackedProps({
   };
 }
 
-async function emitKlaviyoEvent({
+// The shared email-event pipe. MailerLite is the only provider — Klaviyo was
+// removed after its key went stale and it 401'd on every send. profileProps is
+// still accepted so call sites didn't all have to change; MailerLite carries
+// identity on the subscriber record instead.
+async function emitEmailEvent({
   eventName,
   email,
   phone,
@@ -122,9 +126,7 @@ async function emitKlaviyoEvent({
   eventProps = {},
   profileProps = {}
 } = {}) {
-  // "Klaviyo" by name for legacy call sites — this is the shared email-event
-  // pipe. It fans out to every configured provider (Klaviyo, MailerLite).
-  if (!isKlaviyoConfigured() && !isMailerLiteConfigured()) {
+  if (!isMailerLiteConfigured()) {
     return { ok: false, skipped: 'not_configured' };
   }
   const safeEmail = normalizeEmail(email);
@@ -159,9 +161,9 @@ async function emitKlaviyoEvent({
   }
 
   // MailerLite: upsert subscriber + per-event group join (fires their
-  // automation). One provider failing never blocks the other.
+  // automation).
   let mailerLiteOk = false;
-  if (isMailerLiteConfigured() && safeEmail) {
+  if (safeEmail) {
     try {
       const mlResult = await recordMailerLiteEvent({
         email: safeEmail,
@@ -181,36 +183,7 @@ async function emitKlaviyoEvent({
     }
   }
 
-  if (!isKlaviyoConfigured()) {
-    return mailerLiteOk ? { ok: true, provider: 'mailerlite' } : { ok: false, error: 'mailerlite_failed' };
-  }
-
-  try {
-    await createOrUpdateKlaviyoProfile({
-      email: safeEmail || undefined,
-      phone: safePhone || undefined,
-      firstName: fName,
-      lastName: lName,
-      properties: profileProps && typeof profileProps === 'object' ? profileProps : {}
-    });
-  } catch (err) {
-    logEmailEventError(err, `${metric}:profile`);
-  }
-
-  try {
-    await createKlaviyoEvent({
-      eventName: metric,
-      email: safeEmail || undefined,
-      phone: safePhone || undefined,
-      properties: finalEventProps,
-      time: new Date().toISOString()
-    });
-    return { ok: true, provider: mailerLiteOk ? 'klaviyo+mailerlite' : 'klaviyo' };
-  } catch (err) {
-    logEmailEventError(err, `${metric}:event`);
-    if (mailerLiteOk) return { ok: true, provider: 'mailerlite', klaviyoError: err?.message || 'event_failed' };
-    return { ok: false, error: err?.message || 'event_failed' };
-  }
+  return mailerLiteOk ? { ok: true, provider: 'mailerlite' } : { ok: false, error: 'mailerlite_failed' };
 }
 
 async function emitUserEvent({
@@ -221,7 +194,7 @@ async function emitUserEvent({
 } = {}) {
   const id = String(userId || '').trim();
   if (!id) return { ok: false, skipped: 'no_user_id' };
-  if (!isKlaviyoConfigured() && !isMailerLiteConfigured()) return { ok: false, skipped: 'not_configured' };
+  if (!isMailerLiteConfigured()) return { ok: false, skipped: 'not_configured' };
   try {
     const result = await db.query(
       `
@@ -234,7 +207,7 @@ async function emitUserEvent({
     );
     const row = result.rows?.[0] || null;
     if (!row) return { ok: false, skipped: 'user_not_found' };
-    return await emitKlaviyoEvent({
+    return await emitEmailEvent({
       eventName,
       email: row.email || '',
       phone: row.phone || '',
@@ -327,7 +300,7 @@ async function sendInviteEmail({ email, displayName = '', roleLabel = 'trainer',
    OWNER LEAD ALERT — a real email to the owner the moment someone fills
    out a landing-page form. This is a notification, not marketing: it goes
    to one fixed inbox, so it deliberately skips the plan allowlist that
-   gates emitKlaviyoEvent.
+   gates emitEmailEvent.
    ------------------------------------------------------------------ */
 const OWNER_ALERT_SOURCES = new Set(['trainer_gate']);
 
@@ -393,7 +366,7 @@ async function sendOwnerLeadAlert({ lead = {}, source = '' } = {}) {
 }
 
 module.exports = {
-  emitKlaviyoEvent,
+  emitEmailEvent,
   emitUserEvent,
   buildOnboardingEmailPayload,
   buildInviteEmailHtml,

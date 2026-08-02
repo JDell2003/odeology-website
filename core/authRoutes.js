@@ -3,7 +3,7 @@ const bcrypt = require('bcryptjs');
 const db = require('./db');
 const { DbUnavailableError, isTransientPgError } = require('./dbErrors');
 const {
-  emitKlaviyoEvent,
+  emitEmailEvent,
   sendInviteEmail,
   buildOnboardingEmailPayload,
   isEventAllowedByPlan
@@ -6036,7 +6036,7 @@ function queueOnboardingEmails(userLike, source = 'signup_local') {
     source: String(source || 'signup_local'),
     onboarding
   };
-  emitKlaviyoEvent({
+  emitEmailEvent({
     eventName: 'Account Created',
     email,
     phone: userLike?.phone || '',
@@ -6044,7 +6044,7 @@ function queueOnboardingEmails(userLike, source = 'signup_local') {
     eventProps,
     profileProps
   }).catch(() => {});
-  emitKlaviyoEvent({
+  emitEmailEvent({
     eventName: 'Lead Nurture Channel Enrolled',
     email,
     phone: userLike?.phone || '',
@@ -10492,7 +10492,7 @@ async function handlePasswordForgot(req, res) {
   );
 
   const resetUrl = buildPasswordResetUrl(req, rawToken);
-  emitKlaviyoEvent({
+  emitEmailEvent({
     eventName: 'Password Reset Requested',
     email: user.email,
     phone: user.phone || '',
@@ -10580,7 +10580,7 @@ async function handlePasswordReset(req, res) {
     return sendJson(res, 500, { ok: false, error: 'Could not reset password' });
   }
 
-  emitKlaviyoEvent({
+  emitEmailEvent({
     eventName: 'Password Reset Completed',
     email: row.email,
     phone: row.phone || '',

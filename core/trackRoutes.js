@@ -1,8 +1,7 @@
 const crypto = require('crypto');
 const db = require('./db');
 const { isTransientPgError } = require('./dbErrors');
-const { isKlaviyoConfigured } = require('./klaviyoClient');
-const { emitKlaviyoEvent, sendOwnerLeadAlert } = require('./emailEvents');
+const { emitEmailEvent, sendOwnerLeadAlert } = require('./emailEvents');
 
 const GUEST_COOKIE_NAME = process.env.GUEST_COOKIE_NAME || 'gid';
 const MAX_BODY_BYTES = Math.max(10_000, Number(process.env.TRACK_MAX_BODY_BYTES || 400_000));
@@ -14,7 +13,7 @@ let lastSchemaTransientError = null;
 const SCHEMA_RETRY_DELAYS_MS = [200, 600, 1400];
 const TRACK_SCHEMA_BACKOFF_MS = Math.max(1000, Number(process.env.TRACK_SCHEMA_BACKOFF_MS || 15_000));
 let lastTransientTrackLogAt = 0;
-let lastKlaviyoErrorLogAt = 0;
+let lastEmailPipeErrorLogAt = 0;
 
 function sha256Hex(input) {
   return crypto.createHash('sha256').update(String(input)).digest('hex');
@@ -98,11 +97,11 @@ function logTransientTrackError(err, context) {
   }
 }
 
-function logKlaviyoError(err, context) {
+function logEmailPipeError(err, context) {
   const now = Date.now();
-  if (now - lastKlaviyoErrorLogAt < 60_000) return;
-  lastKlaviyoErrorLogAt = now;
-  console.warn('[track][klaviyo]', {
+  if (now - lastEmailPipeErrorLogAt < 60_000) return;
+  lastEmailPipeErrorLogAt = now;
+  console.warn('[track][email]', {
     context,
     code: err?.code || null,
     status: err?.status || null,
@@ -513,8 +512,7 @@ async function createOrUpdateLead({ lead, userId, guestId }) {
   );
 }
 
-async function syncLeadToKlaviyo(lead) {
-  if (!isKlaviyoConfigured()) return;
+async function syncLeadToEmail(lead) {
   const email = normalizeEmail(lead?.email);
   const phone = normalizePhone(lead?.phone);
   if (!email && !phone) return;
@@ -535,7 +533,7 @@ async function syncLeadToKlaviyo(lead) {
   };
 
   try {
-    await emitKlaviyoEvent({
+    await emitEmailEvent({
       eventName: 'Lead Submitted',
       email,
       phone,
@@ -550,11 +548,11 @@ async function syncLeadToKlaviyo(lead) {
       profileProps: sharedProfileProps
     });
   } catch (err) {
-    logKlaviyoError(err, 'syncLeadToKlaviyo:lead');
+    logEmailPipeError(err, 'syncLeadToEmail:lead');
   }
 
   try {
-    await emitKlaviyoEvent({
+    await emitEmailEvent({
       eventName: 'Lead Nurture Channel Enrolled',
       email,
       phone,
@@ -570,7 +568,7 @@ async function syncLeadToKlaviyo(lead) {
       profileProps: sharedProfileProps
     });
   } catch (err) {
-    logKlaviyoError(err, 'syncLeadToKlaviyo:nurture');
+    logEmailPipeError(err, 'syncLeadToEmail:nurture');
   }
 }
 
@@ -652,9 +650,9 @@ module.exports = async function trackRoutes(req, res, url) {
         ['contact_message', path, userId, guestId, JSON.stringify({ name, email, subject })]
       );
 
-      if (isKlaviyoConfigured() && email) {
+      if (email) {
         try {
-          await emitKlaviyoEvent({
+          await emitEmailEvent({
             eventName: 'Support Request Received',
             email,
             displayName: name || '',
@@ -670,7 +668,7 @@ module.exports = async function trackRoutes(req, res, url) {
             }
           });
         } catch (err) {
-          logKlaviyoError(err, 'trackRoutes:contactSupport');
+          logEmailPipeError(err, 'trackRoutes:contactSupport');
         }
       }
 
@@ -728,7 +726,7 @@ module.exports = async function trackRoutes(req, res, url) {
     try {
       await createOrUpdateLead({ lead: payload, userId, guestId });
       await insertEvent({ eventName: 'lead_submitted', path: payload?.path || url.pathname, userId, guestId, props: { wants: payload?.wants || [], source: payload?.source || '' } });
-      await syncLeadToKlaviyo(payload);
+      await syncLeadToEmail(payload);
     } catch (err) {
       // This used to swallow the error silently, which is how a broken lead
       // insert went unnoticed while the page happily showed "You're in."

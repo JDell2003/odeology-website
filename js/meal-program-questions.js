@@ -1,11 +1,10 @@
 // js/meal-program-questions.js — Meal Program Work Order Phase 2:
 // budget / store / state, dietary + allergies (legacy enums), body stats (Mifflin inputs),
-// email gate (Klaviyo best-effort, never blocks the plan).
+// email gate (never blocks the plan).
 (function () {
     'use strict';
 
     var C = window.MealProgramConstants;
-    var KLAVIYO_COMPANY_ID = 'W83QZb'; // MIRRORED(js/main.js:28)
     var App = null;
 
     function bindPills(containerId, dataAttr, onPick, multi) {
@@ -96,34 +95,6 @@
         App.persist();
     }
 
-    // ------------------------------------------------------------ Klaviyo (best-effort)
-    function klaviyoBootstrap() {
-        try {
-            if (!window.klaviyo && !document.querySelector('script[src*="klaviyo.js"]')) {
-                window._klOnsite = window._klOnsite || [];
-                var s = document.createElement('script');
-                s.async = true;
-                s.src = 'https://static.klaviyo.com/onsite/js/' + KLAVIYO_COMPANY_ID +
-                    '/klaviyo.js?company_id=' + KLAVIYO_COMPANY_ID;
-                document.head.appendChild(s);
-            }
-        } catch (e) { /* never block the plan on Klaviyo */ }
-    }
-
-    function klaviyoIdentify(email) {
-        try {
-            if (window.klaviyo && typeof window.klaviyo.identify === 'function') {
-                window.klaviyo.identify({ email: email });
-                if (typeof window.klaviyo.track === 'function') {
-                    window.klaviyo.track('Meal Program Plan Unlocked', { source: 'meal-program.html' });
-                }
-            } else if (window._klOnsite) {
-                window._klOnsite.push(['identify', { email: email }]);
-                window._klOnsite.push(['track', 'Meal Program Plan Unlocked', { source: 'meal-program.html' }]);
-            }
-        } catch (e) { /* best-effort only */ }
-    }
-
     function validEmail(v) { return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(String(v || '').trim()); }
 
     function unlockAndGenerate() {
@@ -138,7 +109,6 @@
         App = app;
         populateStates();
         restoreForm();
-        klaviyoBootstrap();
 
         bindPills('mp-tier-pills', 'data-tier', function (v) { App.answers.tierOverride = v; });
         bindPills('mp-goal-pills', 'data-goal', function (v) {
@@ -176,7 +146,6 @@
             }
             App.email = String(email).trim();
             App.persist();
-            klaviyoIdentify(App.email); // fire-and-forget; never gates the payoff
             unlockAndGenerate();
         });
     }

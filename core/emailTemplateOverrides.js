@@ -11,7 +11,7 @@ const {
   renderEmailHtml,
   renderEmailText,
   EMAIL_EVENT_NAMES
-} = require('./klaviyoEmailTemplates');
+} = require('./emailTemplates');
 
 const OVERRIDE_SCHEMA_SQL = [
   `
