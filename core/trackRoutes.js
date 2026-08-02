@@ -450,8 +450,8 @@ async function createOrUpdateLead({ lead, userId, guestId }) {
       `
         SELECT id
         FROM app_users
-        WHERE ($1 IS NOT NULL AND email = $1)
-           OR ($2 IS NOT NULL AND phone = $2)
+        WHERE ($1::text IS NOT NULL AND email = $1::text)
+           OR ($2::text IS NOT NULL AND phone = $2::text)
         LIMIT 1;
       `,
       [email, phone]
@@ -494,8 +494,8 @@ async function createOrUpdateLead({ lead, userId, guestId }) {
         WHERE guest_id = $1
           AND created_at > (now() - interval '7 days')
           AND (
-            ($2 IS NOT NULL AND email = $2)
-            OR ($3 IS NOT NULL AND phone = $3)
+            ($2::text IS NOT NULL AND email = $2::text)
+            OR ($3::text IS NOT NULL AND phone = $3::text)
           )
         LIMIT 1;
       `,
@@ -730,6 +730,16 @@ module.exports = async function trackRoutes(req, res, url) {
       await insertEvent({ eventName: 'lead_submitted', path: payload?.path || url.pathname, userId, guestId, props: { wants: payload?.wants || [], source: payload?.source || '' } });
       await syncLeadToKlaviyo(payload);
     } catch (err) {
+      // This used to swallow the error silently, which is how a broken lead
+      // insert went unnoticed while the page happily showed "You're in."
+      // Never again: a lost lead is the most expensive thing here.
+      console.error('[track][lead] FAILED to save lead', {
+        source: payload?.source || null,
+        hasEmail: Boolean(payload?.email),
+        hasPhone: Boolean(payload?.phone),
+        code: err?.code || null,
+        message: err?.message || String(err)
+      });
       return sendJson(res, 500, { error: 'Failed to save lead' }, setCookie ? { 'Set-Cookie': setCookie } : {});
     }
 

@@ -57,10 +57,9 @@ html.rfi-authed body.locked{overflow:visible;height:auto}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.25}}
 .gate-card h1{font-family:var(--serif);font-weight:400;font-size:clamp(25px,6vw,33px);line-height:1.18;letter-spacing:-.01em;margin-bottom:12px;color:#fff}
 .gate-card h1 i{font-style:italic;color:var(--amber)}
-.g-sub{color:var(--mute);font-size:15px;margin-bottom:10px}
-.g-what{display:grid;gap:7px;margin:0 0 22px;padding:14px 16px;background:#0a0908;border:1px solid var(--line);border-radius:12px}
-.g-what li{list-style:none;display:flex;gap:10px;align-items:baseline;font-size:13.5px;color:#c9c2b2;line-height:1.5}
-.g-what li:before{content:'';flex:0 0 auto;width:5px;height:5px;border-radius:50%;background:var(--amber);transform:translateY(-2px)}
+/* plain sub-text — no box, no bullets; these lines ARE the sub-copy */
+.g-sub{color:var(--mute);font-size:14.5px;line-height:1.6;margin-bottom:22px}
+.g-sub p+p{margin-top:5px}
 .frow{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .field{margin-bottom:13px}
 .field label{display:block;font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--mute);font-weight:700;margin-bottom:6px}
@@ -87,6 +86,12 @@ html.rfi-authed body.locked{overflow:visible;height:auto}
 .s-card p{color:var(--mute);font-size:15px;margin-bottom:26px}
 .btn-ghost{display:inline-block;background:none;border:1.5px solid var(--amber);color:var(--amber);border-radius:10px;padding:14px 32px;font-size:12.5px;font-weight:900;letter-spacing:.08em;text-transform:uppercase;cursor:pointer;font-family:var(--sans);transition:background .15s,color .15s}
 .btn-ghost:hover{background:var(--amber);color:var(--ink)}
+/* auto-download is blocked often enough that the manual escape hatch has to
+   be right there — deliberately quieter than the primary action */
+.s-actions{display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap}
+.btn-mini{display:inline-block;background:none;border:1px solid var(--line);color:var(--mute);border-radius:9px;padding:11px 16px;font-size:11px;font-weight:800;letter-spacing:.04em;cursor:pointer;font-family:var(--sans);text-decoration:none;transition:border-color .15s,color .15s}
+.btn-mini:hover{border-color:var(--amber);color:var(--amber)}
+.btn-mini[hidden]{display:none}
 
 /* ---------- NAV ---------- */
 .band{position:sticky;top:0;z-index:60;background:rgba(13,12,10,.92);backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
@@ -239,12 +244,11 @@ html{scroll-behavior:auto}
     <div id="gateHot"></div>
     <div class="pill"><span class="dot"></span>Free PDF for personal trainers</div>
     <h1>The script that writes your first <i>client-getting video</i> in 15 minutes.</h1>
-    <p class="g-sub">One PDF. Fill this in and it's yours — straight to your downloads, nothing to wait on.</p>
-    <ul class="g-what">
-      <li>The exact structure: your controversial take, your story, your close.</li>
-      <li>Fill-in-the-blank lines — you're writing, not staring at a blank page.</li>
-      <li>Built to be filmed the same day you write it.</li>
-    </ul>
+    <div class="g-sub">
+      <p>Attack, Relate, Resolve — the exact framework, written out start to finish.</p>
+      <p>Fill-in-the-blank script pages: your take, your story, your close.</p>
+      <p>Plus the hook formula that lands in four seconds.</p>
+    </div>
     <div class="frow">
       <div class="field"><label for="gFirst">First name</label><input type="text" id="gFirst" autocomplete="given-name" placeholder="First"></div>
       <div class="field"><label for="gLast">Last name</label><input type="text" id="gLast" autocomplete="family-name" placeholder="Last"></div>
@@ -263,7 +267,10 @@ html{scroll-behavior:auto}
     <div class="check"></div>
     <b>You're in.</b>
     <p id="sCopy">Your PDF is downloading now. Have a look around while it lands.</p>
-    <button class="btn-ghost" id="sBtn">Take me to it &rarr;</button>
+    <div class="s-actions">
+      <a class="btn-mini" id="sDl" href="#" download>Didn't download? Get it here</a>
+      <button class="btn-ghost" id="sBtn">Take me to it &rarr;</button>
+    </div>
   </div>
 </div>
 
@@ -427,10 +434,10 @@ html{scroll-behavior:auto}
 <script>
 (function(){
 /* ============ CONFIG ============ */
-/* PDF_URL: drop the file in /assets and point here, e.g.
-   "/assets/the-15-minute-client-getting-script.pdf". While it's empty the
-   success card drops the download promise instead of making one it can't keep. */
-var PDF_URL     = "";
+/* The lead magnet itself. If this is ever blanked out, the success card drops
+   the download promise rather than making one it can't keep. */
+var PDF_URL     = "/assets/the-15-minute-client-getting-script.pdf";
+var PDF_NAME    = "The-15-Minute-Client-Getting-Script.pdf";
 /* Inline auth on the entry page; the trainer picks "I'm a Trainer" on the
    role card straight after signup (there is no public role= preselect param). */
 var SIGNUP_URL  = "/?authMode=signup";
@@ -550,7 +557,7 @@ gBtn.addEventListener('click',function(){
   if(PDF_URL){
     setTimeout(function(){
       var a=document.createElement('a');
-      a.href=PDF_URL; a.download='The-15-Minute-Client-Getting-Script.pdf';
+      a.href=PDF_URL; a.download=PDF_NAME;
       document.body.appendChild(a); a.click(); a.remove();
     },900);
   }else{
@@ -558,6 +565,16 @@ gBtn.addEventListener('click',function(){
     if(sc)sc.textContent="I've got your details — the script lands in your inbox as soon as it's finished. Have a look around in the meantime.";
   }
 });
+
+/* Manual fallback: browsers block the programmatic click often enough
+   (pop-up blockers, iOS Safari) that this can't be the only route to the PDF. */
+(function(){
+  var dl=document.getElementById('sDl');
+  if(!dl)return;
+  if(!PDF_URL){ dl.hidden=true; return; }
+  dl.setAttribute('href',PDF_URL);
+  dl.setAttribute('download',PDF_NAME);
+})();
 document.getElementById('sBtn').addEventListener('click',openSite);
 
 /* CTA → signup */
