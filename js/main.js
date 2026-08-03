@@ -22445,6 +22445,28 @@ function setupPreloader() {
         return;
     }
 
+    // Someone arriving with auth intent (every /?authMode=... link, including
+    // the partner page CTAs) is here to sign in, not to watch a splash. The
+    // overlay is opaque and hit-testable for ~3.5s, so it silently ate every
+    // tap on Sign up / Log in / Google — which read as "auth is broken".
+    const bypassForAuth = (() => {
+        try {
+            const url = new URL(window.location.href);
+            return Boolean(
+                url.searchParams.get('authMode')
+                || url.searchParams.get('postAuth')
+                || url.searchParams.get('auth')
+            );
+        } catch {
+            return false;
+        }
+    })();
+
+    if (bypassForAuth) {
+        if (preloader) preloader.remove();
+        return;
+    }
+
     if (isForumPage) {
         if (preloader) preloader.remove();
         return;
@@ -22513,8 +22535,21 @@ function setupPreloader() {
         });
     }
 
+    // Nobody is ever stuck behind the splash. Tearing it down on pointerdown
+    // (capture, before the click resolves) means the SAME tap lands on
+    // whatever is underneath — the browser picks the click target after
+    // pointerdown, so one tap gets through instead of being swallowed.
+    const dismissNow = () => {
+        if (!preloader || !preloader.isConnected) return;
+        preloader.remove();
+    };
+    ['pointerdown', 'touchstart', 'keydown', 'wheel'].forEach((evt) => {
+        window.addEventListener(evt, dismissNow, { capture: true, once: true, passive: true });
+    });
+
     // Fade the overlay after the scene finishes.
     setTimeout(() => {
+        if (!preloader.isConnected) return;
         bar?.classList.add('fade');
         preloader.classList.add('hidden');
         setTimeout(() => preloader.remove(), 500);
