@@ -147,6 +147,12 @@
 
     <section class="ta-kpis" id="ta-kpis"></section>
 
+    <section class="ta-card">
+      <h3>Coach page capture screen</h3>
+      <p class="ta-hint">The name / email / phone screen visitors see before your coach page opens. Clicked off = saw it and left without unlocking.</p>
+      <section class="ta-kpis" id="ta-capture"></section>
+    </section>
+
     <section class="ta-grid">
       <div class="ta-card">
         <h3>Where visitors fall off</h3>
@@ -228,7 +234,23 @@
 
       function render() {
         const list = events.filter(inRange);
-        const sessions = numberByDay(buildSessions(list));
+        // Coach-page capture beacons are their own funnel; keep them out of
+        // the question-funnel sessions or they'd all read as "fell off".
+        const gateList = list.filter((e) => e.type === 'gate_view' || e.type === 'gate_submit');
+        const funnelList = list.filter((e) => e.type !== 'gate_view' && e.type !== 'gate_submit');
+        const gateViewers = new Set(gateList.filter((e) => e.type === 'gate_view').map((e) => e.visitorId || e.ts));
+        const gateSubmitters = new Set(gateList.filter((e) => e.type === 'gate_submit').map((e) => e.visitorId || e.ts));
+        gateSubmitters.forEach((id) => gateViewers.add(id));
+        const gateViews = gateViewers.size;
+        const gateUnlocks = gateSubmitters.size;
+        const gateClickedOff = Math.max(0, gateViews - gateUnlocks);
+        $('#ta-capture').innerHTML = `
+          <div class="ta-kpi"><div class="k-label">Saw the capture</div><div class="k-value">${gateViews}</div><div class="k-sub">unique visitors</div></div>
+          <div class="ta-kpi"><div class="k-label">Unlocked the page</div><div class="k-value">${gateUnlocks}</div><div class="k-sub">left name, email &amp; phone</div></div>
+          <div class="ta-kpi"><div class="k-label">Clicked off</div><div class="k-value">${gateClickedOff}</div><div class="k-sub">${gateViews ? Math.round(gateClickedOff / gateViews * 100) : 0}% never unlocked</div></div>
+          <div class="ta-kpi"><div class="k-label">Unlock rate</div><div class="k-value">${gateViews ? Math.round(gateUnlocks / gateViews * 100) : 0}%</div><div class="k-sub">${gateViews ? '' : 'no capture views yet'}</div></div>
+        `;
+        const sessions = numberByDay(buildSessions(funnelList));
         const total = sessions.length;
         const completes = sessions.filter((s) => s.complete);
         const doneMs = completes.filter((s) => s.ms);

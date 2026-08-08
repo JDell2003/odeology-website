@@ -12019,16 +12019,30 @@ async function trainingRoutes(req, res, url) {
   }
 
   if (pathname === '/api/training/funnel-event' && req.method === 'POST') {
-    // PUBLIC: tracking beacon from visit.html.
+    // PUBLIC: tracking beacon from visit.html, plus the coach-page consult
+    // capture (gate_view when the capture screen shows, gate_submit when the
+    // visitor unlocks the page — the difference is who clicked off).
     let payload;
     try { payload = await readJsonBody(req); }
     catch (err) { return sendJson(res, 400, { error: err.message }); }
-    const handle = String(payload?.handle || '').trim().toLowerCase().slice(0, 60);
+    let handle = String(payload?.handle || '').trim().toLowerCase().slice(0, 60);
     const type = String(payload?.type || '').trim().toLowerCase();
-    if (!handle || !['start', 'answer', 'complete', 'exit'].includes(type)) {
+    if (!handle || !['start', 'answer', 'complete', 'exit', 'gate_view', 'gate_submit'].includes(type)) {
       return sendJson(res, 400, { error: 'Bad funnel event' });
     }
-    if (!(await findWebsiteByHandle(handle))) return sendJson(res, 404, { error: 'Unknown trainer link' });
+    if (!(await findWebsiteByHandle(handle))) {
+      // Gate beacons arrive keyed by coach-page site slug, which needs no
+      // website config — and can differ from the username the trainer's
+      // analytics filter on. Resolve through the published page and store
+      // the username so the events reach the right trainer.
+      let resolved = null;
+      if (type === 'gate_view' || type === 'gate_submit') {
+        try { resolved = await trainerPages.getPublicTrainerPage(db, handle, ''); } catch { resolved = null; }
+      }
+      if (!resolved) return sendJson(res, 404, { error: 'Unknown trainer link' });
+      const username = String(resolved.trainer?.username || '').trim().toLowerCase().slice(0, 60);
+      if (username) handle = username;
+    }
     const event = {
       handle,
       visitorId: String(payload?.visitorId || '').trim().slice(0, 48),

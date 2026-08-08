@@ -27,8 +27,12 @@ const TRAINER = {
 };
 
 // A real-shaped custom_code page: the trainer's own HTML, no platform form.
-const CUSTOM_HTML = '<section id="inquire"><h1>ETAVIS</h1><p>Remote coaching, done properly.</p>'
-  + '<input type="email" placeholder="email"></section>';
+// The style block carries a brand palette (dark ground + bronze accent) so the
+// consult capture's brand theming has something real to derive from.
+const CUSTOM_HTML = '<style>:root{--black:#141210;--bone:#e8e2d8;--bronze:#a8845c}'
+  + 'body{background:var(--black);color:var(--bone)}.cta{color:#a8845c;border-color:#a8845c}</style>'
+  + '<section id="inquire"><h1>ETAVIS</h1><p>Remote coaching, done properly.</p>'
+  + '<input type="email" placeholder="email"><a class="cta">Request</a></section>';
 
 const QUALIFICATION = {
   enabled: true,
@@ -104,6 +108,12 @@ async function visit(browser, viewer, qualification = QUALIFICATION, leadPosts =
       }
       return json({ ok: true, lead: { id: 'lead-capture-1' } });
     }
+    if (u.includes('/api/training/funnel-event')) {
+      if (Array.isArray(opts.funnelPosts)) {
+        try { opts.funnelPosts.push(JSON.parse(req.postData() || '{}')); } catch {}
+      }
+      return json({ ok: true });
+    }
     if (u.includes('/api/coach/pages/public')) {
       if (opts.publicNotFound) {
         return req.respond({ status: 404, contentType: 'application/json', body: JSON.stringify({ ok: false, error: 'Published coach page not found.' }) }).catch(() => {});
@@ -160,6 +170,16 @@ const readGate = (page) => page.evaluate(() => {
       const main = document.querySelector('.trainer-builder-public-main');
       return main ? main.hasAttribute('inert') : false;
     })(),
+    // A live coach site must be square-cornered — the in-app card look
+    // (border-radius 34px) must not leak onto the standalone route.
+    mainRadius: (() => {
+      const main = document.querySelector('.trainer-builder-public-main');
+      return main ? getComputedStyle(main).borderTopLeftRadius : '';
+    })(),
+    captureBrandStyle: (() => {
+      const card = document.querySelector('[data-consult-capture-form]');
+      return card ? String(card.getAttribute('style') || '') : '';
+    })(),
     frameExists: Boolean(frame),
     frameGated: Boolean(document.querySelector('.trainer-builder-public-main.is-gated')),
     shellExists: Boolean(document.querySelector('.trainer-builder-public-shell')),
@@ -201,12 +221,17 @@ const readGate = (page) => page.evaluate(() => {
   // enabled:false object would pass even with the client fix reverted.
   {
     const leadPosts = [];
-    const page = await visit(browser, null, null, leadPosts);
+    const funnelPosts = [];
+    const page = await visit(browser, null, null, leadPosts, { funnelPosts });
     const g = await readGate(page);
     check('unconfigured: page renders through the public shell', g.shellExists, JSON.stringify(g));
     check('unconfigured: coach page iframe renders', g.frameExists, JSON.stringify(g));
     check('unconfigured: stock 14-question gate stays hidden', !g.gateVisible && !g.hasQuestionText, JSON.stringify(g));
     check('unconfigured: simple consult capture is on screen', g.captureVisible, JSON.stringify(g));
+    check('unconfigured: no rounded corners on the live site', g.mainRadius === '0px', g.mainRadius);
+    check('unconfigured: capture is themed from the trainer brand (dark bg + bronze accent)',
+      /--cc-bg:/.test(g.captureBrandStyle) && /--cc-accent:#a8845c/.test(g.captureBrandStyle), g.captureBrandStyle);
+    check('unconfigured: gate_view analytics beacon fired', funnelPosts.some((p) => p.type === 'gate_view' && p.handle === HANDLE), JSON.stringify(funnelPosts));
     check('unconfigured: capture shows the offer copy', g.captureCopyShown, JSON.stringify(g));
     check('unconfigured: capture asks first/last/email/phone', g.captureInputCount === 4, String(g.captureInputCount));
     check('unconfigured: capture has no way to close it', g.captureDismissControls === 0, String(g.captureDismissControls));
@@ -243,6 +268,7 @@ const readGate = (page) => page.evaluate(() => {
     check('submit: lead carries name, email, and phone', post?.fullName === 'Jordan Fields' && post?.email === 'jordan@example.com' && String(post?.phone || '').replace(/\D/g, '').length >= 7, JSON.stringify(post));
     check('submit: hit is tagged with the capture form id', post?.formId === 'consult-capture', JSON.stringify(post));
     check('submit: capture closes and the page unlocks', !after.captureVisible && !after.frameGated, JSON.stringify(after));
+    check('submit: gate_submit analytics beacon fired', funnelPosts.some((p) => p.type === 'gate_submit' && p.handle === HANDLE), JSON.stringify(funnelPosts));
     const persisted = await page.evaluate(() => localStorage.getItem(`trainer-consult-capture:${'etavisf'}`));
     let persistedOk = false;
     try { persistedOk = JSON.parse(persisted || 'null')?.completed === true; } catch {}

@@ -115,7 +115,9 @@
     leadId: '',
     revealed: false,
     saving: false,
-    error: ''
+    error: '',
+    // Once per page load, not per site key — never reset in initialize.
+    viewBeaconSent: false
   };
   const editorState = {
     enabled: false,
@@ -482,6 +484,93 @@
     if (canBypassQualificationGate(page)) return false;
     initializeConsultCaptureState(page);
     return consultCaptureState.revealed !== true;
+  }
+
+  function consultCaptureBrand(page = currentRenderedPage()) {
+    const code = typeof builderCodeForEditing === 'function' ? builderCodeForEditing(page) : null;
+    const source = [String(code?.html || ''), String(code?.css || '')].join('\n');
+    if (!source.trim()) return null;
+    const luminanceOf = (hex) => {
+      const clean = normalizeHexColorToken(hex);
+      if (!clean) return -1;
+      return (0.2126 * parseInt(clean.slice(1, 3), 16))
+        + (0.7152 * parseInt(clean.slice(3, 5), 16))
+        + (0.0722 * parseInt(clean.slice(5, 7), 16));
+    };
+    const blendHex = (fromHex, toHex, amount) => {
+      const a = normalizeHexColorToken(fromHex);
+      const b = normalizeHexColorToken(toHex);
+      if (!a || !b) return a || b || '';
+      const mix = (offset) => Math.round(
+        parseInt(a.slice(offset, offset + 2), 16) * (1 - amount)
+        + parseInt(b.slice(offset, offset + 2), 16) * amount
+      );
+      return rgbTripletToHex(mix(1), mix(3), mix(5));
+    };
+    const cssVars = {};
+    Array.from(source.matchAll(/--([a-z0-9_-]+)\s*:\s*(#[0-9a-f]{3,6})\b/ig)).forEach((match) => {
+      const hex = normalizeHexColorToken(match[2]);
+      if (hex) cssVars[match[1].toLowerCase()] = hex;
+    });
+    const resolveColorToken = (raw) => {
+      const value = String(raw || '').trim();
+      const varMatch = value.match(/var\(\s*--([a-z0-9_-]+)/i);
+      if (varMatch) return cssVars[varMatch[1].toLowerCase()] || '';
+      const hexMatch = value.match(/#[0-9a-f]{3,6}\b/i);
+      return hexMatch ? normalizeHexColorToken(hexMatch[0]) : '';
+    };
+    // The page's own body background is the brand ground; the shared accent
+    // extractor already ranks the page's saturated colors.
+    let pageBg = '';
+    const bodyRule = source.match(/(?:^|[}\s;>])body\s*\{([^}]*)\}/i);
+    if (bodyRule) {
+      const backgroundDecl = bodyRule[1].match(/background(?:-color)?\s*:\s*([^;]+)/i);
+      if (backgroundDecl) pageBg = resolveColorToken(backgroundDecl[1]);
+    }
+    const accent = typeof resolveTrainerRouteLoaderBrandAccent === 'function'
+      ? normalizeHexColorToken(resolveTrainerRouteLoaderBrandAccent(pageState?.trainer, page))
+      : '';
+    if (!pageBg && !accent) return null;
+    const pieces = [];
+    if (pageBg) {
+      const darkPage = luminanceOf(pageBg) < 120;
+      const ink = darkPage ? '#f4efe8' : '#171b1f';
+      // Lift the card slightly off the page color so it reads as a surface.
+      pieces.push(`--cc-bg:${blendHex(pageBg, ink, 0.05)}`);
+      pieces.push(`--cc-ink:${ink}`);
+      pieces.push(`--cc-error:${darkPage ? '#ffb3ab' : '#9b2f2f'}`);
+    }
+    if (accent) {
+      pieces.push(`--cc-accent:${accent}`);
+      pieces.push(`--cc-accent-ink:${luminanceOf(accent) > 165 ? '#171b1f' : '#ffffff'}`);
+    }
+    return pieces.length ? { styleText: pieces.join(';') } : null;
+  }
+
+  function consultCaptureVisitorId() {
+    try {
+      const existing = String(localStorage.getItem('ode-gate-visitor-id') || '').trim();
+      if (existing) return existing;
+      const next = randomSessionKey();
+      localStorage.setItem('ode-gate-visitor-id', next);
+      return next;
+    } catch {
+      return 'anon';
+    }
+  }
+
+  function sendConsultCaptureBeacon(type, page = currentRenderedPage()) {
+    const siteSlug = String(page?.siteSlug || '').trim().toLowerCase();
+    if (!siteSlug) return;
+    // Fire-and-forget: analytics must never block or break the gate itself.
+    void api('/api/training/funnel-event', {
+      method: 'POST',
+      body: JSON.stringify({
+        handle: siteSlug,
+        visitorId: consultCaptureVisitorId(),
+        type
+      })
+    }).catch(() => {});
   }
 
   function storeQualificationDraftAnswer(question, value) {
@@ -8709,9 +8798,11 @@ footer{padding:34px 0;text-align:center;font-size:13px;color:var(--muted);}
       || pageState?.publicPagePayload?.trainer?.displayName
       || 'this coach'
     ).trim() || 'this coach';
+    const brand = consultCaptureBrand(page);
+    const brandStyle = brand?.styleText ? ` style="${escapeHtml(brand.styleText)}"` : '';
     return `
       <div class="trainer-consult-capture-overlay" data-trainer-consult-capture="1">
-        <form class="trainer-consult-capture-card" data-consult-capture-form role="dialog" aria-modal="true" aria-labelledby="trainer-consult-capture-title" novalidate>
+        <form class="trainer-consult-capture-card" data-consult-capture-form role="dialog" aria-modal="true" aria-labelledby="trainer-consult-capture-title" novalidate${brandStyle}>
           <div class="trainer-consult-capture-kicker">One more step</div>
           <h2 id="trainer-consult-capture-title">One more step until the offer.</h2>
           <p class="trainer-consult-capture-sub">Tell us who we&#39;re sending it to.</p>
@@ -10726,6 +10817,12 @@ footer{padding:34px 0;text-align:center;font-size:13px;color:var(--muted);}
     if (!overlay.contains(document.activeElement)) {
       overlay.querySelector('[data-consult-capture-input="firstName"]')?.focus?.();
     }
+    // One view beacon per page load: gate_view minus gate_submit in the
+    // trainer's analytics is how many visitors clicked off without unlocking.
+    if (!consultCaptureState.viewBeaconSent) {
+      consultCaptureState.viewBeaconSent = true;
+      sendConsultCaptureBeacon('gate_view');
+    }
     // Errors and saving states mutate the open form in place instead of
     // re-rendering the profile — a re-render would wipe what the visitor typed.
     form?.addEventListener('submit', async (event) => {
@@ -10781,6 +10878,7 @@ footer{padding:34px 0;text-align:center;font-size:13px;color:var(--muted);}
         consultCaptureState.leadId = String(resp.json?.lead?.id || '').trim();
         consultCaptureState.revealed = true;
         persistConsultCaptureState(page);
+        sendConsultCaptureBeacon('gate_submit', page);
         renderCurrentProfile();
       } finally {
         consultCaptureState.saving = false;
