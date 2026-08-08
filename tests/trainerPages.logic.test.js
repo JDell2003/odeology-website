@@ -1001,6 +1001,150 @@ test('createPublicLead records delay, integration, and lead-upsert automation ac
   ]);
 });
 
+test('createPublicLead treats a phone-only match with a different email as a new person', async () => {
+  // The default consult capture makes a phone mandatory for every visitor, so
+  // shared/junk phone collisions are routine: an update here would overwrite
+  // the earlier lead's name and email with the new submitter's.
+  let inserted = false;
+  let updated = false;
+  const db = {
+    async query(sql, params) {
+      const text = String(sql);
+      if (text.includes('FROM app_trainer_pages p') && text.includes('JOIN app_users u') && text.includes('LEFT JOIN app_trainer_profiles tp')) {
+        return {
+          rows: [{
+            id: 'page-home',
+            trainer_user_id: 'trainer-1',
+            site_slug: 'avery',
+            page_slug: '',
+            page_name: 'Home',
+            nav_label: 'Home',
+            nav_order: 0,
+            mode: 'custom_code',
+            is_home: true,
+            is_published: true,
+            seo: {},
+            settings: {},
+            draft_content: {},
+            published_content: {},
+            created_at: null,
+            updated_at: null,
+            published_at: '2026-06-16T00:00:00Z',
+            username: 'avery',
+            display_name: 'Avery',
+            full_name: 'Avery Stone',
+            contact_email: 'avery@example.com',
+            meta: {}
+          }]
+        };
+      }
+      if (text.includes('FROM app_trainer_pages') && text.includes('ORDER BY nav_order ASC')) {
+        return { rows: [] };
+      }
+      if (text.includes('FROM app_trainer_page_leads') && text.includes('ORDER BY updated_at DESC')) {
+        // Existing lead that collides on PHONE but belongs to someone else.
+        return {
+          rows: [{
+            id: 'lead-first-person',
+            trainer_user_id: 'trainer-1',
+            email: 'a@x.com',
+            phone: '5550109999',
+            full_name: 'Person A',
+            status: 'New Lead',
+            tag_list: [],
+            answers: {},
+            uploads: [],
+            meta: {}
+          }]
+        };
+      }
+      if (text.includes('UPDATE app_trainer_page_leads')) {
+        // Only the dedupe branch rewrites identity fields; the harmless
+        // post-insert automation-summary update (status/tags/meta) is not it.
+        if (text.includes('full_name = CASE WHEN')) {
+          updated = true;
+          return { rows: [{ id: 'lead-first-person', trainer_user_id: 'trainer-1', answers: {}, uploads: [], meta: {}, tag_list: [] }] };
+        }
+        return {
+          rows: [{
+            id: 'lead-second-person',
+            trainer_user_id: 'trainer-1',
+            page_id: 'page-home',
+            source_site_slug: 'avery',
+            source_page_slug: '',
+            source_page_name: 'Home',
+            form_id: 'consult-capture',
+            status: 'New Lead',
+            tag_list: [],
+            full_name: 'Person B',
+            email: 'b@y.com',
+            phone: '5550109999',
+            goal: '',
+            budget: '',
+            location: '',
+            coaching_type: '',
+            availability: '',
+            injuries: '',
+            answers: {},
+            uploads: [],
+            meta: {},
+            created_at: '2026-08-08T00:00:00Z',
+            updated_at: '2026-08-08T00:00:00Z'
+          }]
+        };
+      }
+      if (text.includes('INSERT INTO app_trainer_page_leads')) {
+        inserted = true;
+        return {
+          rows: [{
+            id: 'lead-second-person',
+            trainer_user_id: 'trainer-1',
+            page_id: 'page-home',
+            source_site_slug: 'avery',
+            source_page_slug: '',
+            source_page_name: 'Home',
+            form_id: 'consult-capture',
+            status: 'New Lead',
+            tag_list: [],
+            full_name: params[8],
+            email: params[9],
+            phone: params[10],
+            goal: '',
+            budget: '',
+            location: '',
+            coaching_type: '',
+            availability: '',
+            injuries: '',
+            answers: {},
+            uploads: [],
+            meta: {},
+            created_at: '2026-08-08T00:00:00Z',
+            updated_at: '2026-08-08T00:00:00Z'
+          }]
+        };
+      }
+      if (text.includes('INSERT INTO app_trainer_page_lead_events')) {
+        return { rows: [] };
+      }
+      throw new Error(`Unexpected query: ${text.slice(0, 120)}`);
+    }
+  };
+
+  const result = await trainerPages.createPublicLead(db, {
+    siteSlug: 'avery',
+    formId: 'consult-capture',
+    fullName: 'Person B',
+    email: 'b@y.com',
+    phone: '555 010 9999',
+    answers: { first_name: 'Person', last_name: 'B' }
+  });
+
+  assert.equal(inserted, true);
+  assert.equal(updated, false);
+  assert.equal(result.lead.id, 'lead-second-person');
+  assert.equal(result.lead.email, 'b@y.com');
+});
+
 test('upsertPublicQualificationSession stores progress and completes into a qualified lead', async () => {
   const queries = [];
   const db = {
@@ -1351,7 +1495,9 @@ test('upsertPublicQualificationSession can resolve a trainer by fallback public 
   assert.equal(result.lead.id, 'lead-fallback-1');
   assert.equal(result.publicPage.page.siteSlug, 'jasonodell');
   assert.equal(result.publicPage.page.id, null);
-  assert.equal(result.qualification.enabled, true);
+  // The fallback trainer never saved qualification settings; the gate is
+  // opt-in, so it reports disabled — answers that do arrive still persist.
+  assert.equal(result.qualification.enabled, false);
   assert.ok(queries.some((entry) => entry.includes('LEFT JOIN LATERAL')));
   assert.ok(queries.some((entry) => entry.includes('INSERT INTO app_trainer_page_qualification_sessions')));
 });

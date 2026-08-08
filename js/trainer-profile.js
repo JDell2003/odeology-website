@@ -107,6 +107,16 @@
     saving: false,
     error: ''
   };
+  // Default capture screen for coach pages whose trainer never configured the
+  // qualification gate: one non-dismissable name/email/phone step whose
+  // submission lands in that trainer's Consult Form Hits.
+  const consultCaptureState = {
+    initializedKey: '',
+    leadId: '',
+    revealed: false,
+    saving: false,
+    error: ''
+  };
   const editorState = {
     enabled: false,
     dirty: false,
@@ -318,11 +328,14 @@
     if (explicit && typeof explicit === 'object') return explicit;
     const settings = page?.settings && typeof page.settings === 'object' ? page.settings : {};
     const qualification = settings.qualification && typeof settings.qualification === 'object' ? settings.qualification : {};
+    // Opt-in, mirroring the server: no saved qualification settings, no gate.
+    const configured = Object.keys(qualification).length > 0;
     const questions = Array.isArray(qualification.questions) && qualification.questions.length
       ? qualification.questions
       : DEFAULT_QUALIFICATION_QUESTIONS;
     return {
-      enabled: qualification.enabled !== false,
+      configured,
+      enabled: configured && qualification.enabled !== false,
       title: String(qualification.title || 'A few quick questions before you view this coach page').trim(),
       subtitle: String(qualification.subtitle || 'This helps the trainer qualify the right leads and tailor the follow-up.').trim(),
       ctaLabel: String(qualification.ctaLabel || 'Continue').trim() || 'Continue',
@@ -417,6 +430,58 @@
       persistQualificationState();
     }
     renderCurrentProfile();
+  }
+
+  function consultCaptureStorageKey(page = currentRenderedPage()) {
+    const siteSlug = String(page?.siteSlug || '').trim().toLowerCase();
+    // Site-wide, not per page: giving contact details once unlocks the whole
+    // coach site, unlike qualification progress which tracks per page.
+    return siteSlug ? `trainer-consult-capture:${siteSlug}` : '';
+  }
+
+  function initializeConsultCaptureState(page = currentRenderedPage()) {
+    const key = consultCaptureStorageKey(page);
+    if (!key || consultCaptureState.initializedKey === key) return;
+    consultCaptureState.initializedKey = key;
+    let stored = null;
+    try {
+      const raw = localStorage.getItem(key);
+      stored = raw ? JSON.parse(raw) : null;
+    } catch {
+      stored = null;
+    }
+    consultCaptureState.leadId = String(stored?.leadId || '').trim();
+    consultCaptureState.revealed = stored?.completed === true;
+    consultCaptureState.saving = false;
+    consultCaptureState.error = '';
+  }
+
+  function persistConsultCaptureState(page = currentRenderedPage()) {
+    const key = consultCaptureStorageKey(page);
+    if (!key) return;
+    try {
+      localStorage.setItem(key, JSON.stringify({
+        completed: consultCaptureState.revealed === true,
+        leadId: consultCaptureState.leadId,
+        updatedAt: new Date().toISOString()
+      }));
+    } catch {
+      // ignore storage failures
+    }
+  }
+
+  function consultCaptureRequired(page = currentRenderedPage(), config = qualificationConfig(page)) {
+    // Only pages whose trainer never touched qualification settings get the
+    // default capture; an explicitly configured (even disabled) gate wins.
+    if (config?.enabled !== false || config?.configured === true) return false;
+    // Only a page the public API actually served can deliver the lead. The
+    // legacy ?trainer= route fabricates a blank page when the lookup 404s or
+    // the DB is down — trapping a visitor behind a non-dismissable form whose
+    // POST can never resolve would lock them out of the profile entirely.
+    if (!pageState.publicPagePayload?.page) return false;
+    if (canBypassQualificationGate(page)) return false;
+    initializeConsultCaptureState(page);
+    return consultCaptureState.revealed !== true;
   }
 
   function storeQualificationDraftAnswer(question, value) {
@@ -8636,6 +8701,46 @@ footer{padding:34px 0;text-align:center;font-size:13px;color:var(--muted);}
     `;
   }
 
+  function renderConsultCaptureGate(page) {
+    if (!consultCaptureRequired(page)) return '';
+    const trainerName = String(
+      pageState?.trainer?.fullName
+      || pageState?.trainer?.displayName
+      || pageState?.publicPagePayload?.trainer?.displayName
+      || 'this coach'
+    ).trim() || 'this coach';
+    return `
+      <div class="trainer-consult-capture-overlay" data-trainer-consult-capture="1">
+        <form class="trainer-consult-capture-card" data-consult-capture-form role="dialog" aria-modal="true" aria-labelledby="trainer-consult-capture-title" novalidate>
+          <div class="trainer-consult-capture-kicker">One more step</div>
+          <h2 id="trainer-consult-capture-title">One more step until the offer.</h2>
+          <p class="trainer-consult-capture-sub">Tell us who we&#39;re sending it to.</p>
+          <div class="trainer-consult-capture-grid">
+            <label class="trainer-consult-capture-field">
+              <span>First name</span>
+              <input type="text" name="firstName" autocomplete="given-name" data-consult-capture-input="firstName">
+            </label>
+            <label class="trainer-consult-capture-field">
+              <span>Last name</span>
+              <input type="text" name="lastName" autocomplete="family-name" data-consult-capture-input="lastName">
+            </label>
+          </div>
+          <label class="trainer-consult-capture-field">
+            <span>Email</span>
+            <input type="email" name="email" autocomplete="email" inputmode="email" data-consult-capture-input="email">
+          </label>
+          <label class="trainer-consult-capture-field">
+            <span>Phone number</span>
+            <input type="tel" name="phone" autocomplete="tel" inputmode="tel" data-consult-capture-input="phone">
+          </label>
+          <div class="trainer-consult-capture-error" data-consult-capture-error hidden></div>
+          <button type="submit" class="trainer-consult-capture-submit" data-consult-capture-submit>Take me to the offer</button>
+          <div class="trainer-consult-capture-note">Your details go straight to ${escapeHtml(trainerName)}.</div>
+        </form>
+      </div>
+    `;
+  }
+
   function summarizePitch(raw, maxLength = 132) {
     const text = String(raw || '').trim().replace(/\s+/g, ' ');
     if (!text) return '';
@@ -8685,9 +8790,15 @@ footer{padding:34px 0;text-align:center;font-size:13px;color:var(--muted);}
     const qualificationRevealed = typeof qualificationState === 'undefined' ? true : qualificationState.revealed === true;
     const canBypass = typeof canBypassQualificationGate === 'function' ? canBypassQualificationGate(page) : false;
     const qualificationSettings = typeof qualificationConfig === 'function' ? qualificationConfig(page) : { enabled: true };
-    const revealLocked = publicView && !qualificationRevealed && !canBypass && qualificationSettings?.enabled !== false;
+    const captureLocked = publicView && typeof consultCaptureRequired === 'function'
+      && consultCaptureRequired(page, qualificationSettings);
+    const revealLocked = (publicView && !qualificationRevealed && !canBypass && qualificationSettings?.enabled !== false)
+      || captureLocked;
     const qualificationMarkup = publicView && typeof renderQualificationGate === 'function'
       ? renderQualificationGate(page)
+      : '';
+    const captureMarkup = publicView && typeof renderConsultCaptureGate === 'function'
+      ? renderConsultCaptureGate(page)
       : '';
     // A standalone /coach/:slug route is the trainer's real website — the
     // builder's own nav never belongs on it, whether it's a visitor looking or
@@ -8700,12 +8811,13 @@ footer{padding:34px 0;text-align:center;font-size:13px;color:var(--muted);}
     return `
       <section class="trainer-builder-public-shell">
         ${navMarkup}
-        <section class="trainer-builder-public-main${revealLocked ? ' is-gated' : ''}">
+        <section class="trainer-builder-public-main${revealLocked ? ' is-gated' : ''}"${revealLocked ? ' inert' : ''}>
           <div class="trainer-builder-public-frame">
             ${renderActiveBuilderPage(page, { publicView })}
           </div>
         </section>
         ${qualificationMarkup}
+        ${captureMarkup}
       </section>
     `;
   }
@@ -9585,6 +9697,7 @@ footer{padding:34px 0;text-align:center;font-size:13px;color:var(--muted);}
       };
     });
     bindQualificationGate();
+    bindConsultCaptureGate();
     bindPublicLeadForms();
     bindPublicPageAutomation();
     syncBuilderToolbarState();
@@ -10593,6 +10706,89 @@ footer{padding:34px 0;text-align:center;font-size:13px;color:var(--muted);}
       };
       input.addEventListener('input', persistDraft);
       input.addEventListener('change', persistDraft);
+    });
+  }
+
+  function bindConsultCaptureGate() {
+    const overlay = document.querySelector('[data-trainer-consult-capture="1"]');
+    if (!overlay) return;
+    const form = overlay.querySelector('[data-consult-capture-form]');
+    const errorEl = overlay.querySelector('[data-consult-capture-error]');
+    const submitBtn = overlay.querySelector('[data-consult-capture-submit]');
+    const readField = (name) => String(overlay.querySelector(`[data-consult-capture-input="${name}"]`)?.value || '').trim();
+    const showError = (message) => {
+      if (!errorEl) return;
+      errorEl.textContent = message || '';
+      errorEl.hidden = !message;
+    };
+    // The page behind is inert while locked; without this, Tab from the
+    // address bar would still have to walk to the form on its own.
+    if (!overlay.contains(document.activeElement)) {
+      overlay.querySelector('[data-consult-capture-input="firstName"]')?.focus?.();
+    }
+    // Errors and saving states mutate the open form in place instead of
+    // re-rendering the profile — a re-render would wipe what the visitor typed.
+    form?.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      if (consultCaptureState.saving) return;
+      const firstName = readField('firstName');
+      const lastName = readField('lastName');
+      const email = readField('email');
+      const phone = readField('phone');
+      if (!firstName || !lastName) {
+        showError('Add your first and last name.');
+        return;
+      }
+      if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
+        showError('Add a valid email address.');
+        return;
+      }
+      // The server's normalizePhone silently drops anything under 10 digits —
+      // a shorter number would pass here and then vanish from the lead.
+      if (phone.replace(/\D/g, '').length < 10) {
+        showError('Add a phone number with area code.');
+        return;
+      }
+      showError('');
+      consultCaptureState.saving = true;
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Sending...';
+      }
+      const page = currentRenderedPage();
+      try {
+        const resp = await api('/api/coach/pages/lead', {
+          method: 'POST',
+          body: JSON.stringify({
+            siteSlug: page?.siteSlug,
+            pageSlug: page?.pageSlug,
+            pageName: page?.pageName || 'Coach page',
+            formId: 'consult-capture',
+            fullName: `${firstName} ${lastName}`.trim(),
+            email,
+            phone,
+            answers: { first_name: firstName, last_name: lastName },
+            meta: {
+              source: 'default_consult_capture',
+              pageName: page?.pageName || 'Coach page'
+            }
+          })
+        });
+        if (!resp.ok || !resp.json?.ok) {
+          showError(resp.json?.error || 'Could not send your details right now. Try again.');
+          return;
+        }
+        consultCaptureState.leadId = String(resp.json?.lead?.id || '').trim();
+        consultCaptureState.revealed = true;
+        persistConsultCaptureState(page);
+        renderCurrentProfile();
+      } finally {
+        consultCaptureState.saving = false;
+        if (submitBtn && overlay.isConnected) {
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Take me to the offer';
+        }
+      }
     });
   }
 

@@ -1207,6 +1207,121 @@
       background: rgba(8, 17, 26, 0.48);
       backdrop-filter: blur(16px);
     }
+    .trainer-consult-capture-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 16000;
+      display: flex;
+      /* No align/justify centering: the card centers itself with auto margins,
+         which degrades to a scrollable overlay when the card is taller than a
+         small phone viewport — flex centering would clip the top instead. */
+      overflow-y: auto;
+      padding: 22px;
+      background: rgba(8, 17, 26, 0.52);
+      backdrop-filter: blur(16px);
+    }
+    .trainer-consult-capture-card {
+      width: min(100%, 440px);
+      margin: auto;
+      display: grid;
+      gap: 14px;
+      padding: 30px 28px 26px;
+      border-radius: 24px;
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.99), rgba(247, 249, 252, 0.99));
+      border: 1px solid rgba(16, 36, 52, 0.08);
+      box-shadow: 0 34px 78px rgba(9, 25, 37, 0.28);
+      font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+      color: #10283c;
+    }
+    .trainer-consult-capture-kicker {
+      color: rgba(16, 36, 52, 0.5);
+      font-size: 0.68rem;
+      font-weight: 900;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+    }
+    .trainer-consult-capture-card h2 {
+      margin: 0;
+      font-size: 1.42rem;
+      line-height: 1.2;
+      letter-spacing: -0.01em;
+    }
+    .trainer-consult-capture-sub {
+      margin: -6px 0 2px;
+      color: rgba(16, 36, 52, 0.66);
+      font-size: 0.95rem;
+    }
+    .trainer-consult-capture-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    .trainer-consult-capture-field {
+      display: grid;
+      gap: 6px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: rgba(16, 36, 52, 0.62);
+    }
+    .trainer-consult-capture-field input {
+      width: 100%;
+      min-height: 46px;
+      padding: 0 14px;
+      border: 1px solid rgba(16, 36, 52, 0.16);
+      border-radius: 12px;
+      background: #ffffff;
+      color: #10283c;
+      font-size: 0.95rem;
+      font-weight: 600;
+    }
+    .trainer-consult-capture-field input:focus {
+      outline: 2px solid rgba(43, 108, 176, 0.55);
+      outline-offset: 1px;
+      border-color: rgba(43, 108, 176, 0.55);
+    }
+    .trainer-consult-capture-error {
+      padding: 10px 14px;
+      border-radius: 12px;
+      background: rgba(155, 47, 47, 0.08);
+      border: 1px solid rgba(155, 47, 47, 0.2);
+      color: #9b2f2f;
+      font-size: 0.86rem;
+      font-weight: 700;
+    }
+    .trainer-consult-capture-submit {
+      min-height: 52px;
+      border: 0;
+      border-radius: 999px;
+      background: linear-gradient(135deg, #10283c, #1b4768 62%, #2a6b98);
+      color: #ffffff;
+      font-size: 0.98rem;
+      font-weight: 800;
+      letter-spacing: 0.01em;
+      cursor: pointer;
+      box-shadow: 0 18px 36px rgba(10, 31, 47, 0.24);
+      transition: transform 140ms ease, filter 140ms ease;
+    }
+    .trainer-consult-capture-submit:hover:not(:disabled) {
+      transform: translateY(-1px);
+      filter: brightness(1.05);
+    }
+    .trainer-consult-capture-submit:disabled {
+      opacity: 0.7;
+      cursor: default;
+    }
+    .trainer-consult-capture-note {
+      color: rgba(16, 36, 52, 0.5);
+      font-size: 0.78rem;
+      text-align: center;
+    }
+    @media (max-width: 480px) {
+      .trainer-consult-capture-grid {
+        grid-template-columns: 1fr;
+      }
+      .trainer-consult-capture-card {
+        padding: 24px 20px 22px;
+      }
+    }
     .trainer-qualification-modal {
       position: relative;
       width: min(100%, 720px);
@@ -4676,6 +4791,9 @@
     }
     body.trainer-public-standalone-route .trainer-builder-public-shell {
       gap: 0;
+      /* main.css gives every bare <section> 5rem vertical padding; on the
+         standalone route that painted an 80px white bar above the coach page. */
+      padding: 0;
     }
     body.trainer-public-standalone-route .trainer-builder-public-shell-unavailable {
       min-height: 100vh;
@@ -5423,6 +5541,6 @@
 
   <script src="/js/main.js?v=2026-08-03-authfix-1"></script>
   <script src="/js/avatar-cropper.js"></script>
-  <script src="/js/trainer-profile.js?v=2026-07-29-coachgate-1"></script>
+  <script src="/js/trainer-profile.js?v=2026-08-08-consultcapture-1"></script>
 </body>
 </html>

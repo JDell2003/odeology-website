@@ -470,11 +470,18 @@ function normalizeQualificationQuestion(raw, index = 0) {
 
 function normalizeQualificationSettings(raw) {
   const settings = cleanObject(raw);
+  // Opt-in: a page whose trainer never saved qualification settings has no
+  // gate. Defaulting to enabled here used to throw the 14 stock questions in
+  // front of every visitor on coach pages that ship their own lead capture.
+  const configured = Object.keys(settings).length > 0;
   const questions = cleanArray(settings.questions, { maxItems: MAX_QUALIFICATION_QUESTIONS })
     .map((question, index) => normalizeQualificationQuestion(question, index))
     .filter((question) => question.label);
   return {
-    enabled: settings.enabled !== false,
+    // `configured` lets the client tell "never set up" (default consult
+    // capture) apart from "explicitly disabled" (no gate of any kind).
+    configured,
+    enabled: configured && settings.enabled !== false,
     title: cleanShortText(settings.title || 'A few quick questions before you view this coach page', 140),
     subtitle: cleanLongText(settings.subtitle || 'This helps the trainer qualify the right leads and tailor the follow-up.', 320),
     ctaLabel: cleanShortText(settings.ctaLabel || 'Continue', 40) || 'Continue',
@@ -1853,7 +1860,15 @@ async function createPublicLead(db, payload = {}) {
   const availability = cleanLongText(src.availability || answers.availability, 1000);
   const injuries = cleanLongText(src.injuries || answers.injuries, 2000);
   const meta = cleanObject(src.meta);
-  const existingLead = await findExistingTrainerLead(db, target.trainerUserId, { email, phone });
+  let existingLead = await findExistingTrainerLead(db, target.trainerUserId, { email, phone });
+  // A phone-only match whose email differs is someone else — shared household
+  // and junk numbers are routine now that the default consult capture requires
+  // a phone from every visitor. Updating would overwrite the earlier person's
+  // name and email; insert a fresh lead instead.
+  if (existingLead?.id && email) {
+    const existingEmail = normalizeEmail(existingLead.email);
+    if (existingEmail && existingEmail !== email) existingLead = null;
+  }
 
   let lead = null;
   if (existingLead?.id) {
