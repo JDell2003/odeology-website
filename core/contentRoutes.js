@@ -424,6 +424,95 @@ module.exports = async function contentRoutes(req, res, url) {
     });
   }
 
+  // --- anyone: report a problem or suggest an improvement -------------------
+  // Stored here, worked on elsewhere. The desktop that has the repository polls
+  // this, writes the fix, runs the suite and pushes - so this route's only job
+  // is to not lose the report. It deliberately does NOT try to be clever about
+  // the content: a trainer describing a bug badly is still a real bug, and the
+  // machine that reads the code is in a far better position to work out what
+  // they meant than a validator here is.
+  if (p === '/api/content/report' && req.method === 'POST') {
+    const user = await getUserFromRequest(req);
+    if (!user) return sendJson(res, 401, { ok: false, error: 'UNAUTHORIZED' });
+    const b = await readBody(req);
+    const text = String(b.text || '').trim().slice(0, 4000);
+    if (text.length < 8) return sendJson(res, 400, { ok: false, error: 'Say what happened' });
+    const kind = b.kind === 'improvement' ? 'improvement' : 'problem';
+    // A screenshot is worth more than the words - people describe what they
+    // think went wrong, and a picture shows what actually did. Capped because
+    // this lands in a json store, not object storage.
+    let shot = String(b.shot || '');
+    if (shot && !/^data:image\/(png|jpe?g|webp);base64,/.test(shot)) shot = '';
+    if (shot.length > 3_000_000) shot = '';
+    try {
+      const jsonStore = require('./jsonStore');
+      const rows = await jsonStore.getJson('problem-reports', []);
+      const row = {
+        id: crypto.randomBytes(5).toString('hex'),
+        kind, text, shot,
+        page: String(b.page || '').slice(0, 300),
+        userId: user.id, who: user.display_name || user.username || '',
+        at: new Date().toISOString(), status: 'new'
+      };
+      await jsonStore.setJson('problem-reports', [row, ...(Array.isArray(rows) ? rows : [])].slice(0, 500));
+      return sendJson(res, 200, { ok: true, id: row.id });
+    } catch (e) {
+      return sendJson(res, 500, { ok: false, error: 'Could not save that' });
+    }
+  }
+
+  // --- owner-only: read the queue (the desktop fixer polls this) ------------
+  if (p === '/api/content/owner/reports' && req.method === 'GET') {
+    const viewer = await getUserFromRequest(req);
+    if (!viewer) return sendJson(res, 401, { ok: false, error: 'UNAUTHORIZED' });
+    if (!viewer.isOwner) return sendJson(res, 403, { ok: false, error: 'OWNER_ONLY' });
+    try {
+      const jsonStore = require('./jsonStore');
+      const rows = await jsonStore.getJson('problem-reports', []);
+      const list = Array.isArray(rows) ? rows : [];
+      const want = String(url.searchParams.get('status') || '').trim();
+      const out = (want ? list.filter((r) => r.status === want) : list)
+        // The screenshot is fetched separately - shipping a few hundred base64
+        // images in a list response is how a queue page becomes unusable.
+        .map(({ shot, ...rest }) => ({ ...rest, hasShot: !!shot }));
+      return sendJson(res, 200, { ok: true, reports: out });
+    } catch (e) { return sendJson(res, 500, { ok: false, error: 'DB error' }); }
+  }
+
+  if (p === '/api/content/owner/report-shot' && req.method === 'GET') {
+    const viewer = await getUserFromRequest(req);
+    if (!viewer) return sendJson(res, 401, { ok: false, error: 'UNAUTHORIZED' });
+    if (!viewer.isOwner) return sendJson(res, 403, { ok: false, error: 'OWNER_ONLY' });
+    const id = String(url.searchParams.get('id') || '').trim();
+    try {
+      const jsonStore = require('./jsonStore');
+      const rows = await jsonStore.getJson('problem-reports', []);
+      const row = (Array.isArray(rows) ? rows : []).find((r) => r.id === id);
+      if (!row || !row.shot) return sendJson(res, 404, { ok: false, error: 'No screenshot' });
+      return sendJson(res, 200, { ok: true, shot: row.shot });
+    } catch (e) { return sendJson(res, 500, { ok: false, error: 'DB error' }); }
+  }
+
+  if (p === '/api/content/owner/report-status' && req.method === 'POST') {
+    const viewer = await getUserFromRequest(req);
+    if (!viewer) return sendJson(res, 401, { ok: false, error: 'UNAUTHORIZED' });
+    if (!viewer.isOwner) return sendJson(res, 403, { ok: false, error: 'OWNER_ONLY' });
+    const b = await readBody(req);
+    const id = String(b.id || '').trim();
+    try {
+      const jsonStore = require('./jsonStore');
+      const rows = await jsonStore.getJson('problem-reports', []);
+      const list = Array.isArray(rows) ? rows : [];
+      const row = list.find((r) => r.id === id);
+      if (!row) return sendJson(res, 404, { ok: false, error: 'No such report' });
+      row.status = String(b.status || 'new').slice(0, 24);
+      if (b.note) row.note = String(b.note).slice(0, 600);
+      if (b.sha) row.sha = String(b.sha).slice(0, 40);
+      await jsonStore.setJson('problem-reports', list);
+      return sendJson(res, 200, { ok: true });
+    } catch (e) { return sendJson(res, 500, { ok: false, error: 'DB error' }); }
+  }
+
   // --- owner-only: find the account to import into --------------------------
   // Ambiguity is a refusal upstream, so this exists to let a human pick by eye
   // before anything is written. Importing into the wrong account would rebuild
