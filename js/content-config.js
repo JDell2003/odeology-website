@@ -148,10 +148,163 @@
         { id: 'pin3', title: 'Proof', len: '45–60 sec', beats: ['What they believed that was wrong', 'What changed in their head', 'The result — last'],
           script: '{proofLead}\nWhat changed wasn’t effort — it was believing the right thing and building around {core}.\n{proofResultLine}\nThat’s what’s possible for {audience}. Link’s in my bio when you’re ready.' }
       ],
+
+      // ---- The VSL: the one video that lives on their coach page, not their feed.
+      // NOT a fourth pin. The three pins above go on their Instagram profile; this
+      // one is horizontal, longer, and is the thing every link in bio points AT.
+      // Rendered from THIS object (there is no LIB.pins entry for it), so unlike
+      // the pins above, `beats` and `script` here are live — edit them freely.
+      vsl: {
+        id: 'vsl',
+        title: 'The video on your page',
+        len: '90 sec – 2 min',
+        target: 'about 90 seconds',
+        floor: '90 sec',
+        // The route that actually exists, and the one that can't destroy their
+        // page. "Edit" (not "Edit page") is what the button says on a coach
+        // page; the canvas context menu is wired to the same upload the
+        // template panel uses, and Done saves AND publishes in one step.
+        where: 'Your coach page → Edit → right-click the spot where you want the video (double-tap on a phone) → Add video → pick your file → Done. Done saves and publishes in one step.',
+        hook: 'This is for {audience}.',
+        hookAlt: 'This one’s for the people I train.',
+        note: 'Different rules from your feed videos. Turn the phone sideways, set the camera to 720p, and talk for about a minute and a half — assume they can hear you, they pressed play on purpose. Everything in the filming guide about light, eye level and talking to one person still applies.',
+        // No stopwatch per beat, on purpose. A trainer who times their first
+        // line against a 12-second window and lands on 24 concludes they got it
+        // wrong on take one — which is the exact moment they put the phone down.
+        // `needs` = drop this beat entirely if that answer was never given.
+        beats: [
+          { label: 'Who it’s for', job: 'Say who it’s for and name the thing they’re stuck on. No hello, no name yet, no “welcome to my page”.' },
+          { label: 'Who you are', job: 'One number — how long, how many. Then the thing you did it without. The “without” is what stops it sounding like a brag.' },
+          { label: 'Your story', job: 'One scene from your own story. A place and a time, not a summary. Ends on the line that changed it.' },
+          { label: 'What you believe', needs: 'contrarian', job: 'What you believe that most trainers won’t say, and the one thing everything you do is built on.' },
+          { label: 'Proof', job: 'Proof. What they believed that was wrong, first. The number last — it lands harder there.' },
+          { label: 'What happens', job: 'What actually happens week to week. This is the part they came to the page for. Be boring and specific.' },
+          { label: 'Who it’s not for', job: 'Who it’s not for, then the reason people hesitate and what’s under it.' },
+          { label: 'What to do', job: 'One instruction. Say it once, then say what happens after they do it.' }
+        ],
+        // Exactly 8 blocks separated by a blank line, index-aligned to `beats`.
+        // ___ is a blank THEY fill from the questions below. {braces} we fill.
+        script:
+          'This is for {audience}. If that’s not you, this one’s going to waste your time.\n' +
+          'Most of the people who come to me are stuck in the same place — {mistake1}.\n' +
+          'Give me the rest of this video and I’ll show you exactly what I do about it.\n\n' +
+          'I’m {name}. I’ve been training people for ___ years, and I’ve worked with about ___ of them.\n' +
+          'And I’ve done all of it without ___.\n\n' +
+          'I’m not coming at this from the outside. A few years ago I was {before}.\n' +
+          'Then ___.\n' +
+          'That was when {turning_point}.\n' +
+          'It’s the reason I still do this — {why}.\n\n' +
+          'Here’s what I believe, and most trainers won’t say it out loud: {contrarian}.\n' +
+          'That’s the lever for {audience}. Everything I do with a client is built on it — the rest is noise.\n\n' +
+          '{proofLead}\n' +
+          'That belief was the problem. Not effort, not willpower — the belief.\n' +
+          'Once that changed, the rest followed.\n' +
+          '{proofResultLine}\n\n' +
+          'So here’s what actually happens if we work together.\n' +
+          'In your first two weeks, ___.\n' +
+          'After that it’s ___.\n' +
+          'All of it is built around {core}, and all of it is pointed at one thing: my clients finally {outcome}.\n\n' +
+          'This isn’t for everybody. If you’re someone who ___, I’m honestly not your guy.\n' +
+          'Most people who don’t start tell me {objection}.\n' +
+          'Underneath that it’s usually {fear} — and that’s the part I’d actually be working on with you.\n\n' +
+          'If that sounds like what you’ve been after, use the form on this page and tell me where you’re starting.\n' +
+          'Takes two minutes, and I’m the one who reads it.\n' +
+          'Once you send it, ___.\n' +
+          'That’s it. I’m {name} — talk soon.',
+        // Swapped in for block 5 when has_proof === 'self' — the same fork pin3
+        // already makes. Needed because on the self path {proofLead} degrades to a
+        // bare “I’ve been exactly where you are.” and “That belief” refers to nothing.
+        // {?id} is a SOFT slot: their own answer if they gave one, a blank if not.
+        // Never a stand-in sentence — this one they say about themselves.
+        scriptSelf:
+          'Back when I started I was sure {?old_belief}.\n' +
+          'That belief was the problem. Not effort, not willpower — the belief.\n' +
+          'Once that changed, the rest followed.\n' +
+          '{proofResultLine}',
+        askIntro: 'Answer these out loud before you film. Four of them we already know — you’re just checking we got you right. The rest are the blanks in the script.',
+        ask: [
+          { q: 'We’ve got you down as training {audience}. Say that out loud once. If it’s not how you’d say it to their face, say it your way and use that instead.', beat: 1, from: 'audience_short' },
+          { q: 'The mistake we put first is — {mistake1}. Is that the one you’d bring up to a stranger? If not, swap in one of your other two.', beat: 1, from: 'mistake1' },
+          { q: 'How long have you been training people, and roughly how many have you worked with? Say the number even if it’s small — “about fifteen” is a number. Then finish this: “and I’ve done all of it without ___.”', beat: 2 },
+          { q: 'You said your turning point was {turning_point}. Where were you when that landed? What day was it, what were you doing? Give me the room, not the lesson.', beat: 3, from: 'turning_point' },
+          { q: 'Think about {proofName} — what did {p_they} actually say to you in the first week that told you {p_they} didn’t believe it would work? Their words, not yours.', beat: 5, from: 'proofBelief', only: 'client' },
+          { q: 'Back when you thought this wouldn’t work for you either — what were you telling yourself? Say it the way you actually said it.', beat: 5, from: 'old_belief', only: 'self' },
+          { q: 'Walk me through someone’s first two weeks with you. What do they get, and what day do they get it?', beat: 6 },
+          { q: 'How do you and a client actually talk during the week — app, texts, calls? How often, and who starts it?', beat: 6 },
+          { q: 'Finish this: “if you’re someone who ___, I’m not your guy.” Say the one that would annoy you on a call.', beat: 7 },
+          { q: 'They send the form on your page. What happens next, and how fast do they hear from you? The real number, not the one you wish were true.', beat: 8 },
+          { q: 'Say your price out loud the way you’d say it on a call, and what they get for it. Don’t want it on camera? Fine — but then the call has to cover it.', beat: 8, optional: true }
+        ],
+        mvpBeats: [1, 3, 5, 6, 8],
+        // This is the DEFAULT version, not the fallback. Five beats, about 90
+        // seconds, and it fits the page's 80MB upload limit at 720p with room
+        // spare — which the full eight-beat version does not.
+        mvpNote: 'Five beats — who it’s for, your story, your proof, what actually happens, what to do next. About 90 seconds, and it does the whole job. The other three beats are version two, next week, if you want them.',
+        done: 'A sideways video of you, 90 seconds or longer, published on your page, that plays when you open your own link on your phone. Not good. Up.',
+        allowed: [
+          'Reading off notes just off camera. I do it in my own video and I say so out loud.',
+          'Saying “um”. Starting a sentence again. Losing your place for a second.',
+          'Gym noise, music in the background, someone walking behind you.',
+          'No captions, no music, no B-roll, no intro animation. None of that sells anything.',
+          'One take with one obvious cut in it.',
+          'Your price said as a range, the way you’d say it on the phone.'
+        ],
+        skip: [
+          'The years-and-numbers beat, if you haven’t got numbers yet. Go straight to your story.',
+          'The belief beat, if the video that sent them here already made that argument.',
+          'The who-it’s-not-for beat, if it feels arrogant on take one. Add it to version two.',
+          'The price, if you’d rather cover it on the call.'
+        ],
+        never: [
+          'Saying who it’s for in the first ten seconds. Skip that and the page reads as generic.',
+          'One piece of proof, told belief-first.',
+          'What actually happens week to week. It’s the single thing they came to the page to find out.',
+          'One instruction at the end, said once.',
+          'Being recognisably the same person as your reels. Same clothes, same gym, same voice. That’s a feature.'
+        ],
+
+        // ---- The lesson. Why this video exists and why a reel can’t do its job.
+        // Plain prose, one string per paragraph — rewrite freely, nothing parses it.
+        lesson: {
+          title: 'Why this one is different',
+          body: [
+            'A reel gets someone to stop. This gets them to book. Different jobs — you can’t do the second one with the first.',
+            'Every link you post sends people to one page. The first thing on that page should be you, talking to them. That’s the VSL. It stands for video sales letter, which sounds like something a man in a headset would sell you — ignore the name. It’s the conversation you’d have with someone who walked up to you on the gym floor and asked what you actually do.',
+            'A reel has about three seconds to win a stranger who’s scrolling, so it gets one loud idea. Someone on your page has already stopped and already clicked. They want three answers: is this guy legit, what actually happens if I sign up, is this for someone like me. Without the video they read a headline, don’t find you anywhere on the page, and leave — that’s every reel you filmed this week, wasted at the last step. It’s one video, it works while you sleep, and you won’t want to redo it for a long while. Film it today, while the camera’s out and the light’s still good.'
+          ]
+        },
+
+        // ---- Progress over perfection. Headings for the allowed/skip/never lists
+        // above, plus the per-answer version and the closing line.
+        progressTitle: 'Progress, not perfect. Here’s exactly what that buys you.',
+        doneTitle: 'What “done” means',
+        allowedTitle: 'You’re allowed to get all of this wrong',
+        skipTitle: 'You can skip these entirely',
+        neverTitle: 'These five carry the video — keep them',
+        fitIntro: 'Built to fit how you answered:',
+        // keys are the stored answer values for the `camera` and `time` questions.
+        // None of these may end with "come back tomorrow" or "find a friend" —
+        // the whole point is that they film it today, on their own, off the call.
+        fit: {
+          camera: {
+            hate: 'Don’t film to a camera — prop the phone on a shelf, put the five beats on a sticky note next to the lens, and talk to the note. Stop the recording between beats if it helps; five short takes is still one video. Today, while you’re already annoyed enough to do it.',
+            learning: 'Bullets on a sticky note next to the lens, and stop the recording between beats. Five short takes stitched together is still one video.',
+            comfortable: 'Straight through, one take, don’t overthink it.'
+          },
+          time: {
+            '10': 'The five-beat version — about 90 seconds. Read the beats once, then film. That’s the whole job at its minimum.',
+            '20': 'Read the beats, say the questions out loud once, film. Twenty minutes covers all three — don’t split it across days, you’ll lose the thread.',
+            '30': 'Film the five-beat version first so it’s done and uploaded. If you’ve still got time after that, open the full version and film that one too.'
+          }
+        },
+        bar: 'A rough video of you on your page beats a perfect one you never filmed, and it beats no video by a mile. Three decent takes beat one perfect one that never gets uploaded.'
+      },
+
       tasks: [
         { id: 'link', title: 'Set up your link', body: 'Gear icon on your coach page → copy your link → put it in your bio (or Linktree, or shorten it at tinyurl.com first).' },
         { id: 'profile', title: 'Fix your profile', body: 'Bio line, a clear face photo, link visible.', bioLine: true },
         { id: 'pins', title: 'Record & pin three videos', body: 'Scripts are below. Film them, pin all three to the top of your profile.', pins: true },
+        { id: 'vsl', title: 'Record the video for your page', body: 'One video, about ninety seconds, phone sideways. It goes on your coach page — the page every link you just set up sends people to. Set the camera to 720p before you film: your page takes files up to 80MB, which is roughly two minutes at 720p and only eighty seconds at 1080p. Script and questions below.', vsl: true },
         { id: 'guide', title: 'Read the filming guide', body: 'Two minutes. Vertical, good light, talk to one person, first line is the hook.' }
       ]
     }

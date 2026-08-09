@@ -269,6 +269,186 @@ module.exports = async function contentRoutes(req, res, url) {
     return sendJson(res, 200, out);
   }
 
+  // --- owner-only: import an intake taken from an onboarding CALL ----------
+  // WHY THIS EXISTS. A trainer answers these 24 questions out loud on their
+  // first call. Making them then sit and type the same answers into a form is
+  // the step where onboarding stalls, and it produces worse answers besides -
+  // the typed version is the polished one, and polished answers make bland
+  // content. So the call is transcribed elsewhere, the answers are pulled out
+  // with the trainer's own words attached, and they land here.
+  //
+  // WHY IT IS A ROUTE AND NOT A DIRECT DATABASE WRITE. The transcript work
+  // happens in a separate tool on Jason's desktop. Handing that tool the
+  // production credential would give it the owner role on all 64 tables to do
+  // a job that is one UPDATE on one json key. This route is the narrow version
+  // of that power: owner session required, one table, merge only.
+  //
+  // MERGE, NEVER REPLACE. `||` keeps every answer already on file and lets the
+  // imported ones win. Replacing `answered` wholesale would wipe anything the
+  // trainer filled in themselves, which is worse than not importing at all.
+  if (p === '/api/content/owner/import-intake' && req.method === 'POST') {
+    const viewer = await getUserFromRequest(req);
+    if (!viewer) return sendJson(res, 401, { ok: false, error: 'UNAUTHORIZED' });
+    if (!viewer.isOwner) return sendJson(res, 403, { ok: false, error: 'OWNER_ONLY' });
+
+    const b = await readBody(req);
+    const userId = String(b.userId || '').trim();
+    if (!userId) return sendJson(res, 400, { ok: false, error: 'userId required' });
+    const answers = (b.answers && typeof b.answers === 'object' && !Array.isArray(b.answers))
+      ? b.answers : null;
+    if (!answers) return sendJson(res, 400, { ok: false, error: 'answers must be an object' });
+
+    // Only question ids. A key that is not one is either a mistake or an
+    // attempt to write somewhere else inside the profile json, and neither
+    // should reach the database.
+    // NOT EVERY ANSWER IS A STRING, and coercing them all would corrupt the
+    // ones that are not. `days` is stored as an OBJECT on live profiles - the
+    // posting schedule - so String(v) would write the literal "[object Object]"
+    // into it and quietly destroy their week. Found by reading what is actually
+    // in the column rather than by assuming.
+    const clean = {};
+    const rejected = [];
+    for (const [k, v] of Object.entries(answers)) {
+      if (!/^[a-z][a-z0-9_]{1,40}$/.test(k)) { rejected.push(k); continue; }
+      if (v == null) continue;
+      if (typeof v === 'string') {
+        const s = v.trim().slice(0, 2000);
+        if (s) clean[k] = s;
+      } else if (typeof v === 'number' || typeof v === 'boolean') {
+        clean[k] = v;
+      } else if (typeof v === 'object') {
+        // Structured answers pass through as-is, but a runaway blob does not:
+        // this column is one trainer's profile, not a document store.
+        const size = JSON.stringify(v).length;
+        if (size > 8000) { rejected.push(k); continue; }
+        clean[k] = v;
+      } else {
+        rejected.push(k);
+      }
+    }
+    if (!Object.keys(clean).length) {
+      return sendJson(res, 400, { ok: false, error: 'no usable answers', rejected });
+    }
+
+    // The account has to exist. Writing a profile row for a userId that is not
+    // a user would create an orphan nobody ever sees and no error anybody ever
+    // reads.
+    let account;
+    try {
+      const u = await db.query(
+        'SELECT id::text AS id, username, email, display_name FROM app_users WHERE id = $1::uuid LIMIT 1;',
+        [userId]);
+      account = u.rows?.[0];
+    } catch (e) {
+      return sendJson(res, 400, { ok: false, error: 'userId is not a valid account id' });
+    }
+    if (!account) return sendJson(res, 404, { ok: false, error: 'Account not found' });
+
+    let had = {};
+    let exists = false;
+    try {
+      const cur = await db.query(
+        "SELECT COALESCE(profile->'content_program_v2'->'answered', '{}'::jsonb) AS answered FROM app_user_profiles WHERE user_id = $1::uuid LIMIT 1;",
+        [userId]);
+      if (cur.rows?.length) { exists = true; had = cur.rows[0].answered || {}; }
+    } catch (e) { return sendJson(res, 500, { ok: false, error: 'DB error' }); }
+
+    // Compared as JSON, not with ===, for the same reason: two equal objects
+    // are never === in javascript, so an unchanged `days` would report as an
+    // overwrite every single import.
+    const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+    const added = Object.keys(clean).filter((k) => !(k in had)).sort();
+    const changed = Object.keys(clean).filter((k) => k in had && !same(had[k], clean[k])).sort();
+    const unchanged = Object.keys(clean).filter((k) => k in had && same(had[k], clean[k])).sort();
+
+    // DRY RUN IS THE DEFAULT. This writes into an account a real person logs
+    // into; a caller has to ask for the write explicitly. It also means the
+    // machine on the other end can show Jason the overwrites before any of it
+    // happens.
+    if (!b.commit) {
+      return sendJson(res, 200, {
+        ok: true, dryRun: true, wrote: false, exists,
+        account: { id: account.id, name: account.display_name, email: account.email },
+        added, changed, unchanged, rejected,
+        overwrites: changed.reduce((o, k) => (o[k] = { was: had[k], now: clean[k] }, o), {})
+      });
+    }
+
+    try {
+      if (!exists) {
+        await db.query(
+          `INSERT INTO app_user_profiles (user_id, created_at, updated_at, profile)
+           VALUES ($1::uuid, now(), now(),
+                   jsonb_build_object('content_program_v2',
+                     jsonb_build_object('answered', $2::jsonb,
+                                        'updatedAt', to_char(now() at time zone 'utc',
+                                                             'YYYY-MM-DD"T"HH24:MI:SS"Z"'))))
+           ON CONFLICT (user_id) DO NOTHING;`,
+          [userId, JSON.stringify(clean)]);
+      }
+      await db.query(
+        `UPDATE app_user_profiles
+            SET profile = jsonb_set(
+                  jsonb_set(
+                    COALESCE(profile, '{}'::jsonb),
+                    '{content_program_v2}',
+                    COALESCE(profile->'content_program_v2', '{}'::jsonb),
+                    true),
+                  '{content_program_v2,answered}',
+                  COALESCE(profile->'content_program_v2'->'answered', '{}'::jsonb) || $2::jsonb,
+                  true),
+                updated_at = now()
+          WHERE user_id = $1::uuid;`,
+        [userId, JSON.stringify(clean)]);
+    } catch (e) {
+      return sendJson(res, 500, { ok: false, error: 'Write failed' });
+    }
+
+    // READ BACK RATHER THAN TRUST THE UPDATE. Their whole content program gets
+    // generated from these answers, so "it landed" has to be a fact.
+    let verified = [];
+    try {
+      const chk = await db.query(
+        "SELECT COALESCE(profile->'content_program_v2'->'answered', '{}'::jsonb) AS answered FROM app_user_profiles WHERE user_id = $1::uuid LIMIT 1;",
+        [userId]);
+      const now = chk.rows?.[0]?.answered || {};
+      verified = Object.keys(clean)
+        .filter((k) => JSON.stringify(now[k]) === JSON.stringify(clean[k])).sort();
+    } catch (e) {}
+
+    return sendJson(res, 200, {
+      ok: true, dryRun: false, wrote: true,
+      account: { id: account.id, name: account.display_name, email: account.email },
+      added, changed, unchanged, rejected,
+      verified, verifiedAll: verified.length === Object.keys(clean).length
+    });
+  }
+
+  // --- owner-only: find the account to import into --------------------------
+  // Ambiguity is a refusal upstream, so this exists to let a human pick by eye
+  // before anything is written. Importing into the wrong account would rebuild
+  // a different trainer's whole program from somebody else's answers.
+  if (p === '/api/content/owner/find-account' && req.method === 'GET') {
+    const viewer = await getUserFromRequest(req);
+    if (!viewer) return sendJson(res, 401, { ok: false, error: 'UNAUTHORIZED' });
+    if (!viewer.isOwner) return sendJson(res, 403, { ok: false, error: 'OWNER_ONLY' });
+    const q = String(url.searchParams.get('q') || '').trim();
+    if (q.length < 2) return sendJson(res, 200, { ok: true, accounts: [] });
+    try {
+      const r = await db.query(
+        `SELECT id::text AS id, username, email, display_name
+           FROM app_users
+          WHERE email ILIKE $1 OR username ILIKE $1 OR display_name ILIKE $1
+          ORDER BY display_name LIMIT 10;`,
+        [`%${q}%`]);
+      return sendJson(res, 200, {
+        ok: true,
+        accounts: (r.rows || []).map((x) => ({
+          id: x.id, username: x.username, email: x.email, name: x.display_name }))
+      });
+    } catch (e) { return sendJson(res, 500, { ok: false, error: 'DB error' }); }
+  }
+
   // --- Flow A -> Flow B pre-fill for the CURRENT trainer --------------------
   // Existing trainers have no local prefill blob, so content.js fetches their
   // signup answers here to seed the detailed questionnaire (outcome, specialties).

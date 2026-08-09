@@ -230,7 +230,10 @@
   }
   function proofResultLine() {
     var a = state.answered;
-    if (a.has_proof === 'self') return 'Now? ' + (a.selfResult || 'I’m proof it works.');
+    // The self branch takes the trainer's own words, which rarely end in
+    // punctuation — without this it lands mid-air ("Now? down 30 lbs and I've
+    // kept it off"). The client branch below has always terminated itself.
+    if (a.has_proof === 'self') { var r = a.selfResult || 'I’m proof it works'; return 'Now? ' + r + (/[.!?]$/.test(r) ? '' : '.'); }
     return 'The result: ' + (a.proofResult || 'a result they were proud of') + '.';
   }
 
@@ -1089,6 +1092,308 @@
     o.push(''); o.push('CTA: ' + ctaText());
     return o.join('\n');
   }
+
+  // ---------- Day Zero task 4: the VSL (the video on their coach page) ----------
+  // Unlike the pins — whose config entries are dead data, the visible content
+  // coming from LIB via pinBriefFor — this card is rendered DIRECTLY from
+  // CFG.dayZero.vsl. That object is the single source of truth. There is no
+  // LIB.pins.vsl and there must not be one, or it splits in two again.
+  function vslData() { var v = (CFG.dayZero || {}).vsl; return (v && typeof v === 'object' && v.script) ? v : null; }
+  // {?id} is a SOFT slot: the trainer's own answer if they gave one, a blank if
+  // they didn't. Unlike {id} it never substitutes a stand-in sentence — these
+  // are lines a trainer says about himself, and a plausible invention read off
+  // the autocue is worse than a gap he fills in his own words.
+  function softSlots(s) {
+    return String(s == null ? '' : s).replace(/\{\?([a-zA-Z0-9_]+)\}/g, function (_m, id) {
+      var val = String(qa()[id] == null ? '' : qa()[id]).trim(); return val || '___';
+    });
+  }
+  // Soft slots, then fill(), then turn any slot we DON'T know about into a
+  // blank. fill() passes unknown slots through verbatim, and a trainer reads
+  // this out loud on camera — "___" is something they can say around,
+  // "{offer}" isn't.
+  function fillStrict(s) { return String(fill(softSlots(s)) || '').replace(/\{[a-zA-Z0-9_]+\}/g, '___'); }
+  function vslHook() {
+    var v = vslData(); if (!v) return '';
+    var h = fillStrict(v.hook || ''); return grammarGuard(h) ? h : fillStrict(v.hookAlt || v.hook || '');
+  }
+  // Exactly 8 blocks, index-aligned 1:1 with vsl.beats. Block 5 forks on the
+  // same has_proof branch pin3 makes — on the self path {proofLead} degrades to
+  // a bare line and "That belief" would refer to nothing.
+  function vslBlocks() {
+    var v = vslData(); if (!v) return [];
+    var blocks = String(v.script || '').split('\n\n');
+    if (qa().has_proof === 'self' && v.scriptSelf && blocks.length >= 5) blocks[4] = v.scriptSelf;
+    return blocks;
+  }
+  // A question about a client is hidden from a trainer whose proof is himself,
+  // and vice versa — same fork, one list.
+  function vslAsks() {
+    var v = vslData(); if (!v) return [];
+    return (v.ask || []).filter(function (a) { return !a.only || qa().has_proof === a.only; });
+  }
+  // Beats paired with their script block, already dropped where the beat
+  // declares `needs` and that answer was never given. A quick-path trainer has
+  // no `contrarian`, and beat 4's setup ("most trainers won't say this out
+  // loud") followed by the {contrarian} fallback makes him read the blandest
+  // line in fitness as though it were his edge. No beat beats a false beat.
+  // `n` stays the ORIGINAL 1-based beat number so mvpBeats keeps working.
+  function vslRows() {
+    var v = vslData(); if (!v) return [];
+    var blocks = vslBlocks(); var a = qa();
+    return (v.beats || []).map(function (bt, i) { return { n: i + 1, bt: bt, block: blocks[i] || '' }; })
+      .filter(function (r) { return !r.bt.needs || String(a[r.bt.needs] == null ? '' : a[r.bt.needs]).trim(); });
+  }
+  function beatLabel(bt) { return String(bt.label || bt.t || ''); }
+  // mvpOnly mirrors what the card is SHOWING. The copied text is what goes to
+  // the phone and gets filmed from — if it disagrees with the screen, the
+  // personalisation is undone at the one moment it mattered.
+  function vslPlanText(mvpOnly) {
+    var v = vslData(); if (!v) return '';
+    var mvp = v.mvpBeats || []; var blanks = []; var o = [];
+    o.push('YOUR PAGE VIDEO — ' + (v.title || '') + ' (' + (v.len || '') + ')');
+    o.push('Phone sideways, camera set to 720p. Aim for ' + (v.target || 'about 90 seconds') + '. Floor is ' + (v.floor || '90 sec') + '.');
+    o.push('HOOK: ' + vslHook()); o.push('');
+    vslRows().forEach(function (r) {
+      if (mvpOnly && mvp.indexOf(r.n) === -1) return;
+      o.push(r.n + '. ' + beatLabel(r.bt) + ' — ' + fillStrict(r.bt.job));
+      var blk = fillStrict(r.block);
+      if (blk) { o.push(blk); blk.split('\n').forEach(function (ln) { if (ln.indexOf('___') !== -1) blanks.push(ln.trim()); }); }
+      o.push('');
+    });
+    if (blanks.length) { o.push('THE BLANKS ARE YOURS — fill these in your own words:'); blanks.forEach(function (ln) { o.push('- ' + ln); }); o.push(''); }
+    o.push(mvpOnly ? 'This is the five-beat version — about 90 seconds, and it does the whole job.' : (v.mvpNote || ''));
+    o.push('');
+    if (v.done) o.push('DONE = ' + v.done);
+    return o.join('\n');
+  }
+  function vslAskText() {
+    var v = vslData(); if (!v) return '';
+    var o = ['BEFORE YOU FILM — say these out loud'];
+    if (v.askIntro) { o.push(''); o.push(v.askIntro); }
+    o.push('');
+    vslAsks().forEach(function (a, i) {
+      o.push((i + 1) + '. ' + fillStrict(a.q) + (a.optional ? '  (optional)' : ''));
+      var prev = a.from ? String(qa()[a.from] || '').trim() : '';
+      if (prev) o.push('   You already said: ' + prev);
+    });
+    return o.join('\n');
+  }
+  // The lesson. Not fine print — a trainer who doesn't understand why this
+  // video is different from a reel films a reel, and the page stays dead.
+  // Copy lives in the config (vsl.lesson.body); this is only the floor if the
+  // config half hasn't loaded a lesson yet.
+  var VSL_LESSON = [
+    'A reel gets someone to stop. This gets them to book. Different jobs — you can’t do the second one with the first.',
+    'Every link you just set up sends people to one page. The first thing on that page should be you, talking to them, for about two minutes. That’s the VSL — the conversation you’d have with someone who walked up to you on the gym floor and asked what you actually do.',
+    'A reel has about three seconds to win a stranger who’s scrolling. Someone on your page has already stopped and already clicked — without this video they read a headline, don’t find you anywhere on the page, and leave. That’s every reel you filmed this week, wasted at the last step.'
+  ];
+  // The trainer's own answer, in the words the questionnaire showed them —
+  // read off CFG.questions so a re-labelled choice never drifts from this card.
+  function answerLabel(qid) {
+    var val = String(qa()[qid] == null ? '' : qa()[qid]);
+    var q = (CFG.questions || []).filter(function (x) { return x.id === qid; })[0];
+    if (!q || !q.choices) return val;
+    var c = q.choices.filter(function (x) { return String(x.v) === val; })[0];
+    return c ? c.label : val;
+  }
+  function renderVslCard(host, onChange) {
+    var v = vslData();
+    var boxes = [];
+    function paint() {
+      var on = !!state.dzTasks.vsl;
+      boxes.forEach(function (c) { c.textContent = on ? '✓' : ''; c.style.cssText = 'width:26px;height:26px;' + (on ? 'background:#16a34a;border-color:#16a34a;color:#fff;' : ''); });
+    }
+    // v12 6 — updates in place, never re-renders on tap, so one tap can never
+    // eat another. Both checkboxes drive the one key: state.dzTasks.vsl.
+    function toggle(e) { if (e) e.stopPropagation(); state.dzTasks.vsl = !state.dzTasks.vsl; persist(); paint(); if (onChange) onChange(); }
+    function mkCheck() {
+      var c = el('button', 'cp-dz-check', state.dzTasks.vsl ? '✓' : ''); c.type = 'button';
+      c.style.cssText = 'width:26px;height:26px;' + (state.dzTasks.vsl ? 'background:#16a34a;border-color:#16a34a;color:#fff;' : '');
+      c.onclick = toggle; boxes.push(c); return c;
+    }
+    function blankify(txt) { return esc(fillStrict(txt)).replace(/_{3,}/g, '<span class="cp-blank-slot">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>'); }
+
+    var box = el('div', 'cp-dz-pin');
+    var head = el('div'); head.style.cssText = 'display:flex;align-items:center;gap:8px;';
+    head.appendChild(mkCheck());
+    head.appendChild(el('h4', null, 'Your page video — ' + esc((v && v.title) || 'The video on your page') + (v && v.len ? ' <span style="color:var(--muted);font-weight:600;font-size:.8rem;">(' + esc(v.len) + ')</span>' : '')));
+    box.appendChild(head);
+    if (!v) {
+      // The script lives in the config. If it hasn't loaded, say so — never
+      // show an empty card the trainer can tick their way past.
+      box.appendChild(el('p', 'cp-hooknote', 'Your script didn’t load. Reload the page — if it’s still blank, tell us before you film.'));
+      host.appendChild(box); return;
+    }
+
+    // The permission, up top and in plain sight. A trainer who thinks this has
+    // to be perfect films nothing, and a trainer who films nothing earns nothing.
+    var perm = el('div', 'cp-prompt');
+    perm.innerHTML = '<b>Rough is fine. Done beats good.</b> Ninety seconds, one take, notes just off camera, said your own way. A page with a rough video of you on it beats a page with a perfect video you never filmed — and it beats a page with no video by a mile.';
+    box.appendChild(perm);
+
+    // The lesson: why this isn't a reel.
+    var lessonBody = (v.lesson && v.lesson.body && v.lesson.body.length) ? v.lesson.body : VSL_LESSON;
+    var lessonTitle = (v.lesson && v.lesson.title && v.lesson.title !== v.title) ? v.lesson.title : 'Why this one is different';
+    var lesson = el('div', 'cp-lesson'); lesson.style.marginTop = '10px';
+    var lh = el('div', 'cp-label', esc(lessonTitle)); lh.style.color = 'var(--accent)'; lesson.appendChild(lh);
+    lessonBody.forEach(function (p, i) { var n = el('p', null, esc(p)); n.style.cssText = 'margin:' + (i ? '8px' : '6px') + ' 0 0;font-size:.9rem;line-height:1.5;'; lesson.appendChild(n); });
+    box.appendChild(lesson);
+
+    // Where it goes. This is the route that exists AND is safe: the Custom
+    // canvas is the default tab, its Add video is the same upload the template
+    // panel uses, and Done saves and publishes in one step.
+    var where = el('div'); where.style.marginTop = '10px';
+    var lnk = el('a', 'cp-btn cp-btn-ghost sm', 'Open my page → Edit');
+    lnk.href = fill('{link}'); lnk.target = '_blank'; lnk.rel = 'noopener';
+    lnk.style.cssText = 'display:inline-flex;text-decoration:none;';
+    lnk.onclick = function (e) { e.stopPropagation(); };
+    where.appendChild(lnk);
+    if (v.where) where.appendChild(el('p', 'cp-hooknote', esc(v.where)));
+    // The two ways this ends with nothing — or worse, with a wiped page.
+    // Deliberately not another italic note: a trainer who skims past these
+    // ticks the box and walks away, and the Template tab is genuinely
+    // destructive (it rebuilds the whole site from blank fields).
+    var warn = el('div'); warn.style.cssText = 'margin-top:8px;padding:8px 0 8px 11px;border-left:3px solid #f5b942;font-size:.82rem;line-height:1.5;';
+    warn.innerHTML = '<b>Stay on the Custom tab.</b> Don’t go through Template to do this — Template rebuilds your whole page from blank boxes and wipes what’s already there. Add video, then Done.<br><b>Then check it.</b> Open your own link on your phone and watch it play. If it never appears, it didn’t upload.';
+    where.appendChild(warn);
+    box.appendChild(where);
+
+    // Different rules from the feed videos — read BEFORE filming.
+    if (v.note) box.appendChild(el('p', 'cp-hooknote', esc(v.note)));
+
+    var hk = el('div'); hk.style.cssText = 'margin-top:10px;font-weight:700;font-size:.98rem;line-height:1.35;';
+    hk.textContent = 'Hook: ' + vslHook(); box.appendChild(hk);
+
+    // The five-beat version is the DEFAULT for everyone, not a fallback for the
+    // nervous. It's ~90 seconds, it does the whole job, and — unlike the full
+    // eight — it fits inside the page's 80MB upload limit at 720p. The other
+    // three beats are hidden until asked for, so the card a trainer reads
+    // before filming is short enough to read before filming.
+    var rows = []; var mvpOn = true;
+    var mvpWrap = el('div'); mvpWrap.style.cssText = 'margin-top:10px;';
+    if (v.mvpNote) mvpWrap.appendChild(el('p', 'cp-note', esc(v.mvpNote)));
+    var mvpBtn = el('button', 'cp-btn cp-btn-ghost sm', ''); mvpBtn.type = 'button'; mvpBtn.style.marginTop = '8px';
+    mvpWrap.appendChild(mvpBtn);
+    // The full eight-beat version runs about two and a half minutes, which is
+    // over the page's 80MB upload limit even at 720p. Say so before they film
+    // it, not after — being told your video is wrong once it already exists is
+    // the surest way to end the session with nothing on the page.
+    var mvpWarn = el('p', 'cp-hooknote', 'Heads up: the full version runs about two and a half minutes, which is over the 80MB your page accepts. Film the 90-second version if you want it to upload first time.');
+    mvpWarn.style.display = 'none'; mvpWrap.appendChild(mvpWarn);
+    box.appendChild(mvpWrap);
+    function paintMvp() {
+      var keep = v.mvpBeats || [];
+      rows.forEach(function (r) { var on = !mvpOn || keep.indexOf(r.n) !== -1; r.node.style.display = on ? '' : 'none'; });
+      mvpBtn.textContent = mvpOn ? 'Show the full version (that’s version two)' : 'Back to the 90-second version';
+      mvpWarn.style.display = mvpOn ? 'none' : '';
+    }
+    mvpBtn.onclick = function (e) { e.stopPropagation(); mvpOn = !mvpOn; paintMvp(); };
+
+    vslRows().forEach(function (r) {
+      var row = el('div'); row.style.cssText = 'padding:8px 0;border-top:1px solid var(--line);';
+      var top = el('div'); top.style.cssText = 'display:grid;grid-template-columns:auto 1fr;gap:10px;font-size:.88rem;';
+      // A short label, not a stopwatch. Timecodes on a first take manufacture
+      // retakes: you say the scripted words, glance down, and conclude you got
+      // your own opening line wrong.
+      var t = el('span'); t.style.cssText = 'font-weight:800;color:var(--accent);white-space:nowrap;'; t.textContent = r.n + ' · ' + beatLabel(r.bt);
+      top.appendChild(t); top.appendChild(el('span', null, esc(fillStrict(r.bt.job))));
+      row.appendChild(top);
+      if (r.block) {
+        var blk = el('p'); blk.style.cssText = 'margin:6px 0 0;white-space:pre-line;font-size:.94rem;line-height:1.55;color:var(--ink);font-weight:500;';
+        blk.innerHTML = blankify(r.block); row.appendChild(blk);
+      }
+      rows.push({ n: r.n, node: row }); box.appendChild(row);
+    });
+    var blankHint = el('p', 'cp-hooknote', 'The underlined gaps are yours — that’s where your own words go. Everything else we pulled from your answers.');
+    box.appendChild(blankHint);
+    paintMvp();
+
+    var copyRow = el('div', 'cp-copyrow');
+    var c1 = el('button', 'cp-btn cp-btn-ghost sm', 'Copy my script'); c1.type = 'button';
+    // Copies the version currently on screen — see vslPlanText.
+    c1.onclick = function (e) { e.stopPropagation(); copyText(vslPlanText(mvpOn), 'Script copied'); };
+    var c2 = el('button', 'cp-btn cp-btn-ghost sm', 'Copy the questions'); c2.type = 'button';
+    c2.onclick = function (e) { e.stopPropagation(); copyText(vslAskText(), 'Questions copied'); };
+    copyRow.appendChild(c1); copyRow.appendChild(c2); box.appendChild(copyRow);
+
+    // The self-interview. Anything onboarding already answered is shown back to
+    // them as a 5-second check, not asked twice.
+    var qWrap = el('div'); qWrap.style.marginTop = '14px';
+    qWrap.appendChild(el('div', 'cp-label', 'Questions to ask yourself'));
+    if (v.askIntro) qWrap.appendChild(el('p', 'cp-hooknote', esc(v.askIntro)));
+    var ol = el('ol'); ol.style.cssText = 'margin:10px 0 0;padding-left:20px;display:grid;gap:10px;';
+    vslAsks().forEach(function (a) {
+      var prev = a.from ? String(qa()[a.from] || '').trim() : '';
+      var li = el('li'); li.style.cssText = 'font-size:.9rem;line-height:1.45;' + (prev ? 'color:var(--muted);' : 'font-weight:600;');
+      var q = el('span'); q.textContent = fillStrict(a.q); li.appendChild(q);
+      if (a.optional) { var tag = el('span', null, 'optional'); tag.style.cssText = 'margin-left:6px;font-size:.62rem;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:2px 7px;'; li.appendChild(tag); }
+      if (prev) {
+        var pa = el('div'); pa.style.cssText = 'margin-top:5px;padding:7px 10px;border-left:3px solid var(--accent);background:var(--accent-soft);border-radius:0 10px 10px 0;';
+        var pl = el('div', 'cp-label', 'You already said'); pl.style.color = 'var(--accent)'; pa.appendChild(pl);
+        var pv = el('div'); pv.style.cssText = 'margin-top:2px;color:var(--ink);font-weight:600;line-height:1.4;'; pv.textContent = prev; pa.appendChild(pv);
+        li.appendChild(pa);
+      }
+      ol.appendChild(li);
+    });
+    qWrap.appendChild(ol); box.appendChild(qWrap);
+
+    // Progress over perfection, spelled out: what you may get wrong, what you
+    // may drop entirely, and the five things that carry the whole video.
+    var pw = el('div'); pw.style.cssText = 'margin-top:16px;padding-top:12px;border-top:1px solid var(--line);';
+    var ph = el('h4', null, esc(v.progressTitle || 'Progress, not perfect. Here’s exactly what that buys you.')); ph.style.cssText = 'margin:0;font-size:1rem;';
+    pw.appendChild(ph);
+    // The three lists live behind a tap. They're reassurance, not instruction —
+    // and length is itself a perfection signal. A card that reads as a big
+    // serious thing is a card you don't film today.
+    var listWrap = el('div'); listWrap.style.display = 'none';
+    var listBtn = el('button', 'cp-btn cp-btn-ghost sm', 'What you’re allowed to get wrong'); listBtn.type = 'button'; listBtn.style.marginTop = '10px';
+    listBtn.onclick = function (e) {
+      e.stopPropagation(); var open = listWrap.style.display !== 'none';
+      listWrap.style.display = open ? 'none' : ''; listBtn.textContent = open ? 'What you’re allowed to get wrong' : 'Hide that';
+    };
+    pw.appendChild(listBtn); pw.appendChild(listWrap);
+    function permList(label, items, colour, ordered) {
+      if (!items || !items.length) return;
+      var lb = el('div', 'cp-label', esc(label)); lb.style.cssText = 'margin-top:12px;color:' + colour + ';line-height:1.35;'; listWrap.appendChild(lb);
+      var list = el(ordered ? 'ol' : 'ul'); list.style.cssText = 'margin:6px 0 0;padding-left:20px;display:grid;gap:5px;font-size:.88rem;line-height:1.45;';
+      items.forEach(function (it) { var li = el('li'); li.textContent = fillStrict(it); list.appendChild(li); });
+      listWrap.appendChild(list);
+    }
+    permList(v.allowedTitle || 'You can get this wrong', v.allowed, '#4ade80');
+    permList(v.skipTitle || 'You can skip', v.skip, 'var(--muted)');
+    permList(v.neverTitle || 'Don’t skip these', v.never, '#f87171', true);
+    var fit = v.fit || {};
+    var tips = [];
+    if (fit.camera && fit.camera[qa().camera]) tips.push({ a: answerLabel('camera'), t: fit.camera[qa().camera] });
+    if (fit.time && fit.time[String(qa().time)]) tips.push({ a: answerLabel('time'), t: fit.time[String(qa().time)] });
+    if (tips.length) {
+      var tl = el('div', 'cp-label', esc(v.fitIntro || 'Built to fit how you answered')); tl.style.marginTop = '12px'; pw.appendChild(tl);
+      tips.forEach(function (o) {
+        var n = el('p'); n.style.cssText = 'margin:6px 0 0;font-size:.88rem;line-height:1.45;';
+        if (o.a) { var b2 = el('b'); b2.style.color = 'var(--accent)'; b2.textContent = o.a + ' — '; n.appendChild(b2); }
+        var s2 = el('span'); s2.textContent = o.t; n.appendChild(s2); pw.appendChild(n);
+      });
+    }
+    if (v.bar) { var barP = el('p', null, esc(v.bar)); barP.style.cssText = 'margin:12px 0 0;font-size:.88rem;line-height:1.45;color:var(--muted);'; pw.appendChild(barP); }
+    box.appendChild(pw);
+
+    // The definition of done is the last thing read before the tick.
+    if (v.done) {
+      var dn = el('div'); dn.style.cssText = 'margin:14px 0 0;padding:10px 12px;border-radius:10px;background:var(--accent-soft);border:1px solid rgba(197,141,79,.28);';
+      var dl = el('div', 'cp-label', esc(v.doneTitle || 'What “done” means')); dl.style.color = 'var(--accent)'; dn.appendChild(dl);
+      var dv = el('p'); dv.style.cssText = 'margin:4px 0 0;font-weight:700;font-size:.94rem;line-height:1.45;'; dv.textContent = fillStrict(v.done); dn.appendChild(dv);
+      if (v.doneNote) { var dnn = el('p'); dnn.style.cssText = 'margin:4px 0 0;font-size:.86rem;line-height:1.45;color:var(--muted);font-weight:500;'; dnn.textContent = v.doneNote; dn.appendChild(dnn); }
+      box.appendChild(dn);
+    }
+    var doneRow = el('div'); doneRow.style.cssText = 'display:flex;align-items:center;gap:10px;margin-top:10px;padding-top:10px;border-top:1px solid var(--line);cursor:pointer;';
+    doneRow.appendChild(mkCheck());
+    doneRow.appendChild(el('div', 'cp-dz-title', 'It’s published, and it plays when I open my own link'));
+    doneRow.onclick = toggle;
+    box.appendChild(doneRow);
+    host.appendChild(box);
+  }
+
   function renderDayZero() {
     root.className = 'cp-wrap'; root.innerHTML = '';
     root.appendChild(el('span', 'cp-kicker', 'Day Zero · ' + (state.startDate === ymd(today()) ? 'Today' : (state.startDate === ymd(addDays(today(), 1)) ? 'Tomorrow' : (state.startDate)))));
@@ -1135,20 +1440,37 @@
         allRow.onclick = function () { state.dzTasks.pinsAll = !state.dzTasks.pinsAll; persist(); allChk.textContent = state.dzTasks.pinsAll ? '✓' : ''; allChk.style.cssText = state.dzTasks.pinsAll ? 'background:#16a34a;border-color:#16a34a;color:#fff;' : ''; syncDzGate(); };
         b.appendChild(allRow);
       }
+
+      // The page video. One task, one key (state.dzTasks.vsl) — the same
+      // persist() → /api/profile path every other Day Zero tick uses.
+      if (task.vsl) renderVslCard(b, function () { box.classList.toggle('done', !!state.dzTasks.vsl); syncDzGate(); });
+
       box.appendChild(b);
       // toggle for simple tasks (link, profile, guide)
-      if (!task.pins) head.onclick = function () { state.dzTasks[task.id] = !state.dzTasks[task.id]; persist(); chk.textContent = '✓'; box.classList.toggle('done', !!state.dzTasks[task.id]); syncDzGate(); };
+      if (!task.pins && !task.vsl) head.onclick = function () { state.dzTasks[task.id] = !state.dzTasks[task.id]; persist(); chk.textContent = '✓'; box.classList.toggle('done', !!state.dzTasks[task.id]); syncDzGate(); };
       root.appendChild(box);
     });
 
     var allDone = dz.tasks.every(isTaskDone);
+    // A trainer who already started can be in here voluntarily (see the missing-
+    // video card on the dashboard). Never trap them behind a disabled unlock.
+    if (state.dayZeroDone) {
+      var back = el('button', 'cp-btn cp-btn-ghost', '← Back to today'); back.type = 'button'; back.style.marginTop = '16px';
+      back.onclick = function () { renderDashboard(); }; root.appendChild(back); return;
+    }
     var unlock = el('button', 'cp-btn cp-btn-primary', allDone ? 'Start day one →' : 'Finish the tasks to unlock'); unlock.type = 'button'; unlock.style.marginTop = '16px'; unlock.disabled = !allDone;
     // v12 6 — the gate is computed from the individual keys, in any tap order.
-    function syncDzGate() { var ok2 = dz.tasks.every(isTaskDone); unlock.disabled = !ok2; unlock.textContent = ok2 ? 'Start day one →' : 'Finish the tasks to unlock'; }
+    // `unlock` is undefined on the revisit path (we return before creating it),
+    // and every checkbox in the task list calls this on tap.
+    function syncDzGate() { if (!unlock) return; var ok2 = dz.tasks.every(isTaskDone); unlock.disabled = !ok2; unlock.textContent = ok2 ? 'Start day one →' : 'Finish the tasks to unlock'; }
     renderDayZero._sync = syncDzGate;
     unlock.onclick = function () { state.dayZeroDone = true; persist(); toast('You’re live'); renderDashboard(); };
     root.appendChild(unlock);
-    if (!allDone) root.appendChild(el('p', 'cp-note', 'Your program’s ready. Three videos between you and day one. Day Zero doesn’t count against your compliance — the streak starts at day one.'));
+    if (!allDone) {
+      // Count follows the task list above it: three for the feed, one for the page.
+      var vslTask = (dz.tasks || []).some(function (t) { return t && t.vsl; });
+      root.appendChild(el('p', 'cp-note', 'Your program’s ready. ' + (vslTask ? 'Four videos between you and day one — three for your feed, one for your page.' : 'Three videos between you and day one.') + ' Day Zero doesn’t count against your compliance — the streak starts at day one.'));
+    }
   }
   function isTaskDone(task) { if (task.pins) return state.dzTasks.pin1 && state.dzTasks.pin2 && state.dzTasks.pin3 && state.dzTasks.pinsAll; return !!state.dzTasks[task.id]; }
 
@@ -1185,6 +1507,20 @@
       var keepB = el('button', 'cp-btn cp-btn-ghost', 'They’re mine — keep them'); keepB.type = 'button'; keepB.onclick = function () { state.needsReview = false; persist(); renderDashboard(); };
       row.appendChild(redoB); row.appendChild(keepB); nr.appendChild(row);
       root.appendChild(nr);
+    }
+    // Trainers who finished Day Zero before the page video existed never see it
+    // otherwise — renderDayZero is only reachable while !state.dayZeroDone, and
+    // setStart is the only reset. That's the whole existing roster: the people
+    // already off a call and already earning nothing.
+    var dzc = CFG.dayZero || {};
+    var vslTask = (dzc.tasks || []).filter(function (t) { return t && t.vsl; })[0];
+    if (state.dayZeroDone && vslTask && !state.dzTasks.vsl) {
+      var mv = el('div', 'cp-card cp-unlock');
+      mv.appendChild(el('div', 'cp-label', 'One video missing from your page'));
+      mv.appendChild(el('p', 'cp-sub', 'Every link you post sends people to your coach page, and right now there’s no you on it — just a headline. Ninety seconds, phone sideways, script written from your answers. Rough is fine.'));
+      var mvB = el('button', 'cp-btn cp-btn-primary', 'Show me the script'); mvB.type = 'button';
+      mvB.onclick = function () { renderDayZero(); };
+      mv.appendChild(mvB); root.appendChild(mv);
     }
     if (state.path === 'quick') renderUpgrade();
     // v11 2.3 — Your hooks vs ours. Only renders once a trainer-hook post is

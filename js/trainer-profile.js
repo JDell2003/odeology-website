@@ -2144,7 +2144,9 @@
       }
       if (blob.size > maxBytes) {
         showStandaloneTransientToast(
-          `That ${kind} is too large (${Math.round(blob.size / 1_000_000)}MB). The limit is ${maxLabel} - trim or compress it and try again.`,
+          kind === 'video'
+            ? `That video is too large (${Math.round(blob.size / 1_000_000)}MB). The limit is ${maxLabel}. Set your camera to 720p and keep it under two minutes, then try again - re-recording is faster than compressing.`
+            : `That ${kind} is too large (${Math.round(blob.size / 1_000_000)}MB). The limit is ${maxLabel} - trim or compress it and try again.`,
           'error',
           { autoHideMs: 6000 }
         );
@@ -7196,7 +7198,9 @@ footer{padding:34px 0;text-align:center;font-size:13px;color:var(--muted);}
     }
     if (file.size > maxBytes) {
       showStandaloneTransientToast(
-        `That ${isVideo ? 'video' : 'image'} is too large (${Math.round(file.size / 1_000_000)}MB). The limit is ${isVideo ? '80MB' : '10MB'}.`,
+        isVideo
+          ? `That video is too large (${Math.round(file.size / 1_000_000)}MB). The limit is 80MB. Set your camera to 720p and keep it under two minutes, then try again - re-recording is faster than compressing.`
+          : `That image is too large (${Math.round(file.size / 1_000_000)}MB). The limit is 10MB - resize it and try again.`,
         'error',
         { autoHideMs: 6000 }
       );
