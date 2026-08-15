@@ -53,10 +53,16 @@ async function ensureSchema() {
 
 function cfg() {
     return {
+        // The same Google project as the sign-in flow. One OAuth client can
+        // hold several redirect URIs, so nothing new needs creating.
         id: String(process.env.GOOGLE_CLIENT_ID || '').trim(),
         secret: String(process.env.GOOGLE_CLIENT_SECRET || '').trim(),
-        // Must match a redirect URI registered in the Google console exactly.
-        redirect: String(process.env.GOOGLE_REDIRECT_URI || '').trim(),
+        // Its OWN variable, deliberately. GOOGLE_REDIRECT_URI already points at
+        // /api/auth/google/callback and is what signs everybody in - pointing
+        // it here would break login for every user on the site. Google returns
+        // the user to whichever URI the request was made with, so the two flows
+        // need two values.
+        redirect: String(process.env.GOOGLE_DRIVE_REDIRECT_URI || '').trim(),
     };
 }
 
