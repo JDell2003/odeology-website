@@ -2294,6 +2294,7 @@ function odeNavFor(user = null) {
     const trainerItems = [
         home,
         { label: 'Content', href: 'content.html' },
+        { label: 'Recording', href: 'recording.html' },
         { label: 'Clients', href: 'trainer-dashboard.html' },
         { label: 'Website', href: 'trainer-website.html' },
         { label: 'Calendar', href: 'trainer-calendar.html' }

@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Recording — RiseForIt</title>
+<link rel="stylesheet" href="css/main.css">
+<style>
+/* ---------------------------------------------------------------- the stage
+   Full-bleed camera with the script floating on top. The overlay is DOM, not
+   part of the MediaStream, so it is physically incapable of ending up in the
+   recording - MediaRecorder is handed the camera track and nothing else. That
+   is the requirement met by architecture rather than by effort. */
+.rec-stage{position:relative;width:100%;max-width:1100px;margin:0 auto;
+  background:#000;border-radius:16px;overflow:hidden;aspect-ratio:16/9}
+.rec-stage video{width:100%;height:100%;object-fit:cover;display:block;
+  transform:scaleX(-1)}          /* preview mirrored; the FILE is not */
+.rec-off{position:absolute;inset:0;display:flex;align-items:center;
+  justify-content:center;flex-direction:column;gap:14px;color:#8b949e;
+  text-align:center;padding:24px}
+
+/* The script. Sits over the lower middle so the eyeline stays near the lens. */
+.rec-script{position:absolute;left:0;right:0;top:22%;bottom:16%;
+  overflow:hidden;pointer-events:none;padding:0 8%;
+  -webkit-mask-image:linear-gradient(transparent,#000 14%,#000 86%,transparent);
+  mask-image:linear-gradient(transparent,#000 14%,#000 86%,transparent)}
+.rec-lines{transition:transform .35s cubic-bezier(.22,.61,.36,1)}
+.rec-line{font-size:clamp(18px,2.6vw,34px);line-height:1.5;font-weight:650;
+  color:rgba(255,255,255,.42);text-shadow:0 2px 18px rgba(0,0,0,.85);
+  margin:0 0 .55em;transition:color .25s}
+.rec-line.now{color:#fff}
+.rec-line.done{color:rgba(255,255,255,.22)}
+/* Paused, the lines become targets - tapping one is how you say "start here". */
+.rec-script.pickable{pointer-events:auto}
+.rec-script.pickable .rec-line{cursor:pointer;border-radius:8px;
+  padding:2px 10px;margin-left:-10px;margin-right:-10px}
+.rec-script.pickable .rec-line:hover{background:rgba(255,255,255,.10);
+  color:#fff}
+
+/* Rule of thirds. Composition guide only - it is DOM, so it was never going
+   to reach the file, and it hides the moment recording starts anyway. */
+.rec-grid{position:absolute;inset:0;pointer-events:none;z-index:2}
+.rec-grid i{position:absolute;background:rgba(255,255,255,.34)}
+.rec-grid i.v{top:0;bottom:0;width:1px}
+.rec-grid i.h{left:0;right:0;height:1px}
+.rec-grid i.v1{left:33.333%}.rec-grid i.v2{left:66.666%}
+.rec-grid i.h1{top:33.333%}.rec-grid i.h2{top:66.666%}
+/* The upper intersections, where eyes belong. */
+.rec-grid b{position:absolute;width:14px;height:14px;margin:-7px 0 0 -7px;
+  border:2px solid rgba(255,255,255,.55);border-radius:50%}
+.rec-grid b.e1{left:33.333%;top:33.333%}
+.rec-grid b.e2{left:66.666%;top:33.333%}
+.rec-gridnote{position:absolute;bottom:10px;right:12px;font-size:11px;
+  letter-spacing:.08em;text-transform:uppercase;color:rgba(255,255,255,.5);
+  pointer-events:none;z-index:2}
+
+.rec-bar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;
+  margin-top:14px}
+.rec-btn{width:auto;padding:12px 20px;min-height:0;border-radius:12px;
+  cursor:pointer;font:inherit;font-weight:700}
+.rec-dot{width:12px;height:12px;border-radius:50%;background:#f85149;
+  display:inline-block;margin-right:8px;animation:recpulse 1.4s infinite}
+@keyframes recpulse{0%,100%{opacity:1}50%{opacity:.25}}
+@media (prefers-reduced-motion:reduce){.rec-dot{animation:none}}
+.rec-stat{font-variant-numeric:tabular-nums;color:var(--muted,#8b949e);
+  font-size:14px}
+.rec-warn{color:#d29922;font-size:13px;margin-top:8px}
+.rec-bad{color:#f85149;font-size:13px;margin-top:8px}
+.rec-ok{color:#3fb950}
+.rec-hud{position:absolute;top:12px;left:12px;display:flex;gap:8px;
+  align-items:center;background:rgba(0,0,0,.6);border-radius:99px;
+  padding:6px 14px;font-size:13px;color:#fff;font-variant-numeric:tabular-nums}
+.rec-heard{position:absolute;bottom:10px;left:12px;right:12px;
+  font-size:12px;color:rgba(255,255,255,.55);text-align:center;
+  pointer-events:none;min-height:16px}
+</style>
+</head>
+<body>
+<div id="navbar-container"></div>
+
+<main class="container" style="max-width:1180px;padding-top:24px">
+  <h1>Recording</h1>
+  <p class="muted">Your script sits over the camera while you film. It is not in
+     the video — the recording only ever contains the camera.</p>
+
+  <div class="rec-stage" id="stage">
+    <video id="cam" playsinline muted autoplay></video>
+    <div class="rec-off" id="off">
+      <div style="font-size:44px">🎥</div>
+      <div><b>Camera is off</b><br>
+        <span style="font-size:13px">1080p, 30fps. Nothing records until you
+        press the button.</span></div>
+    </div>
+    <div class="rec-script" id="scriptbox" hidden>
+      <div class="rec-lines" id="lines"></div>
+    </div>
+    <div class="rec-grid" id="grid">
+      <i class="v v1"></i><i class="v v2"></i>
+      <i class="h h1"></i><i class="h h2"></i>
+      <b class="e1"></b><b class="e2"></b>
+    </div>
+    <div class="rec-gridnote" id="gridnote">thirds &middot; eyes on the top line</div>
+    <div class="rec-hud" id="hud" hidden></div>
+    <div class="rec-heard" id="heard"></div>
+  </div>
+
+  <div class="rec-bar">
+    <button class="rec-btn" id="start">Turn the camera on</button>
+    <button class="rec-btn" id="rec" disabled>Record</button>
+    <button class="rec-btn" id="stop" disabled>Stop</button>
+    <span class="rec-stat" id="stat"></span>
+  </div>
+  <div id="msg"></div>
+
+  <section class="card" style="margin-top:18px">
+    <h2 style="margin-top:0">Where it saves</h2>
+    <div id="drivebox" class="rec-stat">checking…</div>
+  </section>
+
+  <section class="card" style="margin-top:18px">
+    <h2 style="margin-top:0">Your script</h2>
+    <p class="muted" style="font-size:13px">Pulled from your Content Machine
+      account. It scrolls at the speed you set — pause any time and tap a line to
+      pick up from there.</p>
+    <select id="pick" style="width:100%"></select>
+    <div class="rec-bar">
+      <button class="rec-btn" id="load">Put it on the camera</button>
+      <button class="rec-btn" id="play">Start the scroll</button>
+      <label class="rec-stat">speed
+        <input type="range" id="speed" min="6" max="90" value="26"
+               style="width:140px;vertical-align:middle">
+        <span id="speedv">26</span></label>
+    </div>
+    <div id="pickmsg" class="rec-stat"></div>
+  </section>
+</main>
+
+<script src="js/main.js"></script>
+<script>
+(() => {
+  const $ = (id) => document.getElementById(id);
+  const esc = (s) => String(s == null ? "" : s).replace(/[&<>"']/g,
+    c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+
+  let stream = null, recorder = null;
+
+  // The framing grid belongs to setup, not to the take. Once he is recording
+  // it is clutter over the thing he is watching.
+  function setGrid(on) {
+    $("grid").hidden = !on;
+    $("gridnote").hidden = !on;
+  }
+  let lines = [], at = 0, startedAt = 0, bytes = 0, seq = 0, uploadId = "";
+  let timer = 0, wake = null;
+
+  const say = (html, cls) => { $("msg").innerHTML = html
+    ? `<div class="${cls || "rec-stat"}">${html}</div>` : ""; };
+
+  // ----------------------------------------------------------------- drive
+  //
+  // Connected, the bytes go from here straight to Google. Not connected, they
+  // go to this server, which on Railway is a disk that a redeploy erases - so
+  // the difference is stated plainly rather than left for someone to discover.
+  let drive = { connected: false, configurable: false };
+
+  async function driveStatus() {
+    try { drive = await (await fetch("/api/recording/drive/status")).json(); }
+    catch (e) { drive = { ok: false, connected: false }; }
+    const q = new URLSearchParams(location.search).get("drive");
+    const note = q === "connected" ? '<span class="rec-ok">Drive connected.</span> '
+      : q === "denied" ? '<span class="rec-warn">You cancelled the Google sign-in.</span> '
+      : q === "mismatch" ? '<span class="rec-bad">That link was for a different login.</span> '
+      : q === "error" ? `<span class="rec-bad">Google said: ${esc(new URLSearchParams(location.search).get("why") || "")}</span> `
+      : "";
+
+    if (drive.connected) {
+      $("drivebox").innerHTML = note
+        + `Saving to <b>your Google Drive</b>${drive.email ? " (" + esc(drive.email) + ")" : ""},
+           in a folder called <b>RiseForIt Recordings</b>. It uses your own storage
+           and the file never passes through our server.`;
+    } else if (drive.configurable) {
+      $("drivebox").innerHTML = note
+        + `<b>Not connected.</b> Recordings will save to our server, and that disk
+           is wiped whenever the site updates — fine for a test, not for a real
+           take.<br>
+           <a class="rec-btn" style="display:inline-block;margin-top:10px;
+              text-decoration:none" href="/api/recording/drive/connect">
+             Connect Google Drive</a>`;
+    } else {
+      $("drivebox").innerHTML = note
+        + `<span class="rec-warn">Google Drive is not set up on this server yet, so
+           recordings save locally and will not survive a site update.</span>`;
+    }
+  }
+  driveStatus();
+
+  // Google's resumable upload wants byte ranges, which is exactly what
+  // MediaRecorder hands out. Each piece is PUT at its own offset the moment it
+  // exists, so nothing is ever held anywhere.
+  let driveSession = null, driveOffset = 0;
+
+  async function driveBegin(mime) {
+    const name = `recording-${new Date().toISOString().replace(/[:.]/g, "-")}`
+      + (mime.includes("mp4") ? ".mp4" : ".webm");
+    const r = await (await fetch("/api/recording/drive/upload", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name, mime }),
+    })).json();
+    if (!r.ok) throw new Error(r.reason || "could not open the upload");
+    driveSession = r.upload_url;
+    driveOffset = 0;
+    return name;
+  }
+
+  async function drivePut(blob, last) {
+    const from = driveOffset;
+    const to = from + blob.size - 1;
+    // The total is unknown until the take ends, which is what the * is for.
+    const total = last ? String(from + blob.size) : "*";
+    for (let attempt = 0; attempt < 3; attempt++) {
+      try {
+        const r = await fetch(driveSession, {
+          method: "PUT",
+          headers: { "Content-Range": `bytes ${from}-${to}/${total}` },
+          body: blob,
+        });
+        // 308 means "got it, send more" - the normal answer mid-upload.
+        if (r.status === 308 || r.ok) { driveOffset = to + 1; return true; }
+        if (r.status >= 500) continue;          // transient, worth retrying
+        throw new Error(`Drive said ${r.status}`);
+      } catch (e) {
+        if (attempt === 2) throw e;
+        await new Promise((z) => setTimeout(z, 400 * (attempt + 1)));
+      }
+    }
+    return false;
+  }
+
+  // ---------------------------------------------------------------- camera
+  $("start").onclick = async () => {
+    $("start").disabled = true;
+    say("asking for the camera…");
+    try {
+      // Asked for, not guaranteed. A phone that cannot do 1080p30 will hand
+      // back its best effort, so what we actually GOT is reported rather than
+      // what we requested.
+      stream = await navigator.mediaDevices.getUserMedia({
+        video: { width: { ideal: 1920 }, height: { ideal: 1080 },
+                 frameRate: { ideal: 30 }, facingMode: "user" },
+        audio: { echoCancellation: true, noiseSuppression: true,
+                 channelCount: 1 },
+      });
+    } catch (e) {
+      say(`Could not open the camera: ${esc(e.message)}`, "rec-bad");
+      $("start").disabled = false;
+      return;
+    }
+    $("cam").srcObject = stream;
+    $("off").hidden = true;
+    $("rec").disabled = false;
+    $("start").textContent = "Camera is on";
+
+    const t = stream.getVideoTracks()[0];
+    const s = t.getSettings ? t.getSettings() : {};
+    const got = `${s.width || "?"}×${s.height || "?"} at ${Math.round(s.frameRate || 0)}fps`;
+    const ideal = (s.width === 1920 && s.height === 1080);
+    say(ideal ? `Camera: <span class="rec-ok">${got}</span>`
+              : `Camera gave <b>${got}</b> — this device could not do 1080p30, `
+                + `so that is what the file will be.`,
+        ideal ? "rec-stat" : "rec-warn");
+  };
+
+  // ---------------------------------------------------------------- record
+  function pickMime() {
+    // In preference order. Safari only recently gained MediaRecorder and only
+    // speaks MP4, so this is not cosmetic - the wrong guess is a silent failure.
+    const want = ["video/webm;codecs=vp9,opus", "video/webm;codecs=vp8,opus",
+                  "video/webm", "video/mp4"];
+    return want.find(m => window.MediaRecorder
+      && MediaRecorder.isTypeSupported(m)) || "";
+  }
+
+  $("rec").onclick = async () => {
+    if (!stream) return;
+    const mime = pickMime();
+    if (!mime) {
+      say("This browser cannot record video. Chrome on Android or a desktop "
+        + "browser will work; older iPhones will not.", "rec-bad");
+      return;
+    }
+    // A two-hour 1080p file is several gigabytes. Holding it in memory would
+    // kill the tab long before then, so it is cut into pieces and each piece
+    // leaves as soon as it exists - nothing large is ever held at once.
+    try {
+      if (drive.connected) {
+        const name = await driveBegin(mime);
+        say(`Recording to your Drive as <b>${esc(name)}</b>`, "rec-stat");
+      } else {
+        const r = await fetch("/api/recording/start", {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ mime, at: Date.now() }),
+        });
+        const j = await r.json();
+        if (!j.ok) throw new Error(j.reason || "could not start");
+        uploadId = j.id;
+        if (j.warning) say(esc(j.warning), "rec-warn");
+      }
+    } catch (e) {
+      say(`Could not start: ${esc(e.message)}`, "rec-bad");
+      return;
+    }
+
+    bytes = 0; seq = 0; startedAt = Date.now();
+    recorder = new MediaRecorder(stream, {
+      mimeType: mime, videoBitsPerSecond: 5000000, audioBitsPerSecond: 128000 });
+    recorder.ondataavailable = (e) => {
+      if (e.data && e.data.size) send(e.data, recorder.state === "inactive");
+    };
+    recorder.onerror = (e) => say(`Recorder stopped: ${esc(e.error && e.error.name)}`,
+                                  "rec-bad");
+    recorder.start(5000);          // a piece every five seconds
+
+    $("rec").disabled = true; $("stop").disabled = false;
+    $("hud").hidden = false;
+    holdWake();
+    setGrid(false);
+    timer = setInterval(tick, 500);
+    tick();
+  };
+
+  async function send(blob, last) {
+    const n = seq++;
+    bytes += blob.size;
+    if (driveSession) {
+      try { await drivePut(blob, last); }
+      catch (e) { window.__recMissed = (window.__recMissed || 0) + 1; }
+      return;
+    }
+    try {
+      await fetch(`/api/recording/chunk?id=${encodeURIComponent(uploadId)}&n=${n}`,
+        { method: "POST", headers: { "Content-Type": "application/octet-stream" },
+          body: blob });
+    } catch (e) {
+      // Kept quiet on screen, because a dropped piece mid-take is not a reason
+      // to distract someone who is talking to a camera. The count is checked
+      // at the end, where it can actually be acted on.
+      window.__recMissed = (window.__recMissed || 0) + 1;
+    }
+  }
+
+  function tick() {
+    const s = Math.floor((Date.now() - startedAt) / 1000);
+    const hh = String(Math.floor(s / 3600)).padStart(2, "0");
+    const mm = String(Math.floor(s / 60) % 60).padStart(2, "0");
+    const ss = String(s % 60).padStart(2, "0");
+    $("hud").innerHTML = `<span class="rec-dot"></span>${hh}:${mm}:${ss}`
+      + `<span style="opacity:.6;margin-left:10px">${(bytes / 1e9).toFixed(2)} GB</span>`;
+    $("stat").textContent = `${(bytes / 1e6).toFixed(0)} MB sent`;
+    if (s > 7200) $("stop").click();      // two hours, the stated ceiling
+  }
+
+  $("stop").onclick = async () => {
+    clearInterval(timer);
+    $("stop").disabled = true;
+    if (recorder && recorder.state !== "inactive") recorder.stop();
+    setGrid(true);
+    dropWake();
+    say("finishing…");
+    // A moment for the final ondataavailable to fire and its upload to leave.
+    setTimeout(async () => {
+      if (driveSession) {
+        // The last piece has to declare the real total, or Drive keeps the
+        // upload open forever and the file never appears.
+        try { await drivePut(new Blob([]), true); } catch (e) { /* already closed */ }
+        const missed = window.__recMissed || 0;
+        say(missed
+          ? `Saved to your Drive, but ${missed} piece(s) failed — tell Jason `
+            + `before you delete anything.`
+          : `Saved to your Google Drive. ${(bytes / 1e9).toFixed(2)} GB.`,
+          missed ? "rec-warn" : "rec-ok");
+        driveSession = null;
+        $("rec").disabled = false;
+        $("hud").hidden = true;
+        return;
+      }
+      try {
+        const r = await fetch("/api/recording/finish", {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ id: uploadId, parts: seq }),
+        });
+        const j = await r.json();
+        const missed = window.__recMissed || 0;
+        say(j.ok
+          ? `Saved. ${j.parts} pieces, ${(j.bytes / 1e9).toFixed(2)} GB.`
+            + (missed ? ` <span class="rec-bad">${missed} piece(s) failed to `
+                + `upload — tell Jason before you delete anything.</span>` : "")
+          : `Saved locally but the server said: ${esc(j.reason || "?")}`,
+          j.ok && !missed ? "rec-ok" : "rec-warn");
+      } catch (e) { say(`Could not finish: ${esc(e.message)}`, "rec-bad"); }
+      $("rec").disabled = false;
+      $("hud").hidden = true;
+    }, 1200);
+  };
+
+  // ------------------------------------------------------------ the script
+  async function loadScripts() {
+    try {
+      const r = await (await fetch("/api/recording/scripts")).json();
+      const items = r.scripts || [];
+      $("pick").innerHTML = items.length
+        ? items.map(s => `<option value="${esc(s.id)}">${esc(s.title)}</option>`).join("")
+        : '<option value="">nothing from the Content Machine yet</option>';
+      window.__scripts = items;
+    } catch (e) { $("pickmsg").textContent = "could not reach your scripts"; }
+  }
+  loadScripts();
+
+  $("load").onclick = () => {
+    const s = (window.__scripts || []).find(x => x.id === $("pick").value);
+    if (!s) return;
+    lines = (s.lines || []).filter(Boolean);
+    at = 0;
+    $("scriptbox").hidden = false;
+    $("lines").innerHTML = lines.map((l, i) =>
+      `<p class="rec-line" id="ln${i}">${esc(l)}</p>`).join("");
+    mark();
+    $("pickmsg").textContent = `${lines.length} lines on the camera`;
+    offset = 0; acc = 0;
+    pauseScroll();
+  };
+
+  function mark() {
+    lines.forEach((_, i) => {
+      const el = $("ln" + i);
+      if (!el) return;
+      el.className = "rec-line" + (i < at ? " done" : i === at ? " now" : "");
+    });
+    const cur = $("ln" + at);
+    if (cur) {
+      // One number owns the position - the timer and a tap both write to it,
+      // so they can never disagree about where the script is.
+      const box = $("scriptbox").clientHeight;
+      offset = Math.max(0, cur.offsetTop - box * 0.38);
+      acc = 0;
+      $("lines").style.transform = `translateY(${-offset}px)`;
+    }
+  }
+
+  // ------------------------------------------------------- the scroll
+  //
+  // Pixels per second, moved with requestAnimationFrame and a sub-pixel
+  // accumulator. A timer stepping whole pixels judders at reading speed and
+  // the eye tracks the jump instead of the words.
+  let scrollOn = false, raf = 0, last = 0, acc = 0, offset = 0, pxs = 26;
+
+  const applyOffset = () => {
+    $("lines").style.transform = `translateY(${-offset}px)`;
+  };
+
+  const frame = (t) => {
+    if (!scrollOn) return;
+    if (!last) last = t;
+    acc += pxs * ((t - last) / 1000);
+    last = t;
+    const step = Math.floor(acc);
+    if (step > 0) { offset += step; acc -= step; applyOffset(); }
+    const max = Math.max(0, $("lines").scrollHeight - 40);
+    if (offset >= max) { pauseScroll(); return; }
+    raf = requestAnimationFrame(frame);
+  };
+
+  function playScroll() {
+    if (scrollOn || !lines.length) return;
+    scrollOn = true; last = 0;
+    $("play").textContent = "Pause the scroll";
+    $("scriptbox").classList.remove("pickable");
+    raf = requestAnimationFrame(frame);
+  }
+  function pauseScroll() {
+    scrollOn = false;
+    cancelAnimationFrame(raf);
+    $("play").textContent = "Start the scroll";
+    // Paused is when he can put the script where he needs it.
+    if (lines.length) $("scriptbox").classList.add("pickable");
+  }
+  $("play").onclick = () => (scrollOn ? pauseScroll() : playScroll());
+
+  $("speed").oninput = () => {
+    pxs = +$("speed").value;
+    $("speedv").textContent = $("speed").value;
+  };
+
+  // Tap a line to start there. The repair for the thing that actually goes
+  // wrong: he loses his place, stops, and wants to pick up from one specific
+  // sentence rather than wherever the timer had drifted to.
+  $("lines").addEventListener("click", (e) => {
+    if (scrollOn) return;
+    const el = e.target.closest(".rec-line");
+    if (!el) return;
+    at = lines.findIndex((_, i) => $("ln" + i) === el);
+    if (at < 0) at = 0;
+    mark();
+    $("heard").textContent = `starting from line ${at + 1}`;
+  });
+
+  // Screens must not sleep mid-take. Needs a secure context, so this quietly
+  // does nothing on plain http and works on the live site.
+  async function holdWake() {
+    try { if (navigator.wakeLock) wake = await navigator.wakeLock.request("screen"); }
+    catch (e) { wake = null; }
+  }
+  function dropWake() { try { if (wake) { wake.release(); wake = null; } } catch (e) {} }
+
+  window.addEventListener("beforeunload", (e) => {
+    if (recorder && recorder.state === "recording") {
+      e.preventDefault(); e.returnValue = "";
+    }
+  });
+})();
+</script>
+</body>
+</html>

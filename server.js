@@ -29,6 +29,7 @@ const USDA_API_KEY = process.env.USDA_API_KEY;
 const { addWalmartItemsToCart } = require('./core/walmartCart');
 const db = require('./core/db');
 const authRoutes = require('./core/authRoutes');
+const recordingRoutes = require('./core/recording');
 const adminRoutes = require('./core/adminRoutes');
 const trackRoutes = require('./core/trackRoutes');
 const trainingRoutes = require('./core/trainingRoutes');
@@ -1867,6 +1868,10 @@ const server = http.createServer(async (req, res) => {
     }
 
     if (await authRoutes(req, res, url)) {
+        return;
+    }
+
+    if (await recordingRoutes(req, res, url)) {
         return;
     }
 
