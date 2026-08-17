@@ -498,7 +498,21 @@ function replacementSlotSignature(slot) {
   ].join('|');
 }
 
+/* Plan generation is deterministic in planSeed and nothing else, so an unseeded
+   build is unreproducible by construction. Under the test runner that silently
+   turns any suite that forgets to pin a seed into a flaky test that passes until
+   it doesn't. Pin the default there; production keeps a fresh random seed so two
+   users with identical answers do not get identical plans. */
+const TEST_PLAN_SEED = 424242;
+
+function inTestContext() {
+  return process.env.NODE_ENV === 'test'
+    || process.env.RISEFORIT_TEST_SEED === '1'
+    || typeof process.env.NODE_TEST_CONTEXT === 'string';
+}
+
 function buildPlanSeed() {
+  if (inTestContext()) return TEST_PLAN_SEED;
   return Math.floor(Math.random() * 1_000_000_000) ^ Date.now();
 }
 
@@ -2694,6 +2708,89 @@ function countBlueprintSlots(slots, predicate) {
   return (Array.isArray(slots) ? slots : []).filter((slot) => predicate(slot)).length;
 }
 
+/* A day can hold at most one isolation exercise per movement family - fillSlots
+   rejects a second same-family pick, and rear delts are additionally capped at
+   one per day. Shoulders only has two named isolation families (lateral_raise,
+   rear_delt), so a day can never carry more than two shoulder isolation slots.
+   The region-exact priority slots below duplicate a region the base blueprint
+   already covers (push_sh_iso is Lateral, pull_rear_iso is Rear), which pushes
+   those days to three. On plans of 3 days or fewer those slots are REQUIRED, so
+   the unfillable third turns a good plan into NO_ELIGIBLE_EXERCISE, ten failed
+   attempts, and a safe-fallback plan.
+
+   When the day is already at capacity for a muscle, sharpen the existing slot's
+   region preference instead of adding a slot that cannot be filled. The region
+   guarantee is preserved and no prescribed volume is lost - weekly sets are
+   distributed by allocateSetsReps across whatever slots exist.
+
+   Capacity is counted per REGION GROUP, not per muscle: a Push day carries both
+   a triceps and (on Upper/DeltsArms) a biceps slot, and sharpening a biceps slot
+   with a triceps region would be worse than the duplicate. Only slots competing
+   for the same pool count toward capacity, and only they are candidates to
+   sharpen. */
+const REGION_GROUPS = [
+  ['Lateral', 'Rear', 'Front'],
+  ['Triceps-Pushdown', 'Triceps-Long', 'Triceps-Lateral', 'Triceps-Overhead'],
+  ['Biceps-Long', 'Biceps-Short']
+];
+// Distinct isolation families the selector can draw on for one region group in a
+// single day (fillSlots allows one exercise per family, rear delts one per day).
+const REGION_GROUP_CAPACITY = 2;
+
+function regionGroupFor(region) {
+  return REGION_GROUPS.find((group) => group.includes(region)) || [region];
+}
+
+function ensureRegionExactSlot(slots, addPrioritySlot, id, muscleTarget, region, opts = {}) {
+  // Only intervene when the slot is REQUIRED, which is the <=3-day case. On a
+  // 4+ day plan these slots are optional, so an unfillable one is skipped
+  // harmlessly and the day is unaffected - reconciling there would trade a real
+  // exercise for nothing and change output that was never broken.
+  if (opts.optional !== false) {
+    addPrioritySlot(id, 'Isolation', 'Isolation', muscleTarget, opts);
+    return;
+  }
+  const group = regionGroupFor(region);
+  const existing = (Array.isArray(slots) ? slots : []).filter((slot) => {
+    if (String(slot?.muscleTarget || '') !== muscleTarget) return false;
+    if (String(slot?.styleRequired || '') !== 'Isolation') return false;
+    const prefs = Array.isArray(slot?.subPreferred) ? slot.subPreferred : [];
+    // An unconstrained slot competes for every pool this muscle can draw from.
+    return !prefs.length || prefs.some((pref) => group.includes(pref));
+  });
+  if (existing.length < REGION_GROUP_CAPACITY) {
+    addPrioritySlot(id, 'Isolation', 'Isolation', muscleTarget, opts);
+    return;
+  }
+  // A slot whose top preference is a DIFFERENT region of the same group has
+  // already been claimed - by the day's own blueprint or by an earlier call
+  // here. Sharpening it again would silently trade one region for another
+  // (a Push/UpperFocus day losing its lateral raise so a rear delt can land),
+  // so leave it alone. When every candidate is claimed the group is genuinely
+  // at capacity and the region is already covered by its siblings.
+  const claimed = (slot) => {
+    const top = Array.isArray(slot?.subPreferred) ? slot.subPreferred[0] : null;
+    return Boolean(top) && top !== region && group.includes(top);
+  };
+  const open = existing.filter((slot) => !claimed(slot));
+  if (!open.length) return;
+  // Prefer sharpening a slot the day must fill, so the region guarantee lands
+  // somewhere that actually gets picked. Never promote an optional slot to
+  // required: the muscle's required-ness is already carried by the general
+  // *_priority slot, and forcing a deliberately-optional slot (pull_rear_iso
+  // shares its pool with Back) just moves the unfillable-slot failure earlier.
+  const byPreference = [
+    open.find((slot) => !slot?.optional && Array.isArray(slot?.subPreferred) && slot.subPreferred.includes(region)),
+    open.find((slot) => !slot?.optional && (!Array.isArray(slot?.subPreferred) || !slot.subPreferred.length)),
+    open.find((slot) => Array.isArray(slot?.subPreferred) && slot.subPreferred.includes(region)),
+    open.find((slot) => !Array.isArray(slot?.subPreferred) || !slot.subPreferred.length)
+  ];
+  const covering = byPreference.find(Boolean);
+  if (!covering) return;
+  const rest = (Array.isArray(covering.subPreferred) ? covering.subPreferred : []).filter((value) => value !== region);
+  covering.subPreferred = [region, ...rest];
+}
+
 function appendExactPrioritySlots(slots, dayType, user, addPrioritySlot, priorityOptional, hasDedicatedCoreAccess, hasUpperLimbConstraint) {
   const priorities = Array.isArray(user?.priorityGroups) ? user.priorityGroups : [];
   const day = String(dayType || '');
@@ -2704,14 +2801,14 @@ function appendExactPrioritySlots(slots, dayType, user, addPrioritySlot, priorit
 
   if (hasPriorityGroup(priorities, 'Shoulders') && ['Push', 'Pull', 'Upper', 'UpperFocus', 'DeltsArms'].includes(day)) {
     if (['Push', 'Upper', 'UpperFocus', 'DeltsArms'].includes(day)) {
-      addPrioritySlot(`${day.toLowerCase()}_shoulder_lat_exact`, 'Isolation', 'Isolation', 'Shoulders', {
+      ensureRegionExactSlot(slots, addPrioritySlot, `${day.toLowerCase()}_shoulder_lat_exact`, 'Shoulders', 'Lateral', {
         primaryAllowed: ['Shoulders'],
         subPreferred: ['Lateral'],
         optional: priorityOptional('Shoulders', true) || hasUpperLimbConstraint
       });
     }
     if (['Pull', 'Upper', 'UpperFocus', 'DeltsArms'].includes(day)) {
-      addPrioritySlot(`${day.toLowerCase()}_shoulder_rear_exact`, 'Isolation', 'Isolation', 'Shoulders', {
+      ensureRegionExactSlot(slots, addPrioritySlot, `${day.toLowerCase()}_shoulder_rear_exact`, 'Shoulders', 'Rear', {
         primaryAllowed: ['Shoulders'],
         subPreferred: ['Rear'],
         optional: priorityOptional('Shoulders', true) || hasUpperLimbConstraint
@@ -2721,14 +2818,14 @@ function appendExactPrioritySlots(slots, dayType, user, addPrioritySlot, priorit
 
   if (hasPriorityGroup(priorities, 'Arms')) {
     if (['Pull', 'Upper', 'UpperFocus', 'DeltsArms'].includes(day)) {
-      addPrioritySlot(`${day.toLowerCase()}_biceps_exact`, 'Isolation', 'Isolation', 'Arms', {
+      ensureRegionExactSlot(slots, addPrioritySlot, `${day.toLowerCase()}_biceps_exact`, 'Arms', 'Biceps-Long', {
         primaryAllowed: ['Arms'],
         subPreferred: ['Biceps-Long', 'Biceps-Short'],
         optional: priorityOptional('Arms', true) || hasUpperLimbConstraint
       });
     }
     if (day === 'Push') {
-      addPrioritySlot(`${day.toLowerCase()}_triceps_pushdown_exact`, 'Isolation', 'Isolation', 'Arms', {
+      ensureRegionExactSlot(slots, addPrioritySlot, `${day.toLowerCase()}_triceps_pushdown_exact`, 'Arms', 'Triceps-Pushdown', {
         primaryAllowed: ['Arms'],
         subPreferred: ['Triceps-Pushdown', 'Triceps-Lateral', 'Triceps-Long'],
         optional: priorityOptional('Arms', true) || hasUpperLimbConstraint
@@ -2738,7 +2835,7 @@ function appendExactPrioritySlots(slots, dayType, user, addPrioritySlot, priorit
       const tricepsPref = day === 'UpperFocus'
         ? ['Triceps-Overhead', 'Triceps-Long', 'Triceps-Pushdown']
         : ['Triceps-Pushdown', 'Triceps-Overhead', 'Triceps-Lateral'];
-      addPrioritySlot(`${day.toLowerCase()}_triceps_exact`, 'Isolation', 'Isolation', 'Arms', {
+      ensureRegionExactSlot(slots, addPrioritySlot, `${day.toLowerCase()}_triceps_exact`, 'Arms', tricepsPref[0], {
         primaryAllowed: ['Arms'],
         subPreferred: tricepsPref,
         optional: priorityOptional('Arms', true) || hasUpperLimbConstraint
@@ -3917,10 +4014,24 @@ function findReplacementExerciseForPlan(exercise, user, allExercises, dayType, u
     .sort((a, b) => (b.score - a.score) || a.ex.name.localeCompare(b.ex.name));
   const chosen = scored[0]?.ex || null;
   if (!chosen) return null;
+  // The prescription belongs to the SLOT, not to the movement: a replacement
+  // stands in for the exercise it displaces and must inherit its sets, reps,
+  // rest, rep-ladder state and coaching text. `chosen` is a raw database row
+  // with none of those, so without this carry-over a swapped exercise renders
+  // as "3xundefined" and drops out of the rep ladder entirely.
+  const carried = {};
+  for (const key of [
+    'sets', 'reps', 'restSec', 'rest', 'rir', 'repLadder', 'progressionRule',
+    'weekType', 'flags', 'priorityOrderRank', 'projected', 'projectedWeight',
+    'projectedUnit', 'progression'
+  ]) {
+    if (exercise && exercise[key] !== undefined) carried[key] = exercise[key];
+  }
   return {
     ...chosen,
+    ...carried,
     name: normalizeBodybuildingDisplayName(chosen.name, user),
-    slotId: slot.id,
+    slotId: slot.id || exercise?.slotId,
     optional: false,
     muscleTarget: slot.muscleTarget
   };

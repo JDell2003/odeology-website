@@ -889,6 +889,18 @@ function normalizeOblueprintExperience(raw) {
   return '6-24m';
 }
 
+/* Mirrors generator/trainingEngine.oblueprint.js buildPlanSeed: an unseeded
+   build is unreproducible, which under the test runner means a suite that
+   forgets to pin a seed passes until it doesn't. Fixed under test, random in
+   production so identical answers do not produce identical plans. */
+const TEST_PLAN_SEED = 424242;
+function defaultPlanSeed() {
+  const underTest = process.env.NODE_ENV === 'test'
+    || process.env.RISEFORIT_TEST_SEED === '1'
+    || typeof process.env.NODE_TEST_CONTEXT === 'string';
+  return underTest ? TEST_PLAN_SEED : Date.now();
+}
+
 function normalizeOblueprintPayload(payload, { relax = false } = {}) {
   const src = payload && typeof payload === 'object' ? payload : {};
   const discipline = resolveOblueprintDiscipline(src.trainingFeel);
@@ -989,7 +1001,7 @@ function normalizeOblueprintPayload(payload, { relax = false } = {}) {
       ? src.liftHistoryAnchors
       : undefined,
     wantsCardio: src.wantsCardio === true || src.wantsCardio === 'true' || src.wantsCardio === 1 || src.wantsCardio === '1' || undefined,
-    planSeed: Number.isFinite(Number(src.planSeed)) ? Math.floor(Number(src.planSeed)) : Date.now()
+    planSeed: Number.isFinite(Number(src.planSeed)) ? Math.floor(Number(src.planSeed)) : defaultPlanSeed()
   };
 
   if (relax) {
@@ -1103,6 +1115,44 @@ const INJURY_NAME_CONTRA = {
   shoulder: [/behind the neck/i, /upright row/i],
   wrist: [/\bfront squat\b/i]
 };
+/* Every exercise the UI renders needs a printable sets x reps. Exercises added
+   by the route repair chain (which runs after the generator's final assembly)
+   can arrive without one. Inherit the prescription from a sibling on the same
+   day so the week's rep-ladder target is preserved, and only fall back to a
+   literal when the day has nothing to copy. Mutates in place; returns the count
+   repaired so callers can log it. */
+function routeNormalizePlanPrescriptions(plan) {
+  const malformedReps = (value) => {
+    const text = String(value ?? '').trim();
+    return !text || text === 'undefined' || text === 'null';
+  };
+  let repaired = 0;
+  for (const week of Array.isArray(plan?.weeks) ? plan.weeks : []) {
+    for (const day of Array.isArray(week?.days) ? week.days : []) {
+      const exercises = Array.isArray(day?.exercises) ? day.exercises : [];
+      for (const ex of exercises) {
+        const needsReps = malformedReps(ex?.reps);
+        const needsSets = !Number.isFinite(Number(ex?.sets)) || Number(ex.sets) < 1;
+        if (!needsReps && !needsSets) continue;
+        const donor = exercises.find((other) => other !== ex
+          && String(other?.style || '') === String(ex?.style || '')
+          && !malformedReps(other?.reps))
+          || exercises.find((other) => other !== ex && !malformedReps(other?.reps));
+        if (needsReps) {
+          ex.reps = donor?.reps ?? (String(ex?.style || '') === 'Compound' ? '6' : '10');
+          if (donor?.repLadder && !ex.repLadder) ex.repLadder = { ...donor.repLadder };
+        }
+        if (needsSets) ex.sets = Number(donor?.sets) || 2;
+        repaired += 1;
+      }
+    }
+  }
+  if (repaired) {
+    console.warn('[oblueprint] repaired malformed prescriptions', { count: repaired });
+  }
+  return repaired;
+}
+
 function planPassesFloorGate(plan, src) {
   try {
     const weeks = Array.isArray(plan?.weeks) ? plan.weeks : [];
@@ -1118,6 +1168,11 @@ function planPassesFloorGate(plan, src) {
         for (const e of exs) {
           const name = String(e?.name || e?.displayName || '');
           if (!name) return false;
+          // renderability: a prescription the UI would print as "3xundefined"
+          // is not a plan. Cheaper to reject here than to ship it.
+          const reps = String(e?.reps ?? '').trim();
+          if (!reps || reps === 'undefined' || reps === 'null') return false;
+          if (!Number.isFinite(Number(e?.sets)) || Number(e.sets) < 1) return false;
           for (const re of contra) if (re.test(name)) return false; // safety
         }
       }
@@ -1628,6 +1683,13 @@ function buildOblueprintPlanWithFallback(payload, opts = {}) {
     // logged injury). If it isn't, downgrade to the guaranteed safe fallback — the
     // safety line and completeness are inviolable. Healthy plans always pass, so
     // the golden-56 are unaffected.
+    // Repair before you reject. A single missing rep target is not a reason to
+    // throw away a whole personalised plan for a generic fallback, and the route
+    // repair chain runs after the generator's final assembly, so it can leave an
+    // appended accessory without a prescription. Normalise first, then gate.
+    if (result && !result.error && result.plan && !result._safeFallback) {
+      routeNormalizePlanPrescriptions(result.plan);
+    }
     if (result && !result.error && result.plan && !result._safeFallback && !planPassesFloorGate(result.plan, src)) {
       const safe = makeSafeFallbackResult(src, { error: 'FLOOR_GATE', reason: 'thin or unsafe day repaired via safe fallback' });
       if (safe) result = safe;
@@ -1808,7 +1870,7 @@ function coerceClassicBodybuildingToOblueprintPayload(payload) {
       ? src.liftHistoryAnchors
       : undefined,
     wantsCardio: src?.wantsCardio === true || src?.wantsCardio === 'true' || src?.wantsCardio === 1 || src?.wantsCardio === '1' || undefined,
-    planSeed: Number(src?.planSeed) || Date.now()
+    planSeed: Number(src?.planSeed) || defaultPlanSeed()
   }, { relax: false });
 }
 
@@ -4082,11 +4144,31 @@ function routeEnsureDayAccessoryInvariant(dayType, exercises) {
     }
     return -1;
   };
-  const appendUnique = (key, base = { style: 'Isolation', pattern: 'Isolation', sets: 2 }) => {
+  // An appended accessory has no slot behind it, so it has no prescription of
+  // its own. Copy one off an isolation exercise already on the day (same week,
+  // so it carries that week's rep-ladder target) and only fall back to a literal
+  // when the day has no isolation work at all. Without this the appended
+  // exercise ships with reps undefined and renders as "3xundefined".
+  const isolationTemplate = () => {
+    const donor = out.find((ex) => String(ex?.style || '') === 'Isolation' && ex?.reps !== undefined)
+      || out.find((ex) => ex?.reps !== undefined);
+    return {
+      style: 'Isolation',
+      pattern: 'Isolation',
+      sets: 2,
+      reps: donor?.reps ?? '10',
+      restSec: donor?.restSec ?? 60,
+      rest: donor?.rest ?? donor?.restSec ?? 60,
+      ...(donor?.repLadder ? { repLadder: { ...donor.repLadder } } : {}),
+      ...(donor?.progressionRule ? { progressionRule: donor.progressionRule } : {}),
+      ...(donor?.weekType ? { weekType: donor.weekType } : {})
+    };
+  };
+  const appendUnique = (key, base = null) => {
     if (out.length >= 6) return false;
     const spec = routePickUniqueReplacementMatching(key, out);
     if (!spec) return false;
-    const next = routeCanonicalizeExercise(routeApplyReplacement(base, spec), out);
+    const next = routeCanonicalizeExercise(routeApplyReplacement(base || isolationTemplate(), spec), out);
     if (out.some((ex) => routeExerciseIdentityKey(ex) === routeExerciseIdentityKey(next))) return false;
     out.push(next);
     return true;

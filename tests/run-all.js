@@ -51,6 +51,47 @@ const SUITES = [
     cmd: process.execPath,
     args: ['tests/transcribe.browser.js'],
     needsServer: false
+  },
+  // Training engine. These suites existed for a long time without gating a
+  // deploy, which is how the powerbuilding-3-Shoulders,Arms golden fixture was
+  // able to rot into a safe-fallback plan unnoticed. Split by area so a failure
+  // names the area, and so the slow golden/matrix builds are not hidden behind
+  // a fast unit failure.
+  //
+  // BLOCKING — green as of the Engine v2 Phase 0 wiring commit. Keep them green.
+  {
+    name: 'training — selection (golden 56 + fuzz)',
+    cmd: process.execPath,
+    args: ['--test', 'tests/selection.golden.test.js', 'tests/selection.fuzz.test.js'],
+    needsServer: false
+  },
+  {
+    name: 'training — phase 0 invariants + cut-mode policy',
+    cmd: process.execPath,
+    args: ['--test', 'tests/training.phase0.invariants.test.js', 'tests/cut-mode.policy.test.js'],
+    needsServer: false
+  },
+  // REPORTED ONLY — these carry a pre-existing failure baseline of 69 of 205
+  // tests, measured on 0eca8b3 before any Engine v2 work started. They are wired
+  // in so the number is visible on every run and can be driven down, but they do
+  // not close the gate yet: making them blocking today would block every deploy
+  // for failures that predate this work. Flip `blocking` off this entry once the
+  // count reaches zero.
+  {
+    name: 'training — engine + disciplines (KNOWN BASELINE: 69/205 failing)',
+    cmd: process.execPath,
+    args: [
+      '--test',
+      'tests/trainingEngine.oblueprint.test.js',
+      'tests/powerbuilding.priority.logic.test.js',
+      'tests/powerbuilding.priority.execution.test.js',
+      'tests/powerbuilding.priority.matrix.test.js',
+      'tests/militaryHybrid.logic.test.js',
+      'tests/militaryHybrid.execution.test.js',
+      'tests/militaryHybrid.matrix.test.js'
+    ],
+    needsServer: false,
+    blocking: false
   }
 ];
 
@@ -122,18 +163,25 @@ async function withServer(fn) {
     } else {
       code = await run(suite.cmd, suite.args, suite.env || {});
     }
-    results.push({ name: suite.name, pass: code === 0 });
+    results.push({ name: suite.name, pass: code === 0, blocking: suite.blocking !== false });
   }
 
   console.log(`\n============================================================`);
   console.log('UNIFIED SUMMARY');
   console.log(`============================================================`);
   for (const r of results) {
-    console.log(`${r.pass ? 'PASS' : 'FAIL'}  ${r.name}`);
+    const status = r.pass ? 'PASS' : (r.blocking ? 'FAIL' : 'FAIL (reported)');
+    console.log(`${status.padEnd(16)}${r.name}`);
   }
-  const failed = results.filter((r) => !r.pass);
+  const failed = results.filter((r) => !r.pass && r.blocking);
+  const reported = results.filter((r) => !r.pass && !r.blocking);
+  if (reported.length) {
+    console.log(`\n${reported.length} REPORTED-ONLY SUITE(S) FAILING — these do not close the gate yet.`);
+    console.log('They carry a known pre-existing failure baseline (see the suite comments in');
+    console.log('tests/run-all.js). Drive them to zero, then flip blocking back on.');
+  }
   console.log(failed.length === 0
-    ? `\nALL ${results.length} SUITES GREEN — gate open.`
-    : `\n${failed.length} of ${results.length} SUITES FAILED — gate closed. No commit, no push, no deploy.`);
+    ? `\nALL ${results.filter((r) => r.blocking).length} BLOCKING SUITES GREEN — gate open.`
+    : `\n${failed.length} of ${results.filter((r) => r.blocking).length} BLOCKING SUITES FAILED — gate closed. No commit, no push, no deploy.`);
   process.exit(failed.length ? 1 : 0);
 })();
