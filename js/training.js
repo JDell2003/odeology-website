@@ -526,6 +526,19 @@
     );
   }
 
+  // Shown when the build has not confirmed yet. It is deliberately not phrased
+  // as a failure: the plan is usually finishing server-side and lands moments
+  // later, and "we couldn't generate it" sends people back through setup for a
+  // workout they already have.
+  const PENDING_BUILD_MESSAGE = 'Your workout is still building. This can take a minute for detailed setups - it is not lost.';
+
+  function isPendingBuildMessage(message) {
+    const text = String(message || '').trim();
+    if (!text) return false;
+    return text === PENDING_BUILD_MESSAGE
+      || /still building|Workout build is taking longer than expected|Workout build did not finish in time|training_build_frontend_abort_timeout|Plan build timed out/i.test(text);
+  }
+
   function neutralizePlanLoadError(message) {
     const text = String(message || '').trim();
     if (!text) return '';
@@ -537,28 +550,103 @@
     return text;
   }
 
-  async function recoverPendingPlan({ prevPlanId = null, requestStartedAt = 0, maxMs = 180000, intervalMs = 2000 } = {}) {
+  // A build that has not confirmed yet is not a failed build. The engine's own
+  // telemetry shows constrained/injured/priority-muscle setups retry several
+  // times before they land, so the client keeps watching well past the first
+  // impatient timeout instead of telling someone their workout does not exist.
+  const PENDING_BUILD_WATCH_MS = 240_000;
+
+  // One watch at a time, and one automatic watch per build. Without these the
+  // waiting card would re-arm its own watcher every time the watch times out
+  // and re-rendered the card.
+  let pendingBuildWatchActive = false;
+  let pendingBuildWatchExhausted = false;
+
+  function resetPendingBuildWatch() {
+    pendingBuildWatchExhausted = false;
+  }
+
+  function canAutoResumePendingBuildWatch() {
+    return !pendingBuildWatchActive && !pendingBuildWatchExhausted;
+  }
+
+  function pendingBuildHandoffCopy(elapsedMs) {
+    const sec = Math.max(0, Math.round(elapsedMs / 1000));
+    if (elapsedMs < 20_000) {
+      return { message: 'Still building your workout...', meta: `Almost there. ${sec}s elapsed.` };
+    }
+    if (elapsedMs < 60_000) {
+      return { message: 'Still building your workout...', meta: `Your setup needs a few extra passes. ${sec}s elapsed.` };
+    }
+    return { message: 'Still building your workout...', meta: `Detailed setups can take a couple of minutes. ${sec}s elapsed - hang tight.` };
+  }
+
+  // Last look before anyone is told the build failed. pollForPlanReady only
+  // accepts a plan newer than the current attempt, which wrongly rejects a plan
+  // an earlier attempt already saved (first submit times out on the client, the
+  // server finishes and writes it, the retry then judges that plan "stale").
+  // On the way out, accept any active plan the account actually has.
+  async function adoptAnyExistingPlan() {
+    let resp = null;
+    try {
+      resp = await fetchTrainingStateWithRetry({ tries: 2, delayMs: 900 });
+    } catch {
+      return false;
+    }
+    const nextPlan = resp?.ok ? (resp.json?.plan || null) : null;
+    if (!nextPlan?.id || !Array.isArray(nextPlan?.plan?.weeks)) return false;
+    setGeneratingHandoffState({ active: false, message: '', meta: '' });
+    clearWorkoutGenerationState({ cancelRequest: false, clearFlags: true });
+    state.profile = resp.json?.profile || state.profile;
+    state.planRow = nextPlan;
+    sanitizeBodybuildingPlanInPlace(state.planRow);
+    state.planError = null;
+    state.logs = [];
+    state.allLogs = [];
+    clearAutoRetryPause();
+    void refreshTrainingLogs(state.planRow.id).then(() => render()).catch(() => {});
+    setView('plan');
+    return true;
+  }
+
+  async function recoverPendingPlan({ prevPlanId = null, requestStartedAt = 0, maxMs = PENDING_BUILD_WATCH_MS, intervalMs = 2000 } = {}) {
+    if (pendingBuildWatchActive) return false;
+    pendingBuildWatchActive = true;
+    const watchStartedAt = Date.now();
     state.planError = null;
     state.generating.minMs = 600;
     state.generating.timeoutMs = Math.max(12_000, maxMs);
-    setGeneratingHandoffState({
-      active: true,
-      message: 'Workout is still finishing. Checking for completed plan...',
-      meta: '95% - Checking for completed plan...'
-    });
+    const opening = pendingBuildHandoffCopy(0);
+    setGeneratingHandoffState({ active: true, message: opening.message, meta: opening.meta });
     setView('generating');
+    // The ticker reads handoff copy every frame, so refreshing it on a timer
+    // keeps the elapsed count honest instead of freezing on one message.
+    const copyTimer = window.setInterval(() => {
+      if (state.view !== 'generating') return;
+      const next = pendingBuildHandoffCopy(Date.now() - watchStartedAt);
+      setGeneratingHandoffState({ active: true, message: next.message, meta: next.meta });
+    }, 1000);
     const pollToken = createGenerationPollToken();
     state.generating.pollToken = pollToken;
-    const ready = await pollForPlanReady({ maxMs, intervalMs, prevPlanId, requestStartedAt, pollToken });
-    if (state.generating?.pollToken === pollToken) state.generating.pollToken = null;
-    if (ready) return true;
-    setGeneratingHandoffState({ active: false, message: '', meta: '' });
-    clearWorkoutGenerationState({ cancelRequest: false, clearFlags: true });
-    state.planError = readLocalIntake()
-      ? 'Workout build did not finish in time. No completed plan was detected.'
-      : 'Failed to load training state.';
-    setView('plan');
-    return false;
+    try {
+      const ready = await pollForPlanReady({ maxMs, intervalMs, prevPlanId, requestStartedAt, pollToken });
+      if (state.generating?.pollToken === pollToken) state.generating.pollToken = null;
+      if (ready || await adoptAnyExistingPlan()) {
+        resetPendingBuildWatch();
+        return true;
+      }
+      setGeneratingHandoffState({ active: false, message: '', meta: '' });
+      clearWorkoutGenerationState({ cancelRequest: false, clearFlags: true });
+      pendingBuildWatchExhausted = true;
+      state.planError = readLocalIntake()
+        ? PENDING_BUILD_MESSAGE
+        : 'Failed to load training state.';
+      setView('plan');
+      return false;
+    } finally {
+      window.clearInterval(copyTimer);
+      pendingBuildWatchActive = false;
+    }
   }
 
   const CLIENT_BB_SET_CAP = 4;
@@ -9945,6 +10033,7 @@ function toggleSharePopover(force) {
   const keepOnEngineAndRetry = ({ forceAutostart = false } = {}) => {
     if (engineRetryInFlight) return;
     engineRetryInFlight = true;
+    resetPendingBuildWatch();
     state.planError = null;
     state.generating.minMs = 600;
     state.generating.timeoutMs = 12_000;
@@ -9959,10 +10048,16 @@ function toggleSharePopover(force) {
         if (autoOnboarded) return;
         const ready = await pollForPlanReady({ maxMs: 12_000, intervalMs: 900, pollToken });
         if (ready) return;
+        if (state.generating?.pollToken === pollToken) state.generating.pollToken = null;
+        if (readLocalIntake()) {
+          // Twelve seconds of quiet is not a failure — the build is very likely
+          // still running. Keep the construction screen up and keep watching
+          // rather than dropping to an error the user has to dismiss.
+          await recoverPendingPlan({ intervalMs: 2000 });
+          return;
+        }
         clearWorkoutGenerationState({ cancelRequest: false, clearFlags: true });
-        state.planError = readLocalIntake()
-          ? 'Workout build is taking longer than expected. Please try again.'
-          : 'No saved setup found. Complete setup, then tap Enter Engine.';
+        state.planError = 'No saved setup found. Complete setup, then tap Enter Engine.';
         setView('plan');
       } finally {
         if (state.generating?.pollToken === pollToken) state.generating.pollToken = null;
@@ -11899,6 +11994,7 @@ function toggleSharePopover(force) {
     state.generating.activeEndpoint = '';
     state.generating.frontendRequestStartedAt = Date.now();
     state.generating.requestId = Number(state.generating.requestId || 0) + 1;
+    resetPendingBuildWatch();
     const requestId = state.generating.requestId;
     const comboEval = evaluateTrainingDebugCombo ? evaluateTrainingDebugCombo(payload, { rawClassic: true }) : { matched: false, reasonIfFalse: 'matcher_unavailable' };
     logDebugComboMatchEval('frontend', comboEval);
@@ -12027,10 +12123,21 @@ function toggleSharePopover(force) {
       const isFrontendAbortTimeout = String(resp?.error?.name || '').trim() === 'AbortError'
         || String(errObj?.error || '').trim() === 'training_build_frontend_abort_timeout'
         || resp?.status === 408;
+      // The server terminates the build worker at its own safety timeout and
+      // reports PLAN_BUILD_TIMEOUT as a structured 400. That is a slow build,
+      // not a rejected one — the engine retries constrained setups several
+      // times and usually lands moments later. Treating it as a hard failure
+      // is what skipped recovery entirely and put "couldn't generate" in front
+      // of people whose workout was seconds away.
+      const isPlanBuildTimeout = /PLAN_BUILD_TIMEOUT|worker-timeout/i.test([
+        errObj?.error, errObj?.code, errObj?.stage, errObj?.failedStage
+      ].map((v) => String(v || '')).join(' '));
+      const isBuildStillRunning = isFrontendAbortTimeout || isPlanBuildTimeout;
       const isStructuredPlanBuildFailure = Boolean(
         resp?.status === 400
         && errObj
         && typeof errObj === 'object'
+        && !isPlanBuildTimeout
         && (errObj.error || errObj.message || errObj.reason)
         && (errObj.functionName || errObj.stage || errObj.failedStage)
       );
@@ -12045,11 +12152,11 @@ function toggleSharePopover(force) {
           willPoll: Boolean(isAuthed && !isStructuredPlanBuildFailure)
         });
       }
-      if (isFrontendAbortTimeout) {
+      if (isBuildStillRunning) {
         setGeneratingHandoffState({
           active: true,
-          message: 'Workout is still finishing. Checking for completed plan...',
-          meta: `95% - Checking for completed plan... ${Math.max(0, Math.round((Date.now() - requestStartedAt) / 1000))}s elapsed.`
+          message: 'Still building your workout...',
+          meta: `Almost there. ${Math.max(0, Math.round((Date.now() - requestStartedAt) / 1000))}s elapsed.`
         });
         try {
           console.error('training_build_frontend_abort_timeout', {
@@ -12132,6 +12239,19 @@ function toggleSharePopover(force) {
           return;
         }
       }
+      // The recovery poll only accepts a plan newer than this attempt. Before
+      // declaring anything, check whether the account already has a usable
+      // plan — an earlier attempt that timed out on the client often finished
+      // and saved server-side, and that plan is the one the user is waiting on.
+      if (isAuthed && !isStructuredPlanBuildFailure && await adoptAnyExistingPlan()) {
+        logTrainingBuildLifecycle('training_build_adopted_existing_plan', {
+          endpoint,
+          elapsedMs: Date.now() - requestStartedAt,
+          routeKind,
+          requestId
+        });
+        return;
+      }
       setGeneratingHandoffState({ active: false, message: '', meta: '' });
       clearWorkoutGenerationState({ cancelRequest: false, clearFlags: true });
       state.planRow = null;
@@ -12169,10 +12289,8 @@ function toggleSharePopover(force) {
         }
         return lines.join('\n');
       })();
-      state.planError = neutralizePlanLoadError(isFrontendAbortTimeout
-        ? 'Workout build did not finish in time. No completed plan was detected.'
-        : resp.status === 408
-          ? 'Plan build timed out. Please try again.'
+      state.planError = neutralizePlanLoadError(isBuildStillRunning || resp.status === 408
+        ? PENDING_BUILD_MESSAGE
         : (detail ? `Failed to build plan:\n${detail}` : 'Failed to build plan.'));
       if (comboDebug) {
         logAbsGlutesLegsDebug('visible-failure', {
@@ -12812,7 +12930,8 @@ function toggleSharePopover(force) {
       state.planError = 'Invalid exercises/sets were removed from display. Regenerate plan for a clean rebuild.';
     }
     const plan = planRow?.plan;
-    if (plan && Array.isArray(plan.weeks) && /Workout build is taking longer than expected|Workout build did not finish in time|training_build_frontend_abort_timeout|Failed to load training state/i.test(String(state.planError || ''))) {
+    if (plan && Array.isArray(plan.weeks)
+      && (isPendingBuildMessage(state.planError) || /Failed to load training state/i.test(String(state.planError || '')))) {
       state.planError = null;
     }
     if (!plan || !Array.isArray(plan.weeks)) {
@@ -12836,12 +12955,40 @@ function toggleSharePopover(force) {
       // While impersonating, the local intake is the trainer's — never offer to
       // build the client's plan from it (wrong data + a long build hang).
       const hasIntake = !sessionIsImpersonated && !!readLocalIntake();
+
+      // An unconfirmed build is not a missing workout. Say so plainly, keep
+      // checking on the user's behalf, and don't lead with Start Over — that
+      // sends people back through the whole questionnaire for a plan the
+      // server is usually seconds away from handing them.
+      if (hasIntake && isPendingBuildMessage(state.planError)) {
+        if (canAutoResumePendingBuildWatch()) {
+          window.setTimeout(() => {
+            if (state.planRow?.plan || !isPendingBuildMessage(state.planError)) return;
+            if (!canAutoResumePendingBuildWatch()) return;
+            void recoverPendingPlan({ intervalMs: 2000 }).catch(() => {});
+          }, 0);
+        }
+        const checkNow = () => {
+          resetPendingBuildWatch();
+          void recoverPendingPlan({ intervalMs: 2000 }).catch(() => {});
+        };
+        return el('div', { class: 'training-card training-center' },
+          el('div', { style: 'font-weight:800' }, 'Your workout is still building'),
+          el('div', { class: 'training-muted', style: 'margin-top:6px' },
+            'Detailed setups take a little longer to construct. Stay on this screen and it will open on its own.'),
+          el('div', { class: 'training-actions', style: 'margin-top:0.75rem' },
+            el('button', { type: 'button', class: 'btn btn-primary', onclick: checkNow }, 'Check now')
+          )
+        );
+      }
+
       const msg = neutralizePlanLoadError(state.planError) || (hasIntake ? 'Ready to generate your workout.' : 'No plan found.');
+      const isRealFailure = Boolean(state.planError) && !isPendingBuildMessage(state.planError);
       return el('div', { class: 'training-card training-center' },
         el('div', { class: 'training-muted' }, msg),
-        hasIntake || state.planError
+        hasIntake || isRealFailure
           ? el('div', { class: 'training-actions', style: 'margin-top:0.75rem' },
-            state.planError
+            isRealFailure
               ? el('button', {
                 type: 'button',
                 class: 'btn btn-ghost',
