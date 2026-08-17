@@ -155,6 +155,11 @@
         { id: 'workoutTime', section: 'activity', type: 'multi', title: 'What time of the day do you prefer to work out?', options: [
             'Morning', 'Midday', 'Afternoon', 'Evening'
         ] },
+        /* Feeds preferredDays. Without it the engine spreads sessions across the
+           week on its own, which is a sane default but not the user's schedule. */
+        { id: 'trainingDays', section: 'activity', type: 'multi', title: 'Which days can you train?', subtitle: "Pick the ones that work. Skip it and we'll spread your sessions across the week.", options: [
+            'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'
+        ] },
         { id: 'equipmentQ', section: 'activity', type: 'multi', title: 'What equipment do you have access to?', options: [
             'Full gym', 'Dumbbells', 'Barbell', 'Machines', 'Cables', 'Bodyweight only'
         ] },
@@ -222,6 +227,12 @@
         ] },
         { id: 'morningFeel', section: 'lifestyle', type: 'choice', title: "How do you usually feel during the day after a night's sleep?", options: [
             'Energetic and ready to tackle the day', 'Moderately alert, but with some difficulty focusing', 'Struggling to stay awake and alert', 'Completely drained and unable to function'
+        ] },
+        /* Feeds `stress`. Paired with sleep it sets the engine's recovery tier,
+           which moves weekly set targets — so this screen changes the plan, which
+           is the bar every screen here is supposed to clear. */
+        { id: 'stressLevel', section: 'lifestyle', type: 'choice', title: 'How much stress are you carrying day to day?', subtitle: 'Stress and sleep together decide how much training volume you can actually recover from.', options: [
+            'Low — things feel manageable', 'Medium — some pressure most weeks', 'High — constantly under it'
         ] },
         { id: 'sleepPromo', type: 'info', kicker: 'RiseForIt', title: 'Improve sleep for a massive energy boost', body: 'Your plan optimizes recovery, so you wake up refreshed and revitalized.', art: 'sleep' },
 
@@ -313,6 +324,27 @@
     const fmtDate = (d) => d.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
 
     /* ---------- outputs: map quiz answers onto the existing intake ---------- */
+    /* Quiz answer text -> the vocabulary buildUserIntake and the engine expect.
+       Keys are matched verbatim against the option strings above; keep them in
+       sync. A miss here fails open to the engine default, which is exactly the
+       class of silent mismatch that cost this product every plan it ever
+       generated (see toWeekday, M vs mo). */
+    const sleepHoursMap = { 'Less than 5 hours': 5, '5-6 hours': 6, '7-8 hours': 8, 'More than 8 hours': 9 };
+    const stressMap = {
+        'Low — things feel manageable': 'Low',
+        'Medium — some pressure most weeks': 'Medium',
+        'High — constantly under it': 'High'
+    };
+    const activityMap = {
+        'I spend most of the day sitting': 'Sedentary',
+        'I take active breaks': 'Active',
+        "I'm on my feet all day long": 'Very active'
+    };
+    const weekdayCodeMap = {
+        Monday: 'Mo', Tuesday: 'Tu', Wednesday: 'We', Thursday: 'Th',
+        Friday: 'Fr', Saturday: 'Sa', Sunday: 'Su'
+    };
+
     function mapAnswers(a) {
         const zoneMap = { Arms: 'Arms', Pecs: 'Chest', Belly: 'Abs', Legs: 'Quads', Back: 'Back', Butt: 'Hamstrings/Glutes' };
         const goalMap = {
@@ -351,6 +383,14 @@
             equipment: (a.equipmentQ && a.equipmentQ.length) ? a.equipmentQ.slice() : ['Bodyweight only'],
             injuries,
             priorityMuscles: (a.targetZones || []).map((z) => zoneMap[z]).filter(Boolean).slice(0, 3),
+            // Recovery + schedule inputs. The quiz has asked about sleep since it
+            // shipped, but the answer only ever reached the identity radar — the
+            // plan generator saw a hardcoded 7 hours. Same for daily activity.
+            // These now travel to buildUserIntake with everything else.
+            sleepHours: sleepHoursMap[a.sleepHours] || 7,
+            stress: stressMap[a.stressLevel] || 'Medium',
+            activityLevel: activityMap[a.dailyActivity] || 'Active',
+            preferredDays: (a.trainingDays || []).map((d) => weekdayCodeMap[d]).filter(Boolean),
             stepTracking: String(a.permSteps || '').startsWith('Yes'),
             sleepTracking: String(a.permSleep || '').startsWith('Yes'),
             wakeTime: String(a.wakeTime || '')

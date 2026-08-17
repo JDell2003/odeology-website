@@ -7,6 +7,33 @@
   <meta name="theme-color" content="#140f0b">
   <script src="js/theme-color.js?v=2026-07-13-themebar-1" defer></script>
   <title>RiseForIt Training</title>
+  <!-- RETIRED (Engine v2 Phase 1 §0.5).
+
+       This page was the original public training wizard and it still holds the
+       most complete intake schema in the codebase — `focus`, `avoidMoves`,
+       `weakPoints`, `loadStyle`, `bodyFatPct`, `phaseRate`, and real sleep and
+       stress questions. mapIntakeToOblueprintPayload was written against THIS
+       schema, which is why it spent months looking for `intake.focus` while the
+       live onboarding wrote `priorityMuscles`.
+
+       It posts to /api/profile only. It has never generated a plan, so its
+       "Build free training plan" CTAs promised something it could not deliver.
+       Keeping a third intake schema alive guarantees the mismatch recurs, so it
+       now forwards to the real onboarding. The markup is left in place rather
+       than deleted so the field set stays available as reference for the
+       progressive-disclosure work in a later phase. -->
+  <script>
+    (function () {
+      try {
+        var here = window.location.pathname || '';
+        if (/training-coming-soon/.test(here)) {
+          window.location.replace('/' + (window.location.search || ''));
+        }
+      } catch (err) {
+        window.location.href = '/';
+      }
+    }());
+  </script>
   <link rel="stylesheet" href="css/main.css?v=2026-07-29-mobilecp-1" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
