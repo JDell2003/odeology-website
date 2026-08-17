@@ -1128,8 +1128,20 @@ function routeNormalizePlanPrescriptions(plan) {
   };
   let repaired = 0;
   for (const week of Array.isArray(plan?.weeks) ? plan.weeks : []) {
-    for (const day of Array.isArray(week?.days) ? week.days : []) {
+    const weekIndex = Number(week?.weekIndex) || 0;
+    for (const [dayOffset, day] of (Array.isArray(week?.days) ? week.days : []).entries()) {
       const exercises = Array.isArray(day?.exercises) ? day.exercises : [];
+      // Stable identity, stamped here because this is the last write before the
+      // plan is gated and persisted - the route repair chain runs after the
+      // generator's final assembly and can insert, drop and reorder exercises,
+      // so anything stamped upstream would already be stale. slotIndex is 0
+      // until a day can hold more than one session; the shape is fixed now so
+      // logging and overrides do not have to change again when it can.
+      // canonicalExerciseId stays the semantic slug; this is for correlation.
+      const dayIndex = dayOffset + 1;
+      exercises.forEach((ex, exerciseIndex) => {
+        ex.id = `${weekIndex}-${dayIndex}-0-${exerciseIndex + 1}`;
+      });
       for (const ex of exercises) {
         const needsReps = malformedReps(ex?.reps);
         const needsSets = !Number.isFinite(Number(ex?.sets)) || Number(ex.sets) < 1;

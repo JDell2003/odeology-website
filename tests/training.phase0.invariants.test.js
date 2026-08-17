@@ -111,6 +111,23 @@ test('an upper-accessory priority pair still yields a real plan, not the safe fa
   }
 });
 
+/* Every exercise needs an identity that is stable within the plan and survives
+   the route repair chain. Logging, overrides, progression and the coming slot
+   model all correlate on it. canonicalExerciseId is a semantic slug and repeats
+   across days, so it cannot serve. */
+test('every exercise carries an id that is unique within the plan', () => {
+  for (const daysPerWeek of [3, 5]) {
+    const { plan } = build({ emphasis: ['chest', 'back'], discipline: 'bodybuilding', daysPerWeek });
+    const ids = allExercises(plan).map((e) => e.id);
+    assert.ok(ids.length > 0, 'plan has exercises');
+    assert.equal(ids.filter((id) => !id).length, 0, `${daysPerWeek}d: every exercise has an id`);
+    assert.equal(new Set(ids).size, ids.length, `${daysPerWeek}d: ids are unique (${ids.length - new Set(ids).size} collisions)`);
+    for (const id of ids) {
+      assert.match(id, /^\d+-\d+-\d+-\d+$/, `id "${id}" is week-day-slot-exercise`);
+    }
+  }
+});
+
 /* Priority is what drives the volume bands, so it has to actually reach the
    engine. It is carried on the payload as priorityGroups. */
 test('selected priority groups reach the built plan', () => {
