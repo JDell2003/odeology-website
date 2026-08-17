@@ -280,16 +280,70 @@
     hip: 'Hip',
     knee: 'Knee'
   };
+  // Keys are what the onboarding checkbox group emits, lowercased. Values are
+  // what normalizeOblueprintPayload accepts. Quads, Hamstrings/Glutes and
+  // Calves are offered by the form and were missing here, so selecting them
+  // silently produced no priority at all.
   const INTAKE_FOCUS_MAP = {
     chest: 'Chest',
     back: 'Back',
     shoulders: 'Shoulders',
+    shoulder: 'Shoulders',
     arms: 'Arms',
     legs: 'Legs',
+    quads: 'Legs',
+    quadriceps: 'Legs',
     glutes: 'Glutes',
+    hamstrings: 'Glutes',
+    'hamstrings/glutes': 'Glutes',
+    'hamstrings & glutes': 'Glutes',
+    'hamstrings and glutes': 'Glutes',
+    calves: 'Calves',
+    calf: 'Calves',
     abs: 'Core',
     core: 'Core'
   };
+
+  // The onboarding form offers "30-45" / "45-60" / "60-75" / "75-90+"; the
+  // engine's session cap table is keyed '30' | '45' | '60' | '75+'. Nothing
+  // bridged them, so every value fell through to the '60' default and every
+  // user got the same 6-exercise cap no matter what they picked.
+  const INTAKE_SESSION_LENGTH_MAP = {
+    '30': '30', '30-45': '30', '30_45': '30',
+    '45': '45', '45-60': '45', '45_60': '45',
+    '60': '60', '60-75': '60', '60_75': '60',
+    '75+': '75+', '75-90+': '75+', '75-90': '75+', '75_90_plus': '75+', '75_90': '75+', '90+': '75+'
+  };
+
+  function mapSessionLength(raw) {
+    const key = String(raw ?? '').trim().toLowerCase();
+    return INTAKE_SESSION_LENGTH_MAP[key] || '60';
+  }
+
+  // Free-text injury notes into avoid tokens the selector understands. Same
+  // vocabulary as the classic bridge in core/trainingRoutes.js, so both entry
+  // paths exclude the same movements for the same words.
+  const INJURY_NOTE_AVOID_RULES = [
+    [/overhead|shoulder press|upright row|behind the neck/, 'overhead press'],
+    [/bench|chest press/, 'flat bench'],
+    [/deadlift|hinge|lower back|good morning/, 'barbell hinge'],
+    [/deep knee|deep squat|knee flexion|\bsquat\b/, 'deep squat'],
+    [/\bdip\b|\bdips\b/, 'dips'],
+    [/lunge|split squat/, 'lunge'],
+    [/skull ?crusher|elbow/, 'skullcrusher']
+  ];
+
+  function deriveAvoidMovesFromIntake(intake) {
+    const explicit = Array.isArray(intake?.avoidMoves) ? intake.avoidMoves.map((v) => String(v)) : [];
+    const note = String(intake?.injuryDetails?.notes || intake?.injuryNotes || '').trim().toLowerCase();
+    const out = [...explicit];
+    if (note) {
+      INJURY_NOTE_AVOID_RULES.forEach(([pattern, token]) => {
+        if (pattern.test(note) && !out.includes(token)) out.push(token);
+      });
+    }
+    return out;
+  }
 
   let autoOnboardInFlight = false;
   let engineRetryInFlight = false;
@@ -1079,12 +1133,18 @@
         : 'bodybuilding';
 
     const daysPerWeek = Math.max(2, Math.min(6, Math.round(Number(intake.daysPerWeek) || 4)));
-    const sessionLengthMin = ['30', '45', '60', '75+'].includes(String(intake.sessionLength))
-      ? String(intake.sessionLength)
-      : '60';
+    const sessionLengthMin = mapSessionLength(intake.sessionLength ?? intake.timePerSession);
 
-    const priorityGroups = mapPriorityGroups(intake.focus);
-    const movementsToAvoid = Array.isArray(intake.avoidMoves) ? intake.avoidMoves.map((v) => String(v)) : [];
+    // The onboarding form writes priorityMuscles; the server writes `focus` back
+    // into the saved intake on a later rebuild. Read both, form first, or a
+    // first build gets no priority at all - which is the difference between the
+    // volume logic working and biceps getting 6 sets at one exposure a week.
+    const priorityGroups = mapPriorityGroups(
+      (Array.isArray(intake.priorityMuscles) && intake.priorityMuscles.length)
+        ? intake.priorityMuscles
+        : intake.focus
+    );
+    const movementsToAvoid = deriveAvoidMovesFromIntake(intake);
     const preferredDays = mapPreferredDays(intake.preferredDays);
     const equipmentAccess = Array.isArray(intake.equipment) ? intake.equipment.map((v) => String(v)) : [];
     const painAreas = mapPainAreas(intake.injuries);
@@ -4548,7 +4608,10 @@
     timePerSession = '',
     trainingAgeBucket = '',
     emphasis = [],
-    equipmentStylePref = 'mix'
+    equipmentStylePref = 'mix',
+    sleepHours = null,
+    stress = '',
+    activityLevel = ''
   } = {}) {
     const normalizedDiscipline = normalizeDiscipline(discipline);
     if (!normalizedDiscipline || !['bodybuilding', 'powerbuilding', 'military'].includes(normalizedDiscipline)) return null;
@@ -4594,9 +4657,10 @@
       hingeMovement: String(normalizedStrength.hingeMovement || '').trim() || null,
       hingeWeight: Number(normalizedStrength.hingeWeight || 0) || null,
       hingeReps: Number(normalizedStrength.hingeReps || 0) || null,
-      sleepHours: 7,
-      activityLevel: 'Active',
-      stress: 'Medium',
+      // Recovery inputs, no longer pinned - see index.html buildUserIntake.
+      sleepHours: Math.max(4, Math.min(10, Number(sleepHours) || 7)),
+      activityLevel: String(activityLevel || '').trim() || 'Active',
+      stress: String(stress || '').trim() || 'Medium',
       planSeed: Date.now()
     };
   }

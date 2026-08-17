@@ -1,19 +1,29 @@
 {
   "bodybuilding-4-111": {
-    "count": 20,
+    "count": 21,
     "sums": [
       {
-        "exercise": "Chest-Supported Row",
+        "exercise": "Barbell Bench Press - Medium Grip",
+        "family": "chest_press",
+        "mode": "external_load",
+        "reps": "6",
+        "w1": 170,
+        "w8": 175,
+        "w16": 185,
+        "start": 170
+      },
+      {
+        "exercise": "Cable Row",
         "family": "horizontal_pull",
         "mode": "external_load",
         "reps": "6",
-        "w1": 72.5,
-        "w8": 77.5,
-        "w16": 87.5,
-        "start": 72.5
+        "w1": 130,
+        "w8": 135,
+        "w16": 145,
+        "start": 130
       },
       {
-        "exercise": "Dumbbell Incline Row",
+        "exercise": "Chest-Supported Row",
         "family": "horizontal_pull",
         "mode": "external_load",
         "reps": "6",
@@ -33,14 +43,14 @@
         "start": 330
       },
       {
-        "exercise": "Incline Cable Chest Press",
-        "family": "chest_press",
+        "exercise": "Lat Pulldown",
+        "family": "vertical_pull",
         "mode": "external_load",
         "reps": "6",
-        "w1": 170,
-        "w8": 175,
-        "w16": 185,
-        "start": 170
+        "w1": 115,
+        "w8": 120,
+        "w16": 130,
+        "start": 115
       },
       {
         "exercise": "Leverage Chest Press",
@@ -53,7 +63,7 @@
         "start": 170
       },
       {
-        "exercise": "Machine Bench Press",
+        "exercise": "Leverage Decline Chest Press",
         "family": "chest_press",
         "mode": "external_load",
         "reps": "6",
@@ -63,14 +73,24 @@
         "start": 170
       },
       {
-        "exercise": "V-Bar Pulldown",
-        "family": "vertical_pull",
+        "exercise": "Leverage High Row",
+        "family": "horizontal_pull",
         "mode": "external_load",
         "reps": "6",
-        "w1": 115,
-        "w8": 120,
-        "w16": 130,
-        "start": 115
+        "w1": 145,
+        "w8": 150,
+        "w16": 160,
+        "start": 145
+      },
+      {
+        "exercise": "Leverage Incline Chest Press",
+        "family": "chest_press",
+        "mode": "external_load",
+        "reps": "6",
+        "w1": 170,
+        "w8": 175,
+        "w16": 185,
+        "start": 170
       },
       {
         "exercise": "Wide-Grip Lat Pulldown",
@@ -83,14 +103,14 @@
         "start": 115
       },
       {
-        "exercise": "Cable Bench Reverse Crunch",
+        "exercise": "Ab Crunch Machine",
         "family": "core_flexion",
         "mode": "external_load",
         "reps": "8",
-        "w1": 55,
-        "w8": 60,
-        "w16": 70,
-        "start": 55
+        "w1": 60,
+        "w8": 65,
+        "w16": 75,
+        "start": 60
       },
       {
         "exercise": "Cable Crossover",
@@ -103,16 +123,6 @@
         "start": 45
       },
       {
-        "exercise": "Cable Crunch",
-        "family": "core_flexion",
-        "mode": "external_load",
-        "reps": "8",
-        "w1": 55,
-        "w8": 60,
-        "w16": 70,
-        "start": 55
-      },
-      {
         "exercise": "Glute Ham Raise",
         "family": "ham_curl",
         "mode": "external_load",
@@ -121,6 +131,16 @@
         "w8": 100,
         "w16": 110,
         "start": 95
+      },
+      {
+        "exercise": "Kneeling Cable Crunch With Alternating Oblique Twists",
+        "family": "core_rotation",
+        "mode": "external_load",
+        "reps": "8",
+        "w1": 40,
+        "w8": 45,
+        "w16": 55,
+        "start": 40
       },
       {
         "exercise": "Leg Extensions",
@@ -133,8 +153,18 @@
         "start": 100
       },
       {
-        "exercise": "Low Cable Crossover",
-        "family": "chest_iso",
+        "exercise": "Machine Triceps Extension",
+        "family": "triceps_iso",
+        "mode": "external_load",
+        "reps": "10",
+        "w1": 50,
+        "w8": 55,
+        "w16": 65,
+        "start": 50
+      },
+      {
+        "exercise": "Overhead Cable Curl",
+        "family": "biceps_iso",
         "mode": "external_load",
         "reps": "10",
         "w1": 45,
@@ -153,24 +183,14 @@
         "start": 55
       },
       {
-        "exercise": "Seated Barbell Twist",
-        "family": "core_rotation",
+        "exercise": "Single-Arm Cable Crossover",
+        "family": "chest_iso",
         "mode": "external_load",
-        "reps": "8",
+        "reps": "10",
         "w1": 45,
         "w8": 50,
         "w16": 60,
         "start": 45
-      },
-      {
-        "exercise": "Seated Close-Grip Concentration Barbell Curl",
-        "family": "biceps_iso",
-        "mode": "external_load",
-        "reps": "10",
-        "w1": 50,
-        "w8": 55,
-        "w16": 65,
-        "start": 50
       },
       {
         "exercise": "Standing Calf Raises",
@@ -191,32 +211,12 @@
         "w8": 50,
         "w16": 60,
         "start": 45
-      },
-      {
-        "exercise": "Triceps Extension",
-        "family": "triceps_iso",
-        "mode": "external_load",
-        "reps": "10",
-        "w1": 25,
-        "w8": 30,
-        "w16": 40,
-        "start": 25
       }
     ]
   },
   "powerbuilding-4-222": {
-    "count": 21,
+    "count": 20,
     "sums": [
-      {
-        "exercise": "Barbell Glute Bridge",
-        "family": "hip_thrust",
-        "mode": "external_load",
-        "reps": "6",
-        "w1": 330,
-        "w8": 335,
-        "w16": 345,
-        "start": 330
-      },
       {
         "exercise": "Barbell Hip Thrust",
         "family": "hip_thrust",
@@ -258,17 +258,37 @@
         "start": 115
       },
       {
-        "exercise": "Leg Press",
-        "family": "leg_press",
+        "exercise": "Hack Squat",
+        "family": "squat_pattern",
         "mode": "external_load",
         "reps": "4",
-        "w1": 375,
-        "w8": 380,
-        "w16": 390,
-        "start": 375
+        "w1": 240,
+        "w8": 245,
+        "w16": 255,
+        "start": 240
+      },
+      {
+        "exercise": "Hip Thrust",
+        "family": "hip_thrust",
+        "mode": "external_load",
+        "reps": "6",
+        "w1": 330,
+        "w8": 335,
+        "w16": 345,
+        "start": 330
       },
       {
         "exercise": "Machine Chest Press",
+        "family": "chest_press",
+        "mode": "external_load",
+        "reps": "6",
+        "w1": 170,
+        "w8": 175,
+        "w16": 185,
+        "start": 170
+      },
+      {
+        "exercise": "Smith Machine Incline Bench Press",
         "family": "chest_press",
         "mode": "external_load",
         "reps": "4",
@@ -278,7 +298,7 @@
         "start": 170
       },
       {
-        "exercise": "Romanian Deadlift",
+        "exercise": "Smith Machine Stiff-Legged Deadlift",
         "family": "hinge_pattern",
         "mode": "external_load",
         "reps": "6",
@@ -288,24 +308,14 @@
         "start": 295
       },
       {
-        "exercise": "Standing Cable Chest Press",
-        "family": "chest_press",
+        "exercise": "Barbell Lunge",
+        "family": "single_leg",
         "mode": "external_load",
         "reps": "6",
-        "w1": 170,
-        "w8": 175,
-        "w16": 185,
-        "start": 170
-      },
-      {
-        "exercise": "Cable Crossover",
-        "family": "chest_iso",
-        "mode": "external_load",
-        "reps": "10",
-        "w1": 45,
-        "w8": 50,
-        "w16": 60,
-        "start": 45
+        "w1": 70,
+        "w8": 75,
+        "w16": 85,
+        "start": 70
       },
       {
         "exercise": "Cable Crunch",
@@ -318,17 +328,17 @@
         "start": 55
       },
       {
-        "exercise": "Elevated Back Lunge",
-        "family": "single_leg",
+        "exercise": "Drag Curl",
+        "family": "biceps_iso",
         "mode": "external_load",
-        "reps": "6",
-        "w1": 70,
-        "w8": 75,
-        "w16": 85,
-        "start": 70
+        "reps": "10",
+        "w1": 50,
+        "w8": 55,
+        "w16": 65,
+        "start": 50
       },
       {
-        "exercise": "Lateral Raise",
+        "exercise": "Dumbbell Lateral Raise",
         "family": "lateral_raise",
         "mode": "external_load",
         "reps": "10",
@@ -336,6 +346,26 @@
         "w8": 15,
         "w16": 25,
         "start": 10
+      },
+      {
+        "exercise": "Glute Ham Raise",
+        "family": "ham_curl",
+        "mode": "external_load",
+        "reps": "10",
+        "w1": 95,
+        "w8": 100,
+        "w16": 110,
+        "start": 95
+      },
+      {
+        "exercise": "Kneeling Cable Crunch With Alternating Oblique Twists",
+        "family": "core_rotation",
+        "mode": "external_load",
+        "reps": "8",
+        "w1": 40,
+        "w8": 45,
+        "w16": 55,
+        "start": 40
       },
       {
         "exercise": "Leg Extensions",
@@ -348,7 +378,7 @@
         "start": 100
       },
       {
-        "exercise": "Reverse Crunch",
+        "exercise": "Rope Crunch",
         "family": "core_flexion",
         "mode": "external_load",
         "reps": "8",
@@ -356,26 +386,6 @@
         "w8": 60,
         "w16": 70,
         "start": 55
-      },
-      {
-        "exercise": "Seated Barbell Twist",
-        "family": "core_rotation",
-        "mode": "external_load",
-        "reps": "8",
-        "w1": 45,
-        "w8": 50,
-        "w16": 60,
-        "start": 45
-      },
-      {
-        "exercise": "Seated Close-Grip Concentration Barbell Curl",
-        "family": "biceps_iso",
-        "mode": "external_load",
-        "reps": "10",
-        "w1": 50,
-        "w8": 55,
-        "w16": 65,
-        "start": 50
       },
       {
         "exercise": "Seated Leg Curl",
@@ -388,14 +398,14 @@
         "start": 95
       },
       {
-        "exercise": "Smith Machine Calf Raise",
-        "family": "calves",
+        "exercise": "Single-Arm Cable Crossover",
+        "family": "chest_iso",
         "mode": "external_load",
         "reps": "10",
-        "w1": 125,
-        "w8": 130,
-        "w16": 140,
-        "start": 125
+        "w1": 45,
+        "w8": 50,
+        "w16": 60,
+        "start": 45
       },
       {
         "exercise": "Standing Barbell Calf Raise",
@@ -406,32 +416,12 @@
         "w8": 130,
         "w16": 140,
         "start": 125
-      },
-      {
-        "exercise": "Triceps Extension",
-        "family": "triceps_iso",
-        "mode": "external_load",
-        "reps": "10",
-        "w1": 25,
-        "w8": 30,
-        "w16": 40,
-        "start": 25
       }
     ]
   },
   "bodybuilding-3-333": {
     "count": 17,
     "sums": [
-      {
-        "exercise": "Cable Row",
-        "family": "horizontal_pull",
-        "mode": "external_load",
-        "reps": "6",
-        "w1": 130,
-        "w8": 135,
-        "w16": 145,
-        "start": 130
-      },
       {
         "exercise": "Chest-Supported Row",
         "family": "horizontal_pull",
@@ -441,16 +431,6 @@
         "w8": 77.5,
         "w16": 87.5,
         "start": 72.5
-      },
-      {
-        "exercise": "Close-Grip Front Lat Pulldown",
-        "family": "vertical_pull",
-        "mode": "external_load",
-        "reps": "6",
-        "w1": 115,
-        "w8": 120,
-        "w16": 130,
-        "start": 115
       },
       {
         "exercise": "Dumbbell Incline Row",
@@ -503,6 +483,16 @@
         "start": 170
       },
       {
+        "exercise": "Leverage High Row",
+        "family": "horizontal_pull",
+        "mode": "external_load",
+        "reps": "6",
+        "w1": 145,
+        "w8": 150,
+        "w16": 160,
+        "start": 145
+      },
+      {
         "exercise": "Machine Bench Press",
         "family": "chest_press",
         "mode": "external_load",
@@ -513,7 +503,7 @@
         "start": 170
       },
       {
-        "exercise": "Smith Machine Bench Press",
+        "exercise": "Smith Machine Incline Bench Press",
         "family": "chest_press",
         "mode": "external_load",
         "reps": "6",
@@ -523,14 +513,14 @@
         "start": 170
       },
       {
-        "exercise": "Ab Crunch Machine",
-        "family": "core_flexion",
+        "exercise": "Wide-Grip Lat Pulldown",
+        "family": "vertical_pull",
         "mode": "external_load",
-        "reps": "8",
-        "w1": 60,
-        "w8": 65,
-        "w16": 75,
-        "start": 60
+        "reps": "6",
+        "w1": 115,
+        "w8": 120,
+        "w16": 130,
+        "start": 115
       },
       {
         "exercise": "Cable Crunch",
@@ -543,14 +533,24 @@
         "start": 55
       },
       {
-        "exercise": "Cable Oblique Crunch",
-        "family": "core_stability",
+        "exercise": "High Cable Curls",
+        "family": "biceps_iso",
+        "mode": "external_load",
+        "reps": "10",
+        "w1": 45,
+        "w8": 50,
+        "w16": 60,
+        "start": 45
+      },
+      {
+        "exercise": "Kneeling Cable Crunch With Alternating Oblique Twists",
+        "family": "core_rotation",
         "mode": "external_load",
         "reps": "8",
-        "w1": null,
-        "w8": null,
-        "w16": null,
-        "start": null
+        "w1": 40,
+        "w8": 45,
+        "w16": 55,
+        "start": 40
       },
       {
         "exercise": "Low Cable Crossover",
@@ -563,14 +563,14 @@
         "start": 45
       },
       {
-        "exercise": "Machine Bicep Curl",
-        "family": "biceps_iso",
+        "exercise": "Rope Crunch",
+        "family": "core_flexion",
         "mode": "external_load",
-        "reps": "10",
-        "w1": 50,
-        "w8": 55,
-        "w16": 65,
-        "start": 50
+        "reps": "8",
+        "w1": 55,
+        "w8": 60,
+        "w16": 70,
+        "start": 55
       },
       {
         "exercise": "Single-Arm Cable Crossover",

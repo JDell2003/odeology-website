@@ -921,15 +921,23 @@ function normalizeOblueprintPayload(payload, { relax = false } = {}) {
     }
     return out;
   };
+  // The onboarding checkbox group emits "Hamstrings/Glutes" verbatim. Without
+  // the slashed key it lands here, misses, and the priority is silently dropped
+  // on the way to the engine.
   const priorityAlias = {
     chest: 'Chest',
     back: 'Back',
     legs: 'Legs',
     glutes: 'Glutes',
     quads: 'Legs',
+    quadriceps: 'Legs',
     hamstrings: 'Glutes',
     hamstrings_glutes: 'Glutes',
+    'hamstrings/glutes': 'Glutes',
+    'hamstrings & glutes': 'Glutes',
+    'hamstrings and glutes': 'Glutes',
     calves: 'Calves',
+    calf: 'Calves',
     shoulders: 'Shoulders',
     shoulder: 'Shoulders',
     arms: 'Arms',
@@ -1874,9 +1882,12 @@ function coerceClassicBodybuildingToOblueprintPayload(payload) {
     equipmentAccess: equipmentAccessToList(src?.equipmentAccess),
     painAreas: classicInjury.painAreas,
     painProfilesByArea: classicInjury.painProfilesByArea,
-    sleepHours: 7,
-    activityLevel: 'Active',
-    stress: 'Medium',
+    // Recovery inputs come from the payload when the caller has them. Pinned
+    // here was one of the three places that made the engine recovery signal a
+    // constant for every user.
+    sleepHours: Math.max(4, Math.min(10, Number(src?.sleepHours ?? strength?.sleepHours) || 7)),
+    activityLevel: String(src?.activityLevel || strength?.activityLevel || '').trim() || 'Active',
+    stress: String(src?.stress || strength?.stress || '').trim() || 'Medium',
     progressionStyle: String(src?.progressionStyle || strength?.progressionStyle || '').trim() || undefined,
     liftHistoryAnchors: (src?.liftHistoryAnchors && typeof src.liftHistoryAnchors === 'object')
       ? src.liftHistoryAnchors

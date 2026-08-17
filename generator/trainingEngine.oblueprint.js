@@ -310,7 +310,17 @@ const EXP_CFG = {
   '2-5y': { large: 18, small: 10, maintenance: 0.6, add: 6, maxLarge: 22, maxSmall: 14, maxDifficulty: 5, diffTarget: 4 },
   '5y+': { large: 22, small: 12, maintenance: 0.55, add: 8, maxLarge: 26, maxSmall: 16, maxDifficulty: 5, diffTarget: 4 }
 };
-const STRESS_MULT = { Low: 1.0, Medium: 0.93, High: 0.85 };
+/* STRESS_MULT is gone. It was computed, threaded through four function
+   signatures and written to plan.meta.stressMultiplier, and it multiplied
+   nothing — every plan was scaled by 1.0 regardless of the value stored.
+
+   Deleted rather than applied, deliberately. Stress already reaches volume
+   through deriveUserProfile: recovery = sleepHours >= 7 && stress !== High,
+   which shifts every target via the +-0.08 recovery term in chooseTargetInRange.
+   Applying a second 0.85 scalar on top would double-count it and push several
+   muscles under their landmark band minimums, which the volume model is not
+   allowed to do. A graded, per-axis recovery budget replaces this properly in
+   phase 3. */
 const SESSION_CAP = { '30': 4, '45': 5, '60': 6, '75+': 7 };
 const DISTRO = {
   1: [1.0],
@@ -2150,17 +2160,36 @@ function normalizeExperienceTier(raw) {
 
 function toWeekday(value) {
   const v = String(value || '').trim().toLowerCase();
+  // Single-letter forms are the vocabulary of TRAINING_WEEKDAY_CODES in
+  // core/trainingRoutes.js ('SU','M','T','W','TH','F','S'), which is what the
+  // classic bridge emits. They were not accepted here, so a 3-day classic
+  // payload arrived as ['M','W','F'], only 'W' resolved, the count no longer
+  // matched daysPerWeek and the whole choice was discarded for a default. That
+  // is why every classic user trained on consecutive days regardless of intent.
   const map = {
     su: 'Su', sun: 'Su', sunday: 'Su',
-    mo: 'Mo', mon: 'Mo', monday: 'Mo',
-    tu: 'Tu', tue: 'Tu', tuesday: 'Tu',
-    we: 'We', wed: 'We', wednesday: 'We',
-    th: 'Th', thu: 'Th', thursday: 'Th',
-    fr: 'Fr', fri: 'Fr', friday: 'Fr',
-    sa: 'Sa', sat: 'Sa', saturday: 'Sa'
+    mo: 'Mo', m: 'Mo', mon: 'Mo', monday: 'Mo',
+    tu: 'Tu', t: 'Tu', tue: 'Tu', tues: 'Tu', tuesday: 'Tu',
+    we: 'We', w: 'We', wed: 'We', wednesday: 'We',
+    th: 'Th', thu: 'Th', thur: 'Th', thurs: 'Th', thursday: 'Th',
+    fr: 'Fr', f: 'Fr', fri: 'Fr', friday: 'Fr',
+    sa: 'Sa', s: 'Sa', sat: 'Sa', saturday: 'Sa'
   };
   return map[v] || null;
 }
+
+/* Conventional weekday spreads for a user who did not pick days. Mirrors
+   preferredWeekdayPattern in core/trainingRoutes.js so both entry paths agree.
+   Rest falls between sessions instead of all landing at the end of the week. */
+const DEFAULT_TRAINING_DAY_SPREAD = {
+  1: ['Mo'],
+  2: ['Mo', 'Th'],
+  3: ['Mo', 'We', 'Fr'],
+  4: ['Mo', 'Tu', 'Th', 'Fr'],
+  5: ['Mo', 'Tu', 'We', 'Fr', 'Sa'],
+  6: ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'],
+  7: ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su']
+};
 
 function derivePreferredDays(daysPerWeek, preferredDaysRaw, unavailableDaysRaw) {
   const n = Math.max(0, Math.floor(Number(daysPerWeek) || 0));
@@ -2172,6 +2201,13 @@ function derivePreferredDays(daysPerWeek, preferredDaysRaw, unavailableDaysRaw) 
   if (available.length < n) return preferred.slice(0, n);
   const chosen = [];
   preferred.forEach((day) => {
+    if (chosen.length < n && !blocked.has(day) && !chosen.includes(day)) chosen.push(day);
+  });
+  // Fill from a SPREAD, not from the head of the week. Taking the first n
+  // weekdays gives everyone who did not pick days a block of consecutive
+  // sessions (Mo,Tu,We,Th) and a four-day gap, which is the worst available
+  // recovery distribution and also starves the placement solver in phase 5.
+  DEFAULT_TRAINING_DAY_SPREAD[n]?.forEach((day) => {
     if (chosen.length < n && !blocked.has(day) && !chosen.includes(day)) chosen.push(day);
   });
   available.forEach((day) => {
@@ -2472,7 +2508,6 @@ function normalizeUserInput(input) {
 
 function computeWeeklyTargets(user) {
   const profile = user?.profile || deriveUserProfile(user);
-  const stressMult = STRESS_MULT[user.stress] || 1;
   const targets = {};
   const frequencyTargets = {};
   const directPrioritySet = getPriorityDirectTargets(user);
@@ -2576,7 +2611,7 @@ function computeWeeklyTargets(user) {
       calfTargetSets: Number(targets.Calves || 0)
     });
   }
-  return { targets, frequencyTargets, stressMultiplier: stressMult };
+  return { targets, frequencyTargets };
 }
 
 function scaleTargets(baseTargets, weekType, blockLength, weekIndex) {
@@ -6387,130 +6422,6 @@ function enforceRecommendationTargetConsistency({
   return String(nextTarget || '');
 }
 
-function buildNextSessionRecommendation({
-  exercise,
-  mode = 'external_load',
-  currentRow = null,
-  nextRow = null,
-  lastEntry = null,
-  exerciseHistory = [],
-  familyHistory = [],
-  familyAdjustment = 1,
-  priorDeloadState = null,
-  decisionSource = 'anchor_fallback',
-  decisionSourceExercise = 'Anchor fallback'
-} = {}) {
-  const repRange = parseRepsRange(currentRow?.repRange || exercise?.reps);
-  const prescribedSets = Number(currentRow?.sets || exercise?.sets || 0) || 0;
-  const logged = summarizeLoggedSets(lastEntry, prescribedSets);
-  const underperformCount = (Array.isArray(exerciseHistory) ? exerciseHistory : []).filter((item) => Number(item?.minReps || 0) > 0 && Number(item.minReps) < repRange.min).length;
-  const familyUnderperformCount = (Array.isArray(familyHistory) ? familyHistory : []).filter((item) => Number(item?.minReps || 0) > 0 && Number(item.minReps) < repRange.min).length;
-  const overperformCount = (Array.isArray(exerciseHistory) ? exerciseHistory : []).filter((item) => Number(item?.minReps || 0) >= repRange.max).length;
-  const fatigueFlags = {
-    exerciseMisses: underperformCount,
-    familyMisses: familyUnderperformCount,
-    stacked: underperformCount >= 2 || familyUnderperformCount >= 3
-  };
-  const allSetsAtTop = logged.completedSets >= prescribedSets && prescribedSets > 0 && Number(logged.minReps || 0) >= repRange.max;
-  const insideRange = logged.completedSets >= Math.max(1, prescribedSets - 1) && Number(logged.averageReps || 0) >= repRange.min;
-  const severeMiss = logged.completedSets > 0 && Number(logged.minReps || 0) < Math.max(1, repRange.min - 2);
-  let recommendation = 'hold';
-  let reason = 'Keep the same target and continue building reps with clean execution.';
-  let confidence = 'medium';
-  let shortNote = 'Solid but not enough evidence for a jump yet.';
-  let adaptiveChanged = false;
-  let deloadState = priorDeloadState || (String(currentRow?.tag || '') === 'deload' ? 'deload_week' : 'normal');
-  if (String(currentRow?.tag || '') === 'deload') {
-    if (logged.completedSets >= Math.max(1, prescribedSets - 1) && Number(logged.minReps || 0) >= repRange.min) {
-      recommendation = 'exit_deload';
-      reason = 'Deload completion was clean, so the next session can return to the planned progression target.';
-      shortNote = 'Recovery week completed. Resume normal loading next time.';
-      deloadState = 'exit_deload';
-      confidence = 'high';
-    } else {
-      recommendation = 'continue_deload';
-      reason = 'Recovery work still looked under-recovered, so extend the reduced-fatigue week for one more exposure.';
-      shortNote = 'Stay easy one more session and protect recovery.';
-      deloadState = 'continue_deload';
-      confidence = 'high';
-    }
-  } else if (fatigueFlags.stacked) {
-    recommendation = 'deload';
-    reason = 'Repeated misses on the exercise or movement family suggest fatigue is accumulating enough to warrant a deload.';
-    shortNote = 'Use a recovery week instead of forcing progress.';
-    deloadState = 'triggered';
-    confidence = 'high';
-  } else if (allSetsAtTop) {
-    recommendation = 'increase';
-    reason = 'All prescribed work sets reached the top of the rep range with full completion.';
-    shortNote = 'Earned a load jump.';
-    if (overperformCount >= 2 || Number(familyAdjustment || 1) > 1.05) {
-      adaptiveChanged = true;
-      reason = 'Repeated overperformance on this exercise or family supports a modestly faster jump, still capped conservatively.';
-      shortNote = 'Adaptive progression nudged the jump upward slightly.';
-    }
-    confidence = 'high';
-  } else if (severeMiss && underperformCount >= 1) {
-    recommendation = 'decrease';
-    reason = 'The last session missed the bottom of the range badly enough that a small step back is more appropriate than forcing the same load.';
-    shortNote = 'Back off slightly and rebuild quality reps.';
-    confidence = 'high';
-  } else if (insideRange) {
-    recommendation = 'hold';
-    reason = 'Performance stayed inside the prescribed range, but it did not clearly earn a load increase yet.';
-    shortNote = 'Hold load and keep chasing the top of the range.';
-    confidence = 'high';
-  } else if (logged.completedSets > 0) {
-    recommendation = 'hold';
-    reason = 'Completion was partial, so the best call is to repeat the same target before adding or dropping load.';
-    shortNote = 'Stabilize execution before changing the load.';
-  }
-  let nextTarget = progressionTargetText(mode, { load: nextRow?.targetLoad, repRange: nextRow?.repRange });
-  if (mode !== 'external_load' && mode !== 'loaded_bodyweight') {
-    nextTarget = nextBodyweightTarget(currentRow, mode, recommendation);
-  } else if (recommendation === 'hold' && Number.isFinite(Number(currentRow?.targetLoad))) {
-    nextTarget = `${Number(currentRow.targetLoad)} lb`;
-  } else if (recommendation === 'decrease' && Number.isFinite(Number(currentRow?.targetLoad || 0))) {
-    const step = Number(exercise?.projectionIncrement || exercise?.projectedIncrement || 5) || 5;
-    nextTarget = `${Math.max(step, Number(currentRow.targetLoad) - step)} lb`;
-  } else if ((recommendation === 'deload' || recommendation === 'continue_deload') && Number.isFinite(Number(currentRow?.targetLoad || 0))) {
-    nextTarget = `${roundProjectedLoad(Number(currentRow.targetLoad) * 0.88, 2.5)} lb`;
-  }
-  if (String(decisionSource || '') === 'movement_family') {
-    reason = `${reason} This used a movement-family fallback because no exact or close-variant history was available.`;
-  } else if (String(decisionSource || '') === 'anchor_fallback') {
-    reason = `${reason} This used an anchor fallback because no usable logged movement signal was available.`;
-  }
-  nextTarget = enforceRecommendationTargetConsistency({
-    recommendation,
-    nextTarget,
-    currentRow,
-    nextRow,
-    exercise,
-    mode
-  });
-  return {
-    recommendation,
-    nextTarget,
-    decisionSource,
-    decisionSourceExercise: safeDecisionSourceExerciseLabel(
-      decisionSource,
-      decisionSourceExercise,
-      mode !== 'external_load' && mode !== 'loaded_bodyweight' ? 'bodyweight' : ''
-    ),
-    reason,
-    confidence,
-    shortNote,
-    adaptiveChanged,
-    fatigueFlags,
-    deloadState,
-    progressionMode: mode,
-    lastTarget: progressionTargetText(mode, { load: currentRow?.targetLoad, repRange: currentRow?.repRange }),
-    actualResult: mode === 'external_load' || mode === 'loaded_bodyweight'
-      ? (Number.isFinite(Number(logged.topWeight)) ? `${logged.topWeight} lb for ${logged.minReps || logged.averageReps || 0}-${logged.maxReps || logged.averageReps || 0} reps` : 'No logged result yet')
-      : (logged.completedSets ? `${logged.minReps || logged.averageReps || 0}-${logged.maxReps || logged.averageReps || 0} reps completed` : 'No logged result yet')
-  };
-}
 
 function phaseProjectionMultiplier(user) {
   return user?.phase === 'deficit' ? 0.96 : user?.phase === 'surplus' ? 1.03 : 1;
@@ -6872,274 +6783,10 @@ function createAdaptiveProjectionState(user, projection) {
   };
 }
 
-function projectionIncrementForSummary(summary = {}) {
-  if (Number.isFinite(Number(summary?.increment)) && Number(summary.increment) > 0) return Number(summary.increment);
-  const equipmentClass = String(summary?.equipmentClass || '').trim();
-  if (equipmentClass === 'barbell') return 2.5;
-  if (equipmentClass === 'dumbbell') return 2.5;
-  if (equipmentClass === 'machine' || equipmentClass === 'cable') return 5;
-  return 2.5;
-}
 
-function cloneProjectionForSimulation(projection = {}) {
-  return {
-    ...projection,
-    anchorInputs: projection?.anchorInputs ? { ...projection.anchorInputs } : {},
-    standards: projection?.standards ? { ...projection.standards } : {},
-    familyAdjustments: { ...(projection?.familyAdjustments || {}) },
-    adaptiveRules: projection?.adaptiveRules ? { ...projection.adaptiveRules } : {},
-    exerciseSummaries: Array.isArray(projection?.exerciseSummaries)
-      ? projection.exerciseSummaries.map((entry) => ({ ...entry }))
-      : [],
-    weeklyTable: Array.isArray(projection?.weeklyTable)
-      ? projection.weeklyTable.map((row) => ({ ...row }))
-      : [],
-    projectionByExerciseWeek: { ...(projection?.projectionByExerciseWeek || {}) },
-    deloadWeeks: Array.isArray(projection?.deloadWeeks) ? projection.deloadWeeks.slice() : []
-  };
-}
 
-function simulateAdaptiveProjectionImpact(projection = {}, adaptiveState = {}, opts = {}) {
-  const next = cloneProjectionForSimulation(projection);
-  const fromWeek = Math.max(1, Number(opts?.fromWeek || 1));
-  const insertedDeloadWeek = Number.isFinite(Number(opts?.insertDeloadWeek)) ? Number(opts.insertDeloadWeek) : null;
-  const familyAdjustments = {
-    ...(projection?.familyAdjustments || {}),
-    ...(adaptiveState?.familyAdjustments || {})
-  };
-  Object.keys(familyAdjustments).forEach((family) => {
-    familyAdjustments[family] = Number(familyAdjustments[family] || 1);
-  });
-  next.familyAdjustments = familyAdjustments;
 
-  const summaryByExercise = new Map(
-    (Array.isArray(next?.exerciseSummaries) ? next.exerciseSummaries : []).map((entry) => [String(entry?.canonicalExerciseId || ''), entry])
-  );
-  const originalRows = Array.isArray(projection?.weeklyTable) ? projection.weeklyTable : [];
-  const deloadWeekSet = new Set(Array.isArray(next?.deloadWeeks) ? next.deloadWeeks : []);
-  if (insertedDeloadWeek && insertedDeloadWeek >= fromWeek) deloadWeekSet.add(insertedDeloadWeek);
-  next.deloadWeeks = Array.from(deloadWeekSet).sort((a, b) => a - b);
 
-  const diffs = [];
-  next.weeklyTable = (Array.isArray(next?.weeklyTable) ? next.weeklyTable : []).map((row, index) => {
-    const original = originalRows[index] || row;
-    const summary = summaryByExercise.get(String(row?.canonicalExerciseId || '')) || null;
-    const progressionMode = String(row?.progressionMode || summary?.progressionMode || 'external_load');
-    const family = String(summary?.family || row?.family || 'general');
-    const familyAdjustment = Number(familyAdjustments[family] || 1);
-    const increment = projectionIncrementForSummary(summary);
-    const nextRow = { ...row };
-    const beforeTarget = Number(original?.targetLoad || 0);
-    const shouldSimulateDeload = insertedDeloadWeek && Number(row?.week || 0) === insertedDeloadWeek;
-
-    if (shouldSimulateDeload) {
-      nextRow.tag = 'deload';
-      nextRow.deloadLabel = 'Triggered Recovery Week';
-      nextRow.note = 'Simulation inserted a recovery week after accumulated misses/fatigue.';
-      nextRow.sets = Math.max(1, Math.round(Number(nextRow?.sets || 1) * 0.6));
-      if ((progressionMode === 'external_load' || progressionMode === 'loaded_bodyweight') && Number.isFinite(beforeTarget) && beforeTarget > 0) {
-        const deloadTarget = roundProjectedLoad(beforeTarget * 0.88, increment);
-        nextRow.targetLoad = deloadTarget;
-        nextRow.displayTarget = `${deloadTarget} lb`;
-        nextRow.postDeloadReturnTarget = `${roundProjectedLoad(beforeTarget * familyAdjustment, increment)} lb`;
-      } else if (progressionMode !== 'external_load' && progressionMode !== 'loaded_bodyweight') {
-        nextRow.displayTarget = nextBodyweightTarget(row, progressionMode, 'continue_deload');
-        nextRow.postDeloadReturnTarget = nextBodyweightTarget(row, progressionMode, 'hold');
-      }
-    } else if (Number(row?.week || 0) >= fromWeek && (progressionMode === 'external_load' || progressionMode === 'loaded_bodyweight') && Number.isFinite(beforeTarget) && beforeTarget > 0) {
-      const adjustedTarget = roundProjectedLoad(beforeTarget * familyAdjustment, increment);
-      nextRow.targetLoad = adjustedTarget;
-      nextRow.displayTarget = `${adjustedTarget} lb`;
-      if (String(nextRow?.postDeloadReturnTarget || '').trim()) {
-        const parsedReturn = Number(String(nextRow.postDeloadReturnTarget).replace(/[^0-9.]+/g, ''));
-        if (Number.isFinite(parsedReturn) && parsedReturn > 0) {
-          nextRow.postDeloadReturnTarget = `${roundProjectedLoad(parsedReturn * familyAdjustment, increment)} lb`;
-        }
-      }
-    }
-
-    if (
-      Number(row?.week || 0) >= fromWeek
-      && (
-        String(original?.displayTarget || '') !== String(nextRow?.displayTarget || '')
-        || String(original?.tag || '') !== String(nextRow?.tag || '')
-        || Number(original?.sets || 0) !== Number(nextRow?.sets || 0)
-      )
-    ) {
-      diffs.push({
-        week: Number(row?.week || 0),
-        exercise: String(row?.exercise || ''),
-        canonicalExerciseId: String(row?.canonicalExerciseId || ''),
-        family,
-        beforeTarget: String(original?.displayTarget || 'N/A'),
-        afterTarget: String(nextRow?.displayTarget || 'N/A'),
-        beforeTag: String(original?.tag || 'normal'),
-        afterTag: String(nextRow?.tag || 'normal')
-      });
-    }
-    return nextRow;
-  });
-
-  next.projectionByExerciseWeek = Object.fromEntries(
-    next.weeklyTable.map((row) => [`${String(row?.canonicalExerciseId || '')}:${Number(row?.week || 0)}`, row])
-  );
-  next.exerciseSummaries = (Array.isArray(next?.exerciseSummaries) ? next.exerciseSummaries : []).map((summary) => {
-    const rows = next.weeklyTable.filter((row) => String(row?.canonicalExerciseId || '') === String(summary?.canonicalExerciseId || ''));
-    const rangeSummary = summarizeProjectionRows(rows);
-    return {
-      ...summary,
-      week1Load: rangeSummary.week1,
-      week8Load: rangeSummary.week8,
-      week16Load: rangeSummary.week16
-    };
-  });
-
-  const changedExerciseIds = new Set(diffs.map((diff) => String(diff?.canonicalExerciseId || '')));
-  const changedFamilies = Array.from(new Set(diffs.map((diff) => String(diff?.family || '')))).filter(Boolean);
-  const familyToExercises = changedFamilies.reduce((acc, family) => {
-    acc[family] = new Set(diffs.filter((diff) => String(diff?.family || '') === family).map((diff) => String(diff?.canonicalExerciseId || '')));
-    return acc;
-  }, {});
-  const familyPropagation = Object.values(familyToExercises).some((exerciseIds) => exerciseIds.size > 1);
-
-  return {
-    projection: next,
-    diffs,
-    changedExerciseIds: Array.from(changedExerciseIds),
-    changedFamilies,
-    familyPropagation,
-    deloadWeeksChanged: JSON.stringify(Array.isArray(projection?.deloadWeeks) ? projection.deloadWeeks : []) !== JSON.stringify(next.deloadWeeks || []),
-    scope: familyPropagation ? 'family_propagated' : changedExerciseIds.size > 1 ? 'global_multiple_exercises' : changedExerciseIds.size === 1 ? 'local_only' : 'no_future_change'
-  };
-}
-
-function updateAdaptiveProjectionState(state, payload = {}) {
-  const next = {
-    modeledAs: state?.modeledAs || 'on_track',
-    familyAdjustments: { ...(state?.familyAdjustments || {}) },
-    overperformanceStreaks: { ...(state?.overperformanceStreaks || {}) },
-    underperformanceStreaks: { ...(state?.underperformanceStreaks || {}) },
-    history: Array.isArray(state?.history) ? state.history.slice() : [],
-    phase: state?.phase || 'recomp'
-  };
-  const family = String(payload?.family || '').trim() || 'general';
-  const projectedLoad = Number(payload?.projectedLoad || 0);
-  const actualLoad = Number(payload?.actualLoad || 0);
-  const targetReps = Number(payload?.targetReps || 0);
-  const actualReps = Number(payload?.actualReps || 0);
-  const overperformed = (Number.isFinite(actualLoad) && Number.isFinite(projectedLoad) && projectedLoad > 0 && actualLoad >= projectedLoad * 1.03)
-    || (Number.isFinite(actualReps) && Number.isFinite(targetReps) && actualReps >= targetReps + 2);
-  const underperformed = (Number.isFinite(actualLoad) && Number.isFinite(projectedLoad) && projectedLoad > 0 && actualLoad <= projectedLoad * 0.97)
-    || (Number.isFinite(actualReps) && Number.isFinite(targetReps) && actualReps <= Math.max(1, targetReps - 2));
-  if (overperformed && !underperformed) {
-    next.overperformanceStreaks[family] = Number(next.overperformanceStreaks[family] || 0) + 1;
-    next.underperformanceStreaks[family] = 0;
-    if (next.overperformanceStreaks[family] >= 2) {
-      next.familyAdjustments[family] = Math.min(1.15, Number(next.familyAdjustments[family] || 1) + 0.03);
-      next.overperformanceStreaks[family] = 0;
-    }
-  } else if (underperformed && !overperformed) {
-    next.underperformanceStreaks[family] = Number(next.underperformanceStreaks[family] || 0) + 1;
-    next.overperformanceStreaks[family] = 0;
-    if (next.underperformanceStreaks[family] >= 2) {
-      next.familyAdjustments[family] = Math.max(0.85, Number(next.familyAdjustments[family] || 1) - 0.03);
-      next.underperformanceStreaks[family] = 0;
-    }
-  } else {
-    next.overperformanceStreaks[family] = 0;
-    next.underperformanceStreaks[family] = 0;
-  }
-  next.history.push({
-    family,
-    projectedLoad: Number.isFinite(projectedLoad) ? projectedLoad : null,
-    actualLoad: Number.isFinite(actualLoad) ? actualLoad : null,
-    targetReps: Number.isFinite(targetReps) ? targetReps : null,
-    actualReps: Number.isFinite(actualReps) ? actualReps : null,
-    familyAdjustment: next.familyAdjustments[family]
-  });
-  return next;
-}
-
-function buildAdaptiveRecalibration(context = {}) {
-  const planMeta = context?.planMeta || {};
-  const checkIn = context?.checkIn || {};
-  const actions = [];
-  const issues = [];
-  const phase = String(context?.phase || planMeta?.phase || 'recomp');
-  const bodyweightRate = Number(checkIn.bodyweightWeeklyChangePct || 0);
-  const fatigueScore = Number(checkIn.fatigueScore || 0);
-  const adherence = Number(checkIn.adherencePct || 100);
-  const sessionCompletion = Number(checkIn.sessionCompletionPct || adherence);
-  const plateauWeeks = Number(checkIn.plateauWeeks || 0);
-  const priorityResponse = String(checkIn.priorityMuscleResponse || 'neutral');
-  const jointIrritation = String(checkIn.jointIrritationTrend || 'stable');
-  const performanceTrend = String(checkIn.performanceTrend || 'stable');
-  const priorityPerformanceTrend = String(checkIn.priorityPerformanceTrend || performanceTrend);
-  const measurementTrend = String(checkIn.bodyMeasurementTrend || 'unknown');
-  const photoTrend = String(checkIn.photosTrend || 'unknown');
-
-  if (phase === 'surplus' && bodyweightRate < 0.2) {
-    issues.push('Bodyweight is gaining too slowly for a productive bulk.');
-    actions.push('Increase daily calories by 100-150 and keep protein in target range.');
-  } else if (phase === 'surplus' && bodyweightRate > 0.7) {
-    issues.push('Bodyweight is gaining faster than the recommended lean-gain pace.');
-    actions.push('Reduce daily calories by 100-150 and keep training performance stable.');
-  }
-  if (phase === 'deficit' && bodyweightRate > -0.3) {
-    issues.push('Bodyweight loss is too slow for the current cut target.');
-    actions.push('Reduce daily calories by 100-150 or tighten adherence before changing training volume.');
-  } else if (phase === 'deficit' && bodyweightRate < -1.0) {
-    issues.push('Bodyweight is dropping fast enough to risk recovery and lean-mass retention.');
-    actions.push('Add 100-150 daily calories and avoid increasing training volume.');
-  }
-  if (fatigueScore >= 8) {
-    issues.push('Fatigue is too high to keep accumulating quality hypertrophy work.');
-    actions.push('Cut 20-30% of non-priority isolation volume and consider a deload if performance is also down.');
-  } else if (fatigueScore >= 6) {
-    actions.push('Hold volume steady and avoid adding sets until fatigue settles.');
-  }
-  if (performanceTrend === 'down' && fatigueScore >= 6) {
-    issues.push('Performance trend is dropping while fatigue is elevated.');
-    actions.push('Use a deload or remove 2-4 weekly sets from the hardest-to-recover maintenance work before changing priority-muscle staples.');
-  } else if (performanceTrend === 'down' && fatigueScore <= 5) {
-    actions.push('Keep fatigue controlled, tighten execution quality, and assess whether the main movement load progression is too aggressive.');
-  }
-  if (jointIrritation === 'rising') {
-    issues.push('Joint irritation is rising.');
-    actions.push('Replace the most aggravating exercise with a safer variation and reduce local volume by 2-4 sets for that area.');
-  }
-  if (plateauWeeks >= 4 && priorityResponse !== 'improving') {
-    issues.push('A meaningful plateau has developed on priority work.');
-    actions.push('Swap 1 low-response movement for a better-tolerated staple and add 2-4 weekly sets to the lagging priority muscle if recovery allows.');
-  } else if (plateauWeeks >= 2 && fatigueScore <= 5) {
-    actions.push('Push progression through reps or load on the main priority movements before changing the split.');
-  }
-  if (priorityResponse === 'poor' && fatigueScore <= 6) {
-    actions.push('Shift 2-4 weekly sets from maintenance muscles toward the lagging priority muscle and move one priority exercise earlier in the session.');
-  }
-  if (priorityPerformanceTrend === 'down' && fatigueScore <= 6) {
-    actions.push('Keep the split structure, but replace the weakest-performing priority exercise with a more stable staple before adding more volume.');
-  }
-  if (measurementTrend === 'stalled' && photoTrend === 'stalled' && plateauWeeks >= 4 && adherence >= 85) {
-    issues.push('Visual and measurement progress appear stalled despite acceptable adherence.');
-    actions.push('Escalate specialization only for the lagging priority muscle by 2-4 weekly sets if recovery and joint status remain acceptable.');
-  }
-  if (sessionCompletion < 85 && adherence >= 85) {
-    issues.push('The plan may be too dense to complete consistently.');
-    actions.push('Remove one lower-value accessory per session and keep reserved priority work intact.');
-  }
-  if (adherence < 80) {
-    issues.push('Adherence is too low to justify adding more complexity or volume.');
-    actions.push('Simplify the plan, reduce novelty, and keep only the highest-value priority work until adherence improves.');
-  }
-
-  return {
-    status: issues.length ? 'adjust' : 'hold',
-    issues,
-    actions,
-    nextReviewDays: fatigueScore >= 8 || jointIrritation === 'rising' ? 14 : 21
-  };
-}
 
 function buildConstrainedSchedule(user) {
   const d = Number(user?.daysPerWeek || 0);
@@ -8295,7 +7942,7 @@ function normalizeRepLadderWeeks(weeks) {
   }));
 }
 
-function materializePlanResult(user, schedule, safeWeeks, safeResult, targets, frequencyTargets, stressMultiplier, notes = []) {
+function materializePlanResult(user, schedule, safeWeeks, safeResult, targets, frequencyTargets, notes = []) {
   return withPlannerTiming(user, 'finalRenderingOutputMs', () => {
     const ladderWeeks = normalizeRepLadderWeeks(safeWeeks);
     const progressionProjection = buildBodybuildingProgressionProjection(user, ladderWeeks);
@@ -8365,7 +8012,6 @@ function materializePlanResult(user, schedule, safeWeeks, safeResult, targets, f
         priorityGroups: user.priorityGroups || [],
         weeklyTargets: targets,
         frequencyTargets,
-        stressMultiplier,
         profile: user.profile,
         nutritionModel: buildNutritionModel(user),
         progressionModel: buildProgressionModel(user, targets, frequencyTargets),
@@ -8436,7 +8082,7 @@ function materializePlanResult(user, schedule, safeWeeks, safeResult, targets, f
   });
 }
 
-function buildFinalConstrainedRebuild(user, exercises, targets, frequencyTargets, stressMultiplier, reason = '') {
+function buildFinalConstrainedRebuild(user, exercises, targets, frequencyTargets, reason = '') {
   const runtime = user?._plannerRuntime || null;
   if (runtime) {
     runtime.state.constrainedRebuildAttempts += 1;
@@ -8573,7 +8219,7 @@ function buildFinalConstrainedRebuild(user, exercises, targets, frequencyTargets
   });
 }
 
-function buildSafeBasePlanner(user, exercises, targets, frequencyTargets, stressMultiplier) {
+function buildSafeBasePlanner(user, exercises, targets, frequencyTargets) {
   return withPlannerTiming(user, 'safeBasePlannerMs', () => {
     logComboStageEnter(user, 'split selection');
     let schedule = withPlannerTiming(user, 'splitSelectionMs', () => buildSplit(user, user.daysPerWeek >= 5 && user.sessionLengthMin === '30'));
@@ -8616,7 +8262,7 @@ function buildSafeBasePlanner(user, exercises, targets, frequencyTargets, stress
       weeksResult = buildWeeks(user.timeline === '4 weeks' ? 4 : 8, schedule, user, exercises, targets);
     }
     if (weeksResult.error) {
-      const rebuilt = buildFinalConstrainedRebuild(user, exercises, targets, frequencyTargets, stressMultiplier, 'Used final constrained rebuild mode after main build exhaustion.');
+      const rebuilt = buildFinalConstrainedRebuild(user, exercises, targets, frequencyTargets, 'Used final constrained rebuild mode after main build exhaustion.');
       if (!rebuilt.error) return rebuilt;
       return attachAbsGlutesLegsDebugMeta(weeksResult, user, {
         stage: 'blueprint construction',
@@ -8636,7 +8282,7 @@ function buildSafeBasePlanner(user, exercises, targets, frequencyTargets, stress
       callBoundary: 'buildSafeBasePlanner_after_repairAndValidatePlan'
     });
     if (safeResult.error) {
-      const rebuilt = buildFinalConstrainedRebuild(user, exercises, targets, frequencyTargets, stressMultiplier, 'Used final constrained rebuild mode after sanitize/repair exhaustion.');
+      const rebuilt = buildFinalConstrainedRebuild(user, exercises, targets, frequencyTargets, 'Used final constrained rebuild mode after sanitize/repair exhaustion.');
       if (!rebuilt.error) return rebuilt;
       return attachAbsGlutesLegsDebugMeta(safeResult, user, {
         stage: 'final validation',
@@ -12821,7 +12467,7 @@ function upgradePlanQualityPass(baseState, user, exercises) {
   });
 }
 
-function attachAdaptiveCoachingLayer(plan, user, targets, frequencyTargets, stressMultiplier) {
+function attachAdaptiveCoachingLayer(plan, user, targets, frequencyTargets) {
   if (!plan || plan.error) return plan;
   const materialized = materializePlanResult(
     user,
@@ -12830,7 +12476,6 @@ function attachAdaptiveCoachingLayer(plan, user, targets, frequencyTargets, stre
     { filteredCount: plan.filteredCount },
     targets,
     frequencyTargets,
-    stressMultiplier,
     plan.notes
   );
   materialized.meta.plannerStages.safeBasePlanner = true;
@@ -12880,8 +12525,8 @@ function buildOblueprintPlan(input, opts = {}) {
       phase: user?.phase || null
     });
 
-    const { targets, frequencyTargets, stressMultiplier } = computeWeeklyTargets(user);
-    const safeBase = buildSafeBasePlanner(user, PREPROCESSED_CACHE, targets, frequencyTargets, stressMultiplier);
+    const { targets, frequencyTargets } = computeWeeklyTargets(user);
+    const safeBase = buildSafeBasePlanner(user, PREPROCESSED_CACHE, targets, frequencyTargets);
     if (safeBase?.error) return attachAbsGlutesLegsDebugMeta(safeBase, user, {
       stage: safeBase?.stage || safeBase?.failedStage || 'builder',
       failedStage: safeBase?.failedStage || safeBase?.stage || 'builder'
@@ -12907,7 +12552,7 @@ function buildOblueprintPlan(input, opts = {}) {
       weeks: dedupedWeeks
     };
     logComboStageExit(user, 'route repair');
-    const plan = attachAdaptiveCoachingLayer(repairedState, user, targets, frequencyTargets, stressMultiplier);
+    const plan = attachAdaptiveCoachingLayer(repairedState, user, targets, frequencyTargets);
     if (plan?.error) return attachAbsGlutesLegsDebugMeta(plan, user, {
       stage: plan?.stage || plan?.failedStage || 'route repair',
       failedStage: plan?.failedStage || plan?.stage || 'route repair'
@@ -12988,7 +12633,7 @@ function buildOblueprintPlan(input, opts = {}) {
     }
     applyEliteGradingLayer(plan, user);
     if (!['elite', 'good'].includes(plan?.meta?.eliteQa?.tier)) {
-      const rebuiltState = buildFinalConstrainedRebuild(user, PREPROCESSED_CACHE, targets, frequencyTargets, stressMultiplier, 'Used final constrained rebuild mode after elite QA downgrade.');
+      const rebuiltState = buildFinalConstrainedRebuild(user, PREPROCESSED_CACHE, targets, frequencyTargets, 'Used final constrained rebuild mode after elite QA downgrade.');
       if (!rebuiltState?.error) {
         const rebuiltPlan = attachAdaptiveCoachingLayer({
           ...rebuiltState,
@@ -12997,7 +12642,7 @@ function buildOblueprintPlan(input, opts = {}) {
             user,
             PREPROCESSED_CACHE
           )
-        }, user, targets, frequencyTargets, stressMultiplier);
+        }, user, targets, frequencyTargets);
         applyEliteGradingLayer(rebuiltPlan, user);
         const currentScore = Number(plan?.meta?.eliteQa?.score || 0);
         const rebuiltScore = Number(rebuiltPlan?.meta?.eliteQa?.score || 0);
@@ -13043,11 +12688,7 @@ module.exports = {
   enforceRecommendationTargetConsistency,
   progressionModeForExercise,
   buildBodybuildingProgressionProjection,
-  buildNextSessionRecommendation,
   createAdaptiveProjectionState,
-  simulateAdaptiveProjectionImpact,
-  updateAdaptiveProjectionState,
-  buildAdaptiveRecalibration,
   buildSafeBasePlanner,
   upgradePlanQualityPass,
   attachAdaptiveCoachingLayer,

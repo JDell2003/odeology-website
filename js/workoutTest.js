@@ -1574,96 +1574,12 @@
     return next;
   }
 
-  function simulateAdaptiveProjectionImpact(projection = {}, adaptiveState = {}, opts = {}) {
-    const next = cloneProjectionForSimulation(projection);
-    const fromWeek = Math.max(1, Number(opts?.fromWeek || 1));
-    const insertedDeloadWeek = Number.isFinite(Number(opts?.insertDeloadWeek)) ? Number(opts.insertDeloadWeek) : null;
-    const familyAdjustments = {
-      ...(projection?.familyAdjustments || {}),
-      ...(adaptiveState?.familyAdjustments || {})
-    };
-    Object.keys(familyAdjustments).forEach((family) => {
-      familyAdjustments[family] = Number(familyAdjustments[family] || 1);
-    });
-    next.familyAdjustments = familyAdjustments;
-    const summaryByExercise = new Map((next.exerciseSummaries || []).map((entry) => [String(entry?.canonicalExerciseId || ''), entry]));
-    const originalRows = Array.isArray(projection?.weeklyTable) ? projection.weeklyTable : [];
-    const deloadWeekSet = new Set(Array.isArray(next?.deloadWeeks) ? next.deloadWeeks : []);
-    if (insertedDeloadWeek && insertedDeloadWeek >= fromWeek) deloadWeekSet.add(insertedDeloadWeek);
-    next.deloadWeeks = Array.from(deloadWeekSet).sort((a, b) => a - b);
-    const diffs = [];
-    next.weeklyTable = (next.weeklyTable || []).map((row, index) => {
-      const original = originalRows[index] || row;
-      const summary = summaryByExercise.get(String(row?.canonicalExerciseId || '')) || null;
-      const progressionMode = String(row?.progressionMode || summary?.progressionMode || 'external_load');
-      const family = String(summary?.family || row?.family || 'general');
-      const increment = projectionIncrementForSummary(summary);
-      const familyAdjustment = Number(familyAdjustments[family] || 1);
-      const nextRow = { ...row };
-      const originalTarget = Number(original?.targetLoad || 0);
-      const shouldSimulateDeload = insertedDeloadWeek && Number(row?.week || 0) === insertedDeloadWeek;
-      if (shouldSimulateDeload) {
-        nextRow.tag = 'deload';
-        nextRow.deloadLabel = 'Triggered Recovery Week';
-        nextRow.note = 'Simulation inserted a recovery week after fatigue accumulation.';
-        nextRow.sets = Math.max(1, Math.round(Number(nextRow?.sets || 1) * 0.6));
-        if ((progressionMode === 'external_load' || progressionMode === 'loaded_bodyweight') && Number.isFinite(originalTarget) && originalTarget > 0) {
-          const deloadTarget = roundSimulationLoad(originalTarget * 0.88, increment);
-          nextRow.targetLoad = deloadTarget;
-          nextRow.displayTarget = formatProjectionLoad(deloadTarget, summary?.loadUnitNote || '');
-          nextRow.postDeloadReturnTarget = formatProjectionLoad(roundSimulationLoad(originalTarget * familyAdjustment, increment), summary?.loadUnitNote || '');
-        } else {
-          nextRow.displayTarget = String(nextRow?.displayTarget || 'Recovery week');
-        }
-      } else if (Number(row?.week || 0) >= fromWeek && (progressionMode === 'external_load' || progressionMode === 'loaded_bodyweight') && Number.isFinite(originalTarget) && originalTarget > 0) {
-        const adjustedTarget = roundSimulationLoad(originalTarget * familyAdjustment, increment);
-        nextRow.targetLoad = adjustedTarget;
-        nextRow.displayTarget = formatProjectionLoad(adjustedTarget, summary?.loadUnitNote || '');
-      }
-      if (
-        Number(row?.week || 0) >= fromWeek
-        && (
-          String(original?.displayTarget || '') !== String(nextRow?.displayTarget || '')
-          || String(original?.tag || '') !== String(nextRow?.tag || '')
-        )
-      ) {
-        diffs.push({
-          week: Number(row?.week || 0),
-          exercise: String(row?.exercise || ''),
-          canonicalExerciseId: String(row?.canonicalExerciseId || ''),
-          family,
-          beforeTarget: String(original?.displayTarget || 'N/A'),
-          afterTarget: String(nextRow?.displayTarget || 'N/A'),
-          beforeTag: String(original?.tag || 'normal'),
-          afterTag: String(nextRow?.tag || 'normal')
-        });
-      }
-      return nextRow;
-    });
-    next.projectionByExerciseWeek = Object.fromEntries(
-      next.weeklyTable.map((row) => [`${String(row?.canonicalExerciseId || '')}:${Number(row?.week || 0)}`, row])
-    );
-    next.exerciseSummaries = (next.exerciseSummaries || []).map((summary) => {
-      const rows = next.weeklyTable.filter((row) => String(row?.canonicalExerciseId || '') === String(summary?.canonicalExerciseId || ''));
-      const byWeek = new Map(rows.map((row) => [Number(row.week), row]));
-      return {
-        ...summary,
-        week1Load: byWeek.get(1)?.targetLoad ?? null,
-        week8Load: byWeek.get(8)?.targetLoad ?? null,
-        week16Load: byWeek.get(16)?.targetLoad ?? null
-      };
-    });
-    const changedExerciseIds = new Set(diffs.map((diff) => String(diff?.canonicalExerciseId || '')));
-    const changedFamilies = Array.from(new Set(diffs.map((diff) => String(diff?.family || '')))).filter(Boolean);
-    const familyPropagation = changedFamilies.some((family) => new Set(diffs.filter((diff) => String(diff?.family || '') === family).map((diff) => String(diff?.canonicalExerciseId || ''))).size > 1);
-    return {
-      projection: next,
-      diffs,
-      changedFamilies,
-      familyPropagation,
-      deloadWeeksChanged: JSON.stringify(Array.isArray(projection?.deloadWeeks) ? projection.deloadWeeks : []) !== JSON.stringify(next.deloadWeeks || []),
-      scope: familyPropagation ? 'family_propagated' : changedExerciseIds.size > 1 ? 'global_multiple_exercises' : changedExerciseIds.size === 1 ? 'local_only' : 'no_future_change'
-    };
+  // The adaptive projection simulator was deleted in Engine v2 Phase 0 §1.6 —
+  // it had no production callers and its family-coefficient term was never
+  // exercised. The gating model worth keeping is written up in
+  // docs/progression-gating-salvage.md and lands in phase 1 §2.2.
+  function simulateAdaptiveProjectionImpact(projection = {}) {
+    return { projection, diffs: [], changedExerciseIds: [], changedFamilies: [], familyPropagation: false, deloadWeeksChanged: false };
   }
 
   function classifySimulationResult(row, simulated) {

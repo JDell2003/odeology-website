@@ -6212,6 +6212,10 @@
               experience: '',
               daysPerWeek: '',
               timePerSession: '',
+              preferredDays: [],
+              sleepHours: '',
+              stress: '',
+              activityLevel: '',
               equipment: [],
               injuries: [],
               injurySeverity: '',
@@ -8377,7 +8381,10 @@ function formatWorkspaceLabel(workspace) {
             modality: preset.modality,
             daysPerWeek,
             sessionLength: String(user.timePerSession || '45-60'),
-            preferredDays: [],
+            // Which weekdays they train. Empty means "no preference", and the
+            // engine then spreads the sessions rather than stacking them on
+            // consecutive days.
+            preferredDays: Array.isArray(user.preferredDays) ? user.preferredDays.slice(0, daysPerWeek) : [],
             equipment: selectedEquipment,
             injuries: selectedInjuries,
             injuryDetails: {
@@ -8386,9 +8393,13 @@ function formatWorkspaceLabel(workspace) {
             },
             priorityMuscles: Array.isArray(user.priorityMuscles) ? user.priorityMuscles : [],
             workoutSource: String(user.workoutSource || ''),
-            sleepHours: 7,
-            activityLevel: 'Active',
-            stress: 'Medium',
+            // Recovery inputs. These were pinned at 7 / 'Active' / 'Medium' for
+            // every user, which collapsed the engine's recovery signal to a
+            // constant — sleep and stress could not move weekly set targets
+            // because they never varied. Now they come from the answers.
+            sleepHours: Math.max(4, Math.min(10, Number(user.sleepHours) || 7)),
+            activityLevel: String(user.activityLevel || '').trim() || 'Active',
+            stress: String(user.stress || '').trim() || 'Medium',
             profile: {
               age: String(user.age || '').trim(),
               sex: String(user.sex || '').trim(),
@@ -11003,6 +11014,43 @@ function formatWorkspaceLabel(workspace) {
                       <option value="60-75" ${user.timePerSession === '60-75' ? 'selected' : ''}>60–75 minutes</option>
                       <option value="75-90+" ${user.timePerSession === '75-90+' ? 'selected' : ''}>75–90+ minutes</option>
                     </select>
+                  </div>
+                  <div class="entry-field full">
+                    <span class="entry-group-title">Which days? <span class="oaa-opt" style="opacity:.6;font-weight:600;">(optional)</span></span>
+                    <p class="entry-note" style="margin:2px 0 8px;">Pick the days you can train and we'll build around them. Skip it and we'll spread your sessions across the week.</p>
+                    ${renderCheckboxGroup('preferredDays', [
+                      { value: 'Mo', label: 'Mon' },
+                      { value: 'Tu', label: 'Tue' },
+                      { value: 'We', label: 'Wed' },
+                      { value: 'Th', label: 'Thu' },
+                      { value: 'Fr', label: 'Fri' },
+                      { value: 'Sa', label: 'Sat' },
+                      { value: 'Su', label: 'Sun' }
+                    ], user.preferredDays, 'is-compact')}
+                  </div>
+                  <div class="entry-field">
+                    <label for="user-sleep">Sleep on a typical night</label>
+                    <select id="user-sleep" name="sleepHours" required>
+                      <option value="">Select</option>
+                      ${['5', '6', '7', '8', '9'].map((value) => `<option value="${value}" ${String(user.sleepHours) === value ? 'selected' : ''}>${value === '5' ? '5 hours or less' : value === '9' ? '9+ hours' : `${value} hours`}</option>`).join('')}
+                    </select>
+                  </div>
+                  <div class="entry-field">
+                    <label for="user-stress">Day-to-day stress</label>
+                    <select id="user-stress" name="stress" required>
+                      <option value="">Select</option>
+                      ${['Low', 'Medium', 'High'].map((value) => `<option value="${value}" ${user.stress === value ? 'selected' : ''}>${value}</option>`).join('')}
+                    </select>
+                  </div>
+                  <div class="entry-field full">
+                    <label for="user-activity">How active is your day outside training?</label>
+                    <select id="user-activity" name="activityLevel" required>
+                      <option value="">Select</option>
+                      <option value="Sedentary" ${user.activityLevel === 'Sedentary' ? 'selected' : ''}>Mostly sitting</option>
+                      <option value="Active" ${user.activityLevel === 'Active' ? 'selected' : ''}>On my feet some of the day</option>
+                      <option value="Very active" ${user.activityLevel === 'Very active' ? 'selected' : ''}>On my feet all day / manual work</option>
+                    </select>
+                    <p class="entry-note" style="margin:6px 0 0;">Sleep and stress set how much weekly volume you recover from. Daily activity sets your calorie target.</p>
                   </div>
                 </div>
               `,
