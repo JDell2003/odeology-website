@@ -68,7 +68,7 @@ const SUITES = [
   {
     name: 'training — phase 0 invariants + cut-mode policy',
     cmd: process.execPath,
-    args: ['--test', 'tests/training.phase0.invariants.test.js', 'tests/cut-mode.policy.test.js'],
+    args: ['--test', 'tests/training.phase0.invariants.test.js', 'tests/training.targetOwnership.test.js', 'tests/cut-mode.policy.test.js'],
     needsServer: false
   },
   // REPORTED ONLY — these carry a pre-existing failure baseline of 69 of 205

@@ -3435,13 +3435,7 @@
         values: lookupValues,
         beforeDate: performedAt
       });
-      const resolvedProjected = resolveProjectedForExercise(ex, planRef, {
-        previousEntry,
-        historicalPerformance,
-        crossPlanPerformance: crossPlanHistory.performance,
-        persistentLift,
-        currentPerformedAt: performedAt
-      });
+      const resolvedProjected = resolveProjectedForExercise(ex, planRef);
       const resolvedProjectedValue = Number.isFinite(resolvedProjected?.value) ? resolvedProjected.value : null;
       const resolvedProjectedUnit = resolvedProjected?.unit || null;
       const draftSetCount = getWorkoutSetCountDraft({
@@ -5274,126 +5268,12 @@
     return String(value || '').trim().toLowerCase().replace(/[_-]+/g, ' ');
   }
 
-  function isLowerBodyTargetExercise(ex) {
-    const movement = targetWeightTextToken(ex?.movementPattern);
-    if (movement === 'squat' || movement === 'hinge' || movement === 'lower') return true;
 
-    const tags = [
-      ex?.bodyPart,
-      ex?.muscle_group,
-      ex?.muscleGroup,
-      ex?.muscle,
-      ex?.primaryMuscleGroup,
-      ex?.subMuscleGroup,
-      ex?.category,
-      ...(Array.isArray(ex?.muscleKeys) ? ex.muscleKeys : []),
-      ...(Array.isArray(ex?.primaryMuscles) ? ex.primaryMuscles : []),
-      ...(Array.isArray(ex?.secondaryMuscles) ? ex.secondaryMuscles : [])
-    ].map(targetWeightTextToken).filter(Boolean);
 
-    if (tags.some((tag) => (
-      tag === 'legs'
-      || tag === 'lower'
-      || tag.includes('leg')
-      || tag.includes('lower body')
-      || tag.includes('quad')
-      || tag.includes('hamstring')
-      || tag.includes('glute')
-      || tag.includes('calf')
-      || tag.includes('adductor')
-      || tag.includes('abductor')
-    ))) {
-      return true;
-    }
 
-    const name = targetWeightTextToken(ex?.displayName || ex?.name);
-    return /(squat|deadlift|rdl|romanian deadlift|leg press|lunge|split squat|bulgarian|hip thrust|leg curl|ham curl|leg extension|calf raise|hack squat|good morning|step up)/.test(name);
-  }
 
-  function resolveTargetWeightIncrement(ex) {
-    return isLowerBodyTargetExercise(ex) ? 10 : 5;
-  }
 
-  function resolvePreviousProjectedWeight(options = {}) {
-    const candidates = [
-      Number(options.previousEntry?.prescribed?.projectedWeight),
-      Number(options.previousEntry?.projectedWeight),
-      Number(options.lastPerformance?.prescribed?.projectedWeight),
-      Number(options.lastPerformance?.projectedWeight)
-    ];
-    for (const value of candidates) {
-      if (Number.isFinite(value) && value > 0) return Math.round(value * 100) / 100;
-    }
-    return null;
-  }
 
-  function buildTargetWeightPerformanceCandidate(raw, { projectedWeight = null } = {}) {
-    if (!raw || typeof raw !== 'object') return null;
-    const perf = (Array.isArray(raw?.sets) || (raw?.actual && typeof raw.actual === 'object'))
-      ? extractWorkoutEntryPerformance(raw)
-      : normalizeLiftPerformance(raw);
-    const weight = Number(perf?.weight);
-    if (!Number.isFinite(weight) || weight <= 0) return null;
-    return {
-      ...perf,
-      performedAt: perf?.performedAt || (raw?.performedAt ? String(raw.performedAt).slice(0, 10) : null),
-      projectedWeight: Number.isFinite(Number(projectedWeight)) && Number(projectedWeight) > 0
-        ? Math.round(Number(projectedWeight) * 100) / 100
-        : null
-    };
-  }
-
-  function pickBestTargetWeightCandidate(candidates, { excludePerformedAt = '' } = {}) {
-    const blockedDate = excludePerformedAt ? String(excludePerformedAt).slice(0, 10) : '';
-    const valid = (Array.isArray(candidates) ? candidates : []).filter((candidate) => {
-      const weight = Number(candidate?.weight);
-      if (!Number.isFinite(weight) || weight <= 0) return false;
-      if (blockedDate && candidate?.performedAt && String(candidate.performedAt).slice(0, 10) === blockedDate) return false;
-      return true;
-    });
-    if (!valid.length) return null;
-    const dated = valid
-      .map((candidate, index) => ({
-        candidate,
-        index,
-        stamp: candidate?.performedAt ? Date.parse(`${String(candidate.performedAt).slice(0, 10)}T00:00:00Z`) : NaN
-      }))
-      .filter((entry) => Number.isFinite(entry.stamp));
-    if (dated.length) {
-      dated.sort((a, b) => (b.stamp - a.stamp) || (a.index - b.index));
-      return dated[0].candidate;
-    }
-    return valid[0];
-  }
-
-  function normalizeTargetWeightPerformance(raw) {
-    if (!raw || typeof raw !== 'object') return null;
-    if (Array.isArray(raw?.sets) || (raw?.actual && typeof raw.actual === 'object')) {
-      return extractWorkoutEntryPerformance(raw);
-    }
-    return normalizeLiftPerformance(raw);
-  }
-
-  function resolveTargetSeedForExercise(ex, options = {}) {
-    const persistentLift = options.persistentLift || pickLiftHistoryRecord(state.liftHistory, {
-      baseId: ex?.baseId,
-      exerciseId: ex?.exerciseId || ex?.id,
-      exerciseName: ex?.displayName || ex?.name
-    });
-    return pickBestTargetWeightCandidate([
-      buildTargetWeightPerformanceCandidate(options.lastPerformance, {
-        projectedWeight: resolvePreviousProjectedWeight({ lastPerformance: options.lastPerformance })
-      }),
-      buildTargetWeightPerformanceCandidate(options.previousEntry, {
-        projectedWeight: resolvePreviousProjectedWeight({ previousEntry: options.previousEntry })
-      }),
-      buildTargetWeightPerformanceCandidate(options.historicalPerformance),
-      buildTargetWeightPerformanceCandidate(options.crossPlanPerformance),
-      buildTargetWeightPerformanceCandidate(persistentLift?.last)
-    ], {
-      excludePerformedAt: options.currentPerformedAt
-    });
-  }
 
   function roundTo(value, inc) {
     const n = Number(value);
@@ -5402,24 +5282,39 @@
     return Math.round(n / step) * step;
   }
 
-  function fallbackBaselinesFromBodyweight(exp, bodyweight) {
-    const bw = Number(bodyweight);
-    if (!Number.isFinite(bw) || bw <= 0) return null;
-    const tier = String(exp || '').toLowerCase();
-    const ratios = tier === 'advanced'
-      ? { press: 0.8, leg: 1.3, hinge: 1.6, pull: 0.75 }
-      : tier === 'intermediate'
-        ? { press: 0.65, leg: 1.05, hinge: 1.25, pull: 0.6 }
-        : { press: 0.5, leg: 0.85, hinge: 1.0, pull: 0.5 };
-    return {
-      press1rm: roundTo(bw * ratios.press, 5),
-      leg1rm: roundTo(bw * ratios.leg, 5),
-      hinge1rm: roundTo(bw * ratios.hinge, 5),
-      pull1rm: roundTo(bw * ratios.pull, 5)
-    };
+
+  /* The server owns the target. The client renders it.
+
+     This used to be a computation: resolveProjectedForExercise derived a weight
+     from logged history as `last logged weight + increment` (10 lb lower / 5 upper,
+     no rep gate) and that value OUTRANKED the plan whenever any history existed.
+     Once Phase 0 reconnected the server-side progression layer there were two
+     writers disagreeing - the server wrote a gated target and the client
+     overwrote it at render time. Deleted, along with the four helpers that
+     existed only to feed it.
+
+     What remains is a read. ex.projected.value is authoritative; projectedWeight
+     is the flattened mirror the engine keeps in lockstep with it. The remaining
+     fallbacks fire only for a plan that carries no projection at all (an old
+     stored plan, or a bodyweight movement), never to second-guess a live one. */
+  function resolveProjectedForExercise(ex, plan) {
+    const eqClass = String(ex?.equipmentClass || '').toLowerCase();
+    if (ex?.projected && typeof ex.projected === 'object') {
+      if (ex.projected.unit === 'bw') return ex.projected;
+      if (Number.isFinite(Number(ex.projected.value))) {
+        return { value: Number(ex.projected.value), unit: ex.projected.unit || 'lb' };
+      }
+    }
+    if (Number.isFinite(Number(ex?.projectedWeight))) {
+      return { value: Number(ex.projectedWeight), unit: ex.projectedUnit || 'lb' };
+    }
+    if (eqClass === 'bodyweight') return { value: null, unit: 'bw' };
+    return legacyPlanProjectedFallback(ex, plan);
   }
 
-  function safeDefaultProjected(ex) {
+  /* Only for plans with no server-computed projection - pre-Engine-v2 rows that
+     render read-only. A live plan never reaches this. */
+  function legacyPlanProjectedFallback(ex, plan) {
     const eqClass = String(ex?.equipmentClass || '').toLowerCase();
     if (eqClass === 'bodyweight') return { value: null, unit: 'bw' };
     const stimulus = String(ex?.stimulusType || '').toLowerCase();
@@ -5448,75 +5343,6 @@
     return { value: Number.isFinite(value) ? value : null, unit: 'lb' };
   }
 
-  function resolveProjectedForExercise(ex, plan, options = {}) {
-    const eqClass = String(ex?.equipmentClass || '').toLowerCase();
-    const targetSeed = resolveTargetSeedForExercise(ex, options);
-    if (eqClass !== 'bodyweight' && Number.isFinite(Number(targetSeed?.weight))) {
-      const increment = resolveTargetWeightIncrement(ex);
-      const previousProjectedWeight = Number(targetSeed?.projectedWeight);
-      if (Number.isFinite(previousProjectedWeight) && previousProjectedWeight > 0 && Number(targetSeed.weight) < previousProjectedWeight) {
-        const regressedWeight = Math.max(increment, previousProjectedWeight - increment);
-        return { value: Math.round(regressedWeight * 100) / 100, unit: 'lb' };
-      }
-      const nextWeight = Math.round((Number(targetSeed.weight) + increment) * 100) / 100;
-      return { value: nextWeight, unit: 'lb' };
-    }
-    if (ex?.projected && typeof ex.projected === 'object') {
-      if (ex.projected.unit === 'bw') return ex.projected;
-      if (Number.isFinite(ex.projected.value)) return ex.projected;
-    }
-    if (Number.isFinite(ex?.projectedWeight)) return { value: ex.projectedWeight, unit: 'lb' };
-    const baselines = plan?.baselines && typeof plan.baselines === 'object' ? plan.baselines : {};
-    const exp = plan?.meta?.experience || '';
-    const fallback = fallbackBaselinesFromBodyweight(exp, baselines?.bodyweight);
-    if (eqClass === 'bodyweight') return { value: null, unit: 'bw' };
-    const tm = baselines?.trainingMax || {};
-    const baseId = String(ex?.baseId || '');
-    if (baseId) {
-      const tmVal = baseId.includes('squat') ? tm.squat
-        : baseId.includes('dead') ? tm.deadlift
-          : baseId.includes('bench') ? tm.bench
-            : null;
-      if (Number.isFinite(tmVal)) {
-        const est = roundTo(tmVal * 0.7, baseId.includes('bench') ? 2.5 : 5);
-        return { value: est, unit: 'lb' };
-      }
-    }
-    const ww = baselines?.workingWeights || {};
-    const movement = String(ex?.movementPattern || '').toLowerCase();
-    const stimulus = String(ex?.stimulusType || '').toLowerCase();
-    const muscleKeys = Array.isArray(ex?.muscleKeys) ? ex.muscleKeys : [];
-    let base = null;
-    let inc = 2.5;
-    if (movement === 'squat') { base = ww.lower; inc = 5; }
-    else if (movement === 'hinge') { base = ww.hinge; inc = 5; }
-    else if (movement === 'row' || movement === 'vertical_pull') { base = ww.pull; }
-    else if (muscleKeys.some((m) => ['quads', 'hamstrings', 'glutes', 'calves'].includes(m))) { base = ww.lower || ww.hinge; inc = 5; }
-    else { base = ww.press || ww.pull; }
-
-    if (!Number.isFinite(base) && Number.isFinite(baselines.press1rm)) base = baselines.press1rm * 0.7;
-    if (!Number.isFinite(base) && Number.isFinite(baselines.pull1rm)) base = baselines.pull1rm * 0.7;
-    if (!Number.isFinite(base) && Number.isFinite(baselines.leg1rm)) { base = baselines.leg1rm * 0.7; inc = 5; }
-    if (!Number.isFinite(base) && Number.isFinite(baselines.hinge1rm)) { base = baselines.hinge1rm * 0.7; inc = 5; }
-    if (!Number.isFinite(base) && fallback) {
-      if (movement === 'squat' || muscleKeys.some((m) => ['quads', 'hamstrings', 'glutes', 'calves'].includes(m))) {
-        base = fallback.leg1rm * 0.7;
-        inc = 5;
-      } else if (movement === 'hinge') {
-        base = fallback.hinge1rm * 0.7;
-        inc = 5;
-      } else if (movement === 'row' || movement === 'vertical_pull') {
-        base = fallback.pull1rm * 0.7;
-      } else {
-        base = fallback.press1rm * 0.7;
-      }
-    }
-
-    if (!Number.isFinite(base)) return safeDefaultProjected(ex);
-    const ratio = stimulus === 'isolation' ? 0.5 : 0.6;
-    const est = roundTo(base * ratio, inc);
-    return { value: Number.isFinite(est) ? est : null, unit: 'lb' };
-  }
 
   function formatProjectionModeLabel(value) {
     const raw = String(value || '').trim();
@@ -14121,7 +13947,7 @@ function toggleSharePopover(force) {
           const exercises = Array.isArray(day?.exercises) ? day.exercises : [];
           return exercises.map((exercise, exerciseIndex) => {
             const roleInfo = complexPdfExerciseRole(exercise, exerciseIndex, context.priorities, context.painAreas);
-            const projected = resolveProjectedForExercise(exercise, plan, {});
+            const projected = resolveProjectedForExercise(exercise, plan);
             const rir = String(exercise?.rir || exercise?.rpe || '').trim()
               || (context.outputStyle === 'Simple sets x reps' ? '—' : (roleInfo.role === 'Strength anchor' ? '2-3 RIR' : '1-2 RIR'));
             const sets = Math.max(1, Number(exercise?.sets) || 1);
@@ -16151,23 +15977,10 @@ function toggleSharePopover(force) {
               )
             )
             : null;
-        const targetSeed = resolveTargetSeedForExercise(ex, {
-          previousEntry,
-          historicalPerformance,
-          crossPlanPerformance: crossPlanHistory.performance,
-          persistentLift,
-          currentPerformedAt: performedAtValue
-        });
-        const projected = fmtProjected(resolveProjectedForExercise(ex, plan, {
-          previousEntry,
-          historicalPerformance,
-          crossPlanPerformance: crossPlanHistory.performance,
-          persistentLift,
-          lastPerformance: targetSeed,
-          currentPerformedAt: performedAtValue
-        }));
-        const lastPerf = targetSeed
-          || extractWorkoutEntryPerformance(currentEntry)
+        const projected = fmtProjected(resolveProjectedForExercise(ex, plan));
+        // Logged history is still shown to the user for comparison; it just no
+        // longer decides the target.
+        const lastPerf = extractWorkoutEntryPerformance(currentEntry)
           || persistentLift?.last
           || historicalPerformance
           || crossPlanHistory.performance
