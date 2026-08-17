@@ -1,7 +1,7 @@
 {
  "bodybuilding-3-Chest,Back": {
   "seed": 1030,
-  "hash": "d95bc2023fd9564b",
+  "hash": "e0fd9b5a72293dc8",
   "week1": {
    "wk": 1,
    "days": [
@@ -23,7 +23,7 @@
       [
        "Low Cable Crossover",
        3,
-       "6",
+       "10",
        "Chest"
       ],
       [
@@ -111,7 +111,7 @@
       [
        "Romanian Deadlift",
        2,
-       "10",
+       "6",
        "Legs"
       ],
       [
@@ -127,7 +127,7 @@
  },
  "bodybuilding-3-Legs,Glutes": {
   "seed": 1031,
-  "hash": "0a222cdc5867d795",
+  "hash": "827d91ffbcd3ea59",
   "week1": {
    "wk": 1,
    "days": [
@@ -137,7 +137,7 @@
       [
        "Romanian Deadlift",
        3,
-       "10",
+       "6",
        "Legs"
       ],
       [
@@ -241,7 +241,7 @@
  },
  "bodybuilding-3-Shoulders,Arms": {
   "seed": 1032,
-  "hash": "77f560f3ade1a467",
+  "hash": "d220b5ffbba0229f",
   "week1": {
    "wk": 1,
    "days": [
@@ -308,7 +308,7 @@
        "Core"
       ],
       [
-       "Pallof Hold",
+       "Pallof Press",
        2,
        "8",
        "Core"
@@ -343,7 +343,7 @@
  },
  "bodybuilding-3-Back,Arms": {
   "seed": 1033,
-  "hash": "8262c0673e60054b",
+  "hash": "d0e112364d46211f",
   "week1": {
    "wk": 1,
    "days": [
@@ -394,7 +394,7 @@
       [
        "Romanian Deadlift",
        4,
-       "10",
+       "6",
        "Legs"
       ],
       [
@@ -445,7 +445,7 @@
  },
  "bodybuilding-3-Core,Calves": {
   "seed": 1034,
-  "hash": "d7f0b88835034648",
+  "hash": "6f80547c8b93ace4",
   "week1": {
    "wk": 1,
    "days": [
@@ -490,17 +490,11 @@
       [
        "Romanian Deadlift",
        2,
-       "10",
-       "Legs"
-      ],
-      [
-       "Lying Leg Curl",
-       2,
        "8",
        "Legs"
       ],
       [
-       "Leg Extensions",
+       "Seated Leg Curl",
        2,
        "8",
        "Legs"
@@ -518,7 +512,13 @@
        "Core"
       ],
       [
-       "Cable Crunch",
+       "Cable Bench Reverse Crunch",
+       2,
+       "8",
+       "Core"
+      ],
+      [
+       "Ab Crunch Machine",
        2,
        "10",
        "Core"
@@ -529,16 +529,16 @@
      "t": "FullBodyB",
      "ex": [
       [
-       "Hip Thrust",
+       "Barbell Glute Bridge",
        2,
-       "8",
-       "Glutes"
+       "10",
+       "Legs"
       ],
       [
-       "Barbell Glute Bridge",
+       "Romanian Deadlift",
        3,
        "10",
-       "Glutes"
+       "Legs"
       ],
       [
        "Seated Leg Curl",
@@ -565,7 +565,7 @@
  },
  "bodybuilding-3-Chest,Core": {
   "seed": 1035,
-  "hash": "346a4ae7ef06e070",
+  "hash": "1536536160aca0ff",
   "week1": {
    "wk": 1,
    "days": [
@@ -628,7 +628,7 @@
       [
        "Romanian Deadlift",
        3,
-       "8",
+       "6",
        "Legs"
       ],
       [
@@ -679,7 +679,7 @@
  },
  "bodybuilding-3-Glutes,Calves": {
   "seed": 1036,
-  "hash": "84fe964749452f0f",
+  "hash": "517478f5b4b60328",
   "week1": {
    "wk": 1,
    "days": [
@@ -717,7 +717,7 @@
        "Core"
       ],
       [
-       "Pallof Hold",
+       "Pallof Press",
        2,
        "10",
        "Core"
@@ -771,7 +771,7 @@
       [
        "Romanian Deadlift",
        3,
-       "10",
+       "6",
        "Legs"
       ],
       [
@@ -793,7 +793,7 @@
        "Core"
       ],
       [
-       "Pallof Hold",
+       "Pallof Press",
        2,
        "10",
        "Core"
@@ -805,7 +805,7 @@
  },
  "bodybuilding-4-Chest,Back": {
   "seed": 1040,
-  "hash": "05d0b4b9817b1373",
+  "hash": "03377c31bf7204e0",
   "week1": {
    "wk": 1,
    "days": [
@@ -827,7 +827,7 @@
       [
        "Low Cable Crossover",
        2,
-       "6",
+       "10",
        "Chest"
       ],
       [
@@ -1115,7 +1115,7 @@
  },
  "bodybuilding-4-Shoulders,Arms": {
   "seed": 1042,
-  "hash": "b12a7aa93157bb4a",
+  "hash": "3a418512be7ff590",
   "week1": {
    "wk": 1,
    "days": [
@@ -1194,7 +1194,7 @@
        "Core"
       ],
       [
-       "Pallof Hold",
+       "Pallof Press",
        2,
        "8",
        "Core"
@@ -1419,7 +1419,7 @@
  },
  "bodybuilding-4-Core,Calves": {
   "seed": 1044,
-  "hash": "2050b16bee45cb17",
+  "hash": "8eff6e4627fb64a7",
   "week1": {
    "wk": 1,
    "days": [
@@ -1452,17 +1452,11 @@
       [
        "Romanian Deadlift",
        2,
-       "8",
+       "10",
        "Legs"
       ],
       [
-       "Lying Leg Curl",
-       2,
-       "8",
-       "Legs"
-      ],
-      [
-       "Leg Extensions",
+       "Seated Leg Curl",
        2,
        "10",
        "Legs"
@@ -1472,6 +1466,12 @@
        2,
        "10",
        "Legs"
+      ],
+      [
+       "Cable Seated Crunch",
+       2,
+       "8",
+       "Core"
       ]
      ]
     },
@@ -1481,7 +1481,7 @@
       [
        "Chest-Supported Row",
        2,
-       "8",
+       "6",
        "Back"
       ],
       [
@@ -1544,7 +1544,7 @@
  },
  "bodybuilding-4-Chest,Core": {
   "seed": 1045,
-  "hash": "5fe7275f63ae6e87",
+  "hash": "b336edd3317fb04b",
   "week1": {
    "wk": 1,
    "days": [
@@ -1583,7 +1583,7 @@
       [
        "Wide-Grip Lat Pulldown",
        3,
-       "8",
+       "6",
        "Back"
       ],
       [
@@ -1854,7 +1854,7 @@
  },
  "bodybuilding-5-Chest,Back": {
   "seed": 1050,
-  "hash": "3d8a32312c93d1a2",
+  "hash": "40c92a1013b14096",
   "week1": {
    "wk": 1,
    "days": [
@@ -1876,7 +1876,7 @@
       [
        "Low Cable Crossover",
        3,
-       "6",
+       "10",
        "Chest"
       ],
       [
@@ -2240,7 +2240,7 @@
  },
  "bodybuilding-5-Shoulders,Arms": {
   "seed": 1052,
-  "hash": "3dc25b9c788e9b66",
+  "hash": "5dbe8c59fe9d7e9e",
   "week1": {
    "wk": 1,
    "days": [
@@ -2303,7 +2303,7 @@
       [
        "Romanian Deadlift",
        4,
-       "10",
+       "6",
        "Legs"
       ],
       [
@@ -2608,7 +2608,7 @@
  },
  "bodybuilding-5-Core,Calves": {
   "seed": 1054,
-  "hash": "c5e355d868b7d689",
+  "hash": "653f3e773acfa769",
   "week1": {
    "wk": 1,
    "days": [
@@ -2682,17 +2682,11 @@
       [
        "Romanian Deadlift",
        2,
-       "10",
-       "Legs"
-      ],
-      [
-       "Lying Leg Curl",
-       2,
        "8",
        "Legs"
       ],
       [
-       "Leg Extensions",
+       "Seated Leg Curl",
        2,
        "8",
        "Legs"
@@ -2710,7 +2704,13 @@
        "Core"
       ],
       [
-       "Cable Crunch",
+       "Cable Bench Reverse Crunch",
+       2,
+       "8",
+       "Core"
+      ],
+      [
+       "Ab Crunch Machine",
        2,
        "10",
        "Core"
@@ -2740,7 +2740,7 @@
       [
        "Romanian Deadlift",
        3,
-       "10",
+       "8",
        "Legs"
       ],
       [
@@ -2780,7 +2780,7 @@
  },
  "bodybuilding-5-Chest,Core": {
   "seed": 1055,
-  "hash": "ca22ef8f294513b9",
+  "hash": "fe372927f7738464",
   "week1": {
    "wk": 1,
    "days": [
@@ -2902,7 +2902,7 @@
       [
        "Cable Crunch",
        2,
-       "6",
+       "10",
        "Core"
       ]
      ]
@@ -2988,7 +2988,7 @@
  },
  "bodybuilding-5-Glutes,Calves": {
   "seed": 1056,
-  "hash": "c9e689a2a8ff9a74",
+  "hash": "5655e135951b959f",
   "week1": {
    "wk": 1,
    "days": [
@@ -3096,7 +3096,7 @@
        "Core"
       ],
       [
-       "Pallof Hold",
+       "Pallof Press",
        3,
        "10",
        "Core"
@@ -3150,7 +3150,7 @@
       [
        "Romanian Deadlift",
        3,
-       "10",
+       "6",
        "Legs"
       ],
       [
@@ -3172,7 +3172,7 @@
        "Core"
       ],
       [
-       "Pallof Hold",
+       "Pallof Press",
        2,
        "10",
        "Core"
@@ -3184,7 +3184,7 @@
  },
  "bodybuilding-6-Chest,Back": {
   "seed": 1060,
-  "hash": "c13dc276f1719171",
+  "hash": "17b561d69b4bc3a6",
   "week1": {
    "wk": 1,
    "days": [
@@ -3206,7 +3206,7 @@
       [
        "Low Cable Crossover",
        2,
-       "6",
+       "10",
        "Chest"
       ],
       [
@@ -3859,7 +3859,7 @@
  },
  "bodybuilding-6-Back,Arms": {
   "seed": 1063,
-  "hash": "30ac242eb99f4811",
+  "hash": "5fd765223195d2f5",
   "week1": {
    "wk": 1,
    "days": [
@@ -3875,7 +3875,7 @@
       [
        "Cable Row",
        3,
-       "10",
+       "6",
        "Back"
       ],
       [
@@ -3899,7 +3899,7 @@
       [
        "Barbell Curl",
        3,
-       "6",
+       "10",
        "Arms"
       ]
      ]
@@ -3916,7 +3916,7 @@
       [
        "Romanian Deadlift",
        4,
-       "10",
+       "6",
        "Legs"
       ],
       [
@@ -4078,7 +4078,7 @@
  },
  "bodybuilding-6-Core,Calves": {
   "seed": 1064,
-  "hash": "2fc90d996a41b91a",
+  "hash": "8d39bbe990cddc41",
   "week1": {
    "wk": 1,
    "days": [
@@ -4204,17 +4204,11 @@
       [
        "Romanian Deadlift",
        2,
-       "10",
-       "Legs"
-      ],
-      [
-       "Lying Leg Curl",
-       2,
        "8",
        "Legs"
       ],
       [
-       "Leg Extensions",
+       "Seated Leg Curl",
        2,
        "8",
        "Legs"
@@ -4232,7 +4226,13 @@
        "Core"
       ],
       [
-       "Cable Crunch",
+       "Cable Bench Reverse Crunch",
+       2,
+       "8",
+       "Core"
+      ],
+      [
+       "Ab Crunch Machine",
        2,
        "10",
        "Core"
@@ -4285,7 +4285,7 @@
  },
  "bodybuilding-6-Chest,Core": {
   "seed": 1065,
-  "hash": "088638ccb0e6a218",
+  "hash": "520ef82b3ddb5413",
   "week1": {
    "wk": 1,
    "days": [
@@ -4407,7 +4407,7 @@
       [
        "Cable Crunch",
        2,
-       "6",
+       "10",
        "Core"
       ]
      ]
@@ -4463,12 +4463,6 @@
        "Back"
       ],
       [
-       "Machine Chest Press",
-       2,
-       "8",
-       "Chest"
-      ],
-      [
        "Cable Crossover",
        2,
        "10",
@@ -4477,7 +4471,13 @@
       [
        "Cable Crunch",
        2,
-       "6",
+       "10",
+       "Core"
+      ],
+      [
+       "Cable Pallof Hold",
+       2,
+       "8",
        "Core"
       ]
      ]
@@ -4528,7 +4528,7 @@
  },
  "bodybuilding-6-Glutes,Calves": {
   "seed": 1066,
-  "hash": "c43174c33f86e3c6",
+  "hash": "b68392f26bca4924",
   "week1": {
    "wk": 1,
    "days": [
@@ -4614,7 +4614,7 @@
       [
        "Romanian Deadlift",
        3,
-       "10",
+       "6",
        "Legs"
       ],
       [
@@ -4636,7 +4636,7 @@
        "Core"
       ],
       [
-       "Pallof Hold",
+       "Pallof Press",
        3,
        "10",
        "Core"
@@ -4712,7 +4712,7 @@
        "Core"
       ],
       [
-       "Pallof Hold",
+       "Pallof Press",
        2,
        "10",
        "Core"

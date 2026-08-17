@@ -10,7 +10,7 @@ const jsonStore = require('./jsonStore');
 const trainerPages = require('./trainerPages');
 const { DbUnavailableError, isTransientPgError } = require('./dbErrors');
 const { generatePlan, applyLogAdjustments, normalizeExperience, assertBodybuildingPlanIntegrity, estimateExerciseMinutes } = require('./trainingEngine');
-const { buildOblueprintPlan, preprocessExercises, normalizeUserInput } = require('../generator/trainingEngine.oblueprint');
+const { buildOblueprintPlan, preprocessExercises, normalizeUserInput, projectionFamilyForExercise } = require('../generator/trainingEngine.oblueprint');
 const { buildSafeFallbackPlan } = require('../generator/safeFallbackPlan');
 const militaryHybrid = require('../generator/militaryHybrid.oblueprint');
 const { resolveWorkoutExercises } = require('./exerciseResolver');
@@ -1153,16 +1153,28 @@ function routeNormalizePlanPrescriptions(plan) {
       for (const ex of exercises) {
         const needsReps = malformedReps(ex?.reps);
         const needsSets = !Number.isFinite(Number(ex?.sets)) || Number(ex.sets) < 1;
-        if (!needsReps && !needsSets) continue;
-        const donor = exercises.find((other) => other !== ex
-          && String(other?.style || '') === String(ex?.style || '')
-          && !malformedReps(other?.reps))
+        const needsLoad = !ex?.projected || !Number.isFinite(Number(ex.projected.value));
+        if (!needsReps && !needsSets && !needsLoad) continue;
+        // Copy from a SAME-CLASS exercise on the day. Class is the thing that
+        // makes a prescription transferable: an isolation movement's reps and
+        // load mean nothing on a compound and vice versa.
+        const sameClass = (other) => String(other?.style || '') === String(ex?.style || '');
+        const donor = exercises.find((other) => other !== ex && sameClass(other) && !malformedReps(other?.reps))
           || exercises.find((other) => other !== ex && !malformedReps(other?.reps));
+        const loadDonor = exercises.find((other) => other !== ex && sameClass(other)
+          && Number.isFinite(Number(other?.projected?.value)));
         if (needsReps) {
           ex.reps = donor?.reps ?? (String(ex?.style || '') === 'Compound' ? '6' : '10');
           if (donor?.repLadder && !ex.repLadder) ex.repLadder = { ...donor.repLadder };
         }
         if (needsSets) ex.sets = Number(donor?.sets) || 2;
+        if (needsLoad && loadDonor) {
+          // Only from a same-class donor. If the day has none, leave it unset —
+          // the UI shows an estimate rather than a confidently wrong number.
+          ex.projected = { value: Number(loadDonor.projected.value), unit: loadDonor.projected.unit || 'lb' };
+          ex.projectedWeight = ex.projected.value;
+          ex.projectedUnit = ex.projected.unit;
+        }
         repaired += 1;
       }
     }
@@ -1171,6 +1183,114 @@ function routeNormalizePlanPrescriptions(plan) {
     console.warn('[oblueprint] repaired malformed prescriptions', { count: repaired });
   }
   return repaired;
+}
+
+/* The general remedy for a recurring failure shape.
+
+   Six bugs now have shared one form: two components holding different
+   vocabularies for the same concept, failing OPEN — a default, a skip, a silent
+   relabel — instead of failing loud.
+
+     log correlation    baseId          vs  canonicalExerciseId
+     week keying        index           vs  weekIndex
+     weekday codes      M, T, TH        vs  mo, tu, th
+     session length     "60-75"         vs  '60'
+     priority field     intake.focus    vs  priorityMuscles
+     movement identity  the slot's      vs  the exercise's
+
+   None was visible from reading the code. All needed someone to execute the
+   path and print the result. This pass is the cheap version of that: at
+   materialisation, every exercise's identity must match its row in the exercise
+   table, and every enum-valued field must be a member of its enum. Four of the
+   six would have been caught the day they landed.
+
+   Throws in development so it cannot be ignored; logs in production because a
+   plan with one mislabelled field is still better than no plan. */
+const PLAN_ENUMS = {
+  style: ['Compound', 'Isolation', 'Cardio', 'Skill', 'Plyo', 'Carry', 'Conditioning'],
+  // 'Full Body' and 'FullBody' are BOTH here on purpose: the exercise table uses
+  // the closed form and militaryHybrid's generated tasks use the spaced one.
+  // That is the same two-vocabularies-for-one-concept shape as M vs mo, and it
+  // should be normalised to one spelling — but silently rejecting half the
+  // vocabulary from an audit is not how to discover that, so both are accepted
+  // and the split is recorded here.
+  primaryMuscle: ['Chest', 'Back', 'Shoulders', 'Arms', 'Legs', 'Glutes', 'Core', 'Calves', 'Forearms', 'Neck', 'FullBody', 'Full Body', 'Cardio']
+};
+
+/* Discipline modules synthesise prescriptions that are not table exercises at
+   all — militaryHybrid emits run intervals, carries, plank holds and jump work
+   with generated ids (mh_zone2_run_w1_1). They have no table row by design, so
+   the row comparison does not apply to them. Their identity still has to be
+   internally consistent, which the enum check below still enforces. */
+function isGeneratedTaskExercise(ex) {
+  // Identify by the GENERATOR's own marker on id/exerciseId, not by the
+  // canonical id: militaryHybrid derives its canonicalExerciseId from the
+  // display name ("barbell_deadlift") while carrying an mh_ id, so a canonical
+  // id check alone misses exactly the entries that need exempting.
+  return /^(mh|pb|task)_/.test(String(ex?.exerciseId || ''))
+    || /^(mh|pb|task)_/.test(String(ex?.id || ''))
+    || /^(mh|pb|task)_/.test(String(ex?.canonicalExerciseId || ''));
+}
+
+function auditPlanIdentityIntegrity(plan) {
+  const problems = [];
+  const seenIds = new Set();
+  for (const week of Array.isArray(plan?.weeks) ? plan.weeks : []) {
+    for (const day of Array.isArray(week?.days) ? week.days : []) {
+      for (const ex of Array.isArray(day?.exercises) ? day.exercises : []) {
+        const where = `wk${week?.weekIndex} ${day?.dayType} "${ex?.name}"`;
+        // Resolve by canonicalExerciseId, not by name. `name` is a DISPLAY name
+        // — normalizeBodybuildingDisplayName rewrites it ("Cable Rope Overhead
+        // Triceps Extension" shows as "Overhead Triceps Extension") — so a
+        // name lookup finds a different row and reports a mismatch that is only
+        // an alias. The canonical id is the identity; audit against that.
+        const generated = isGeneratedTaskExercise(ex);
+        const row = generated
+          ? null
+          : (routeExerciseRowByCanonicalId(ex?.canonicalExerciseId) || routeExerciseRowByName(ex?.name));
+        if (row) {
+          const truth = row.canonicalTruth || {};
+          // Identity must equal the table's, not whatever slot it landed in.
+          for (const [field, expected] of [
+            ['primary', row.primary],
+            ['style', row.style],
+            ['primaryMuscle', truth.primaryMuscle]
+          ]) {
+            if (expected === undefined || ex?.[field] === undefined) continue;
+            if (String(ex[field]) !== String(expected)) {
+              problems.push(`${where}: ${field} is "${ex[field]}", table says "${expected}"`);
+            }
+          }
+        } else if (!generated && ex?.canonicalExerciseId) {
+          problems.push(`${where}: canonicalExerciseId "${ex.canonicalExerciseId}" is not in the exercise table`);
+        }
+        for (const [field, allowed] of Object.entries(PLAN_ENUMS)) {
+          const value = ex?.[field];
+          if (value === undefined || value === null) continue;
+          if (!allowed.includes(String(value))) {
+            problems.push(`${where}: ${field} "${value}" is not one of ${allowed.join('|')}`);
+          }
+        }
+        if (ex?.id) {
+          if (seenIds.has(ex.id)) problems.push(`${where}: duplicate exercise id ${ex.id}`);
+          seenIds.add(ex.id);
+        }
+      }
+    }
+  }
+  return problems;
+}
+
+function enforcePlanIdentityIntegrity(plan) {
+  const problems = auditPlanIdentityIntegrity(plan);
+  if (!problems.length) return 0;
+  const inProduction = String(process.env.NODE_ENV || '').toLowerCase() === 'production';
+  const summary = problems.slice(0, 12).join('; ');
+  if (!inProduction) {
+    throw new Error(`plan identity integrity: ${problems.length} problem(s) — ${summary}`);
+  }
+  console.error('[oblueprint] plan identity integrity', { count: problems.length, sample: problems.slice(0, 5) });
+  return problems.length;
 }
 
 function planPassesFloorGate(plan, src) {
@@ -1709,6 +1829,14 @@ function buildOblueprintPlanWithFallback(payload, opts = {}) {
     // appended accessory without a prescription. Normalise first, then gate.
     if (result && !result.error && result.plan && !result._safeFallback) {
       routeNormalizePlanPrescriptions(result.plan);
+      try {
+        enforcePlanIdentityIntegrity(result.plan);
+      } catch (err) {
+        // Development: surface it. A plan that misdescribes its own movements
+        // corrupts load, reps, projection family and progression correlation at
+        // once, so it is not something to ship past a red build.
+        if (String(process.env.NODE_ENV || '').toLowerCase() !== 'production') throw err;
+      }
     }
     if (result && !result.error && result.plan && !result._safeFallback && !planPassesFloorGate(result.plan, src)) {
       const safe = makeSafeFallbackResult(src, { error: 'FLOOR_GATE', reason: 'thin or unsafe day repaired via safe fallback' });
@@ -3868,15 +3996,111 @@ function routeEnforceCanonicalMovementFamilyRedundancy(dayType, exercises, { pri
   return list;
 }
 
+/* A slot may specify what it WANTS. It may never rewrite what a movement IS.
+
+   routeApplyReplacement used to spread the exercise being displaced and
+   overwrite exactly four fields — name, pattern, style, primary — so a
+   replacement inherited the donor's entire identity. A Close-Grip Barbell Bench
+   Press replaced by "Triceps Extension" kept primaryMuscle Chest, subMuscle Mid,
+   movementFamily triceps_press, the donor's 3x6 prescription, its 157.5 lb load,
+   and — worst — its canonicalExerciseId. Since §1.3 made canonicalExerciseId the
+   progression key, every set logged against that "Triceps Extension" wrote
+   progression state under the bench press's key. One relabel corrupted identity,
+   prescription, load, projection family and progression correlation at once.
+
+   Identity now comes from the exercise table row for spec.name. The slot keeps
+   only what belongs to a slot: its id, its set count, and its position. */
+let ROUTE_EXERCISE_ROWS_BY_NAME = null;
+function routeExerciseRowByName(name) {
+  if (!ROUTE_EXERCISE_ROWS_BY_NAME) {
+    ROUTE_EXERCISE_ROWS_BY_NAME = new Map();
+    for (const row of getSafeFallbackPool()) {
+      const key = routeNormName(row?.name);
+      if (key && !ROUTE_EXERCISE_ROWS_BY_NAME.has(key)) ROUTE_EXERCISE_ROWS_BY_NAME.set(key, row);
+    }
+  }
+  return ROUTE_EXERCISE_ROWS_BY_NAME.get(routeNormName(name)) || null;
+}
+
+let ROUTE_EXERCISE_ROWS_BY_CANONICAL_ID = null;
+function routeExerciseRowByCanonicalId(id) {
+  const key = String(id || '').trim();
+  if (!key) return null;
+  if (!ROUTE_EXERCISE_ROWS_BY_CANONICAL_ID) {
+    ROUTE_EXERCISE_ROWS_BY_CANONICAL_ID = new Map();
+    for (const row of getSafeFallbackPool()) {
+      const canonicalId = row?.canonicalTruth?.canonicalExerciseId;
+      if (canonicalId && !ROUTE_EXERCISE_ROWS_BY_CANONICAL_ID.has(canonicalId)) {
+        ROUTE_EXERCISE_ROWS_BY_CANONICAL_ID.set(canonicalId, row);
+      }
+    }
+  }
+  return ROUTE_EXERCISE_ROWS_BY_CANONICAL_ID.get(key) || null;
+}
+
+// Identity travels with the movement; everything here is derived from the
+// exercise itself and must never be inherited from whatever it replaced.
+const ROUTE_IDENTITY_FIELDS = [
+  'primary', 'sub', 'style', 'pattern', 'primaryMuscle', 'subMuscle',
+  'canonicalExerciseId', 'canonicalName', 'movementFamily', 'requiredEquipment',
+  'equipment', 'equipmentNorm', 'directArmType', 'directArmSubtype', 'directDeltSubtype',
+  'directCalf', 'directAb', 'coreFamily', 'isCalisthenicsLike', 'nameLower',
+  'projectionFamily', 'canonicalTruth'
+];
+
 function routeApplyReplacement(ex, spec) {
   if (!spec) return ex;
-  return {
-    ...ex,
-    name: spec.name,
-    pattern: spec.pattern || ex?.pattern,
-    style: spec.style || ex?.style,
-    primary: spec.primary || ex?.primary
-  };
+  const row = routeExerciseRowByName(spec.name);
+  // A spec naming an exercise that is not in the table cannot be given a real
+  // identity, and half an identity is what caused this bug in the first place.
+  // Decline the replacement and say so — a repair that cannot be done correctly
+  // should not be done at all.
+  if (!row) {
+    console.warn('[route-repair] replacement declined, not in exercise table', { name: spec.name });
+    return ex;
+  }
+  const truth = row.canonicalTruth || null;
+  const next = { ...ex, name: spec.name, displayName: spec.name };
+
+  if (row) {
+    for (const field of ROUTE_IDENTITY_FIELDS) {
+      if (field === 'canonicalTruth') { if (truth) next.canonicalTruth = truth; continue; }
+      const fromTruth = truth ? truth[field] : undefined;
+      const fromRow = row[field];
+      const value = fromTruth !== undefined ? fromTruth : fromRow;
+      if (value !== undefined) next[field] = value;
+    }
+  }
+  // projectionFamily is stamped at materialisation, BEFORE this repair runs, so
+  // the donor's family survives unless it is recomputed here. It decides the
+  // load anchor — leaving it is how a triceps isolation kept a chest_press
+  // anchor and a bench-press weight.
+  if (row) {
+    try { next.projectionFamily = projectionFamilyForExercise(row, null); } catch { delete next.projectionFamily; }
+  }
+  // The spec is allowed to assert these; the table row wins where it has one.
+  next.pattern = row?.pattern || spec.pattern || ex?.pattern;
+  next.style = row?.style || spec.style || ex?.style;
+  next.primary = row?.primary || spec.primary || ex?.primary;
+
+  const donorStyle = String(ex?.style || '');
+  const nextStyle = String(next.style || '');
+  if (donorStyle && nextStyle && donorStyle !== nextStyle) {
+    // A cross-class swap means the inherited prescription describes a different
+    // kind of movement. Clear it so routeNormalizePlanPrescriptions rebuilds it
+    // from a same-class exercise on the day instead of carrying bench numbers
+    // onto an isolation movement.
+    console.warn('[route-repair] cross-class replacement, prescription reset', {
+      from: `${ex?.name} [${donorStyle}]`, to: `${spec.name} [${nextStyle}]`
+    });
+    delete next.reps;
+    delete next.projected;
+    delete next.projectedWeight;
+    delete next.projectedUnit;
+    delete next.repLadder;
+    delete next.progressionRule;
+  }
+  return next;
 }
 
 function routeExerciseIdentityKey(ex) {
@@ -13858,6 +14082,8 @@ async function trainingRoutes(req, res, url) {
 }
 
 trainingRoutes._private = {
+  routeApplyReplacement,
+  auditPlanIdentityIntegrity,
   buildOblueprintPlanWithFallback,
   coerceClassicBodybuildingToOblueprintPayload,
   deriveLiftHistoryAnchors,
