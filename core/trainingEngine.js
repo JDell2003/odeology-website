@@ -4798,6 +4798,48 @@ function generatePlan(input) {
   };
 }
 
+/* The key progression state is stored under. It has to be SEMANTIC and stable
+   across weeks, so it cannot be the per-exercise `id` (which encodes position:
+   1-1-0-1 in week 1 is 2-1-0-1 in week 2).
+
+   The legacy generator emitted `baseId`; the oblueprint generator - which builds
+   every plan in production - never has. That single mismatch is why this whole
+   module was inert: byBase stayed empty, so the loop below never ran and the
+   function returned its input unchanged. canonicalExerciseId is the oblueprint
+   equivalent, and its slug form ("barbell-curl", "back-squat") also satisfies
+   the substring heuristics in chooseIncrementLb, so increments stay correct. */
+function resolveProgressionKey(source) {
+  if (!source || typeof source !== 'object') return '';
+  return String(
+    source.baseId
+    || source.canonicalExerciseId
+    || source.exerciseId
+    || ''
+  ).trim();
+}
+
+/* Weeks are keyed by weekIndex. The legacy generator wrote `index`; stored plans
+   from before the Engine v2 migration still carry it, and those render read-only
+   rather than regenerating, so accept both on read. */
+function planWeekIndex(week) {
+  const next = Number(week?.weekIndex);
+  if (Number.isFinite(next)) return next;
+  const legacy = Number(week?.index);
+  return Number.isFinite(legacy) ? legacy : NaN;
+}
+
+/* A plan carries the working weight in TWO places: exercise.projected.value and
+   the flattened exercise.projectedWeight. The generator writes both; the live
+   layer historically wrote only projected.value, so once progression started
+   moving loads the two disagreed and which number a user saw depended on which
+   field the caller happened to read. Keep them in lockstep. */
+function syncProjectedWeight(ex) {
+  if (!ex || typeof ex !== 'object') return;
+  const value = Number(ex?.projected?.value);
+  if (!Number.isFinite(value) || value <= 0) return;
+  ex.projectedWeight = value;
+  ex.projectedUnit = ex?.projected?.unit || ex.projectedUnit || 'lb';
+}
 function applyLogAdjustments({ plan, workoutLog, experience }) {
   if (!plan || typeof plan !== 'object') return plan;
   const discipline = String(plan?.meta?.discipline || '').trim().toLowerCase();
@@ -4827,7 +4869,7 @@ function applyLogAdjustments({ plan, workoutLog, experience }) {
   const done = Array.isArray(workoutLog?.entries) ? workoutLog.entries : [];
   const byBase = new Map();
   for (const entry of done) {
-    const baseId = String(entry?.baseId || '').trim();
+    const baseId = resolveProgressionKey(entry);
     if (!baseId) continue;
     const actualW = Number(entry?.actual?.weight);
     const actualR = Number(entry?.actual?.reps);
@@ -4886,7 +4928,7 @@ function applyLogAdjustments({ plan, workoutLog, experience }) {
   for (const wk of updated.weeks || []) {
     for (const day of wk?.days || []) {
       for (const ex of day?.exercises || []) {
-        const baseId = String(ex?.baseId || '').trim();
+        const baseId = resolveProgressionKey(ex);
         if (!baseId || repRanges.has(baseId)) continue;
         const rr = parseRepRange(ex?.reps);
         if (rr) repRanges.set(baseId, rr);
@@ -4900,7 +4942,7 @@ function applyLogAdjustments({ plan, workoutLog, experience }) {
     for (const wk of updated.weeks || []) {
       for (const day of wk?.days || []) {
         for (const ex of day?.exercises || []) {
-          const baseId = String(ex?.baseId || '').trim();
+          const baseId = resolveProgressionKey(ex);
           if (!baseId || map.has(baseId)) continue;
           const tags = ex?.tags && typeof ex.tags === 'object' ? ex.tags : null;
           if (tags) map.set(baseId, tags);
@@ -4915,7 +4957,7 @@ function applyLogAdjustments({ plan, workoutLog, experience }) {
     for (const wk of updated.weeks || []) {
       for (const day of wk?.days || []) {
         for (const ex of day?.exercises || []) {
-          const baseId = String(ex?.baseId || '').trim();
+          const baseId = resolveProgressionKey(ex);
           if (!baseId) continue;
           const fromProg = Number(ex?.progression?.setsCap);
           const cap = Number.isFinite(fromProg) && fromProg > 0
@@ -4989,7 +5031,7 @@ function applyLogAdjustments({ plan, workoutLog, experience }) {
 
     const prescribedByBase = new Map();
     for (const ex of dayPlan?.exercises || []) {
-      const baseId = String(ex?.baseId || '').trim();
+      const baseId = resolveProgressionKey(ex);
       if (!baseId) continue;
       prescribedByBase.set(baseId, {
         reps: String(ex?.reps || '').trim(),
@@ -5004,7 +5046,7 @@ function applyLogAdjustments({ plan, workoutLog, experience }) {
     };
 
     for (const entry of done) {
-      const baseId = String(entry?.baseId || '').trim();
+      const baseId = resolveProgressionKey(entry);
       if (!baseId) continue;
       const pres = prescribedByBase.get(baseId) || null;
       const tags = pres?.tags || powerliftingTagByBase.get(baseId) || null;
@@ -5386,6 +5428,7 @@ function applyLogAdjustments({ plan, workoutLog, experience }) {
           if (!Number.isFinite(tm) || tm <= 0) continue;
           const capped = roundForLift(lift, tm * cap);
           if (Number.isFinite(capped) && capped > 0) ex.projected.value = capped;
+          syncProjectedWeight(ex);
         }
       }
 
@@ -5493,13 +5536,13 @@ function applyLogAdjustments({ plan, workoutLog, experience }) {
     for (const [baseId, st] of Object.entries(states)) projState[baseId] = JSON.parse(JSON.stringify(st));
 
     for (const week of updated.weeks || []) {
-      const wi = Number(week?.index);
+      const wi = planWeekIndex(week);
       if (!Number.isFinite(wi) || wi <= weekIndex) continue;
       const deload = deloadSet.has(wi);
 
       for (const day of week.days || []) {
         for (const ex of day.exercises || []) {
-          const baseId = String(ex?.baseId || '').trim();
+          const baseId = resolveProgressionKey(ex);
           if (!baseId) continue;
           if (!ex.projected || typeof ex.projected !== 'object') continue;
           if (ex.projected.unit !== 'lb') continue;
@@ -5532,9 +5575,11 @@ function applyLogAdjustments({ plan, workoutLog, experience }) {
               ? roundTo(deloadBaseWorking * 0.7, inc)
               : roundTo(baseWorking * 0.7, inc);
             ex.projected.value = Number.isFinite(nextDeloadWeight) ? nextDeloadWeight : ex.projected.value;
+            syncProjectedWeight(ex);
           } else {
             ex.sets = clampInt(Number(setsBase || ex.sets), 1, maxCap, ex.sets);
             ex.projected.value = roundTo(baseWorking, inc);
+            syncProjectedWeight(ex);
           }
         }
       }
@@ -5565,13 +5610,13 @@ function applyLogAdjustments({ plan, workoutLog, experience }) {
   // For non-bodybuilding plans, still apply deload multipliers to future weeks when scheduled.
   if (discipline !== 'bodybuilding' && deloadSet.size) {
     for (const week of updated.weeks || []) {
-      const wi = Number(week?.index);
+      const wi = planWeekIndex(week);
       if (!Number.isFinite(wi) || wi <= weekIndex) continue;
       const deload = deloadSet.has(wi);
       if (!deload) continue;
       for (const day of week.days || []) {
         for (const ex of day.exercises || []) {
-          const baseId = String(ex?.baseId || '').trim();
+          const baseId = resolveProgressionKey(ex);
           if (!baseId) continue;
           if (!ex.projected || typeof ex.projected !== 'object') continue;
           if (ex.projected.unit !== 'lb') continue;
@@ -5579,6 +5624,7 @@ function applyLogAdjustments({ plan, workoutLog, experience }) {
           const inc = chooseIncrementLb(exp, baseId, defaults, { discipline, elite: bbIsElite });
           ex.sets = clampInt(Math.round(Number(ex.sets || 0) * deloadPct.setMult), 1, 12, ex.sets);
           ex.projected.value = roundTo(Number(ex.projected.value) * deloadPct.loadMult, inc);
+          syncProjectedWeight(ex);
           ex.progression = ex.progression && typeof ex.progression === 'object' ? ex.progression : {};
           ex.progression.technique = 'none';
         }

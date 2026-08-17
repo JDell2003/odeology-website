@@ -3439,6 +3439,10 @@
       return {
         exerciseId: ex.exerciseId || ex.id,
         baseId: ex.baseId,
+        // The server keys progression state on a SEMANTIC id that is stable
+        // across weeks. Oblueprint plans have no baseId, so without this the
+        // whole live progression layer sees an empty entry set and no-ops.
+        canonicalExerciseId: ex.canonicalExerciseId,
         exerciseName: ex.displayName || ex.name || ex.baseId || ex.id || 'Exercise',
         prescribed: {
           sets: draftSetCount,

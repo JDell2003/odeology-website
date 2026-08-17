@@ -10700,7 +10700,7 @@ async function patchProjectedWeight({ userId, planId, weekIndex, dayIndex, exerc
   const row = planRow.rows?.[0];
   if (!row) return null;
   const plan = row.plan && typeof row.plan === 'object' ? row.plan : JSON.parse(String(row.plan || '{}'));
-  const week = (plan.weeks || []).find((w) => Number(w.index) === Number(weekIndex));
+  const week = (plan.weeks || []).find((w) => Number(w.weekIndex ?? w.index) === Number(weekIndex));
   if (!week) return null;
   const day = (week.days || [])[Number(dayIndex) - 1];
   if (!day) return null;
@@ -10745,7 +10745,7 @@ async function patchExerciseOverride({
   const row = planRow.rows?.[0];
   if (!row) return null;
   const plan = row.plan && typeof row.plan === 'object' ? row.plan : JSON.parse(String(row.plan || '{}'));
-  const week = (plan.weeks || []).find((w) => Number(w.index) === Number(weekIndex));
+  const week = (plan.weeks || []).find((w) => Number(w.weekIndex ?? w.index) === Number(weekIndex));
   if (!week) return null;
   const day = (week.days || [])[Number(dayIndex) - 1];
   if (!day) return null;
@@ -10758,6 +10758,8 @@ async function patchExerciseOverride({
     if (targetSlotId && String(entry?.slotId || '') === targetSlotId) return true;
     if (targetExerciseId && String(entry?.id || '') === targetExerciseId) return true;
     if (targetOldExerciseId && String(entry?.exerciseId || '') === targetOldExerciseId) return true;
+    // Oblueprint plans carry canonicalExerciseId, not exerciseId.
+    if (targetOldExerciseId && String(entry?.canonicalExerciseId || '') === targetOldExerciseId) return true;
     return false;
   });
   if (!ex) return null;
