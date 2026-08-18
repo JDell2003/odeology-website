@@ -194,8 +194,15 @@ test('P4 arm volume: 10-14 direct sets weekly across 3 exposures for biceps, tri
 /* --------------------------------------------------- 5. shoulder exclusion --- */
 
 test('P5 shoulder exclusion: no behind-neck, deep-stretch flye or upright row anywhere in the block', () => {
-  const BANNED = /behind[\s-]*(the[\s-]*)?neck|upright row|\bfly(e)?s?\b/i;
+  /* Deep-stretch PRESSING flyes only. A rear delt fly is short-range, light,
+     and is exactly the work a loose shoulder should be getting — the previous
+     /\bfly(e)?s?\b/ caught "Cable Rear Delt Fly" and called therapeutic work
+     contraindicated. The brief says "no deep-stretch dumbbell flyes", not
+     "no flyes". */
+  const BANNED = /behind[\s-]*(the[\s-]*)?neck|upright row|(dumbbell|incline|decline|flat|pec ?deck)[\s-]*(chest[\s-]*)?fly(e)?s?\b/i;
+  const REAR_DELT_OK = /rear[\s-]*delt|reverse[\s-]*fly|bent[\s-]*over/i;
   const hits = allExercises().filter(nameMatches(BANNED))
+    .filter((ex) => !REAR_DELT_OK.test(String(ex.name)))
     .map((ex) => `wk${ex.__wk} ${ex.__day} ${ex.name}`);
   assert.deepEqual(hits, [], `contraindicated for a loose shoulder:\n  ${hits.slice(0, 12).join('\n  ')}`);
 });
