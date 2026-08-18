@@ -761,7 +761,8 @@ export const exercises = [
     ],
     "movementTags": [
       "bilateral"
-    ]
+    ],
+    "excludeReason": "unstable-surface work is not a strength prescription"
   },
   {
     "name": "Ball Leg Curl",
@@ -1984,7 +1985,7 @@ export const exercises = [
       "free-exercise-db/exercises/Bench_Press_with_Chains/1.jpg"
     ],
     "equipment": [
-      "Barbell"
+      "Other"
     ],
     "difficulty": 4,
     "style": "Compound",
@@ -2690,7 +2691,8 @@ export const exercises = [
     "movementTags": [
       "bilateral",
       "supported"
-    ]
+    ],
+    "excludeReason": "unstable-surface work is not a strength prescription"
   },
   {
     "name": "Bottoms Up",
@@ -2801,7 +2803,7 @@ export const exercises = [
       "free-exercise-db/exercises/Box_Squat_with_Chains/1.jpg"
     ],
     "equipment": [
-      "Barbell"
+      "Other"
     ],
     "difficulty": 5,
     "style": "Compound",
@@ -3849,7 +3851,7 @@ export const exercises = [
       "free-exercise-db/exercises/Chain_Press/1.jpg"
     ],
     "equipment": [
-      "Barbell"
+      "Other"
     ],
     "difficulty": 3,
     "style": "Compound",
@@ -4841,7 +4843,7 @@ export const exercises = [
       "free-exercise-db/exercises/Deadlift_with_Chains/1.jpg"
     ],
     "equipment": [
-      "Barbell"
+      "Other"
     ],
     "difficulty": 5,
     "style": "Compound",
@@ -6850,7 +6852,7 @@ export const exercises = [
       "free-exercise-db/exercises/Floor_Press_with_Chains/1.jpg"
     ],
     "equipment": [
-      "Barbell"
+      "Other"
     ],
     "difficulty": 3,
     "style": "Compound",
@@ -12876,7 +12878,8 @@ export const exercises = [
     "movementTags": [
       "bilateral",
       "freeWeight"
-    ]
+    ],
+    "excludeReason": "behind-neck pressing loads the shoulder in external rotation at end range"
   },
   {
     "name": "Push Up to Side Plank",
@@ -16355,7 +16358,7 @@ export const exercises = [
       "free-exercise-db/exercises/Squat_with_Chains/1.jpg"
     ],
     "equipment": [
-      "Barbell"
+      "Other"
     ],
     "difficulty": 4,
     "style": "Compound",
@@ -16535,7 +16538,8 @@ export const exercises = [
     "movementTags": [
       "bilateral",
       "freeWeight"
-    ]
+    ],
+    "excludeReason": "behind-neck pressing loads the shoulder in external rotation at end range"
   },
   {
     "name": "Standing Bent-Over One-Arm Dumbbell Triceps Extension",
@@ -17806,7 +17810,7 @@ export const exercises = [
       "free-exercise-db/exercises/Sumo_Deadlift_with_Chains/1.jpg"
     ],
     "equipment": [
-      "Barbell"
+      "Other"
     ],
     "difficulty": 4,
     "style": "Compound",
@@ -19446,7 +19450,8 @@ export const exercises = [
     "movementTags": [
       "bilateral",
       "supported"
-    ]
+    ],
+    "excludeReason": "behind-neck pulling loads the shoulder in external rotation at end range"
   },
   {
     "name": "Wide-Grip Rear Pull-Up",
