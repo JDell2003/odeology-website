@@ -10,6 +10,7 @@ const jsonStore = require('./jsonStore');
 const trainerPages = require('./trainerPages');
 const { DbUnavailableError, isTransientPgError } = require('./dbErrors');
 const { generatePlan, applyLogAdjustments, normalizeExperience, assertBodybuildingPlanIntegrity, estimateExerciseMinutes } = require('./trainingEngine');
+const progressionPlanUpdate = require('../generator/progressionPlanUpdate');
 const { buildOblueprintPlan, preprocessExercises, normalizeUserInput, projectionFamilyForExercise } = require('../generator/trainingEngine.oblueprint');
 const { buildSafeFallbackPlan } = require('../generator/safeFallbackPlan');
 const militaryHybrid = require('../generator/militaryHybrid.oblueprint');
@@ -1857,6 +1858,18 @@ function buildOblueprintPlanWithFallback(payload, opts = {}) {
     // appended accessory without a prescription. Normalise first, then gate.
     if (result && !result.error && result.plan && !result._safeFallback) {
       routeNormalizePlanPrescriptions(result.plan);
+      // §2.3: replace the baked 16-week ladder with state. Week 1 keeps its
+      // anchor; every later week is simulated forward from advance() under a
+      // clean-sessions assumption and flagged progression.isProjection so the
+      // UI can say it is a projection rather than imply a prescription. The
+      // ladder climbed reps by week index regardless of what anyone lifted,
+      // which is the second writer §2.1 exists to remove.
+      try {
+        const states = progressionPlanUpdate.ensureStates(result.plan);
+        progressionPlanUpdate.reprojectForward(result.plan, states, 0);
+      } catch (err) {
+        console.error('[oblueprint] progression seeding failed', err?.message || err);
+      }
       try {
         enforcePlanIdentityIntegrity(result.plan);
       } catch (err) {
@@ -11130,11 +11143,19 @@ async function applyProgressionFromLog({ userId, planId, logPayload }) {
   const row = planRow.rows?.[0];
   if (!row) return null;
   const plan = row.plan && typeof row.plan === 'object' ? row.plan : JSON.parse(String(row.plan || '{}'));
-  const updatedPlan = applyLogAdjustments({
-    plan,
-    workoutLog: logPayload,
-    experience: plan?.meta?.experience
-  });
+  // §2.1: oblueprint plans - which is every plan generated in production -
+  // progress through carried state. applyLogAdjustments stays for legacy rows,
+  // where it re-derives rep targets from week 1 and disagrees with the ladder;
+  // that disagreement is the single-miss bug and it is not worth porting.
+  const usesCarriedState = String(plan?.meta?.version || '') === '2.0'
+    || Array.isArray(plan?.weeks) && Number.isFinite(Number(plan.weeks[0]?.weekIndex));
+  const updatedPlan = usesCarriedState
+    ? progressionPlanUpdate.applyLoggedSession(plan, logPayload)
+    : applyLogAdjustments({
+      plan,
+      workoutLog: logPayload,
+      experience: plan?.meta?.experience
+    });
   if (!updatedPlan) return null;
 
   // Feed the spider graph: a verified earned progression is a real Strength
