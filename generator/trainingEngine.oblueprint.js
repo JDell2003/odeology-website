@@ -6025,6 +6025,49 @@ function bodyweightFallbackAnchors(user) {
   };
 }
 
+/* §0.1 — layoff decay.
+
+   Strength does not sit still. Someone who last pulled 600 fifteen months ago
+   is not a 600 deadlifter today, and programming them as one is the difference
+   between a usable first month and an injury. Before this, a returning lifter
+   who reported a 600 deadlift was programmed off 600.
+
+   The multiplier is inverted from what the name suggests and that is
+   deliberate: a longer training history means a SLOWER loss, so 5y+ carries the
+   smallest decay rate. The floor at 55% is there because nobody detrains to
+   nothing — the movement pattern and the connective adaptation outlast the
+   peak. Two weeks is free; that is a deload, not a layoff. */
+const LAYOFF_DECAY_MULTIPLIER = { '<6m': 1.0, '6-24m': 0.85, '2-5y': 0.7, '5y+': 0.6 };
+const LAYOFF_RAMP_WEEKS_THRESHOLD = 8;
+const LAYOFF_RAMP_FACTOR = 0.70;
+const LAYOFF_RAMP_DURATION_WEEKS = 4;
+
+function decayAnchor(e1rm, weeksSince, experience) {
+  const value = Number(e1rm);
+  if (!Number.isFinite(value) || value <= 0) return value;
+  const weeks = Number(weeksSince);
+  if (!Number.isFinite(weeks) || weeks <= 2) return value;
+  const multiplier = LAYOFF_DECAY_MULTIPLIER[String(experience || '')] ?? 0.85;
+  const rate = 0.012 * multiplier;
+  return Math.max(value * Math.exp(-rate * (weeks - 2)), value * 0.55);
+}
+
+/* Weeks since this family was last trained heavy. Accepts either a week count
+   or a date, per family, and falls back to the whole-profile value. */
+function weeksSinceHeavyFor(user, family) {
+  const src = user?.lastTrainedHeavy;
+  const raw = (src && typeof src === 'object') ? (src[family] ?? src.all) : src;
+  if (raw == null || raw === '') return null;
+  const asNumber = Number(raw);
+  if (Number.isFinite(asNumber)) return Math.max(0, asNumber);
+  const asDate = Date.parse(String(raw));
+  if (!Number.isFinite(asDate)) return null;
+  const planNow = Number(user?.planNowMs);
+  const now = Number.isFinite(planNow) ? planNow : Date.parse(String(user?.planGeneratedAt || '')) || null;
+  if (!now) return null;
+  return Math.max(0, (now - asDate) / (7 * 24 * 3600 * 1000));
+}
+
 function anchorInputsForUser(user) {
   const explicitBench = Math.max(0, Number(user?.bench || 0));
   const explicitSquat = Math.max(0, Number(user?.squat || 0));
@@ -6054,9 +6097,38 @@ function anchorInputsForUser(user) {
   const historySquat = Math.max(0, Number(user?.liftHistoryAnchors?.squat1rm || 0));
   const historyDeadlift = Math.max(0, Number(user?.liftHistoryAnchors?.deadlift1rm || 0));
   const bodyweightFallback = bodyweightFallbackAnchors(user);
-  const bench = explicitBench || derivedBench || historyBench || bodyweightFallback.bench1rm;
-  const squat = explicitSquat || derivedSquat || historySquat || bodyweightFallback.squat1rm;
-  const deadlift = explicitDeadlift || derivedDeadlift || historyDeadlift || bodyweightFallback.deadlift1rm;
+  const rawBench = explicitBench || derivedBench || historyBench || bodyweightFallback.bench1rm;
+  const rawSquat = explicitSquat || derivedSquat || historySquat || bodyweightFallback.squat1rm;
+  const rawDeadlift = explicitDeadlift || derivedDeadlift || historyDeadlift || bodyweightFallback.deadlift1rm;
+
+  /* §0.1 — decay each family by how long since it was last trained heavy. The
+     bodyweight fallback is already a guess about someone training now, so it is
+     left alone; only a number the user actually reported gets decayed. */
+  const experience = String(user?.experience || '');
+  const layoff = {};
+  const decayFamily = (family, value, reported) => {
+    const weeks = weeksSinceHeavyFor(user, family);
+    if (!reported || weeks == null || weeks <= 2) return value;
+    const decayed = decayAnchor(value, weeks, experience);
+    layoff[family] = {
+      weeksSinceHeavy: Math.round(weeks),
+      reported: Math.round(value),
+      decayed: Math.round(decayed),
+      rampWeeks: weeks > LAYOFF_RAMP_WEEKS_THRESHOLD ? LAYOFF_RAMP_DURATION_WEEKS : 0,
+      rampFactor: weeks > LAYOFF_RAMP_WEEKS_THRESHOLD ? LAYOFF_RAMP_FACTOR : 1,
+      reason: weeks > LAYOFF_RAMP_WEEKS_THRESHOLD
+        ? `Last trained heavy about ${Math.round(weeks / 4.345)} months ago, so this starts from `
+          + `${Math.round(decayed)} rather than ${Math.round(value)}, and the first `
+          + `${LAYOFF_RAMP_DURATION_WEEKS} weeks sit near ${Math.round(LAYOFF_RAMP_FACTOR * 100)}% of that. `
+          + 'Connective tissue re-adapts slower than muscle and far slower than the nervous system, which '
+          + 'is why coming back feels fine in week one and hurts in week three.'
+        : `Last trained heavy about ${Math.round(weeks)} weeks ago, so this starts from ${Math.round(decayed)} rather than ${Math.round(value)}.`
+    };
+    return decayed;
+  };
+  const bench = decayFamily('bench', rawBench, Boolean(explicitBench || derivedBench || historyBench));
+  const squat = decayFamily('squat', rawSquat, Boolean(explicitSquat || derivedSquat || historySquat));
+  const deadlift = decayFamily('deadlift', rawDeadlift, Boolean(explicitDeadlift || derivedDeadlift || historyDeadlift));
   const explicitCount = [explicitBench, explicitSquat, explicitDeadlift].filter((value) => Number.isFinite(value) && value > 0).length;
   const workingCount = [derivedBench, derivedSquat, derivedDeadlift].filter((value) => Number.isFinite(value) && value > 0).length;
   const historyCount = [historyBench, historySquat, historyDeadlift].filter((value) => Number.isFinite(value) && value > 0).length;
@@ -6089,7 +6161,8 @@ function anchorInputsForUser(user) {
     bodyweightFallbackDeadlift: bodyweightFallback.deadlift1rm,
     bench1rm: bench > 0 ? bench : null,
     squat1rm: squat > 0 ? squat : null,
-    deadlift1rm: deadlift > 0 ? deadlift : null
+    deadlift1rm: deadlift > 0 ? deadlift : null,
+    layoff: Object.keys(layoff).length ? layoff : null
   };
 }
 
@@ -8021,6 +8094,11 @@ function materializePlanResult(user, schedule, safeWeeks, safeResult, targets, f
         weeklyTargets: targets,
         frequencyTargets,
         profile: user.profile,
+        // §0.1 — what the layoff did to each anchor, and why. This is on the
+        // plan rather than in a log because the user has to be told: a lifter
+        // who reported a 600 deadlift and is handed 250 deserves the reason,
+        // or they will simply load the bar to 600.
+        layoff: anchorInputsForUser(user).layoff,
         nutritionModel: buildNutritionModel(user),
         progressionModel: buildProgressionModel(user, targets, frequencyTargets),
         recoveryModel: buildRecoveryModel(user),

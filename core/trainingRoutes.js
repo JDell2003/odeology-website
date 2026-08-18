@@ -991,6 +991,13 @@ function normalizeOblueprintPayload(payload, { relax = false } = {}) {
     bench: Number.isFinite(Number(src.bench)) ? Number(src.bench) : null,
     squat: Number.isFinite(Number(src.squat)) ? Number(src.squat) : null,
     deadlift: Number.isFinite(Number(src.deadlift)) ? Number(src.deadlift) : null,
+    /* §0.1 — weeks (or a date) since each family was last trained heavy, keyed
+       bench/squat/deadlift, or `all`. This is a whitelist, so a field the bridge
+       emits but that is not named here is silently dropped. Absent means
+       "training it now", i.e. today's behaviour exactly. */
+    lastTrainedHeavy: (src.lastTrainedHeavy && typeof src.lastTrainedHeavy === 'object')
+      ? src.lastTrainedHeavy
+      : (src.lastTrainedHeavy != null ? { all: src.lastTrainedHeavy } : null),
     benchVariation: String(src.benchVariation || '').trim() || null,
     benchWeight: Number.isFinite(Number(src.benchWeight)) ? Number(src.benchWeight) : null,
     benchReps: Number.isFinite(Number(src.benchReps)) ? Number(src.benchReps) : null,
@@ -2123,6 +2130,10 @@ function coerceClassicBodybuildingToOblueprintPayload(payload) {
     bench: Number(src?.bench || strength?.bench || 0) || null,
     squat: Number(src?.squat || strength?.squat || 0) || null,
     deadlift: Number(src?.deadlift || strength?.deadlift || 0) || null,
+    /* §0.1 — weeks (or a date) since each family was last trained heavy. Absent
+       means "training it now", which is today's behaviour exactly, so this is
+       inert for every existing profile. */
+    lastTrainedHeavy: (src?.lastTrainedHeavy || strength?.lastTrainedHeavy) || null,
     benchVariation: String(strength?.benchVariation || '').trim() || null,
     benchWeight: Number(strength?.benchWeight || 0) || null,
     benchReps: Number(strength?.benchReps || 0) || null,

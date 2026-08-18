@@ -65,8 +65,13 @@ function buildPlan(overrides = {}) {
     equipmentAccess: JASON.equipment,
     emphasis: overrides.emphasis || JASON.priorityMuscles.map((m) => m.toLowerCase()),
     unavailableDays: ['sun'], equipmentStylePref: 'mix',
+    // 15 months since the last heavy squat/deadlift; bench and press are current.
+    lastTrainedHeavy: { squat: 65, deadlift: 65 },
     strength: {
-      phase: 'maintain', trainingAgeBucket: '2_5y', timePerSession: '75_90', equipmentStylePref: 'mix',
+      // '5_plus' is the real bucket key. '2_5y' is not recognised and falls
+      // through to a silent '6-24m' default, which had Jason programmed as a
+      // 6-to-24-month lifter.
+      phase: 'maintain', trainingAgeBucket: '5_plus', timePerSession: '75_90', equipmentStylePref: 'mix',
       injury: { has: true, joints: ['Shoulder'], note: JASON.injury.note },
       injurySeverityByJoint: { Shoulder: { severity: 4, recency: 'Recent' } },
       bench: JASON.lifts.bench.weight, squat: JASON.lifts.squat.weight, deadlift: JASON.lifts.deadlift.weight
@@ -136,19 +141,24 @@ test('P1 frequency: bench 3x, squat 2x, deadlift 1 heavy + 1 light, run 3x, ruck
 /* ------------------------------------------------------------- 2. layoff --- */
 
 test('P2 layoff: squat starts 185-225 and deadlift 225-275, with the reason stated', () => {
-  const start = (rx) => {
-    const ex = week1Exercises().find(nameMatches(rx));
+  const start = (rx, exclude) => {
+    const ex = week1Exercises()
+      .filter(nameMatches(rx))
+      .filter((e) => !exclude || !exclude.test(String(e.name)))
+      .sort((a, b) => Number(b.projected?.value || 0) - Number(a.projected?.value || 0))[0];
     return ex ? Number(ex.projected?.value ?? ex.projectedWeight ?? 0) : null;
   };
-  const squat = start(/back squat|barbell squat|^squat/i);
+  // Any bilateral loaded squat counts as "the squat" — the engine may pick a
+  // Smith or hack variant. Split squats and wall sits are not the main lift.
+  const squat = start(/squat/i, /split|wall|bulgarian|shrimp|goblet/i);
   const dead = start(/deadlift/i);
   const problems = [];
   if (squat === null) problems.push('no squat found in week 1');
   else if (!(squat >= 185 && squat <= 225)) problems.push(`squat starts at ${squat}, expected 185-225 after a 15-month layoff (prior best 405)`);
   if (dead === null) problems.push('no deadlift found in week 1');
   else if (!(dead >= 225 && dead <= 275)) problems.push(`deadlift starts at ${dead}, expected 225-275 after a 15-month layoff (prior best 600)`);
-  const reason = JSON.stringify(PLAN.meta?.decayNotes || PLAN.meta?.anchorNotes || '');
-  if (!/layoff|decay|last trained|detrain/i.test(reason)) problems.push('no stated reason for the reduced start (needs decayAnchor + lastTrainedHeavyAt)');
+  const reason = JSON.stringify(PLAN.meta?.layoff || '');
+  if (!/last trained heavy/i.test(reason)) problems.push('no stated reason for the reduced start (needs decayAnchor + lastTrainedHeavyAt)');
   assert.deepEqual(problems, [], `layoff not respected:\n  ${problems.join('\n  ')}`);
 });
 
