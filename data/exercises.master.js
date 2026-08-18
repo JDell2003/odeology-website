@@ -14,7 +14,7 @@ export const exercises = [
       "free-exercise-db/exercises/3_4_Sit-Up/1.jpg"
     ],
     "equipment": [
-      "Barbell"
+      "Bodyweight"
     ],
     "difficulty": 2,
     "style": "Compound",
@@ -545,7 +545,7 @@ export const exercises = [
       "free-exercise-db/exercises/Hyperextensions_Back_Extensions/1.jpg"
     ],
     "equipment": [
-      "Bodyweight"
+      "Other"
     ],
     "difficulty": 2,
     "style": "Isolation",
@@ -690,7 +690,7 @@ export const exercises = [
       "free-exercise-db/exercises/Backward_Drag/1.jpg"
     ],
     "equipment": [
-      "Bodyweight"
+      "Sled"
     ],
     "difficulty": 2,
     "style": "Compound",
@@ -751,7 +751,7 @@ export const exercises = [
       "free-exercise-db/exercises/Balance_Board/1.jpg"
     ],
     "equipment": [
-      "Bodyweight"
+      "Other"
     ],
     "difficulty": 2,
     "style": "Compound",
@@ -1726,7 +1726,7 @@ export const exercises = [
       "free-exercise-db/exercises/Battling_Ropes/1.jpg"
     ],
     "equipment": [
-      "Cable"
+      "Other"
     ],
     "difficulty": 2,
     "style": "Cardio",
@@ -2372,7 +2372,7 @@ export const exercises = [
       "free-exercise-db/exercises/Bicycling/1.jpg"
     ],
     "equipment": [
-      "Bodyweight"
+      "Other"
     ],
     "difficulty": 2,
     "style": "Cardio",
@@ -2536,7 +2536,7 @@ export const exercises = [
       "free-exercise-db/exercises/Bodyweight_Flyes/1.jpg"
     ],
     "equipment": [
-      "Bodyweight"
+      "Barbell"
     ],
     "difficulty": 3,
     "style": "Isolation",
@@ -2694,28 +2694,32 @@ export const exercises = [
   },
   {
     "name": "Bottoms Up",
-    "primary": "Shoulders",
-    "sub": "Stability",
-    "pattern": "VerticalPush",
+    "primary": "Core",
+    "sub": "Lower",
+    "pattern": "CoreFlexion",
     "spine": 2,
-    "knee": 0,
-    "hip": 0,
-    "shoulder": 2,
-    "elbow": 1,
+    "knee": 1,
+    "hip": 2,
+    "shoulder": 0,
+    "elbow": 0,
     "images": [
       "free-exercise-db/exercises/Bottoms_Up/0.jpg",
       "free-exercise-db/exercises/Bottoms_Up/1.jpg"
     ],
     "equipment": [
-      "Kettlebell"
+      "Bodyweight"
     ],
     "difficulty": 2,
-    "style": "Compound",
+    "style": "Isolation",
     "secondaryMuscles": [
-      "Triceps"
+      "Abs",
+      "HipFlexors"
     ],
     "movementTags": [
       "bilateral"
+    ],
+    "requiredEquipment": [
+      "bodyweight"
     ]
   },
   {
@@ -4410,7 +4414,7 @@ export const exercises = [
       "free-exercise-db/exercises/Conans_Wheel/1.jpg"
     ],
     "equipment": [
-      "Bodyweight"
+      "Other"
     ],
     "difficulty": 3,
     "style": "Compound",
@@ -4550,7 +4554,7 @@ export const exercises = [
       "free-exercise-db/exercises/Crucifix/1.jpg"
     ],
     "equipment": [
-      "Bodyweight"
+      "Dumbbell"
     ],
     "difficulty": 2,
     "style": "Isolation",
@@ -5296,13 +5300,42 @@ export const exercises = [
       "free-exercise-db/exercises/Donkey_Calf_Raises/1.jpg"
     ],
     "equipment": [
-      "Bodyweight"
+      "Machine"
     ],
     "difficulty": 2,
     "style": "Isolation",
     "secondaryMuscles": [],
     "movementTags": [
       "bilateral"
+    ]
+  },
+  {
+    "name": "Doorway Row",
+    "primary": "Back",
+    "sub": "Lats-Thickness",
+    "pattern": "HorizontalPull",
+    "spine": 1,
+    "knee": 1,
+    "hip": 1,
+    "shoulder": 1,
+    "elbow": 2,
+    "images": [],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 1,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Lats",
+      "Biceps",
+      "MidBack",
+      "RearDelts"
+    ],
+    "movementTags": [
+      "bilateral"
+    ],
+    "requiredEquipment": [
+      "bodyweight"
     ]
   },
   {
@@ -5405,7 +5438,7 @@ export const exercises = [
       "free-exercise-db/exercises/Drop_Push/1.jpg"
     ],
     "equipment": [
-      "Bodyweight"
+      "Other"
     ],
     "difficulty": 3,
     "style": "Compound",
@@ -6874,7 +6907,7 @@ export const exercises = [
       "free-exercise-db/exercises/Forward_Drag_with_Press/1.jpg"
     ],
     "equipment": [
-      "Bodyweight"
+      "Sled"
     ],
     "difficulty": 3,
     "style": "Compound",
@@ -7727,7 +7760,7 @@ export const exercises = [
       "free-exercise-db/exercises/Heavy_Bag_Thrust/1.jpg"
     ],
     "equipment": [
-      "Bodyweight"
+      "Other"
     ],
     "difficulty": 3,
     "style": "Skill",
@@ -7892,7 +7925,7 @@ export const exercises = [
       "free-exercise-db/exercises/Hyperextensions_Back_Extensions/1.jpg"
     ],
     "equipment": [
-      "Bodyweight"
+      "Other"
     ],
     "difficulty": 2,
     "style": "Isolation",
@@ -8485,7 +8518,7 @@ export const exercises = [
       "free-exercise-db/exercises/Inverted_Row_with_Straps/1.jpg"
     ],
     "equipment": [
-      "Bodyweight"
+      "Other"
     ],
     "difficulty": 2,
     "style": "Compound",
@@ -8740,6 +8773,34 @@ export const exercises = [
       "bilateral",
       "supported",
       "machineStable"
+    ]
+  },
+  {
+    "name": "Jumping Pull-Up",
+    "primary": "Back",
+    "sub": "Lats-Width",
+    "pattern": "VerticalPull",
+    "spine": 1,
+    "knee": 1,
+    "hip": 1,
+    "shoulder": 2,
+    "elbow": 2,
+    "images": [],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 1,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Lats",
+      "Biceps",
+      "MidBack"
+    ],
+    "movementTags": [
+      "bilateral"
+    ],
+    "requiredEquipment": [
+      "bodyweight"
     ]
   },
   {
@@ -9868,7 +9929,7 @@ export const exercises = [
       "free-exercise-db/exercises/London_Bridges/1.jpg"
     ],
     "equipment": [
-      "Bodyweight"
+      "Other"
     ],
     "difficulty": 3,
     "style": "Compound",
@@ -10438,7 +10499,7 @@ export const exercises = [
       "free-exercise-db/exercises/Lying_Triceps_Press/1.jpg"
     ],
     "equipment": [
-      "Bodyweight"
+      "Barbell"
     ],
     "difficulty": 3,
     "style": "Isolation",
@@ -11837,7 +11898,7 @@ export const exercises = [
       "free-exercise-db/exercises/Otis-Up/1.jpg"
     ],
     "equipment": [
-      "Bodyweight"
+      "Barbell"
     ],
     "difficulty": 2,
     "style": "Compound",
@@ -12455,7 +12516,7 @@ export const exercises = [
       "free-exercise-db/exercises/Platform_Hamstring_Slides/1.jpg"
     ],
     "equipment": [
-      "Bodyweight"
+      "Other"
     ],
     "difficulty": 2,
     "style": "Isolation",
@@ -13798,7 +13859,7 @@ export const exercises = [
       "free-exercise-db/exercises/Ring_Dips/1.jpg"
     ],
     "equipment": [
-      "Bodyweight"
+      "Other"
     ],
     "difficulty": 4,
     "style": "Compound",
@@ -13940,7 +14001,7 @@ export const exercises = [
       "free-exercise-db/exercises/Rope_Climb/1.jpg"
     ],
     "equipment": [
-      "Cable"
+      "Other"
     ],
     "difficulty": 4,
     "style": "Compound",
@@ -14004,7 +14065,7 @@ export const exercises = [
       "free-exercise-db/exercises/Rope_Jumping/1.jpg"
     ],
     "equipment": [
-      "Cable"
+      "Other"
     ],
     "difficulty": 3,
     "style": "Cardio",
@@ -14666,7 +14727,7 @@ export const exercises = [
       "free-exercise-db/exercises/Seated_Head_Harness_Neck_Resistance/1.jpg"
     ],
     "equipment": [
-      "Bodyweight"
+      "Other"
     ],
     "difficulty": 2,
     "style": "Isolation",
@@ -15491,7 +15552,7 @@ export const exercises = [
       "free-exercise-db/exercises/Skating/1.jpg"
     ],
     "equipment": [
-      "Bodyweight"
+      "Other"
     ],
     "difficulty": 3,
     "style": "Cardio",
@@ -16207,7 +16268,7 @@ export const exercises = [
       "free-exercise-db/exercises/Spider_Curl/1.jpg"
     ],
     "equipment": [
-      "Bodyweight"
+      "Barbell"
     ],
     "difficulty": 2,
     "style": "Isolation",
@@ -17864,7 +17925,7 @@ export const exercises = [
       "free-exercise-db/exercises/Suspended_Fallout/1.jpg"
     ],
     "equipment": [
-      "Bodyweight"
+      "Other"
     ],
     "difficulty": 3,
     "style": "Isolation",
@@ -17896,7 +17957,7 @@ export const exercises = [
       "free-exercise-db/exercises/Suspended_Push-Up/1.jpg"
     ],
     "equipment": [
-      "Bodyweight"
+      "Other"
     ],
     "difficulty": 3,
     "style": "Compound",
@@ -17924,7 +17985,7 @@ export const exercises = [
       "free-exercise-db/exercises/Suspended_Reverse_Crunch/1.jpg"
     ],
     "equipment": [
-      "Bodyweight"
+      "Other"
     ],
     "difficulty": 2,
     "style": "Isolation",
@@ -17950,7 +18011,7 @@ export const exercises = [
       "free-exercise-db/exercises/Suspended_Row/1.jpg"
     ],
     "equipment": [
-      "Bodyweight"
+      "Other"
     ],
     "difficulty": 2,
     "style": "Compound",
@@ -17979,7 +18040,7 @@ export const exercises = [
       "free-exercise-db/exercises/Suspended_Split_Squat/1.jpg"
     ],
     "equipment": [
-      "Bodyweight"
+      "Other"
     ],
     "difficulty": 4,
     "style": "Compound",
@@ -18009,7 +18070,7 @@ export const exercises = [
       "free-exercise-db/exercises/Svend_Press/1.jpg"
     ],
     "equipment": [
-      "Bodyweight"
+      "Barbell"
     ],
     "difficulty": 2,
     "style": "Isolation",
@@ -18051,6 +18112,35 @@ export const exercises = [
     "movementTags": [
       "bilateral",
       "freeWeight"
+    ]
+  },
+  {
+    "name": "Table Inverted Row",
+    "primary": "Back",
+    "sub": "Lats-Thickness",
+    "pattern": "HorizontalPull",
+    "spine": 1,
+    "knee": 0,
+    "hip": 0,
+    "shoulder": 1,
+    "elbow": 2,
+    "images": [],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 2,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Lats",
+      "Biceps",
+      "MidBack",
+      "RearDelts"
+    ],
+    "movementTags": [
+      "bilateral"
+    ],
+    "requiredEquipment": [
+      "bodyweight"
     ]
   },
   {
@@ -18146,6 +18236,35 @@ export const exercises = [
     "supportType": "machine_supported",
     "overloadFriendliness": "medium",
     "fatigueClass": "low"
+  },
+  {
+    "name": "Towel Door Row",
+    "primary": "Back",
+    "sub": "Lats-Thickness",
+    "pattern": "HorizontalPull",
+    "spine": 1,
+    "knee": 1,
+    "hip": 1,
+    "shoulder": 1,
+    "elbow": 2,
+    "images": [],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 1,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Lats",
+      "Biceps",
+      "Forearms",
+      "MidBack"
+    ],
+    "movementTags": [
+      "bilateral"
+    ],
+    "requiredEquipment": [
+      "bodyweight"
+    ]
   },
   {
     "name": "Trail Running/Walking",
@@ -18856,7 +18975,7 @@ export const exercises = [
       "free-exercise-db/exercises/Weighted_Bench_Dip/1.jpg"
     ],
     "equipment": [
-      "Bodyweight"
+      "Dumbbell"
     ],
     "difficulty": 4,
     "style": "Compound",
@@ -18912,7 +19031,7 @@ export const exercises = [
       "free-exercise-db/exercises/Dips_-_Chest_Version/1.jpg"
     ],
     "equipment": [
-      "Bodyweight"
+      "Barbell"
     ],
     "difficulty": 4,
     "style": "Compound",
@@ -18966,7 +19085,7 @@ export const exercises = [
       "free-exercise-db/exercises/Weighted_Pull_Ups/1.jpg"
     ],
     "equipment": [
-      "Bodyweight"
+      "Barbell"
     ],
     "difficulty": 4,
     "style": "Compound",
@@ -19108,7 +19227,7 @@ export const exercises = [
       "free-exercise-db/exercises/Weighted_Squat/1.jpg"
     ],
     "equipment": [
-      "Bodyweight"
+      "Barbell"
     ],
     "difficulty": 4,
     "style": "Compound",
@@ -19401,7 +19520,7 @@ export const exercises = [
       "free-exercise-db/exercises/Wrist_Roller/1.jpg"
     ],
     "equipment": [
-      "Bodyweight"
+      "Other"
     ],
     "difficulty": 2,
     "style": "Isolation",
