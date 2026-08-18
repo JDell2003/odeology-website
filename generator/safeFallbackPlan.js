@@ -51,13 +51,47 @@ const NAME_CONTRA = {
 // logged joint — never the whole pattern (substitutes remain).
 function isInjurySafe(ex, injuryMap) {
   const m = injuryMap || {};
-  const sev = (joint) => Number(m[joint] || m[String(joint).toLowerCase()] || 0);
-  if (sev('lower back') >= 4 && (ex.axialLoadHigh || (ex.hingeLoadingHigh && !ex.controlledHingeAllowed))) return false;
-  if (sev('knee') >= 4 && (ex.forwardKneeTravelHigh || ex.deepKneeFlexionHigh)) return false;
-  if (sev('shoulder') >= 4 && ex.shoulderOverhead) return false;
-  if (sev('hip') >= 4 && ex.deepHipFlexionHigh) return false;
-  if (sev('elbow') >= 4 && ex.elbowSupinationStress) return false;
-  if (sev('wrist') >= 4 && ex.wristExtensionHeavy) return false;
+  // The nine risk flags live on canonicalTruth, not on the pool object this is
+  // handed. Reading them off `ex` returned undefined for all 549 pooled
+  // exercises, so this entire screen was inert for EVERY joint - the safe
+  // fallback was equipment-honest and injury-blind. Two vocabularies for one
+  // concept again: the exercise, and its truth.
+  const t = (ex && ex.canonicalTruth) ? ex.canonicalTruth : (ex || {});
+  // The engine screens on graded joint stress; mirror that here so a severe
+  // joint is protected even when a flag is absent.
+  const stress = (joint) => Number((ex && ex[joint]) || 0);
+  // The engine keys injuryMap by JOINT (INJURY_JOINT_MAP: Back -> spine), while
+  // this file asks for anatomical names like "lower back". That mismatch meant a
+  // severity-9 back never matched anything here and Back Squat kept shipping.
+  const JOINT_ALIASES = {
+    'lower back': ['spine', 'lower back', 'back'],
+    back: ['spine', 'back', 'lower back'],
+    spine: ['spine', 'back', 'lower back'],
+    knee: ['knee'],
+    hip: ['hip'],
+    shoulder: ['shoulder'],
+    elbow: ['elbow'],
+    wrist: ['wrist', 'Wrist', 'elbow'],
+    ankle: ['ankle']
+  };
+  const sev = (joint) => {
+    const key = String(joint).toLowerCase();
+    const keys = JOINT_ALIASES[key] || [key];
+    let worst = 0;
+    for (const k of keys) worst = Math.max(worst, Number(m[k] || m[String(k).toLowerCase()] || 0));
+    return worst;
+  };
+  if (sev('lower back') >= 4 && (t.axialLoadHigh || (t.hingeLoadingHigh && !t.controlledHingeAllowed))) return false;
+  if (sev('knee') >= 4 && (t.forwardKneeTravelHigh || t.deepKneeFlexionHigh)) return false;
+  if (sev('shoulder') >= 4 && t.shoulderOverhead) return false;
+  if (sev('hip') >= 4 && t.deepHipFlexionHigh) return false;
+  if (sev('elbow') >= 4 && t.elbowSupinationStress) return false;
+  if (sev('wrist') >= 4 && t.wristExtensionHeavy) return false;
+  // Graded stress backstop, matching evaluateJoint in the main selector:
+  // severity >= 7 rejects max stress, >= 5 rejects it too at this tier.
+  for (const [joint, key] of [['lower back', 'spine'], ['back', 'spine'], ['knee', 'knee'], ['hip', 'hip'], ['shoulder', 'shoulder'], ['elbow', 'elbow'], ['wrist', 'elbow']]) {
+    if (sev(joint) >= 5 && stress(key) >= 3) return false;
+  }
   const name = String(ex.name || ex.displayName || '');
   for (const joint of Object.keys(NAME_CONTRA)) {
     if (sev(joint) >= 1) for (const re of NAME_CONTRA[joint]) if (re.test(name)) return false;

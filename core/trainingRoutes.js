@@ -11,7 +11,7 @@ const trainerPages = require('./trainerPages');
 const { DbUnavailableError, isTransientPgError } = require('./dbErrors');
 const { generatePlan, applyLogAdjustments, normalizeExperience, assertBodybuildingPlanIntegrity, estimateExerciseMinutes } = require('./trainingEngine');
 const progressionPlanUpdate = require('../generator/progressionPlanUpdate');
-const { buildOblueprintPlan, preprocessExercises, normalizeUserInput, projectionFamilyForExercise } = require('../generator/trainingEngine.oblueprint');
+const { buildOblueprintPlan, preprocessExercises, normalizeUserInput, projectionFamilyForExercise, normalizeEquipmentTags } = require('../generator/trainingEngine.oblueprint');
 const { buildSafeFallbackPlan } = require('../generator/safeFallbackPlan');
 const militaryHybrid = require('../generator/militaryHybrid.oblueprint');
 const { resolveWorkoutExercises } = require('./exerciseResolver');
@@ -1014,18 +1014,28 @@ function normalizeOblueprintPayload(payload, { relax = false } = {}) {
   };
 
   if (relax) {
-    if (trainingFeel === 'Powerbuilding' || trainingFeel === 'Military Hybrid') {
-      normalized.trainingStyle = 'Balanced mix';
-      normalized.closeToFailure = 'No';
-    } else {
-      normalized.location = 'Commercial gym';
-      normalized.trainingStyle = 'Balanced mix';
-      normalized.movementsToAvoid = [];
-      normalized.painAreas = [];
-      normalized.painProfilesByArea = {};
+    // RELAX PREFERENCES. NEVER RELAX CAPABILITIES OR SAFETY.
+    //
+    // This branch used to also clear equipmentAccess, location, painAreas,
+    // painProfilesByArea and movementsToAvoid for the bodybuilding lane. Every
+    // live call site passes fastBuild:true, which allows a single strict
+    // attempt, so in production ~100% of users who are not at a full
+    // five-tool commercial gym had their equipment silently replaced with a
+    // full gym: 89% of prescribed slots required kit they never said they had.
+    // Two thirds of injury-carrying profiles relaxed, and ~90% of those plans
+    // then contained a movement the user’s own injury screen rejects. A
+    // bodyweight-only healthy user and a full-gym user with a severity-9 back
+    // injury received byte-identical plans.
+    //
+    // A preference can be overridden to get a plan built. A capability cannot -
+    // the user either owns a barbell or does not - and a contraindication must
+    // never be. If the constraints genuinely admit no plan, that is a refusal
+    // to surface, not a constraint to delete.
+    normalized.trainingStyle = 'Balanced mix';
+    normalized.closeToFailure = 'No';
+    if (trainingFeel !== 'Powerbuilding' && trainingFeel !== 'Military Hybrid') {
+      // Weekday placement is a scheduling preference, not a capability.
       normalized.preferredDays = [];
-      normalized.equipmentAccess = [];
-      normalized.closeToFailure = 'No';
     }
   }
 
@@ -1261,6 +1271,66 @@ function auditLoggedEntryIdentity(entries) {
   }
   return problems;
 }
+/* §4.0.4 — a plan the user physically cannot perform is not a plan.
+
+   Every other finding in this effort produced a plan that was suboptimal. The
+   relaxed-fallback discard produced plans that were impossible: 89% of
+   prescribed slots required equipment the user never claimed, and ~90% of
+   relaxed injury-carrying plans contained a movement their own screen rejects.
+   Selection enforces both; the repair and fallback chains did not. This is the
+   backstop for every path that inserts an exercise after selection.
+
+   `src` is the ORIGINAL request, not the possibly-rewritten payload — checking
+   against plan.meta.allowedEquipment would compare the relaxation to itself. */
+function auditPlanFeasibility(plan, src) {
+  const problems = [];
+  const requested = normalizeEquipmentTags(Array.isArray(src?.equipmentAccess) ? src.equipmentAccess : []);
+  // No declared equipment means "assume the default for the location", which
+  // normalizeUserInput already resolved — nothing to check against.
+  // Bodyweight is never unavailable - you always have your own body - so it is
+  // implicit in every equipment set. Without this a full-gym user trips on
+  // "Ab Crunch Machine needs [bodyweight]".
+  const allowed = requested.length ? new Set([...requested, 'bodyweight']) : null;
+  const painAreas = Array.isArray(src?.painAreas) ? src.painAreas : [];
+  const severities = new Map();
+  for (const area of painAreas) {
+    const raw = src?.painProfilesByArea?.[area];
+    const severity = Number(raw?.severity);
+    if (Number.isFinite(severity)) severities.set(String(area).toLowerCase(), severity);
+  }
+  const seen = new Set();
+  for (const week of Array.isArray(plan?.weeks) ? plan.weeks : []) {
+    for (const day of Array.isArray(week?.days) ? week.days : []) {
+      for (const ex of Array.isArray(day?.exercises) ? day.exercises : []) {
+        const label = `wk${week?.weekIndex} ${day?.dayType} "${ex?.name}"`;
+        if (allowed) {
+          const required = normalizeEquipmentTags(Array.isArray(ex?.requiredEquipment) ? ex.requiredEquipment : []);
+          const missing = required.filter((token) => !allowed.has(token));
+          if (missing.length && !seen.has(`e:${ex?.name}`)) {
+            seen.add(`e:${ex?.name}`);
+            problems.push(`${label}: needs [${missing.join(", ")}], user has [${[...allowed].join(", ")}]`);
+          }
+        }
+        const truth = ex?.canonicalTruth || null;
+        for (const [area, severity] of severities.entries()) {
+          if (severity < 7) continue;
+          const joint = area === "back" ? "spine" : area === "wrist" ? "elbow" : area;
+          const stress = Number(ex?.[joint] || 0);
+          if (stress >= 3 && !seen.has(`i:${ex?.name}:${area}`)) {
+            seen.add(`i:${ex?.name}:${area}`);
+            problems.push(`${label}: max ${joint} stress with a severity-${severity} ${area}`);
+          }
+          if (area === "shoulder" && truth?.shoulderOverhead && !seen.has(`o:${ex?.name}`)) {
+            seen.add(`o:${ex?.name}`);
+            problems.push(`${label}: overhead loading with a severity-${severity} shoulder`);
+          }
+        }
+      }
+    }
+  }
+  return problems;
+}
+
 function auditPlanIdentityIntegrity(plan) {
   const problems = [];
   const seenIds = new Set();
@@ -1310,8 +1380,8 @@ function auditPlanIdentityIntegrity(plan) {
   return problems;
 }
 
-function enforcePlanIdentityIntegrity(plan) {
-  const problems = auditPlanIdentityIntegrity(plan);
+function enforcePlanIdentityIntegrity(plan, src) {
+  const problems = auditPlanIdentityIntegrity(plan).concat(auditPlanFeasibility(plan, src));
   if (!problems.length) return 0;
   const inProduction = String(process.env.NODE_ENV || '').toLowerCase() === 'production';
   const summary = problems.slice(0, 12).join('; ');
@@ -1369,6 +1439,7 @@ function makeSafeFallbackResult(src, lastError) {
 
 function buildOblueprintPlanWithFallback(payload, opts = {}) {
   const src = payload && typeof payload === 'object' ? payload : {};
+  routeSetActiveEquipment(src);
   const buildStartedAt = Date.now();
   const seedBase = Number(src?.planSeed);
   const baseSeed = Number.isFinite(seedBase) ? Math.floor(seedBase) : Date.now();
@@ -1871,7 +1942,7 @@ function buildOblueprintPlanWithFallback(payload, opts = {}) {
         console.error('[oblueprint] progression seeding failed', err?.message || err);
       }
       try {
-        enforcePlanIdentityIntegrity(result.plan);
+        enforcePlanIdentityIntegrity(result.plan, src);
       } catch (err) {
         // Development: surface it. A plan that misdescribes its own movements
         // corrupts load, reps, projection family and progression correlation at
@@ -1902,7 +1973,17 @@ function buildOblueprintPlanWithFallback(payload, opts = {}) {
   }
 
   const relaxedPayload = normalizeOblueprintPayload(src, { relax: true });
-  const relaxedBuild = tryBuildSeries(relaxedPayload, relaxedAttempts);
+  // Relaxation now only loosens PREFERENCES, so it cannot rescue a build that
+  // failed for want of equipment - you cannot relax your way into owning a
+  // barbell. Running the relaxed series anyway burned all ten attempts before
+  // reaching the floor and made a barbell-only build 8x slower than a full-gym
+  // one (3525ms vs 429ms). When the strict series died on NO_ELIGIBLE_EXERCISE
+  // and the user is equipment-constrained, go straight to the floor.
+  const strictDiedOnEligibility = String(lastError?.error || lastError?.code || "") === "NO_ELIGIBLE_EXERCISE";
+  const equipmentConstrained = Boolean(ROUTE_ACTIVE_EQUIPMENT && ROUTE_ACTIVE_EQUIPMENT.size < 5);
+  const relaxedBuild = (strictDiedOnEligibility && equipmentConstrained)
+    ? null
+    : tryBuildSeries(relaxedPayload, relaxedAttempts);
   if (relaxedBuild) return finish({ ...relaxedBuild, usedPayload: { ...relaxedBuild.usedPayload, _relaxedFallback: true } });
   if (lastPlan) return finish({ plan: lastPlan, usedPayload: lastPayload });
   // The floor (Task 5): never surface a failure to a user. If the builder can't
@@ -3123,29 +3204,36 @@ function routePickReplacement(key, dayExercises) {
 }
 
 function routePickReplacementMatching(key, dayExercises, acceptFn) {
+  // A spec the user cannot perform is not a candidate, whatever else it fixes.
+  const equipmentOk = (spec) => routeEquipmentAllows(routeExerciseRowByName(spec && spec.name));
   const list = Array.isArray(ROUTE_REPLACEMENT_MAP[key]) ? ROUTE_REPLACEMENT_MAP[key] : [];
   const used = new Set((Array.isArray(dayExercises) ? dayExercises : []).map((ex) => routeNormName(ex?.name)));
   for (const spec of list) {
     if (!spec?.name) continue;
     if (used.has(routeNormName(spec.name))) continue;
     if (typeof acceptFn === 'function' && !acceptFn(spec)) continue;
+    if (!equipmentOk(spec)) continue;
     return spec;
   }
   for (const spec of list) {
     if (!spec?.name) continue;
     if (typeof acceptFn === 'function' && !acceptFn(spec)) continue;
+    if (!equipmentOk(spec)) continue;
     return spec;
   }
   return list[0] || null;
 }
 
 function routePickUniqueReplacementMatching(key, dayExercises, acceptFn) {
+  // A spec the user cannot perform is not a candidate, whatever else it fixes.
+  const equipmentOk = (spec) => routeEquipmentAllows(routeExerciseRowByName(spec && spec.name));
   const list = Array.isArray(ROUTE_REPLACEMENT_MAP[key]) ? ROUTE_REPLACEMENT_MAP[key] : [];
   const used = new Set((Array.isArray(dayExercises) ? dayExercises : []).map((ex) => routeNormName(ex?.name)));
   for (const spec of list) {
     if (!spec?.name) continue;
     if (used.has(routeNormName(spec.name))) continue;
     if (typeof acceptFn === 'function' && !acceptFn(spec)) continue;
+    if (!equipmentOk(spec)) continue;
     return spec;
   }
   return null;
@@ -4051,6 +4139,40 @@ function routeEnforceCanonicalMovementFamilyRedundancy(dayType, exercises, { pri
 
    Identity now comes from the exercise table row for spec.name. The slot keeps
    only what belongs to a slot: its id, its set count, and its position. */
+/* The equipment available to the build currently running.
+
+   filterEligible enforces equipment during SELECTION. The route repair chain
+   runs after the generator has finished and had no idea what the user owns, so
+   it substituted a Romanian Deadlift into a bodyweight-only plan. This is the
+   section 3 principle in a different costume: a repair may choose what to
+   insert, but it may not insert something the user cannot do.
+
+   Module-scoped because the repair chain is a deep synchronous call tree with
+   no user object threaded through it, and a build is synchronous end to end so
+   there is no interleaving. Set on entry, cleared on exit. */
+let ROUTE_ACTIVE_EQUIPMENT = null;
+
+function routeSetActiveEquipment(src) {
+  try {
+    const tags = normalizeEquipmentTags(Array.isArray(src && src.equipmentAccess) ? src.equipmentAccess : []);
+    ROUTE_ACTIVE_EQUIPMENT = tags.length ? new Set(tags.concat(["bodyweight"])) : null;
+  } catch (err) {
+    ROUTE_ACTIVE_EQUIPMENT = null;
+  }
+}
+
+function routeEquipmentAllows(row) {
+  if (!ROUTE_ACTIVE_EQUIPMENT) return true;
+  const truth = (row && row.canonicalTruth) ? row.canonicalTruth : null;
+  const required = (truth && Array.isArray(truth.requiredEquipment))
+    ? truth.requiredEquipment
+    : ((row && Array.isArray(row.requiredEquipment)) ? row.requiredEquipment : []);
+  if (!required.length) return true;
+  return required.every(function (token) {
+    return ROUTE_ACTIVE_EQUIPMENT.has(String(token == null ? "" : token).trim().toLowerCase());
+  });
+}
+
 let ROUTE_EXERCISE_ROWS_BY_NAME = null;
 function routeExerciseRowByName(name) {
   if (!ROUTE_EXERCISE_ROWS_BY_NAME) {
@@ -4098,6 +4220,10 @@ function routeApplyReplacement(ex, spec) {
   // should not be done at all.
   if (!row) {
     console.warn('[route-repair] replacement declined, not in exercise table', { name: spec.name });
+    return ex;
+  }
+  if (!routeEquipmentAllows(row)) {
+    console.warn('[route-repair] replacement declined, needs equipment the user does not have', { name: spec.name });
     return ex;
   }
   const truth = row.canonicalTruth || null;
@@ -14158,6 +14284,7 @@ trainingRoutes._private = {
   auditLoggedEntryIdentity,
   routeApplyReplacement,
   auditPlanIdentityIntegrity,
+  auditPlanFeasibility,
   buildOblueprintPlanWithFallback,
   coerceClassicBodybuildingToOblueprintPayload,
   deriveLiftHistoryAnchors,
