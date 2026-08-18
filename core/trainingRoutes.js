@@ -3193,14 +3193,17 @@ function routeDiversifyNearDuplicateMovements(dayType, list, shouldersPriority) 
 }
 
 function routePickReplacement(key, dayExercises) {
+  // A spec the user cannot perform is not a candidate, whatever else it fixes.
+  const equipmentOk = (spec) => routeEquipmentAllows(routeExerciseRowByName(spec && spec.name));
   const list = Array.isArray(ROUTE_REPLACEMENT_MAP[key]) ? ROUTE_REPLACEMENT_MAP[key] : [];
   const used = new Set((Array.isArray(dayExercises) ? dayExercises : []).map((ex) => routeNormName(ex?.name)));
   for (const spec of list) {
     if (!spec?.name) continue;
     if (used.has(routeNormName(spec.name))) continue;
+    if (!equipmentOk(spec)) continue;
     return spec;
   }
-  return list[0] || null;
+  return list.find((spec) => spec && spec.name && equipmentOk(spec)) || null;
 }
 
 function routePickReplacementMatching(key, dayExercises, acceptFn) {
@@ -3221,7 +3224,14 @@ function routePickReplacementMatching(key, dayExercises, acceptFn) {
     if (!equipmentOk(spec)) continue;
     return spec;
   }
-  return list[0] || null;
+  /* Last resort. This used to be `list[0]`, handed back even when the equipment
+     filter above had just rejected every candidate — the caller applies it,
+     routeApplyReplacement declines it, the exercise comes back unchanged, and
+     nothing has been repaired. That is what livelocked ensureSingleRole:
+     Rear Delt Fly, needing a cable, offered 202,319 times to a
+     bodyweight+dumbbell user. A spec the user cannot perform is not a last
+     resort, it is not a candidate. */
+  return list.find((spec) => spec && spec.name && equipmentOk(spec)) || null;
 }
 
 function routePickUniqueReplacementMatching(key, dayExercises, acceptFn) {
@@ -4640,14 +4650,24 @@ function routeRepairDeltsArmsDayRoles(day, week, { absPriority = false } = {}) {
       const idx = indexes[indexes.length - 1];
       if (!Number.isFinite(idx)) break;
       const replacement = routePickDeltsArmsNonArmReplacement(role, list[idx], list.filter((_, i) => i !== idx));
-      if (replacement) {
-        const others = list.filter((_, i) => i !== idx);
-        const next = routeCanonicalizeExercise(routeApplyReplacement(list[idx], replacement), others);
-        if (!others.some((ex) => routeExerciseIdentityKey(ex) === routeExerciseIdentityKey(next))) {
-          list[idx] = next;
-        } else {
-          list.splice(idx, 1);
-        }
+      const current = list[idx];
+      const others = list.filter((_, i) => i !== idx);
+      const next = replacement
+        ? routeCanonicalizeExercise(routeApplyReplacement(current, replacement), others)
+        : null;
+      /* routeApplyReplacement returns the ORIGINAL exercise untouched when it
+         declines a spec — the row is not in the table, or it needs equipment
+         this user does not have. That is not progress, and this loop only ever
+         terminates by reducing counts[role]: assigning list[idx] = next when
+         next IS list[idx] leaves the role counts identical and spins forever.
+         A declined replacement therefore has to take the same path as "no
+         replacement available" and drop the duplicate, which always makes
+         progress. (Measured before this guard: 200,000 iterations in 2.5s
+         across two distinct states, on a 3-day bodyweight+dumbbell profile.) */
+      const declined = !next
+        || routeExerciseIdentityKey(next) === routeExerciseIdentityKey(current);
+      if (!declined && !others.some((ex) => routeExerciseIdentityKey(ex) === routeExerciseIdentityKey(next))) {
+        list[idx] = next;
       } else {
         list.splice(idx, 1);
       }

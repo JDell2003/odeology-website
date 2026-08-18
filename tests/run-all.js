@@ -52,6 +52,16 @@ const SUITES = [
     args: ['tests/transcribe.browser.js'],
     needsServer: false
   },
+  // Exercise table. The generator answers "what can this user do?" entirely
+  // from this data, so a row that lies in either direction fails silently and
+  // shows up only as a user getting a generic plan. The coverage checks turn
+  // "the builder cannot find a vertical press" into a build-time failure.
+  {
+    name: 'exercise table — integrity (equipment honesty, style/pattern, slot coverage)',
+    cmd: process.execPath,
+    args: ['--test', 'tests/exerciseTable.integrity.test.js'],
+    needsServer: false
+  },
   // Onboarding. The quiz is becoming the only question surface, so a screen
   // that throws is a dead end for every new signup — and the promises check
   // pins the rule that nothing on screen claims what the engine cannot deliver.

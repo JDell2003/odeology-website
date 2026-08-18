@@ -388,6 +388,34 @@ export const exercises = [
     ]
   },
   {
+    "name": "Archer Push-Up",
+    "primary": "Chest",
+    "sub": "Mid",
+    "pattern": "HorizontalPush",
+    "spine": 1,
+    "knee": 0,
+    "hip": 0,
+    "shoulder": 3,
+    "elbow": 2,
+    "images": [],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 4,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Triceps",
+      "FrontDelts",
+      "Core"
+    ],
+    "movementTags": [
+      "unilateral"
+    ],
+    "requiredEquipment": [
+      "bodyweight"
+    ]
+  },
+  {
     "name": "Arnold Dumbbell Press",
     "primary": "Shoulders",
     "sub": "Front",
@@ -2466,6 +2494,34 @@ export const exercises = [
     ]
   },
   {
+    "name": "Bodyweight Bulgarian Split Squat",
+    "primary": "Legs",
+    "sub": "Quads",
+    "pattern": "Squat",
+    "spine": 1,
+    "knee": 2,
+    "hip": 2,
+    "shoulder": 0,
+    "elbow": 0,
+    "images": [],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 2,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Glutes",
+      "Hamstrings",
+      "Core"
+    ],
+    "movementTags": [
+      "unilateral"
+    ],
+    "requiredEquipment": [
+      "bodyweight"
+    ]
+  },
+  {
     "name": "Bodyweight Flyes",
     "primary": "Chest",
     "sub": "Mid",
@@ -2492,6 +2548,34 @@ export const exercises = [
     ],
     "movementTags": [
       "bilateral"
+    ]
+  },
+  {
+    "name": "Bodyweight Hip Hinge",
+    "primary": "Legs",
+    "sub": "Hamstrings-Hinge",
+    "pattern": "Hinge",
+    "spine": 2,
+    "knee": 1,
+    "hip": 3,
+    "shoulder": 0,
+    "elbow": 0,
+    "images": [],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 1,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Glutes",
+      "Hamstrings",
+      "SpinalErectors"
+    ],
+    "movementTags": [
+      "bilateral"
+    ],
+    "requiredEquipment": [
+      "bodyweight"
     ]
   },
   {
@@ -2623,7 +2707,7 @@ export const exercises = [
       "free-exercise-db/exercises/Bottoms_Up/1.jpg"
     ],
     "equipment": [
-      "Bodyweight"
+      "Kettlebell"
     ],
     "difficulty": 2,
     "style": "Compound",
@@ -2775,7 +2859,7 @@ export const exercises = [
       "Bodyweight"
     ],
     "difficulty": 2,
-    "style": "Isolation",
+    "style": "Compound",
     "secondaryMuscles": [
       "Hamstrings",
       "Glutes",
@@ -3645,7 +3729,7 @@ export const exercises = [
       "free-exercise-db/exercises/Car_Deadlift/1.jpg"
     ],
     "equipment": [
-      "Bodyweight"
+      "Other"
     ],
     "difficulty": 4,
     "style": "Compound",
@@ -3735,7 +3819,7 @@ export const exercises = [
       "free-exercise-db/exercises/Chain_Handle_Extension/1.jpg"
     ],
     "equipment": [
-      "Bodyweight"
+      "Cable"
     ],
     "difficulty": 3,
     "style": "Isolation",
@@ -3761,7 +3845,7 @@ export const exercises = [
       "free-exercise-db/exercises/Chain_Press/1.jpg"
     ],
     "equipment": [
-      "Bodyweight"
+      "Barbell"
     ],
     "difficulty": 3,
     "style": "Compound",
@@ -6204,6 +6288,34 @@ export const exercises = [
     ]
   },
   {
+    "name": "Elevated Pike Push-Up",
+    "primary": "Shoulders",
+    "sub": "Front",
+    "pattern": "VerticalPush",
+    "spine": 2,
+    "knee": 0,
+    "hip": 2,
+    "shoulder": 3,
+    "elbow": 2,
+    "images": [],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 3,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Triceps",
+      "Chest",
+      "Core"
+    ],
+    "movementTags": [
+      "bilateral"
+    ],
+    "requiredEquipment": [
+      "bodyweight"
+    ]
+  },
+  {
     "name": "Elliptical Trainer",
     "primary": "Cardio",
     "sub": "General",
@@ -6988,7 +7100,7 @@ export const exercises = [
       "free-exercise-db/exercises/Front_Plate_Raise/1.jpg"
     ],
     "equipment": [
-      "Bodyweight"
+      "Barbell"
     ],
     "difficulty": 3,
     "style": "Isolation",
@@ -7172,6 +7284,35 @@ export const exercises = [
     ],
     "movementTags": [
       "bilateral"
+    ]
+  },
+  {
+    "name": "Glute Bridge March",
+    "primary": "Legs",
+    "sub": "Glutes",
+    "pattern": "Hinge",
+    "spine": 2,
+    "knee": 1,
+    "hip": 2,
+    "shoulder": 0,
+    "elbow": 0,
+    "images": [],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 2,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Hamstrings",
+      "Glutes",
+      "Core",
+      "HipFlexors"
+    ],
+    "movementTags": [
+      "unilateral"
+    ],
+    "requiredEquipment": [
+      "bodyweight"
     ]
   },
   {
@@ -7456,7 +7597,7 @@ export const exercises = [
       "Bodyweight"
     ],
     "difficulty": 5,
-    "style": "Skill",
+    "style": "Compound",
     "secondaryMuscles": [
       "Triceps"
     ],
@@ -10046,7 +10187,7 @@ export const exercises = [
       "free-exercise-db/exercises/Lying_Face_Down_Plate_Neck_Resistance/1.jpg"
     ],
     "equipment": [
-      "Bodyweight"
+      "Barbell"
     ],
     "difficulty": 2,
     "style": "Isolation",
@@ -10071,7 +10212,7 @@ export const exercises = [
       "free-exercise-db/exercises/Lying_Face_Up_Plate_Neck_Resistance/1.jpg"
     ],
     "equipment": [
-      "Bodyweight"
+      "Barbell"
     ],
     "difficulty": 2,
     "style": "Isolation",
@@ -10789,6 +10930,91 @@ export const exercises = [
     "movementTags": [
       "bilateral",
       "freeWeight"
+    ]
+  },
+  {
+    "name": "Negative Pull-Up",
+    "primary": "Back",
+    "sub": "Lats-Width",
+    "pattern": "VerticalPull",
+    "spine": 1,
+    "knee": 0,
+    "hip": 0,
+    "shoulder": 2,
+    "elbow": 2,
+    "images": [],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 2,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Lats",
+      "Biceps",
+      "MidBack",
+      "Forearms"
+    ],
+    "movementTags": [
+      "bilateral"
+    ],
+    "requiredEquipment": [
+      "bodyweight"
+    ]
+  },
+  {
+    "name": "Neutral-Grip Pull-Up",
+    "primary": "Back",
+    "sub": "Lats-Width",
+    "pattern": "VerticalPull",
+    "spine": 1,
+    "knee": 0,
+    "hip": 0,
+    "shoulder": 2,
+    "elbow": 2,
+    "images": [],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 3,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Lats",
+      "Biceps",
+      "MidBack",
+      "Forearms"
+    ],
+    "movementTags": [
+      "bilateral"
+    ],
+    "requiredEquipment": [
+      "bodyweight"
+    ]
+  },
+  {
+    "name": "Nordic Curl",
+    "primary": "Legs",
+    "sub": "Hamstrings-Curl",
+    "pattern": "Isolation",
+    "spine": 1,
+    "knee": 3,
+    "hip": 1,
+    "shoulder": 0,
+    "elbow": 0,
+    "images": [],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 4,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "Glutes",
+      "Calves"
+    ],
+    "movementTags": [
+      "bilateral"
+    ],
+    "requiredEquipment": [
+      "bodyweight"
     ]
   },
   {
@@ -12077,6 +12303,34 @@ export const exercises = [
     ]
   },
   {
+    "name": "Pike Push-Up",
+    "primary": "Shoulders",
+    "sub": "Front",
+    "pattern": "VerticalPush",
+    "spine": 2,
+    "knee": 0,
+    "hip": 2,
+    "shoulder": 3,
+    "elbow": 2,
+    "images": [],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 2,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Triceps",
+      "Chest",
+      "Core"
+    ],
+    "movementTags": [
+      "bilateral"
+    ],
+    "requiredEquipment": [
+      "bodyweight"
+    ]
+  },
+  {
     "name": "Pin Presses",
     "primary": "Chest",
     "sub": "Mid",
@@ -12151,7 +12405,7 @@ export const exercises = [
       "free-exercise-db/exercises/Plate_Pinch/1.jpg"
     ],
     "equipment": [
-      "Bodyweight"
+      "Barbell"
     ],
     "difficulty": 3,
     "style": "Isolation",
@@ -12175,7 +12429,7 @@ export const exercises = [
       "free-exercise-db/exercises/Plate_Twist/1.jpg"
     ],
     "equipment": [
-      "Bodyweight"
+      "Barbell"
     ],
     "difficulty": 3,
     "style": "Compound",
@@ -12355,6 +12609,34 @@ export const exercises = [
     "movementTags": [
       "bilateral",
       "freeWeight"
+    ]
+  },
+  {
+    "name": "Pseudo Planche Push-Up",
+    "primary": "Chest",
+    "sub": "Upper",
+    "pattern": "HorizontalPush",
+    "spine": 2,
+    "knee": 0,
+    "hip": 0,
+    "shoulder": 3,
+    "elbow": 2,
+    "images": [],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 4,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "FrontDelts",
+      "Triceps",
+      "Core"
+    ],
+    "movementTags": [
+      "bilateral"
+    ],
+    "requiredEquipment": [
+      "bodyweight"
     ]
   },
   {
@@ -13358,6 +13640,33 @@ export const exercises = [
     ]
   },
   {
+    "name": "Reverse Nordic Curl",
+    "primary": "Legs",
+    "sub": "Quads",
+    "pattern": "Squat",
+    "spine": 1,
+    "knee": 3,
+    "hip": 1,
+    "shoulder": 0,
+    "elbow": 0,
+    "images": [],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 3,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "HipFlexors",
+      "Core"
+    ],
+    "movementTags": [
+      "bilateral"
+    ],
+    "requiredEquipment": [
+      "bodyweight"
+    ]
+  },
+  {
     "name": "Reverse Plate Curls",
     "primary": "Arms",
     "sub": "Brachialis",
@@ -13372,7 +13681,7 @@ export const exercises = [
       "free-exercise-db/exercises/Reverse_Plate_Curls/1.jpg"
     ],
     "equipment": [
-      "Bodyweight"
+      "Barbell"
     ],
     "difficulty": 2,
     "style": "Isolation",
@@ -13427,7 +13736,7 @@ export const exercises = [
       "free-exercise-db/exercises/Rickshaw_Carry/1.jpg"
     ],
     "equipment": [
-      "Bodyweight"
+      "Other"
     ],
     "difficulty": 3,
     "style": "Compound",
@@ -13459,7 +13768,7 @@ export const exercises = [
       "free-exercise-db/exercises/Rickshaw_Deadlift/1.jpg"
     ],
     "equipment": [
-      "Bodyweight"
+      "Other"
     ],
     "difficulty": 4,
     "style": "Compound",
@@ -14726,6 +15035,33 @@ export const exercises = [
     ]
   },
   {
+    "name": "Shrimp Squat",
+    "primary": "Legs",
+    "sub": "Quads",
+    "pattern": "Squat",
+    "spine": 1,
+    "knee": 3,
+    "hip": 2,
+    "shoulder": 0,
+    "elbow": 0,
+    "images": [],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 4,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Glutes",
+      "Core"
+    ],
+    "movementTags": [
+      "unilateral"
+    ],
+    "requiredEquipment": [
+      "bodyweight"
+    ]
+  },
+  {
     "name": "Side Bridge",
     "primary": "Core",
     "sub": "Obliques",
@@ -14910,7 +15246,7 @@ export const exercises = [
       "Bodyweight"
     ],
     "difficulty": 2,
-    "style": "Isolation",
+    "style": "Compound",
     "secondaryMuscles": [
       "Hamstrings",
       "Glutes",
@@ -15004,6 +15340,32 @@ export const exercises = [
     ]
   },
   {
+    "name": "Single-Leg Calf Raise (Bodyweight)",
+    "primary": "Legs",
+    "sub": "Calves-Gastrocnemius",
+    "pattern": "Isolation",
+    "spine": 0,
+    "knee": 0,
+    "hip": 0,
+    "shoulder": 0,
+    "elbow": 0,
+    "images": [],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 2,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "Calves"
+    ],
+    "movementTags": [
+      "unilateral"
+    ],
+    "requiredEquipment": [
+      "bodyweight"
+    ]
+  },
+  {
     "name": "Single-Leg High Box Squat",
     "primary": "Legs",
     "sub": "Quads",
@@ -15057,6 +15419,35 @@ export const exercises = [
       "unilateral",
       "supported",
       "machineStable"
+    ]
+  },
+  {
+    "name": "Single-Leg Hip Hinge (Bodyweight)",
+    "primary": "Legs",
+    "sub": "Hamstrings-Hinge",
+    "pattern": "Hinge",
+    "spine": 2,
+    "knee": 1,
+    "hip": 3,
+    "shoulder": 0,
+    "elbow": 0,
+    "images": [],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 3,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Glutes",
+      "Hamstrings",
+      "SpinalErectors",
+      "Core"
+    ],
+    "movementTags": [
+      "unilateral"
+    ],
+    "requiredEquipment": [
+      "bodyweight"
     ]
   },
   {
@@ -16675,7 +17066,7 @@ export const exercises = [
       "free-exercise-db/exercises/Standing_Olympic_Plate_Hand_Squeeze/1.jpg"
     ],
     "equipment": [
-      "Bodyweight"
+      "Barbell"
     ],
     "difficulty": 2,
     "style": "Isolation",
@@ -18339,6 +18730,59 @@ export const exercises = [
       "bilateral",
       "supported",
       "machineStable"
+    ]
+  },
+  {
+    "name": "Wall Sit",
+    "primary": "Legs",
+    "sub": "Quads",
+    "pattern": "Isolation",
+    "spine": 0,
+    "knee": 2,
+    "hip": 1,
+    "shoulder": 0,
+    "elbow": 0,
+    "images": [],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 1,
+    "style": "Isolation",
+    "secondaryMuscles": [
+      "Glutes"
+    ],
+    "movementTags": [
+      "bilateral"
+    ],
+    "requiredEquipment": [
+      "bodyweight"
+    ]
+  },
+  {
+    "name": "Wall-Supported Handstand Push-Up",
+    "primary": "Shoulders",
+    "sub": "Front",
+    "pattern": "VerticalPush",
+    "spine": 2,
+    "knee": 0,
+    "hip": 0,
+    "shoulder": 3,
+    "elbow": 2,
+    "images": [],
+    "equipment": [
+      "Bodyweight"
+    ],
+    "difficulty": 4,
+    "style": "Compound",
+    "secondaryMuscles": [
+      "Triceps",
+      "Core"
+    ],
+    "movementTags": [
+      "bilateral"
+    ],
+    "requiredEquipment": [
+      "bodyweight"
     ]
   },
   {

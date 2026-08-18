@@ -2113,7 +2113,15 @@ function preprocessExercises(exercises) {
       primary: normalizedPrimary,
       nameLower: name.toLowerCase(),
       equipmentNorm: normalizeEquipmentTags(ex?.equipment || []),
-      requiredEquipment: inferRequiredEquipment(ex),
+      // An explicit requiredEquipment on the row wins over what the name
+      // implies. inferRequiredEquipment ADDS tokens parsed from the name on top
+      // of the equipment field — "Bulgarian Split Squat" forces 'dumbbell' even
+      // on a row tagged Bodyweight — so without this the data cannot override
+      // the name. buildExerciseTruth already honours the field; this makes the
+      // two agree. No-op for every row that carries it today.
+      requiredEquipment: Array.isArray(ex?.requiredEquipment) && ex.requiredEquipment.length
+        ? [...new Set(ex.requiredEquipment.map((token) => String(token || '').trim().toLowerCase()).filter(Boolean))]
+        : inferRequiredEquipment(ex),
       isCalisthenicsLike: isCalisthenicsLikeExercise(ex),
       secondaryMuscles: normalizedSecondary,
       canonicalTruth: buildExerciseTruth({
