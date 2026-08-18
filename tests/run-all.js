@@ -52,6 +52,15 @@ const SUITES = [
     args: ['tests/transcribe.browser.js'],
     needsServer: false
   },
+  // Onboarding. The quiz is becoming the only question surface, so a screen
+  // that throws is a dead end for every new signup — and the promises check
+  // pins the rule that nothing on screen claims what the engine cannot deliver.
+  {
+    name: 'onboarding — client quiz (every screen renders, walks to plan, no unbacked promises)',
+    cmd: process.execPath,
+    args: ['tests/clientQuiz.walk.browser.js'],
+    needsServer: false
+  },
   // Training engine. These suites existed for a long time without gating a
   // deploy, which is how the powerbuilding-3-Shoulders,Arms golden fixture was
   // able to rot into a safe-fallback plan unnoticed. Split by area so a failure

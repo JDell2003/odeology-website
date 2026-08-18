@@ -1,7 +1,7 @@
 /* BetterMe-style client onboarding quiz.
    One question per screen, tap-to-advance, section progress bar,
-   interstitial "message" screens, BMI + projection graph, loading
-   screen, then a FREE plan-ready page. Mounted by index.html's entry
+   interstitial "message" screens, loading screen, then a FREE
+   plan-ready page. Mounted by index.html's entry
    flow at the client path's `quiz` step; answers are mapped back onto
    the existing intake fields so plan generation is unchanged. */
 (() => {
@@ -255,11 +255,9 @@
         { id: 'weight', section: 'goals', type: 'weight', title: "What's your current weight?" },
         { id: 'goalWeight', section: 'goals', type: 'goalWeight', title: "Got it! And what's your goal weight?" },
         { id: 'age', section: 'goals', type: 'age', title: "What's your age?" },
-        { id: 'wellness', type: 'bmi' },
         { id: 'event', section: 'goals', type: 'choice', title: 'Do you have an important event coming up?', subtitle: 'Having something to look forward to can be a great motivator for reaching your goal', options: [
             'Vacation', 'Wedding', 'Holiday', 'Sporting event', 'Reunion', 'Birthday', 'Other', 'No events any time soon'
         ] },
-        { id: 'projection', type: 'projection' },
         { id: 'confidence', section: 'goals', type: 'choice', title: (a) => `How confident are you in reaching ${goalWeightLabel(a)}?`, options: [
             'I believe I can do it!', "I'm uncertain, but willing to try!", "I'm still really unsure"
         ] },
@@ -307,21 +305,6 @@
     }
     const bmiClass = (v) => (v < 18.5 ? 'Underweight' : v < 25 ? 'Normal' : v < 30 ? 'Overweight' : 'Obese');
 
-    function goalDate(a) {
-        const now = weightLb(a);
-        const goal = goalWeightLb(a);
-        // ~1.5 lb/week loss, ~0.5 lb/week lean gain; min 4 weeks so it never reads as instant.
-        let weeks = 8;
-        if (now && goal) {
-            const delta = now - goal;
-            weeks = delta > 0 ? Math.ceil(delta / 1.5) : Math.ceil(Math.abs(delta) / 0.5);
-        }
-        weeks = clamp(weeks, 4, 78);
-        const d = new Date();
-        d.setDate(d.getDate() + weeks * 7);
-        return d;
-    }
-    const fmtDate = (d) => d.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
 
     /* ---------- outputs: map quiz answers onto the existing intake ---------- */
     /* Quiz answer text -> the vocabulary buildUserIntake and the engine expect.
@@ -845,69 +828,6 @@
                             <button type="button" class="bm-skip" data-bm-skip>SKIP THIS STEP</button>
                         </div>`;
                 }
-                case 'bmi': {
-                    const v = bmi(answers) || 25;
-                    const pos = clamp(((v - 15) / (40 - 15)) * 100, 2, 98);
-                    const cls = bmiClass(v);
-                    const risky = cls === 'Obese' || cls === 'Overweight';
-                    const bodyType = { 'Slender': 'Ectomorph', 'Medium build': 'Mesomorph', 'Stocky': 'Mesomorph', 'Significantly overweight': 'Endomorph' }[answers.build] || 'Mesomorph';
-                    const lifestyle = { 'I spend most of the day sitting': 'Sedentary', 'I take active breaks': 'Lightly active', "I'm on my feet all day long": 'Active' }[answers.dailyActivity] || 'Moderate';
-                    const fitness = { 'Never': 'Basic', 'Several times a month': 'Basic', 'Several times a week': 'Intermediate', 'Almost every day': 'Advanced' }[answers.exerciseFreq] || 'Basic';
-                    const metabolism = { 'I gain weight fast but lose it slowly': 'Moderate, challenging to stay trim', 'I gain and lose weight easily': 'Fast and responsive', 'I struggle to gain weight or muscle': 'Fast, hard to gain' }[answers.weightChange] || 'Moderate';
-                    return `
-                        <h2 class="bm-title">Here's your wellness profile</h2>
-                        <div class="bm-bmi-card">
-                            <div class="bm-bmi-head">Body Mass Index (BMI)</div>
-                            <div class="bm-bmi-scale">
-                                <div class="bm-bmi-you" style="left:${pos}%"><span>You — ${v.toFixed(2)}</span></div>
-                                <div class="bm-bmi-bar"></div>
-                                <div class="bm-bmi-ticks"><span>15</span><span>18.5</span><span>25</span><span>30</span><span>40</span></div>
-                                <div class="bm-bmi-zones"><span>UNDERWEIGHT</span><span>NORMAL</span><span>OVERWEIGHT</span><span>OBESE</span></div>
-                            </div>
-                            ${risky ? `<div class="bm-banner is-warn"><strong>Risks of unhealthy BMI:</strong><p>High blood pressure, increased risk of heart attack, stroke, type 2 diabetes, chronic back and joint pain.</p></div>`
-                                : `<div class="bm-banner is-ok"><strong>Solid base to build on.</strong><p>Your BMI sits in a healthy range — we'll focus on strength, shape and consistency.</p></div>`}
-                            <div class="bm-bmi-rows">
-                                <div class="bm-bmi-row"><span>Body type</span><strong>${esc(bodyType)}</strong></div>
-                                <div class="bm-bmi-row"><span>Lifestyle</span><strong>${esc(lifestyle)}</strong></div>
-                                <div class="bm-bmi-row"><span>Fitness level</span><strong>${esc(fitness)}</strong></div>
-                                <div class="bm-bmi-row"><span>Metabolism</span><strong>${esc(metabolism)}</strong></div>
-                            </div>
-                        </div>
-                        <div class="bm-footer"><button type="button" class="bm-cta" data-bm-next>CONTINUE</button></div>`;
-                }
-                case 'projection': {
-                    const d = goalDate(answers);
-                    const nowW = Math.round(weightLb(answers) || 200);
-                    const goalW = Math.round(goalWeightLb(answers) || nowW - 20);
-                    const losing = nowW >= goalW;
-                    return `
-                        <h2 class="bm-title">The plan that will finally get you in shape</h2>
-                        <p class="bm-subtitle">We estimate you could be <strong>${goalW} lbs</strong> by <strong>${fmtDate(d)}</strong>*</p>
-                        <div class="bm-graph-card">
-                            <svg viewBox="0 0 320 170" class="bm-graph" aria-label="Projected weight curve">
-                                <defs>
-                                    <linearGradient id="bm-curve" x1="0" y1="0" x2="1" y2="0">
-                                        <stop offset="0%" stop-color="#e2574c"></stop>
-                                        <stop offset="45%" stop-color="#e7a34d"></stop>
-                                        <stop offset="100%" stop-color="#3fae5a"></stop>
-                                    </linearGradient>
-                                    <linearGradient id="bm-fill" x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="0%" stop-color="rgba(226,87,76,0.18)"></stop>
-                                        <stop offset="100%" stop-color="rgba(63,174,90,0.02)"></stop>
-                                    </linearGradient>
-                                </defs>
-                                ${[0, 1, 2, 3].map((i) => `<line x1="16" x2="304" y1="${30 + i * 36}" y2="${30 + i * 36}" class="bm-graph-grid"></line>`).join('')}
-                                <path class="bm-graph-area" fill="url(#bm-fill)" d="M16 ${losing ? 30 : 138} C 90 ${losing ? 34 : 132}, 120 ${losing ? 96 : 72}, 190 ${losing ? 118 : 52} C 240 ${losing ? 132 : 40}, 270 ${losing ? 138 : 34}, 304 ${losing ? 138 : 30} L 304 166 L 16 166 Z"></path>
-                                <path class="bm-graph-line" stroke="url(#bm-curve)" d="M16 ${losing ? 30 : 138} C 90 ${losing ? 34 : 132}, 120 ${losing ? 96 : 72}, 190 ${losing ? 118 : 52} C 240 ${losing ? 132 : 40}, 270 ${losing ? 138 : 34}, 304 ${losing ? 138 : 30}"></path>
-                                <circle cx="16" cy="${losing ? 30 : 138}" r="5" class="bm-graph-dot"></circle>
-                                <circle cx="304" cy="${losing ? 138 : 30}" r="6" class="bm-graph-dot is-goal"></circle>
-                                <text x="20" y="${losing ? 22 : 158}" class="bm-graph-text">${nowW}</text>
-                            </svg>
-                            <div class="bm-graph-goal" style="${losing ? 'right:6px;bottom:44px' : 'right:6px;top:6px'}">Goal<br><strong>${goalW} lbs</strong></div>
-                        </div>
-                        <p class="bm-finePrint">* Based on users who log their progress. Following the exercise and meal plan greatly impacts results. The chart is a non-customized illustration; results may vary.</p>
-                        <div class="bm-footer"><button type="button" class="bm-cta" data-bm-next>CONTINUE</button></div>`;
-                }
                 case 'loading':
                     return `
                         <div class="bm-loading">
@@ -916,13 +836,6 @@
                                 <div class="bm-loading-pct"><span data-bm-pct>0</span>%</div>
                             </div>
                             <p class="bm-loading-label">Creating your personalized plan…</p>
-                        </div>
-                        <div class="bm-divider"></div>
-                        <h3 class="bm-loading-social">Built for people like you</h3>
-                        <div class="bm-quote-card">
-                            <div class="bm-stars">★★★★★</div>
-                            <strong>“It's like having a coach, a meal planner and a grocery list in one.”</strong>
-                            <p>Workouts, meals and restock alerts all talk to each other. I stopped juggling four apps.</p>
                         </div>
                         <p class="bm-finePrint">*Disclaimer: following the exercise and meal plan is the key to your results. Individual results may vary.</p>`;
                 case 'plan': {
