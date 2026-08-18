@@ -52,6 +52,19 @@ const SUITES = [
     args: ['tests/transcribe.browser.js'],
     needsServer: false
   },
+  // THE ACCEPTANCE TEST — the definition of done. The engine is finished when
+  // Jason can go through his own onboarding and get his actual plan back.
+  // 4 of 13 pass as of 2026-08-18. Reported, not blocking: making it blocking
+  // today would close the gate on the very work that has to make it pass.
+  // Flip `blocking` off this entry the moment all thirteen are green, and treat
+  // any regression from 4 as a failure in the meantime.
+  {
+    name: 'ACCEPTANCE — Jason\'s plan (BASELINE 4/13 passing as of 2026-08-18)',
+    cmd: process.execPath,
+    args: ['--test', 'tests/acceptance.jason.test.js'],
+    needsServer: false,
+    blocking: false
+  },
   // Exercise table. The generator answers "what can this user do?" entirely
   // from this data, so a row that lies in either direction fails silently and
   // shows up only as a user getting a generic plan. The coverage checks turn

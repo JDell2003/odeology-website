@@ -2081,7 +2081,17 @@ function mapClassicInjuryToOblueprint(strength) {
   const movementsToAvoid = [];
   const lowerNote = note.toLowerCase();
   if (/overhead|shoulder press|upright row/.test(lowerNote)) movementsToAvoid.push('overhead press');
-  if (/bench|press/.test(lowerNote) && /shoulder|pinch/.test(lowerNote)) movementsToAvoid.push('flat bench');
+  /* This used to be /bench|press/ && /shoulder|pinch/, which fires on any note
+     containing "press" anywhere near the word "shoulder". The note
+     "avoid deep stretch pressing and behind-neck work; shoulder feels loose
+     under load" therefore banned FLAT BENCH — for a powerbuilder whose primary
+     goal is a 315 bench. Powerbuilding requires a bench slot, so the profile
+     became unsatisfiable and fell to the generic safe fallback: an honest
+     injury note deleted the user's main lift and their whole plan with it.
+     The note has to actually name the bench now. "Deep stretch" is a position
+     cue, not a movement ban, and the exercises it argues against (deep-stretch
+     flyes, behind-neck work) are excluded by the shoulder joint screen. */
+  if (/\bbench\b/.test(lowerNote) && /shoulder|pinch|pain|hurt/.test(lowerNote)) movementsToAvoid.push('flat bench');
   if (/deadlift|axial|hinge|lower back/.test(lowerNote)) movementsToAvoid.push('barbell hinge');
   if (/deep knee|deep squat|knee flexion|ankle/.test(lowerNote)) movementsToAvoid.push('deep squat');
   if (/dip/.test(lowerNote)) movementsToAvoid.push('dips');
