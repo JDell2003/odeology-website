@@ -1070,8 +1070,18 @@ function getSlotMuscleTargets(slot) {
     else if (raw === 'Lats-Width' || raw === 'Lats-Thickness') explicit.push('lats');
     else if (raw === 'UpperBack') explicit.push('middle back', 'traps');
   });
-  if (explicit.length) return Array.from(new Set(explicit));
+  /* This used to `return explicit` here, which turned subPreferred from a
+     PREFERENCE into the slot's only acceptable answer. `lower_squat` is
+     Squat/Compound/primaryAllowed:['Legs']/subPreferred:['Quads'], so it
+     resolved to ['quadriceps'] alone and 'Legs' was discarded — and the
+     support-muscle test then required the literal token 'quadriceps', which a
+     barbell squat does not carry because quads are its PRIMARY and land in
+     directMuscleTargets instead. The slot was unfillable at every equipment
+     tier including a full gym: it fell back to a Hinge, and a full-gym Lower
+     day came out as Barbell Glute Bridge + Romanian Deadlift + leg curl +
+     calves + abs. Two hinges and no quad work at all.
 
+     subPreferred still steers scoring; it no longer excludes. */
   const broad = [];
   (Array.isArray(slot?.primaryAllowed) ? slot.primaryAllowed : []).forEach((value) => {
     const raw = String(value || '').trim();
@@ -1085,7 +1095,7 @@ function getSlotMuscleTargets(slot) {
     else if (raw === 'Glutes') broad.push(...getPriorityMuscleTargets('Hamstrings/Glutes'));
     else if (raw === 'Legs') broad.push('quadriceps', 'hamstrings', 'glutes');
   });
-  return Array.from(new Set(broad));
+  return Array.from(new Set([...explicit, ...broad]));
 }
 
 function getExerciseMuscleTargets(ex) {
