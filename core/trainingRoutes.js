@@ -1232,6 +1232,34 @@ function isGeneratedTaskExercise(ex) {
     || /^(mh|pb|task)_/.test(String(ex?.canonicalExerciseId || ''));
 }
 
+/* §2.0.3 — catch a contaminated progression key at WRITE time.
+
+   The §3 relabel bug left an exercise whose name said "Triceps Extension" and
+   whose canonicalExerciseId said close-grip-barbell-bench-press. Because §1.3
+   made that id the progression key, sets logged against it would have written
+   progression state under a different lift. Production carried zero such rows
+   — only one session has ever been logged — but the guard belongs here so the
+   next one is rejected rather than discovered months later.
+
+   Compared with separators stripped: the exercise table uses hyphen slugs and
+   lift history uses underscore slugs, which is a vocabulary split of its own
+   and must not read as a mismatch. */
+function liftHistoryKeyDisagreesWithName(entry) {
+  const compact = (value) => String(value || "").toLowerCase().replace(/[^a-z0-9]+/g, "");
+  const key = compact(entry?.canonicalExerciseId || entry?.baseId);
+  const name = compact(entry?.exerciseName || entry?.name);
+  if (!key || !name) return false;
+  return key !== name && !key.includes(name) && !name.includes(key);
+}
+
+function auditLoggedEntryIdentity(entries) {
+  const problems = [];
+  for (const entry of Array.isArray(entries) ? entries : []) {
+    if (!liftHistoryKeyDisagreesWithName(entry)) continue;
+    problems.push(`logged "${entry?.exerciseName || entry?.name}" carries id "${entry?.canonicalExerciseId || entry?.baseId}"`);
+  }
+  return problems;
+}
 function auditPlanIdentityIntegrity(plan) {
   const problems = [];
   const seenIds = new Set();
@@ -10634,11 +10662,25 @@ function normalizeLiftHistoryKey(raw) {
     .slice(0, 180);
 }
 
+/* A plan-position id. §1.2 gave every exercise `id` = week-day-slot-exercise so
+   logging and overrides could address a specific line of a specific session.
+   That is the right shape for ADDRESSING and exactly the wrong shape for
+   IDENTITY: js/training.js sends `exerciseId: ex.exerciseId || ex.id`, and
+   oblueprint exercises carry no exerciseId, so this key silently became
+   positional the moment §1.2 shipped. The same lift got a fresh history row
+   every week, and two different exercises at the same position shared one. */
+const POSITIONAL_EXERCISE_ID = /^\d+-\d+-\d+-\d+$/;
+
 function buildLiftHistoryKey(entry) {
+  // Identity first. baseId is the legacy generator’s semantic id;
+  // canonicalExerciseId is the oblueprint one, and the same key §1.3 made
+  // authoritative for progression state - so history and progression agree.
   const baseId = safeText(entry?.baseId, 180);
   if (baseId) return normalizeLiftHistoryKey(baseId);
+  const canonicalExerciseId = safeText(entry?.canonicalExerciseId, 180);
+  if (canonicalExerciseId) return normalizeLiftHistoryKey(canonicalExerciseId);
   const exerciseId = safeText(entry?.exerciseId, 180);
-  if (exerciseId) return normalizeLiftHistoryKey(exerciseId);
+  if (exerciseId && !POSITIONAL_EXERCISE_ID.test(exerciseId)) return normalizeLiftHistoryKey(exerciseId);
   const exerciseName = safeText(entry?.exerciseName || entry?.name, 180);
   return normalizeLiftHistoryKey(exerciseName);
 }
@@ -13942,6 +13984,15 @@ async function trainingRoutes(req, res, url) {
         timerStartedAt: payload?.timerStartedAt || null,
         timerEndedAt: payload?.timerEndedAt || null
       });
+      // §2.0.3: a logged entry whose name and identity key disagree would write
+      // progression state under a different lift. Never blocks the log — losing a
+      // session is worse than one odd history row — but it is recorded loudly.
+      const identityProblems = auditLoggedEntryIdentity(payload?.entries);
+      if (identityProblems.length) {
+        console.error('[training] logged entry identity mismatch', {
+          userId: user.id, planId, count: identityProblems.length, sample: identityProblems.slice(0, 5)
+        });
+      }
       const liftHistory = await upsertLiftHistoryEntries({
         userId: user.id,
         performedAt: payload?.performedAt || null,
@@ -14082,6 +14133,8 @@ async function trainingRoutes(req, res, url) {
 }
 
 trainingRoutes._private = {
+  buildLiftHistoryKey,
+  auditLoggedEntryIdentity,
   routeApplyReplacement,
   auditPlanIdentityIntegrity,
   buildOblueprintPlanWithFallback,

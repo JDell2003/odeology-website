@@ -3066,15 +3066,22 @@
       .slice(0, 180);
   }
 
-  function resolveLiftHistoryKeyFromValues({ baseId, exerciseId, exerciseName, name } = {}) {
+  // Mirrors buildLiftHistoryKey on the server. Identity first, and never the
+  // positional `id` §1.2 introduced — keying history on week-day-slot-exercise
+  // gives the same lift a fresh row every week.
+  const POSITIONAL_EXERCISE_ID = /^\d+-\d+-\d+-\d+$/;
+
+  function resolveLiftHistoryKeyFromValues({ baseId, canonicalExerciseId, exerciseId, exerciseName, name } = {}) {
+    const positionalFree = POSITIONAL_EXERCISE_ID.test(String(exerciseId || "")) ? "" : exerciseId;
     return (
       normalizeLiftHistoryKey(baseId)
-      || normalizeLiftHistoryKey(exerciseId)
+      || normalizeLiftHistoryKey(canonicalExerciseId)
+      || normalizeLiftHistoryKey(positionalFree)
       || normalizeLiftHistoryKey(exerciseName || name)
     );
   }
 
-  function resolveLiftHistoryLookupKeys({ baseId, exerciseId, exerciseName, name } = {}) {
+  function resolveLiftHistoryLookupKeys({ baseId, canonicalExerciseId, exerciseId, exerciseName, name } = {}) {
     const seen = new Set();
     const keys = [];
     const push = (raw) => {
@@ -3083,9 +3090,10 @@
       seen.add(key);
       keys.push(key);
     };
+    push(canonicalExerciseId);
     push(exerciseName || name);
-    push(exerciseId);
     push(baseId);
+    if (!POSITIONAL_EXERCISE_ID.test(String(exerciseId || ""))) push(exerciseId);
     return keys;
   }
 
@@ -3158,6 +3166,7 @@
       for (const rawEntry of entries) {
         const aliases = resolveLiftHistoryLookupKeys({
           baseId: rawEntry?.baseId,
+          canonicalExerciseId: rawEntry?.canonicalExerciseId,
           exerciseId: rawEntry?.exerciseId || rawEntry?.id,
           exerciseName: rawEntry?.exerciseName || rawEntry?.displayName || rawEntry?.name
         });
@@ -3230,6 +3239,7 @@
       if (key) out.set(key, row);
       resolveLiftHistoryLookupKeys({
         baseId: row?.baseId,
+        canonicalExerciseId: row?.canonicalExerciseId,
         exerciseId: row?.exerciseId || row?.id,
         exerciseName: row?.exerciseName || row?.displayName || row?.name
       }).forEach((alias) => {
@@ -3424,6 +3434,7 @@
       const exerciseKey = resolveWorkoutExerciseKey(ex);
       const lookupValues = {
         baseId: ex?.baseId,
+        canonicalExerciseId: ex?.canonicalExerciseId,
         exerciseId: ex?.exerciseId || ex?.id,
         exerciseName: ex?.displayName || ex?.name
       };
@@ -12618,6 +12629,7 @@ function toggleSharePopover(force) {
         out.set(key, nextPerf);
         resolveLiftHistoryLookupKeys({
           baseId: e?.baseId,
+          canonicalExerciseId: e?.canonicalExerciseId,
           exerciseId: e?.exerciseId || e?.id,
           exerciseName: e?.exerciseName || e?.displayName || e?.name
         }).forEach((alias) => {
@@ -12654,6 +12666,7 @@ function toggleSharePopover(force) {
         out.set(key, nextEntry);
         resolveLiftHistoryLookupKeys({
           baseId: e?.baseId,
+          canonicalExerciseId: e?.canonicalExerciseId,
           exerciseId: e?.exerciseId || e?.id,
           exerciseName: e?.exerciseName || e?.displayName || e?.name
         }).forEach((alias) => {
