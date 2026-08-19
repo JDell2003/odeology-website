@@ -5852,8 +5852,30 @@ function buildWeeks(blockLength, schedule, user, exercises, targets, opts = {}) 
             for (const ex of picked) bySlot.set(String(ex.slotId || ''), ex);
             const lines = (dayBp.slots || []).map((s) => {
               const hit = bySlot.get(String(s.id || s.slotId || ''));
+              let why = '';
+              if (!hit) {
+                /* A bare "filled=NO" is a negative result with no reason, which is
+                   indistinguishable from a broken logger. Say WHY: how many rows
+                   match the slot on pattern+style at all, and how many survive the
+                   real eligibility filter for this user and day. */
+                let raw = 0;
+                try {
+                  raw = (exercises || []).filter((ex) => String(ex.pattern) === String(s.pattern)
+                    && (!s.styleRequired || String(ex.style) === String(s.styleRequired))
+                    && (!Array.isArray(s.primaryAllowed) || !s.primaryAllowed.length
+                      || s.primaryAllowed.includes(String(ex.primary)))).length;
+                } catch (e) { raw = -1; }
+                let elig = -1;
+                try {
+                  elig = filterEligible(s, exercises, user, new Set(), null, dayBp.dayType || '', null).length;
+                } catch (e) { elig = -2; }
+                why = `  reason: pattern+style+primary matches=${raw}, passes filterEligible=${elig}`
+                  + (elig === 0 && raw > 0 ? '  <-- filtered out by equipment/joint/difficulty/quality'
+                    : raw === 0 ? '  <-- NOTHING IN THE TABLE MATCHES THIS SLOT'
+                      : elig > 0 ? '  <-- eligible existed, slot lost it downstream' : '');
+              }
               return `    ${String(s.id || s.slotId).padEnd(28)} optional=${String(Boolean(s.optional)).padEnd(5)} `
-                + `pattern=${String(s.pattern).padEnd(15)} filled=${hit ? 'YES  ' + hit.name : 'NO'}`;
+                + `pattern=${String(s.pattern).padEnd(15)} filled=${hit ? 'YES  ' + hit.name : 'NO'}${why}`;
             });
             process.stderr.write(`\n@@SLOTTRACE ${dayBp.dayType} — ${(dayBp.slots || []).length} slots, `
               + `${picked.length} picked\n${lines.join('\n')}\n`
