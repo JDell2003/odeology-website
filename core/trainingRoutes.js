@@ -910,7 +910,20 @@ function normalizeOblueprintPayload(payload, { relax = false } = {}) {
     : discipline === 'military'
       ? 'Military Hybrid'
       : 'Aesthetic bodybuilding';
-  const oneOf = (value, allowed, fallback) => (allowed.includes(value) ? value : fallback);
+  /* Item 4 — the enum validator. Every enum-valued intake field flows through
+     here. A non-empty value outside the allowed set is a bug in the caller: it
+     throws in dev so it is findable in seconds, and logs loudly in prod before
+     falling back. trainingAgeBucket silently coercing '2_5y' to '6-24m' is the
+     known instance — it corrupted every acceptance measurement for a week. */
+  const oneOf = (value, allowed, fallback, field = 'enum') => {
+    if (allowed.includes(value)) return value;
+    if (value !== '' && value !== null && value !== undefined) {
+      const msg = `[intake-enum] ${field}: ${JSON.stringify(value)} not in [${allowed.join('|')}], coercing to ${JSON.stringify(fallback)}`;
+      if (String(process.env.NODE_ENV || '').toLowerCase() !== 'production' && !relax) throw new Error(msg);
+      console.error(msg);
+    }
+    return fallback;
+  };
   const asArray = (v) => Array.isArray(v) ? v : [];
   const uniqueStrings = (list, max = 24) => {
     const out = [];
@@ -974,12 +987,12 @@ function normalizeOblueprintPayload(payload, { relax = false } = {}) {
       trainingFeel === 'Aesthetic bodybuilding' ? 'Aesthetic' : 'Strength'
     ),
     experience: normalizeOblueprintExperience(src.experience),
-    location: oneOf(String(src.location || '').trim(), ['Home', 'Commercial gym'], 'Commercial gym'),
-    trainingStyle: oneOf(String(src.trainingStyle || '').trim(), ['Mostly machines/cables', 'Mostly free weights', 'Balanced mix'], 'Balanced mix'),
-    outputStyle: oneOf(String(src.outputStyle || '').trim(), ['RPE/RIR cues', 'Simple sets x reps'], 'RPE/RIR cues'),
-    closeToFailure: oneOf(String(src.closeToFailure || '').trim(), ['Yes', 'No'], 'No'),
+    location: oneOf(String(src.location || '').trim(), ['Home', 'Commercial gym'], 'Commercial gym', 'location'),
+    trainingStyle: oneOf(String(src.trainingStyle || '').trim(), ['Mostly machines/cables', 'Mostly free weights', 'Balanced mix'], 'Balanced mix', 'trainingStyle'),
+    outputStyle: oneOf(String(src.outputStyle || '').trim(), ['RPE/RIR cues', 'Simple sets x reps'], 'RPE/RIR cues', 'outputStyle'),
+    closeToFailure: oneOf(String(src.closeToFailure || '').trim(), ['Yes', 'No'], 'No', 'closeToFailure'),
     daysPerWeek: clampInt(src.daysPerWeek, 2, 6, 4),
-    sessionLengthMin: oneOf(String(src.sessionLengthMin || src.sessionLength || '').trim(), ['30', '45', '60', '75+'], '60'),
+    sessionLengthMin: oneOf(String(src.sessionLengthMin || src.sessionLength || '').trim(), ['30', '45', '60', '75+'], '60', 'sessionLengthMin'),
     priorityGroups,
     movementsToAvoid: uniqueStrings(asArray(src.movementsToAvoid), 24),
     preferredDays: uniqueStrings(asArray(src.preferredDays), 7),
@@ -1046,6 +1059,15 @@ function normalizeOblueprintPayload(payload, { relax = false } = {}) {
     }
   }
 
+  /* Item 5 — the whitelist assertion. This function is a whitelist: a field
+     the bridge emits but that is not named above is silently dropped, which is
+     how the first lastTrainedHeavy implementation changed nothing at all.
+     Any unrecognised key on the incoming payload now announces itself. */
+  for (const key of Object.keys(src)) {
+    if (!(key in normalized) && !key.startsWith('_')) {
+      console.error(`[intake-whitelist] normalizeOblueprintPayload dropped unrecognised key "${key}" — name it in the whitelist or remove it from the bridge`);
+    }
+  }
   return normalized;
 }
 
@@ -2026,6 +2048,14 @@ function mapClassicTrainingAgeToOblueprint(raw, fallbackExperience = '') {
   if (key === '6_18') return '6-24m';
   if (key === '18_36' || key === '3_5') return '2-5y';
   if (key === '5_plus') return '5y+';
+  /* Item 4 — an unrecognised non-empty bucket is a caller bug, not a shrug.
+     This silently coerced '2_5y' to '6-24m' and Jason was evaluated as a
+     6-to-24-month lifter through a week of acceptance measurements. */
+  if (key) {
+    const msg = `[intake-enum] trainingAgeBucket: ${JSON.stringify(raw)} not in [0_6|6_18|18_36|3_5|5_plus]`;
+    if (String(process.env.NODE_ENV || '').toLowerCase() !== 'production') throw new Error(msg);
+    console.error(msg);
+  }
   return normalizeOblueprintExperience(fallbackExperience);
 }
 
