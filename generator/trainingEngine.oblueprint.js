@@ -5839,6 +5839,27 @@ function buildWeeks(blockLength, schedule, user, exercises, targets, opts = {}) 
           exerciseCount: Array.isArray(filled?.exercises) ? filled.exercises.length : 0
         });
         filledDays.push({ dayType: dayBp.dayType, day: dayBp.day, exercises: filled.exercises });
+        /* SLOT TRACE (env SLOT_TRACE=<dayType|*>). Records, per required slot,
+           whether fillSlots filled it — so mechanism (b) "never filled" is
+           distinguishable from mechanism (a) "filled then removed". A logger
+           that only watched removal would print the same thing under (b) as a
+           logger that does not work. */
+        if (process.env.SLOT_TRACE && i === 0) {
+          const want = String(process.env.SLOT_TRACE);
+          if (want === '*' || want === String(dayBp.dayType)) {
+            const picked = Array.isArray(filled.exercises) ? filled.exercises : [];
+            const bySlot = new Map();
+            for (const ex of picked) bySlot.set(String(ex.slotId || ''), ex);
+            const lines = (dayBp.slots || []).map((s) => {
+              const hit = bySlot.get(String(s.id || s.slotId || ''));
+              return `    ${String(s.id || s.slotId).padEnd(28)} optional=${String(Boolean(s.optional)).padEnd(5)} `
+                + `pattern=${String(s.pattern).padEnd(15)} filled=${hit ? 'YES  ' + hit.name : 'NO'}`;
+            });
+            process.stderr.write(`\n@@SLOTTRACE ${dayBp.dayType} — ${(dayBp.slots || []).length} slots, `
+              + `${picked.length} picked\n${lines.join('\n')}\n`
+              + `    picked slotIds: ${JSON.stringify(picked.map((e) => e.slotId))}\n`);
+          }
+        }
       }
       let prescribed = allocateSetsReps(filledDays, weekType, targetsForWeek, user);
       if (weekType === 'deload') {
@@ -5854,10 +5875,25 @@ function buildWeeks(blockLength, schedule, user, exercises, targets, opts = {}) 
           })
         }));
       }
+      /* SLOT TRACE — day contents after each pass, so a compound that vanishes
+         is attributed to the exact pass that dropped it. */
+      const __trace = (label) => {
+        if (!process.env.SLOT_TRACE || i !== 0) return;
+        const want = String(process.env.SLOT_TRACE);
+        for (const d of prescribed) {
+          if (want !== '*' && want !== String(d.dayType)) continue;
+          const ex = d.exercises || [];
+          process.stderr.write(`@@PASS ${String(label).padEnd(42)} ${String(d.dayType).padEnd(12)} `
+            + `${String(ex.length).padStart(2)} ex  ${ex.map((e) => `${e.name}[${e.pattern}]`).join(' | ')}\n`);
+        }
+      };
+      __trace('after allocateSetsReps');
       if (user.discipline === 'powerbuilding') {
         prescribed = prescribed.map((d) => powerbuildingPriority.polishPowerbuildingDay(d, user));
+        __trace('after polishPowerbuildingDay');
       }
       prescribed = prescribed.map((d) => applySessionCapTrimming(d, user.sessionCap, user.priorityGroups || [], user.profile, user));
+      __trace('after applySessionCapTrimming');
       prescribed = prescribed.map((d) => ({
         ...d,
         exercises: (d.exercises || []).map((ex) => ({
@@ -5869,6 +5905,7 @@ function buildWeeks(blockLength, schedule, user, exercises, targets, opts = {}) 
         ...d,
         exercises: organizeDayExerciseOrder(d.dayType, d.exercises || [], user)
       }));
+      __trace('after organizeDayExerciseOrder');
       // Rep ladder: week 1 prescribes the bottom of each exercise's rep
       // range, and every later week adds 1 rep at the same weight. Only
       // plain numeric prescriptions ladder - timed holds and text-based
