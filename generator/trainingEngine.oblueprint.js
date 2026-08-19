@@ -175,66 +175,6 @@ const ALWAYS_AVOID_TOKENS = [
   'mini band',
   'resistance band'
 ];
-const HARD_BANNED_NAME_PATTERNS = [
-  /\bchains?\b/,
-  /\bkneeling\s*squat\b/,
-  /\bone[-\s]?arm\s*floor\s*press\b/,
-  /\bpin\s*press(es)?\b/,
-  /\bfloor\s*press\b/,
-  /\bfloor\b/,
-  /\blying\b/,
-  /\bprone\b/,
-  /\bsupine\b/,
-  /\bboard\s*press\b/,
-  /\banti[-\s]?gravity\s*press\b/,
-  /\bpowerlifting\b/,
-  /\bcompetition\b/,
-  /\btechnique\b/,
-  /\bneck\s*press\b/,
-  /\bspeed\b/,
-  /\bdynamic\s*effort\b/,
-  /\btempo\b/,
-  /\bpaused?\b/,
-  /\bgood\s*morning\b/,
-  /\boverhead\s*squat\b/,
-  /\bpistol\s*squat\b/,
-  /\bfrankenstein\b/,
-  /\baxle\b/,
-  /\blog\b/,
-  /\byoke\b/,
-  /\bstone\b/,
-  /\bfarmers?\b/,
-  /\bsandbag\b/,
-  /\bjammer\b/,
-  /\bdeadlift\b.*\bsingle\b/,
-  /\bsingle\b.*\bdeadlift\b/,
-  /\bkneeling\b(?!.*\b(crunch|ab|core|rollout)\b)/,
-  /\bone[-\s]*arm\b.*\blat\b.*\bpull[\s-]*down\b/,
-  /\bsingle[-\s]*arm\b.*\blat\b.*\bpull[\s-]*down\b/,
-  /\bone[-\s]*arm\b.*\bpull[\s-]*down\b/,
-  /\bsingle[-\s]*arm\b.*\bpull[\s-]*down\b/,
-  /\bone[-\s]*arm\b.*\bshoulder\s*press\b/,
-  /\bsingle[-\s]*arm\b.*\bshoulder\s*press\b/,
-  /\bone[-\s]*leg\b.*\bbarbell\b.*\bsquat\b/,
-  /\bsingle[-\s]*leg\b.*\bbarbell\b.*\bsquat\b/,
-  /\bsquat\s*with\s*plate\s*movers\b/,
-  /\bcalf\s*raise\s*on\s*a\s*dumbbell\b/,
-  /\bbosu\b/,
-  /\bbalance\s*board\b/,
-  /^(?!.*\b(lying|seated)\b).*\bhamstring\s*curls?\b/i,
-  /^(?!.*\b(lying|seated)\b).*\bleg\s*curls?\b/i,
-  /\b(bench|press|curl|extension|squat|deadlift|row)\b.*\bto\b.*\b(bench|press|curl|extension|squat|deadlift|row)\b/,
-  /\bwith\s*a\s*twist\b/,
-  /\bside[\s-]*to[\s-]*side\b/,
-  /\brocky\b/,
-  /\bbehind(?:[\s-]*the)?[\s-]*neck\b/,
-  /\brear\s*delt\s*row\b/,
-  /\bgironda\b/,
-  /\bsternum\s*chin\b/,
-  /\bmini\s*band\b/,
-  /\bresistance\s*band\b/,
-  /\bbanded\b/
-];
 
 const NOVELTY_NAME_PATTERNS = [
   /\bfrankenstein\b/,
@@ -1169,14 +1109,17 @@ function normalizeName(raw) {
     .trim();
 }
 
+/* §0.2 — a movement is excluded because of WHAT IT IS, and the row says so in
+   words. This replaces HARD_BANNED_NAME_PATTERNS: 60 name regexes that removed
+   132 of 701 rows — 19% of the catalogue — of which five warranted exclusion.
+   31 band rows (bands are equipment, not a hazard), 23 rows containing
+   "lying" (including Lying Machine Squat, a squat, in a table that could not
+   fill its squat slot), and every powerlifting variant with "paused",
+   "competition" or "speed" in its name. Equipment gating, the joint screen and
+   difficulty already exclude what needs excluding, and they can explain
+   themselves. */
 function isHardBannedExercise(ex) {
-  const name = normalizeName(ex?.name);
-  if (!name) return false;
-  if (HARD_BANNED_NAME_PATTERNS.some((rx) => rx.test(name))) return true;
-  if (/\bone arm\b/.test(name) && /\bfloor press\b/.test(name)) return true;
-  const equipment = normalizeName(Array.isArray(ex?.equipment) ? ex.equipment.join(' ') : ex?.equipment);
-  if (/\bband(s)?\b/.test(equipment)) return true;
-  return false;
+  return Boolean(ex && typeof ex.excludeReason === 'string' && ex.excludeReason.trim());
 }
 
 function isCalisthenicsLikeExercise(ex) {
@@ -1259,9 +1202,11 @@ function normalizeBodybuildingDisplayName(name, user) {
   if (/^chest-supported row$/i.test(raw) && Array.isArray(user?.allowedEquipment) && user.allowedEquipment.includes('machine') && !user.allowedEquipment.includes('dumbbell')) {
     return 'Machine Chest-Supported Row';
   }
-  if ((/\bhamstring\s*curls?\b/i.test(raw) || /\bleg\s*curls?\b/i.test(raw)) && !/\b(lying|seated)\b/i.test(raw)) {
-    return 'Seated Hamstring Curl';
-  }
+  /* The curl-collapsing rename is gone with the ban list it papered over.
+     It renamed every non-lying, non-seated curl to "Seated Hamstring Curl",
+     so a newly unbanned "Leg Curl" and the real "Seated Hamstring Curl" could
+     land on the same day as visible duplicates - distinct canonical rows, one
+     display name - and the lower-day validator then failed the whole plan. */
   if (/^neck\s*press$/i.test(raw)) return 'Bench Press';
   if (/one[-\s]*leg\b.*\bbarbell\b.*\bsquat/i.test(raw) || /single[-\s]*leg\b.*\bbarbell\b.*\bsquat/i.test(raw)) return 'Hack Squat';
   if (/^bench press\s*\(technique\)$/i.test(raw)) return 'Bench Press';
@@ -8967,7 +8912,18 @@ function buildQualityReplacement(day, exercise, slot, user, exercises, weekType,
     const sets = effectiveSlot.styleRequired === 'Isolation'
       ? Math.min(3, Math.max(2, Number(exercise?.sets || 2)))
       : Math.max(2, Math.min(BODYBUILDING_MAX_SETS_PER_EXERCISE, Number(exercise?.sets || 3)));
-    return buildExerciseOutput(replacement, user, { ...effectiveSlot, optional: false }, sets, rr, { weekType: String(weekType || 'base') });
+    const output = buildExerciseOutput(replacement, user, { ...effectiveSlot, optional: false }, sets, rr, { weekType: String(weekType || 'base') });
+    /* The dedupe above compares canonical identity; the lower-day validator
+       compares DISPLAY names. Output renames can make two different rows share
+       a visible name — polishLowerCoachCleanup swapped in a second "Seated
+       Hamstring Curl" this way and then failed its own validator, sending the
+       whole profile to the safe fallback. A replacement whose FINAL name is
+       already on the day is a duplicate, whatever its canonical row. */
+    const outputName = normalizeName(output?.displayName || output?.name || '');
+    if (outputName && (dayWithoutCurrent?.exercises || []).some((entry) => normalizeName(entry?.displayName || entry?.name || '') === outputName)) {
+      return null;
+    }
+    return output;
   });
 }
 
