@@ -10275,12 +10275,43 @@ function enforceNarrowPriorityOffGoalCap(day, user) {
   }
   pullFirstPriority(comboOrder[1]);
   const comboEstablished = comboOrder.every((muscle) => ordered.some((exercise) => exerciseSatisfiesDayPriorityIdentity(exercise, muscle, user, day?.dayType || '')));
+  /* The cap exists to keep a narrow-priority session focused on the user's two
+     priority muscles by limiting off-goal work. That premise requires the day
+     to be ABLE to carry both. When it cannot — Calves on an Upper day — every
+     branch below that sets allowedOffGoalSlots is guarded by comboEstablished,
+     so the allowance stays 0 and EVERY off-goal exercise is deleted.
+
+     Measured on powerbuilding 4d core+calves, day Upper:
+       into the chain                      5 ex
+       after polishNarrowPrioritySessionOrder 5 ex  (reorders priority to front)
+       after this cap                      2 ex  Pallof Press | Cable Crunch
+     Row, Pulldown and Lateral Raise were deleted, leaving a day with no
+     compound movement at all. That shipped.
+
+     A focus cap has no basis on a day that structurally cannot express the
+     combo, so it does not apply there. This is the authority fix, not a
+     calibration: the pass may reorder and it may trim toward the combo, but it
+     may not strip a day it has no premise to judge. */
+  if (!comboEstablished) return day;
   const directPriorityRemaining = remaining.filter((exercise) => comboOrder.some((muscle) => exerciseSatisfiesDayPriorityIdentity(exercise, muscle, user, day?.dayType || '')));
   const protectedLowerRemaining = isPosteriorCoreDay ? remaining.filter((exercise) => isMeaningfulLowerPriorityExercise(exercise, user)) : [];
+  /* A focus cap trims ACCESSORY volume. It is not licensed to delete the day's
+     structural movements. Off-goal compounds are therefore not off-goal for
+     this purpose — they are what makes the session a training day rather than a
+     list of isolations. Without this, a core+calves user's Lower day lost its
+     squat and hinge and shipped as leg curl + calf raise + two core movements.
+
+     The cap still does its job: off-goal ISOLATION work is capped exactly as
+     before, which is the volume a narrow-priority user wanted redirected. */
+  const offGoalCompounds = remaining.filter((exercise) => {
+    if (comboOrder.some((muscle) => exerciseSatisfiesDayPriorityIdentity(exercise, muscle, user, day?.dayType || ''))) return false;
+    if (isPosteriorCoreDay && isMeaningfulLowerPriorityExercise(exercise, user)) return false;
+    return String(exercise?.style || '') === 'Compound';
+  });
   const offGoalRemaining = remaining.filter((exercise) => {
     if (comboOrder.some((muscle) => exerciseSatisfiesDayPriorityIdentity(exercise, muscle, user, day?.dayType || ''))) return false;
     if (isPosteriorCoreDay && isMeaningfulLowerPriorityExercise(exercise, user)) return false;
-    return true;
+    return String(exercise?.style || '') !== 'Compound';
   });
   directPriorityRemaining.sort((a, b) => {
     const aScore = comboOrder.reduce((sum, muscle, index) => sum + (exerciseSatisfiesDayPriorityIdentity(a, muscle, user, day?.dayType || '') ? (index === 0 ? 20 : 16) : 0), 0);
@@ -10315,6 +10346,8 @@ function enforceNarrowPriorityOffGoalCap(day, user) {
       return String(a?.name || '').localeCompare(String(b?.name || ''));
     })
     .slice(0, allowedOffGoalSlots);
+  // Structural movements are kept regardless of the accessory allowance.
+  ordered.push(...offGoalCompounds);
   ordered.push(...keptOffGoal);
   return {
     ...day,
@@ -12376,7 +12409,18 @@ function upgradePlanQualityPass(baseState, user, exercises) {
           ...finalizedPowerbuildingDay,
           exercises: organizeDayExerciseOrder(day?.dayType || '', finalizedPowerbuildingDay.exercises || [], user)
         };
-        orderedDay = enforceNarrowPriorityOffGoalCap(polishNarrowPrioritySessionOrder(orderedDay, user), user);
+        const __t = (lbl, dd) => {
+          if (!process.env.SLOT_TRACE) return dd;
+          const w = String(process.env.SLOT_TRACE);
+          if (w === '*' || w === String(dd?.dayType)) {
+            const ex = dd?.exercises || [];
+            process.stderr.write(`@@SUB ${String(lbl).padEnd(36)} ${String(dd?.dayType).padEnd(12)} ${String(ex.length).padStart(2)} ex  ${ex.map((e) => `${e.name}[${e.pattern}]`).join(' | ')}\n`);
+          }
+          return dd;
+        };
+        __t('into narrow-priority chain', orderedDay);
+        orderedDay = __t('after polishNarrowPrioritySessionOrder', polishNarrowPrioritySessionOrder(orderedDay, user));
+        orderedDay = __t('after enforceNarrowPriorityOffGoalCap', enforceNarrowPriorityOffGoalCap(orderedDay, user));
         if (user?.discipline === 'powerbuilding') {
           const shoulderPriority = Number(user?.profile?.powerbuilding?.priorityRanks?.Shoulders || 99) <= 2;
           if (shoulderPriority && String(orderedDay?.dayType || '') === 'Pull') {
