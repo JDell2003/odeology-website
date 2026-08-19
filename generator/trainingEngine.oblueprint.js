@@ -321,6 +321,8 @@ const EXP_CFG = {
    muscles under their landmark band minimums, which the volume model is not
    allowed to do. A graded, per-axis recovery budget replaces this properly in
    phase 3. */
+const QUALITY_STRUCTURAL_PATTERNS = ['Squat', 'Hinge', 'Lunge', 'HorizontalPush', 'VerticalPush', 'HorizontalPull', 'VerticalPull'];
+
 const SESSION_CAP = { '30': 4, '45': 5, '60': 6, '75+': 7 };
 const DISTRO = {
   1: [1.0],
@@ -10144,6 +10146,12 @@ function polishNarrowPrioritySessionIdentity(day, user, exercises, weekType) {
     const slot = buildNarrowIdentityReplacementSlot(nextDay, user);
     if (!slot) break;
     const replacement = buildQualityReplacement(nextDay, current, slot, user, exercises, weekType, (candidate) => {
+      /* Same rule as polishUpperPressRedundancy: replacing a structural
+         compound requires a structural compound. */
+      if (QUALITY_STRUCTURAL_PATTERNS.includes(String(current?.pattern || ''))) {
+        if (String(candidate?.style || '') !== 'Compound') return false;
+        if (!QUALITY_STRUCTURAL_PATTERNS.includes(String(candidate?.pattern || ''))) return false;
+      }
       if (slot.muscleTarget === 'Shoulders') {
         const truth = candidate?.canonicalTruth || buildExerciseTruth(candidate, user);
         return truth.lateralDeltPattern || truth.rearDeltPattern;
@@ -10219,7 +10227,21 @@ function polishNarrowPriorityGoalDominance(day, user, exercises, weekType) {
     const targetMuscle = pickLeastRepresentedGoalPriority(nextDay, user);
     const slot = buildPriorityIdentitySlot(dayType, targetMuscle);
     if (!slot) continue;
+    /* THE RULE: a goal-dominance swap may pick a better exercise; it may not
+       pick a different KIND of exercise. The loop only targets off-goal
+       COMPOUNDS, so the replacement must itself be a structural compound. When
+       no compound serves the priority (calves, core have none) the swap
+       declines and the day keeps its structure. Without this, Leg Press
+       [Squat] became Calf Press [Isolation] and Barbell Glute Bridge [Hinge]
+       became Reverse Crunch for a core+calves user — the day kept its exercise
+       count and lost its structure, invisible to every count-based
+       measurement. 29 of 37 sweep violations sat at exactly this boundary.
+       (The same constraint placed in shared buildQualityReplacement broke 21
+       profiles into safe fallbacks — other callers legitimately cross class —
+       so it lives here, on the authority that was wrong.) */
     const replacement = buildQualityReplacement(nextDay, current, slot, user, exercises, weekType, (candidate) => {
+      if (String(candidate?.style || '') !== 'Compound') return false;
+      if (!QUALITY_STRUCTURAL_PATTERNS.includes(String(candidate?.pattern || ''))) return false;
       return exerciseDirectlyServesPriority(candidate, targetMuscle, user);
     });
     if (!replacement) continue;
@@ -10628,7 +10650,18 @@ function polishUpperPressRedundancy(day, user, exercises, weekType) {
     const idx = pressIndexes[i];
     const current = nextDay.exercises[idx];
     const slot = chooseUpperRedundancyReplacementSlot(nextDay, current, user);
+    /* THE RULE: a redundancy swap of a structural compound must itself be a
+       structural compound. The predicates below inherently select isolation
+       work (lateral/rear delts, direct arms), so under the rule they decline —
+       and the deletion branch is floored so the pass cannot take a day below
+       two structural movements. Before this, a shoulders+arms user's Push day
+       lost its only shoulder press here, then its only chest press in
+       polishChestPressRedundancy, and shipped as five isolations. */
     const replacement = buildQualityReplacement(nextDay, current, slot, user, exercises, weekType, (candidate) => {
+      if (QUALITY_STRUCTURAL_PATTERNS.includes(String(current?.pattern || ''))) {
+        if (String(candidate?.style || '') !== 'Compound') return false;
+        if (!QUALITY_STRUCTURAL_PATTERNS.includes(String(candidate?.pattern || ''))) return false;
+      }
       const truth = candidate?.canonicalTruth || buildExerciseTruth(candidate, user);
       if (slot.muscleTarget === 'Shoulders') return truth.lateralDeltPattern || truth.rearDeltPattern;
       if (slot.muscleTarget === 'Arms') return truth.directArmType !== 'none';
@@ -10643,7 +10676,10 @@ function polishUpperPressRedundancy(day, user, exercises, weekType) {
       return truth.lateralDeltPattern || truth.rearDeltPattern || truth.shoulderPressPattern;
     });
     const armDirectCount = countExercisesByPredicate(nextDay, (exercise) => exerciseDirectlyServesPriority(exercise, 'Arms', user) && !isCoachSideEyeAccessory(exercise, user));
-    if ((isNarrowShouldersArmsUser(user) || isNarrowChestCoreUser(user) || isChestShouldersArmsUser(user)) && shoulderDirectCount >= 2 && (armDirectCount >= 1 || nextDay.exercises.length > 4)) {
+    const structuralAfterDelete = nextDay.exercises.filter((entry, entryIdx) => entryIdx !== idx
+      && QUALITY_STRUCTURAL_PATTERNS.includes(String(entry?.pattern || ''))).length;
+    if (structuralAfterDelete >= 2
+      && (isNarrowShouldersArmsUser(user) || isNarrowChestCoreUser(user) || isChestShouldersArmsUser(user)) && shoulderDirectCount >= 2 && (armDirectCount >= 1 || nextDay.exercises.length > 4)) {
       nextDay.exercises.splice(idx, 1);
     }
   }
@@ -12331,48 +12367,56 @@ function upgradePlanQualityPass(baseState, user, exercises) {
           usedNames.add(String(current?.name || ''));
           return current;
         });
+        __q('after upgradedExercises map', { ...day, exercises: upgradedExercises });
         const polishedShoulders = polishDuplicateShoulderPresses(
           { ...day, exercises: upgradedExercises },
           user,
           exercises,
           String(week?.weekType || 'base')
         );
+        __q('after polishedShoulders', polishedShoulders);
         const polishedLateralRedundancy = polishLateralRaiseRedundancy(
           polishedShoulders,
           user,
           exercises,
           String(week?.weekType || 'base')
         );
+        __q('after polishedLateralRedundancy', polishedLateralRedundancy);
         const polishedUpperPresses = polishUpperPressRedundancy(
           polishedLateralRedundancy,
           user,
           exercises,
           String(week?.weekType || 'base')
         );
+        __q('after polishedUpperPresses', polishedUpperPresses);
         const polishedChestPresses = polishChestPressRedundancy(
           polishedUpperPresses,
           user,
           exercises,
           String(week?.weekType || 'base')
         );
+        __q('after polishedChestPresses', polishedChestPresses);
         const polishedChestLeak = polishBackDominantChestLeak(
           polishedChestPresses,
           user,
           exercises,
           String(week?.weekType || 'base')
         );
+        __q('after polishedChestLeak', polishedChestLeak);
         const polishedBackSupport = polishBackBuilderSupport(
           polishedChestLeak,
           user,
           exercises,
           String(week?.weekType || 'base')
         );
+        __q('after polishedBackSupport', polishedBackSupport);
         const polishedIdentity = polishPriorityDominanceSessionIdentity(
           polishedBackSupport,
           user,
           exercises,
           String(week?.weekType || 'base')
         );
+        __q('after polishedIdentity', polishedIdentity);
         const polishedPowerbuildingPull = polishPowerbuildingPullCompoundSupport(
           polishedIdentity,
           user,
@@ -12385,24 +12429,28 @@ function upgradePlanQualityPass(baseState, user, exercises) {
           exercises,
           String(week?.weekType || 'base')
         );
+        __q('after polishedNarrowIdentity', polishedNarrowIdentity);
         const polishedNarrowDominance = polishNarrowPriorityGoalDominance(
           polishedNarrowIdentity,
           user,
           exercises,
           String(week?.weekType || 'base')
         );
+        __q('after polishedNarrowDominance', polishedNarrowDominance);
         const polishedGlutePriority = polishGlutePriorityExpression(
           polishedNarrowDominance,
           user,
           exercises,
           String(week?.weekType || 'base')
         );
+        __q('after polishedGlutePriority', polishedGlutePriority);
         const polishedArmAccessories = polishCoachSideEyeArmAccessories(
           polishedGlutePriority,
           user,
           exercises,
           String(week?.weekType || 'base')
         );
+        __q('after polishedArmAccessories', polishedArmAccessories);
         const polishedLowerCleanup = polishLowerCoachCleanup(
           polishedArmAccessories,
           user,
@@ -12410,18 +12458,21 @@ function upgradePlanQualityPass(baseState, user, exercises) {
           String(week?.weekType || 'base'),
           { weekIndex: week?.weekIndex }
         );
+        __q('after polishedLowerCleanup', polishedLowerCleanup);
         const polishedPowerbuildingHinge = polishPowerbuildingTrueHingeExposure(
           polishedLowerCleanup,
           user,
           exercises,
           String(week?.weekType || 'base')
         );
+        __q('after polishedPowerbuildingHinge', polishedPowerbuildingHinge);
         const polishedAssembledLower = polishAssembledLowerDay(
           polishedPowerbuildingHinge,
           user,
           exercises,
           String(week?.weekType || 'base')
         );
+        __q('after polishedAssembledLower', polishedAssembledLower);
         const polishedLowerFatigue = polishLowerFatigueStacking(
           polishedAssembledLower,
           user,
@@ -12429,12 +12480,14 @@ function upgradePlanQualityPass(baseState, user, exercises) {
           String(week?.weekType || 'base'),
           { weekIndex: week?.weekIndex }
         );
+        __q('after polishedLowerFatigue', polishedLowerFatigue);
         const polishedDay = polishShortSessionHipDominantClustering(
           polishedLowerFatigue,
           user,
           exercises,
           String(week?.weekType || 'base')
         );
+        __q('after polishedDay', polishedDay);
         const finalizedPowerbuildingDay = user?.discipline === 'powerbuilding'
           ? powerbuildingPriority.polishPowerbuildingDay({ ...day, exercises: polishedDay.exercises || [] }, user)
           : { ...day, exercises: polishedDay.exercises || [] };
