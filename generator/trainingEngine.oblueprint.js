@@ -12285,6 +12285,17 @@ function upgradePlanQualityPass(baseState, user, exercises) {
   return withPlannerTiming(user, 'qualityUpgradePassMs', () => {
     const upgradedWeeks = (Array.isArray(baseState.weeks) ? baseState.weeks : []).map((week) => {
       const nextDays = (week?.days || []).map((day) => {
+        const __q = (lbl, dd) => {
+          if (!process.env.SLOT_TRACE) return dd;
+          const w = String(process.env.SLOT_TRACE);
+          if (w === '*' || w === String(dd?.dayType)) {
+            const ex = dd?.exercises || [];
+            const C = new Set(['Squat', 'Hinge', 'Lunge', 'HorizontalPush', 'VerticalPush', 'HorizontalPull', 'VerticalPull']);
+            process.stderr.write(`@@Q ${String(lbl).padEnd(30)} ${String(dd?.dayType).padEnd(12)} ${String(ex.length).padStart(2)} ex/${ex.filter((e) => C.has(String(e.pattern))).length}c  ${ex.map((e) => e.name).join(' | ')}\n`);
+          }
+          return dd;
+        };
+        __q('ENTRY to upgradePlanQualityPass', day);
         const usedNames = new Set();
         const upgradedExercises = (day?.exercises || []).map((exercise) => {
           let current = { ...exercise };
