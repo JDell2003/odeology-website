@@ -12659,18 +12659,36 @@ function buildOblueprintPlan(input, opts = {}) {
     });
 
     const { targets, frequencyTargets } = computeWeeklyTargets(user);
+    /* SLOT TRACE, plan level. The per-day pipeline is proven clean — every
+       required slot fills and no pass removes anything — so the rewrite happens
+       among these stages. Prints contents, not counts, because the shipped day
+       turned out to be a DIFFERENT day rather than a trimmed one. */
+    const __planTrace = (label, weeks) => {
+      if (!process.env.SLOT_TRACE) return;
+      const want = String(process.env.SLOT_TRACE);
+      const wk = (Array.isArray(weeks) ? weeks : []).find((w) => Number(w?.weekIndex ?? w?.index) === 1) || (weeks || [])[0];
+      for (const d of (wk?.days || [])) {
+        if (want !== '*' && want !== String(d.dayType)) continue;
+        const ex = d.exercises || [];
+        process.stderr.write(`@@PLAN ${String(label).padEnd(34)} ${String(d.dayType).padEnd(12)} `
+          + `${String(ex.length).padStart(2)} ex  ${ex.map((e) => `${e.name}[${e.pattern}]`).join(' | ')}\n`);
+      }
+    };
     const safeBase = buildSafeBasePlanner(user, PREPROCESSED_CACHE, targets, frequencyTargets);
+    __planTrace('buildSafeBasePlanner', safeBase?.weeks);
     if (safeBase?.error) return attachAbsGlutesLegsDebugMeta(safeBase, user, {
       stage: safeBase?.stage || safeBase?.failedStage || 'builder',
       failedStage: safeBase?.failedStage || safeBase?.stage || 'builder'
     });
     const qualityUpgraded = upgradePlanQualityPass(safeBase, user, PREPROCESSED_CACHE);
+    __planTrace('upgradePlanQualityPass', qualityUpgraded?.weeks);
     if (qualityUpgraded?.error) return attachAbsGlutesLegsDebugMeta(qualityUpgraded, user, {
       stage: qualityUpgraded?.stage || qualityUpgraded?.failedStage || 'builder',
       failedStage: qualityUpgraded?.failedStage || qualityUpgraded?.stage || 'builder'
     });
     logComboStageEnter(user, 'priority repair');
     const priorityRepairedWeeks = repairVisiblePriorityStructure(qualityUpgraded.weeks, user, PREPROCESSED_CACHE, targets);
+    __planTrace('repairVisiblePriorityStructure', priorityRepairedWeeks);
     logComboStageExit(user, 'priority repair');
     logComboStageEnter(user, 'final dedupe');
     const dedupedWeeks = enforceFinalVisibleDedupeInvariant(
@@ -12679,6 +12697,7 @@ function buildOblueprintPlan(input, opts = {}) {
       PREPROCESSED_CACHE
     );
     logComboStageExit(user, 'final dedupe');
+    __planTrace('enforceFinalVisibleDedupeInvariant', dedupedWeeks);
     logComboStageEnter(user, 'route repair');
     const repairedState = {
       ...qualityUpgraded,
@@ -12686,6 +12705,7 @@ function buildOblueprintPlan(input, opts = {}) {
     };
     logComboStageExit(user, 'route repair');
     const plan = attachAdaptiveCoachingLayer(repairedState, user, targets, frequencyTargets);
+    __planTrace('attachAdaptiveCoachingLayer', plan?.weeks);
     if (plan?.error) return attachAbsGlutesLegsDebugMeta(plan, user, {
       stage: plan?.stage || plan?.failedStage || 'route repair',
       failedStage: plan?.failedStage || plan?.stage || 'route repair'
