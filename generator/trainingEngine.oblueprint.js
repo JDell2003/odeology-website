@@ -5840,7 +5840,13 @@ function buildWeeks(blockLength, schedule, user, exercises, targets, opts = {}) 
           dayType: dayBp.dayType,
           exerciseCount: Array.isArray(filled?.exercises) ? filled.exercises.length : 0
         });
-        filledDays.push({ dayType: dayBp.dayType, day: dayBp.day, exercises: filled.exercises });
+        filledDays.push({
+          dayType: dayBp.dayType,
+          day: dayBp.day,
+          exercises: filled.exercises,
+          __requiredStructural: (dayBp.slots || []).filter((s) => !s.optional
+            && QUALITY_STRUCTURAL_PATTERNS.includes(String(s.pattern || ''))).length
+        });
         /* SLOT TRACE (env SLOT_TRACE=<dayType|*>). Records, per required slot,
            whether fillSlots filled it — so mechanism (b) "never filled" is
            distinguishable from mechanism (a) "filled then removed". A logger
@@ -5886,6 +5892,17 @@ function buildWeeks(blockLength, schedule, user, exercises, targets, opts = {}) 
         }
       }
       let prescribed = allocateSetsReps(filledDays, weekType, targetsForWeek, user);
+      /* STRUCTURAL FLOOR baseline: what fillSlots actually delivered, with
+         prescriptions attached. The floor at attachAdaptiveCoachingLayer
+         restores from this if any later pass drops the day below its
+         blueprint's required compound count. */
+      prescribed = prescribed.map((d, idx) => ({
+        ...d,
+        __requiredStructural: Number(filledDays[idx]?.__requiredStructural || 0),
+        __structuralBaseline: (d.exercises || [])
+          .filter((ex) => QUALITY_STRUCTURAL_PATTERNS.includes(String(ex?.pattern || '')))
+          .map((ex) => ({ ...ex }))
+      }));
       if (weekType === 'deload') {
         prescribed = prescribed.map((day) => ({
           ...day,
@@ -12730,8 +12747,52 @@ function upgradePlanQualityPass(baseState, user, exercises) {
   });
 }
 
+/* THE STRUCTURAL FLOOR. Every pass between fillSlots and here may swap,
+   dedupe or delete — and three of them were found replacing squats and presses
+   with priority isolation work, while a fourth deleted what a guarded pass
+   declined to swap. Guarding passes one at a time whack-a-moled (fixing the
+   swap moved the loss to the dedupe), so the invariant is enforced once, at
+   the single point every assembly path funnels through: a day may not ship
+   with fewer structural compounds than its own blueprint required. Missing
+   compounds are restored from what fillSlots actually delivered, replacing
+   non-structural work from the end of the day so the session cap holds. */
+function enforceStructuralFloor(weeks, user) {
+  for (const week of Array.isArray(weeks) ? weeks : []) {
+    for (const day of week?.days || []) {
+      const required = Number(day?.__requiredStructural || 0);
+      const baseline = Array.isArray(day?.__structuralBaseline) ? day.__structuralBaseline : [];
+      if (required > 0 && baseline.length) {
+        const isStructural = (ex) => QUALITY_STRUCTURAL_PATTERNS.includes(String(ex?.pattern || ''));
+        const have = () => (day.exercises || []).filter(isStructural).length;
+        const names = new Set((day.exercises || []).map((ex) => String(ex?.name || '')));
+        for (const missing of baseline) {
+          if (have() >= required) break;
+          if (names.has(String(missing?.name || ''))) continue;
+          const idx = (() => {
+            for (let i = (day.exercises || []).length - 1; i >= 0; i -= 1) {
+              if (!isStructural(day.exercises[i])) return i;
+            }
+            return -1;
+          })();
+          const restored = { ...missing };
+          if (idx >= 0) day.exercises.splice(idx, 1, restored);
+          else day.exercises.push(restored);
+          names.add(String(restored?.name || ''));
+          logAbsGlutesLegsComboDebug(user, 'structural-floor-restore', {
+            dayType: day?.dayType || null, restored: restored?.name || null
+          });
+        }
+      }
+      delete day.__requiredStructural;
+      delete day.__structuralBaseline;
+    }
+  }
+  return weeks;
+}
+
 function attachAdaptiveCoachingLayer(plan, user, targets, frequencyTargets) {
   if (!plan || plan.error) return plan;
+  enforceStructuralFloor(plan.weeks, user);
   const materialized = materializePlanResult(
     user,
     plan.schedule,
