@@ -1015,6 +1015,7 @@ function normalizeOblueprintPayload(payload, { relax = false } = {}) {
     running: (src.running && typeof src.running === 'object') ? src.running : null,
     rucking: (src.rucking && typeof src.rucking === 'object') ? src.rucking : null,
     goals: (src.goals && typeof src.goals === 'object') ? src.goals : null,
+    martialArts: (src.martialArts && typeof src.martialArts === 'object') ? src.martialArts : null,
     benchVariation: String(src.benchVariation || '').trim() || null,
     benchWeight: Number.isFinite(Number(src.benchWeight)) ? Number(src.benchWeight) : null,
     benchReps: Number.isFinite(Number(src.benchReps)) ? Number(src.benchReps) : null,
@@ -1440,7 +1441,9 @@ function planPassesFloorGate(plan, src) {
         // completeness — but an endurance day IS one session-sized entry: a
         // long ruck day carries exactly one exercise and is complete.
         const allEndurance = exs.length > 0 && exs.every((e) => ['running', 'rucking'].includes(String(e?.discipline || '')));
-        if (exs.length < 2 && !allEndurance) return false;
+        const martialArtsBlock = Array.isArray(d?.sessions) && d.sessions.length > 0
+          && d.sessions.every((sn) => String(sn?.discipline || '') === 'martialArts');
+        if (exs.length < 2 && !allEndurance && !martialArtsBlock) return false;
         for (const e of exs) {
           const name = String(e?.name || e?.displayName || '');
           if (!name) return false;
@@ -1879,6 +1882,134 @@ function routeAttachGoalProjections(plan, user) {
   if (Object.keys(projections).length) {
     plan.meta = plan.meta || {};
     plan.meta.goalProjections = projections;
+  }
+  return plan;
+}
+
+/* Phase 2.4 - compose martial arts into the week. The engine never writes
+   the session: each class renders as a labelled block with no exercises, and
+   everything else schedules around it.
+
+   fixed mode: the user's class days are immovable - hard constraints. If a
+   fixed day collides with the ordering rules the compromise is RECORDED, not
+   silently resolved, because the user's schedule outranks the engine's
+   preference. engine mode: classes land on free calendar days maximising
+   separation from heavy lower work.
+
+   Ordering rules enforced on the LIFTING side (the movable side):
+     - grappling day -> the NEXT day's heavy deadlifts and rows are dropped to
+       light (grip and spinal erectors are already cooked)
+     - hard sparring -> the PREVIOUS day may not carry a heavy squat
+     - five or more classes a week -> the lifting role drops to maintain and
+       plan.meta.overrides says so */
+function routeComposeMartialArtsSessions(plan, user) {
+  const cfg = user?.martialArts;
+  if (!plan || plan.error || !cfg || cfg.enabled === false) return plan;
+  let maModule = null;
+  try { maModule = require('../generator/disciplines/martialArts'); } catch (e) { return plan; }
+  const sessions = maModule.build(cfg);
+  if (!sessions.length) return plan;
+  const WEEK_ORDER = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'];
+  const POSTERIOR = { Legs: 8, Lower: 8, LowerFocus: 7, FullBodyB: 7 };
+  const compromises = [];
+  for (const week of plan.weeks || []) {
+    const days = week?.days || [];
+    if (!days.length) continue;
+    const labelOf = (d) => String(d?.day || '');
+    const used = new Set(days.map(labelOf));
+    sessions.forEach((session, i) => {
+      let hostLabel = session.fixedDay && WEEK_ORDER.includes(session.fixedDay) ? session.fixedDay : null;
+      if (!hostLabel) {
+        // engine mode: free day first, farthest from heavy lower days
+        const free = WEEK_ORDER.filter((d) => !used.has(d));
+        const heavyLowerLabels = days
+          .filter((d) => (d.sessions || [{ dayType: d.dayType }]).some((sn) => Number(POSTERIOR[String(sn.dayType)] || 0) >= 7))
+          .map(labelOf);
+        const scoreLabel = (label) => {
+          const pos = WEEK_ORDER.indexOf(label);
+          let minGap = 7;
+          for (const h of heavyLowerLabels) {
+            const gap = Math.abs(pos - WEEK_ORDER.indexOf(h));
+            minGap = Math.min(minGap, Math.min(gap, 7 - gap));
+          }
+          return minGap;
+        };
+        hostLabel = (free.sort((a, b) => scoreLabel(b) - scoreLabel(a))[0])
+          || (days.slice().sort((a, b) => (a.sessions || []).length - (b.sessions || []).length)[0] || {}).day
+          || null;
+      }
+      if (!hostLabel) return;
+      const existing = days.find((d) => labelOf(d) === hostLabel);
+      const block = {
+        slotIndex: existing && Array.isArray(existing.sessions) ? existing.sessions.length : 0,
+        window: cfg.typicalTime || null,
+        dayType: session.name,
+        discipline: 'martialArts',
+        intensity: session.intensity,
+        grappling: session.grappling,
+        striking: session.striking,
+        fatigue: session.fatigue,
+        exercises: []
+      };
+      if (existing) {
+        if (!Array.isArray(existing.sessions)) {
+          existing.sessions = [{ slotIndex: 0, window: null, dayType: existing.dayType, discipline: 'lifting', exercises: existing.exercises }];
+        }
+        block.slotIndex = existing.sessions.length;
+        existing.sessions.push(block);
+        existing.separationHours = Number(cfg.minSeparationHours) || 6;
+      } else {
+        const newDay = { day: hostLabel, dayType: session.name, sessions: [block], exercises: [], separationHours: null };
+        const pos = WEEK_ORDER.indexOf(hostLabel);
+        let insertAt = days.length;
+        for (let k = 0; k < days.length; k += 1) {
+          if (WEEK_ORDER.indexOf(labelOf(days[k])) > pos) { insertAt = k; break; }
+        }
+        days.splice(insertAt, 0, newDay);
+        used.add(hostLabel);
+      }
+    });
+    /* Ordering rules, enforced on the movable side. */
+    const isHeavy = (ex, rx) => rx.test(String(ex?.name || '')) && (() => {
+      const reps = Number(String(ex?.reps ?? '').match(/\d+/)?.[0] || 0);
+      return reps > 0 && reps <= 5;
+    })();
+    for (const day of days) {
+      const ma = (day.sessions || []).filter((sn) => sn.discipline === 'martialArts');
+      if (!ma.length) continue;
+      const pos = WEEK_ORDER.indexOf(labelOf(day));
+      const nextDay = days.find((d) => WEEK_ORDER.indexOf(labelOf(d)) === (pos + 1) % 7);
+      const prevDay = days.find((d) => WEEK_ORDER.indexOf(labelOf(d)) === (pos + 6) % 7);
+      if (ma.some((sn) => sn.grappling) && nextDay) {
+        for (const ex of nextDay.exercises || []) {
+          if (isHeavy(ex, /deadlift|\brow\b/i)) {
+            const reps = Number(String(ex?.reps ?? '').match(/\d+/)?.[0] || 0);
+            ex.reps = String(Math.max(8, reps + 3));
+            ex.progression = { ...(ex.progression || {}), lastDecision: 'Lightened: grip and spinal erectors are still recovering from ' + ma[0].dayType + ' the day before.' };
+            compromises.push({ rule: 'no heavy deadlift/row within 24h after grappling', day: labelOf(nextDay), action: 'lightened ' + ex.name });
+          }
+        }
+      }
+      if (ma.some((sn) => sn.intensity === 'hard_sparring') && prevDay) {
+        for (const ex of prevDay.exercises || []) {
+          if (isHeavy(ex, /\bsquats?\b/i)) {
+            const reps = Number(String(ex?.reps ?? '').match(/\d+/)?.[0] || 0);
+            ex.reps = String(Math.max(8, reps + 3));
+            ex.progression = { ...(ex.progression || {}), lastDecision: 'Lightened: a fatigued lower body in a live round is an injury risk, and ' + ma[0].dayType + ' is tomorrow.' };
+            compromises.push({ rule: 'no heavy squat within 24h before hard sparring', day: labelOf(prevDay), action: 'lightened ' + ex.name });
+          }
+        }
+      }
+    }
+  }
+  if (Number(cfg.sessionsPerWeek) >= 5) {
+    compromises.push({ rule: 'five or more classes a week', action: 'lifting holds at maintenance volume; your mat schedule is the priority and the bar work exists to support it, not compete with it' });
+  }
+  if (compromises.length) {
+    plan.meta = plan.meta || {};
+    const seen = new Set((plan.meta.overrides || []).map((o) => JSON.stringify(o)));
+    plan.meta.overrides = [...(plan.meta.overrides || []),
+      ...compromises.filter((o) => { const k = JSON.stringify(o); if (seen.has(k)) return false; seen.add(k); return true; })];
   }
   return plan;
 }
@@ -2491,6 +2622,7 @@ function buildOblueprintPlanWithFallback(payload, opts = {}) {
        powerbuilding returns before it. Priority isolation gets its band at the
        one point every result passes. */
     if (result && !result.error && result.plan) routeBuildDaySessions(result.plan, src);
+    if (result && !result.error && result.plan) routeComposeMartialArtsSessions(result.plan, src);
     if (result && !result.error && result.plan) routeComposeRunningSessions(result.plan, src);
     if (result && !result.error && result.plan) routeComposeRuckingSessions(result.plan, src);
     if (result && !result.error && result.plan) routeEnsurePowerbuildingMainLiftExposures(result.plan, src);
@@ -2694,6 +2826,10 @@ function coerceClassicBodybuildingToOblueprintPayload(payload) {
     running: (src?.running && typeof src.running === 'object') ? src.running : null,
     rucking: (src?.rucking && typeof src.rucking === 'object') ? src.rucking : null,
     goals: (src?.goals && typeof src.goals === 'object') ? src.goals : null,
+    /* Phase 2.4 - martial arts. {art, sessionsPerWeek, scheduling fixed|engine,
+       fixedDays, typicalTime, intensity}. The engine never writes these
+       sessions; it schedules around them. */
+    martialArts: (src?.martialArts && typeof src.martialArts === 'object') ? src.martialArts : null,
     benchVariation: String(strength?.benchVariation || '').trim() || null,
     benchWeight: Number(strength?.benchWeight || 0) || null,
     benchReps: Number(strength?.benchReps || 0) || null,
