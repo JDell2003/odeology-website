@@ -7293,6 +7293,44 @@ function placeSessionsForWeek(schedule, user) {
     current = list;
     currentScore = incomingScore;
   }
+  /* Phase 2.4 wiring - two-a-days. When the user says they can train twice on
+     some days, the solver moves the LOWEST-cost session into slot 1 of an
+     allowed host day, freeing a full rest day. Guard rails: the donor must be
+     systemically light (<=5), donor and host may not both load any axis >=6,
+     and the move only happens when the objective does not worsen. Separation
+     defaults to 6h and is recorded on the merged day by the route. */
+  const twoADays = user && user.twoADays && typeof user.twoADays === 'object' ? user.twoADays : null;
+  const pref = String(twoADays?.preference || (twoADays?.enabled ? 'some' : 'no'));
+  if (twoADays && pref !== 'no' && current.length >= 4) {
+    const allowedDays = Array.isArray(twoADays.days) && twoADays.days.length
+      ? twoADays.days.map(String)
+      : current.map((e) => e.day);
+    const doubles = pref === 'most' ? 2 : 1;
+    for (let round = 0; round < doubles; round += 1) {
+      const costed = current.map((e, idx) => ({ ...e, idx, cost: totalCost(e.dayType) }))
+        .filter((e) => Number((SESSION_AXIS_LOADS_BY_DAYTYPE[e.dayType] || {}).systemic || 0) <= 5)
+        .sort((a, b) => a.cost - b.cost || a.idx - b.idx);
+      const donor = costed[0];
+      if (!donor) break;
+      const host = current
+        .map((e, idx) => ({ ...e, idx, cost: totalCost(e.dayType) }))
+        .filter((e) => e.idx !== donor.idx && allowedDays.includes(String(e.day)) && Number(e.slotIndex || 0) === 0)
+        .filter((e) => {
+          const a = SESSION_AXIS_LOADS_BY_DAYTYPE[e.dayType] || {};
+          const b = SESSION_AXIS_LOADS_BY_DAYTYPE[donor.dayType] || {};
+          return !fatigueVector.FATIGUE_AXES.some((axis) => Number(a[axis] || 0) >= 6 && Number(b[axis] || 0) >= 6);
+        })
+        .sort((a, b) => a.cost - b.cost || a.idx - b.idx)[0];
+      if (!host) break;
+      const trial = current
+        .filter((e, idx) => idx !== donor.idx)
+        .concat([{ day: host.day, dayType: donor.dayType, slotIndex: 1 }]);
+      if (placementObjective(trial, budgets) <= currentScore) {
+        current = trial;
+        currentScore = placementObjective(trial, budgets);
+      } else break;
+    }
+  }
   const before = list.map((e) => e.dayType).join(',');
   const after = current.map((e) => e.dayType).join(',');
   if (user) {
@@ -8494,6 +8532,8 @@ function materializePlanResult(user, schedule, safeWeeks, safeResult, targets, f
       ...weekRest,
       days: (week.days || []).map((day) => ({
         dayType: day.dayType,
+        day: day.day || null,
+        slotIndex: Number(day.slotIndex || 0),
         exercises: (day.exercises || []).map(({ muscleTarget, slotId, optional, requiredEquipment, isCalisthenicsLike, nameLower, canonicalTruth, ...rest }) => ({
           ...rest,
           requiredEquipment: Array.isArray(rest?.requiredEquipment) ? rest.requiredEquipment : requiredEquipment,

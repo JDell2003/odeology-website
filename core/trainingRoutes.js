@@ -1011,6 +1011,7 @@ function normalizeOblueprintPayload(payload, { relax = false } = {}) {
     lastTrainedHeavy: (src.lastTrainedHeavy && typeof src.lastTrainedHeavy === 'object')
       ? src.lastTrainedHeavy
       : (src.lastTrainedHeavy != null ? { all: src.lastTrainedHeavy } : null),
+    twoADays: (src.twoADays && typeof src.twoADays === 'object') ? src.twoADays : null,
     benchVariation: String(src.benchVariation || '').trim() || null,
     benchWeight: Number.isFinite(Number(src.benchWeight)) ? Number(src.benchWeight) : null,
     benchReps: Number.isFinite(Number(src.benchReps)) ? Number(src.benchReps) : null,
@@ -1585,7 +1586,30 @@ function routeRestoreStructuralFloor(plan, snapshot) {
      with. The placement solver (2.3) emits multi-session days into this same
      shape; nothing downstream changes again. */
   for (const week of plan?.weeks || []) {
+    const merged = [];
+    const byLabel = new Map();
     for (const day of week?.days || []) {
+      const label = String(day?.day || '');
+      const host = label && byLabel.get(label);
+      if (host) {
+        /* Two schedule entries on one weekday: the slot-1 session joins the
+           host day. Positional ids are restamped with the session's slot so
+           the log key (planId, weekIndex, dayIndex, slotIndex) stays true. */
+        const slot = host.sessions.length;
+        (day.exercises || []).forEach((ex, exerciseIndex) => {
+          if (ex && typeof ex === 'object') ex.id = String(ex.id || '').replace(/^(\d+)-(\d+)-\d+-(\d+)$/, (mm, w2, d2, n2) => `${w2}-${d2}-${slot}-${n2}`);
+        });
+        host.sessions.push({
+          slotIndex: slot,
+          window: null,
+          dayType: day.dayType,
+          discipline: 'lifting',
+          exercises: day.exercises
+        });
+        host.exercises = host.sessions.flatMap((session) => session.exercises || []);
+        host.separationHours = 6;
+        continue;
+      }
       day.sessions = [{
         slotIndex: 0,
         window: null,
@@ -1594,7 +1618,10 @@ function routeRestoreStructuralFloor(plan, snapshot) {
         exercises: day.exercises
       }];
       day.separationHours = null;
+      if (label) byLabel.set(label, day);
+      merged.push(day);
     }
+    if (merged.length && merged.length !== (week.days || []).length) week.days = merged;
   }
   return plan;
 }
@@ -2308,6 +2335,9 @@ function coerceClassicBodybuildingToOblueprintPayload(payload) {
        means "training it now", which is today's behaviour exactly, so this is
        inert for every existing profile. */
     lastTrainedHeavy: (src?.lastTrainedHeavy || strength?.lastTrainedHeavy) || null,
+    /* Phase 2.4 wiring - "could you train twice on some days?" no | some | most,
+       plus which days and time windows. Absent means no, i.e. today exactly. */
+    twoADays: (src?.twoADays && typeof src.twoADays === 'object') ? src.twoADays : null,
     benchVariation: String(strength?.benchVariation || '').trim() || null,
     benchWeight: Number(strength?.benchWeight || 0) || null,
     benchReps: Number(strength?.benchReps || 0) || null,

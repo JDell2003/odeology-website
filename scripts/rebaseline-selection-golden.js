@@ -37,6 +37,26 @@ const namesOf = (plan) => (plan.weeks?.[0]?.days || []).map((d) => `${d.dayType}
 
 const next = {};
 const moved = [];
+/* Guard: re-baselining must never launder a regression. Every build below is
+   also swept against the structural standard, and --write refuses when the
+   count is worse than the recorded baseline - a hash update cannot bless a
+   plan that got structurally worse. */
+const SWEEP_BASELINE = path.join(__dirname, '..', 'tests', 'fixtures', 'sweep-baseline.json');
+const SWEEP_MIN = { Push: [2, 4], Pull: [2, 4], Upper: [2, 4], UpperFocus: [2, 4], Lower: [2, 4], LowerFocus: [2, 4], Legs: [2, 4], FullBodyA: [3, 4], FullBodyB: [3, 4], DeltsArms: [1, 4] };
+const SWEEP_STRUCTURAL = ['Squat', 'Hinge', 'Lunge', 'HorizontalPush', 'VerticalPush', 'HorizontalPull', 'VerticalPull'];
+let sweepViolations = 0;
+let sweepFallbacks = 0;
+function sweepPlan(built) {
+  if (built && built._safeFallback) { sweepFallbacks += 1; return; }
+  const week = built && built.plan && built.plan.weeks && built.plan.weeks[0];
+  for (const day of (week && week.days) || []) {
+    const m = SWEEP_MIN[String((day && day.dayType) || '')];
+    if (!m) continue;
+    const ex = (day && day.exercises) || [];
+    const compounds = ex.filter((e) => SWEEP_STRUCTURAL.includes(String((e && e.pattern) || ''))).length;
+    if (compounds < m[0] || ex.length < m[1]) sweepViolations += 1;
+  }
+}
 for (const disc of ['bodybuilding', 'powerbuilding']) {
   for (const days of [3, 4, 5, 6]) {
     for (const pr of PRIORITIES) {
@@ -44,6 +64,7 @@ for (const disc of ['bodybuilding', 'powerbuilding']) {
       const prev = GOLDEN[key];
       const built = P.buildOblueprintPlanWithFallback(P.coerceClassicBodybuildingToOblueprintPayload(prof(disc, days, pr, prev.seed)));
       if (built.error) { process.stderr.write(`ERROR building ${key}: ${JSON.stringify(built.error).slice(0, 120)}\n`); process.exit(1); }
+      sweepPlan(built);
       const hash = hashOf(built.plan);
       // week1 is the human-readable record of what the hash covers. It has to
       // move with the hash or the fixture documents a plan that no longer exists.
@@ -59,6 +80,14 @@ for (const m of moved) {
   for (const line of m.week1) process.stderr.write(`      ${line}\n`);
 }
 
+process.stderr.write('sweep: ' + sweepViolations + ' violations, ' + sweepFallbacks + ' fallbacks across the 56 golden builds' + String.fromCharCode(10));
+let recordedSweep = null;
+try { recordedSweep = JSON.parse(fs.readFileSync(SWEEP_BASELINE, 'utf8')); } catch (e) { recordedSweep = null; }
+if (process.argv.includes('--write') && recordedSweep
+  && (sweepViolations > Number(recordedSweep.violations || 0) || sweepFallbacks > Number(recordedSweep.fallbacks || 0))) {
+  process.stderr.write('REFUSED: sweep regressed (recorded ' + recordedSweep.violations + ' violations / ' + recordedSweep.fallbacks + ' fallbacks). Fix the regression before re-baselining.' + String.fromCharCode(10));
+  process.exit(1);
+}
 if (!process.argv.includes('--write')) {
   process.stderr.write(`\n(report only — pass --write to rewrite the fixture)\n`);
   process.exit(moved.length ? 1 : 0);
@@ -66,4 +95,5 @@ if (!process.argv.includes('--write')) {
 // Match the file's existing serialisation exactly — 1-space indent, CRLF, no
 // trailing newline — so the diff shows the drifted entries and nothing else.
 fs.writeFileSync(FIXTURE, JSON.stringify(next, null, 1).replace(/\n/g, '\r\n'), 'utf8');
+fs.writeFileSync(SWEEP_BASELINE, JSON.stringify({ violations: sweepViolations, fallbacks: sweepFallbacks, at: 'golden-56' }, null, 1));
 process.stderr.write(`\nrewrote ${FIXTURE}\n`);
