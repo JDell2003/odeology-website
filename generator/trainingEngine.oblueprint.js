@@ -7191,7 +7191,7 @@ function orderScheduleForRecovery(schedule, user) {
    hide every failure this exists to surface. */
 const SAME_AXIS_48H = ['systemic', 'kneeExtensor', 'posterior', 'connective'];
 
-function placementObjective(schedule, budgets) {
+function placementObjective(schedule, budgets, opts = null) {
   const entries = (Array.isArray(schedule) ? schedule : []).map((e) => ({
     day: String(e?.day || ''),
     dayType: String(e?.dayType || ''),
@@ -7215,11 +7215,24 @@ function placementObjective(schedule, budgets) {
   for (const axis of fatigueVector.FATIGUE_AXES) daily[axis] = Math.ceil(Number(budgets?.[axis] || 0) * 0.35);
   let soft = 0;
   const weekly = {};
+  /* Two-a-day daily budget: co-located sessions cost LESS than two isolated
+     ones, scaled by separation — max load counts in full, every further
+     session on the day counts at (1 - min(sep,12)/24), so 6h apart is 75% and
+     12h apart is 50%. The combined per-day figure is what the daily budget is
+     checked against, and what accumulates into the weekly totals. */
+  const sep = Number(opts?.separationHours) || 6;
+  const discount = 1 - Math.min(Math.max(sep, 0), 12) / 24;
+  const byDay = new Map();
   for (const e of entries) {
+    if (!byDay.has(e.day)) byDay.set(e.day, []);
+    byDay.get(e.day).push(e);
+  }
+  for (const dayEntries of byDay.values()) {
     for (const axis of fatigueVector.FATIGUE_AXES) {
-      const load = Number(e.loads[axis] || 0);
-      weekly[axis] = (weekly[axis] || 0) + load;
-      if (load > daily[axis]) hard += 250;
+      const loads = dayEntries.map((e) => Number(e.loads[axis] || 0)).sort((a, b) => b - a);
+      const combined = loads.length ? loads[0] + loads.slice(1).reduce((n, v) => n + v * discount, 0) : 0;
+      weekly[axis] = (weekly[axis] || 0) + combined;
+      if (combined > daily[axis]) hard += 250;
     }
   }
   for (const axis of fatigueVector.FATIGUE_AXES) {
@@ -7245,7 +7258,7 @@ function placeSessionsForWeek(schedule, user) {
      every downstream selection keys off it. The solver only takes over when it
      finds a placement with a strictly better objective — a schedule that
      already satisfies every constraint keeps its order, byte for byte. */
-  const incomingScore = placementObjective(list, budgets);
+  const incomingScore = placementObjective(list, budgets, { separationHours: Number(user?.twoADays?.minSeparationHours) || 6 });
   const days = list.map((e) => e.day);
   const sessions = list.map((e) => e.dayType);
   const totalCost = (dayType) => {

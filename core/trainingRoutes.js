@@ -1585,6 +1585,15 @@ function routeRestoreStructuralFloor(plan, snapshot) {
      touches exercises, so session.exercises is the same array the day ships
      with. The placement solver (2.3) emits multi-session days into this same
      shape; nothing downstream changes again. */
+  return plan;
+}
+
+/* Phase 2.2/2.4 — sessions[] on every shipped plan, every discipline, every
+   path. Same-weekday entries (the solver's two-a-day doubles) merge into one
+   day with sessions[0..n], restamped positional ids and separationHours. */
+function routeBuildDaySessions(plan, user) {
+  if (!plan || plan.error) return plan;
+  const sepDefault = Number(user?.twoADays?.minSeparationHours) || 6;
   for (const week of plan?.weeks || []) {
     const merged = [];
     const byLabel = new Map();
@@ -1607,7 +1616,7 @@ function routeRestoreStructuralFloor(plan, snapshot) {
           exercises: day.exercises
         });
         host.exercises = host.sessions.flatMap((session) => session.exercises || []);
-        host.separationHours = 6;
+        host.separationHours = sepDefault;
         continue;
       }
       day.sessions = [{
@@ -2150,6 +2159,7 @@ function buildOblueprintPlanWithFallback(payload, opts = {}) {
         if (String(process.env.NODE_ENV || '').toLowerCase() !== 'production') throw err;
       }
     }
+    if (result && !result.error && result.plan) routeBuildDaySessions(result.plan, src);
     if (result && !result.error && result.plan && !result._safeFallback && !planPassesFloorGate(result.plan, src)) {
       const safe = makeSafeFallbackResult(src, { error: 'FLOOR_GATE', reason: 'thin or unsafe day repaired via safe fallback' });
       if (safe) result = safe;
