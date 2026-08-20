@@ -1,5 +1,6 @@
 const fs = require('fs');
 const path = require('path');
+const fatigueVector = require('./fatigueVector');
 const {
   getPriorityMuscleTargets,
   normalizeMuscleLabel,
@@ -7172,6 +7173,140 @@ function orderScheduleForRecovery(schedule, user) {
   return { schedule: current, reordered: before !== after, residual };
 }
 
+/* Phase 2.3 - the placement solver.
+
+   Generalised from the military module's chooseHardConditioningIndexes, which
+   places hard conditioning by maximising cyclic day distance on ONE axis. This
+   places every session against SIX, with per-axis budgets from the recovery
+   inputs.
+
+   Hard constraints (reject): the P6 precedence rules (24h posterior->
+   connective and same-axis heavy pairs), 48h separation between two heavy
+   sessions on the same axis, and session fatigue exceeding the remaining
+   daily budget on any axis. Soft objective: minimise squared weekly budget
+   overrun per axis plus a clustering penalty. Greedy places highest-cost
+   sessions first at maximum cyclic distance; then bounded deterministic
+   pairwise swaps (~200 evaluations) accept improvements. Runs BEFORE
+   generation - never inside the retry loop, which silently relaxes and would
+   hide every failure this exists to surface. */
+const SAME_AXIS_48H = ['systemic', 'kneeExtensor', 'posterior', 'connective'];
+
+function placementObjective(schedule, budgets) {
+  const entries = (Array.isArray(schedule) ? schedule : []).map((e) => ({
+    day: String(e?.day || ''),
+    dayType: String(e?.dayType || ''),
+    hour: Number(WEEKDAY_HOUR_INDEX[String(e?.day || '')] ?? 0),
+    loads: SESSION_AXIS_LOADS_BY_DAYTYPE[String(e?.dayType || '')] || null
+  })).filter((e) => e.loads);
+  let hard = sessionOrderViolations(schedule).length * 1000;
+  // 48h same-axis separation between heavy sessions
+  for (const axis of SAME_AXIS_48H) {
+    const heavy = entries.filter((e) => Number(e.loads[axis] || 0) >= 7);
+    for (let a = 0; a < heavy.length; a += 1) {
+      for (let b = a + 1; b < heavy.length; b += 1) {
+        const gap = Math.abs(heavy[a].hour - heavy[b].hour);
+        const cyclic = Math.min(gap, 168 - gap);
+        if (cyclic < 48) hard += 500;
+      }
+    }
+  }
+  // daily budget: session fatigue may not exceed the day's remaining budget
+  const daily = {};
+  for (const axis of fatigueVector.FATIGUE_AXES) daily[axis] = Math.ceil(Number(budgets?.[axis] || 0) * 0.35);
+  let soft = 0;
+  const weekly = {};
+  for (const e of entries) {
+    for (const axis of fatigueVector.FATIGUE_AXES) {
+      const load = Number(e.loads[axis] || 0);
+      weekly[axis] = (weekly[axis] || 0) + load;
+      if (load > daily[axis]) hard += 250;
+    }
+  }
+  for (const axis of fatigueVector.FATIGUE_AXES) {
+    const over = Math.max(0, (weekly[axis] || 0) - Number(budgets?.[axis] || 0));
+    soft += over * over;
+  }
+  // clustering: adjacent (24h) pairs where both days are systemically hard
+  for (const a of entries) {
+    for (const b of entries) {
+      if (a === b) continue;
+      const forward = ((b.hour - a.hour) + 168) % 168;
+      if (forward === 24 && Number(a.loads.systemic || 0) >= 7 && Number(b.loads.systemic || 0) >= 7) soft += 25;
+    }
+  }
+  return hard + soft;
+}
+
+function placeSessionsForWeek(schedule, user) {
+  const list = Array.isArray(schedule) ? schedule.map((e) => ({ ...e })) : [];
+  if (list.length < 3) return { schedule: list, objective: 0, reordered: false };
+  const budgets = fatigueVector.deriveAxisBudgets(user || {});
+  /* Strictly-improve-or-keep: the incoming order is the legacy behaviour and
+     every downstream selection keys off it. The solver only takes over when it
+     finds a placement with a strictly better objective — a schedule that
+     already satisfies every constraint keeps its order, byte for byte. */
+  const incomingScore = placementObjective(list, budgets);
+  const days = list.map((e) => e.day);
+  const sessions = list.map((e) => e.dayType);
+  const totalCost = (dayType) => {
+    const loads = SESSION_AXIS_LOADS_BY_DAYTYPE[dayType] || {};
+    return fatigueVector.FATIGUE_AXES.reduce((n, axis) => n + Number(loads[axis] || 0), 0);
+  };
+  // Greedy: heaviest sessions first, each onto the free day slot that scores
+  // best under the full objective (cyclic distance is captured by the 48h and
+  // clustering terms, which is chooseHardConditioningIndexes' distance score
+  // generalised to six axes).
+  const order = sessions.map((dayType, idx) => ({ dayType, idx }))
+    .sort((a, b) => (totalCost(b.dayType) - totalCost(a.dayType)) || (a.idx - b.idx));
+  const placed = days.map(() => null);
+  for (const { dayType } of order) {
+    let bestSlot = -1;
+    let bestScore = Infinity;
+    for (let slot = 0; slot < days.length; slot += 1) {
+      if (placed[slot] !== null) continue;
+      placed[slot] = dayType;
+      const trial = days.map((day, k) => ({ day, dayType: placed[k] })).filter((e) => e.dayType !== null);
+      const score = placementObjective(trial, budgets);
+      placed[slot] = null;
+      if (score < bestScore) { bestScore = score; bestSlot = slot; }
+    }
+    placed[bestSlot === -1 ? placed.indexOf(null) : bestSlot] = dayType;
+  }
+  let current = days.map((day, k) => ({ day, dayType: placed[k] }));
+  let currentScore = placementObjective(current, budgets);
+  // ~200 bounded pairwise swap evaluations, deterministic.
+  let evaluations = 0;
+  for (let pass = 0; pass < 8 && evaluations < 200; pass += 1) {
+    let improved = false;
+    for (let a = 0; a < current.length && evaluations < 200; a += 1) {
+      for (let b = a + 1; b < current.length && evaluations < 200; b += 1) {
+        const trial = current.map((e) => ({ ...e }));
+        const tmp = trial[a].dayType; trial[a].dayType = trial[b].dayType; trial[b].dayType = tmp;
+        const score = placementObjective(trial, budgets);
+        evaluations += 1;
+        if (score < currentScore) { current = trial; currentScore = score; improved = true; }
+      }
+    }
+    if (!improved) break;
+  }
+  if (currentScore >= incomingScore) {
+    current = list;
+    currentScore = incomingScore;
+  }
+  const before = list.map((e) => e.dayType).join(',');
+  const after = current.map((e) => e.dayType).join(',');
+  if (user) {
+    user._sessionPlacement = {
+      reordered: before !== after,
+      before,
+      after,
+      objective: currentScore,
+      residualViolations: sessionOrderViolations(current)
+    };
+  }
+  return { schedule: current, objective: currentScore, reordered: before !== after };
+}
+
 function buildConstrainedSchedule(user) {
   const d = Number(user?.daysPerWeek || 0);
   const days = user.preferredDays.length === d ? user.preferredDays.slice(0, d) : WEEKDAY_DEFAULT_ORDER.slice(0, d);
@@ -7197,7 +7332,7 @@ function buildConstrainedSchedule(user) {
     }
     split = best;
   }
-  return orderScheduleForRecovery(split.map((dayType, index) => ({ day: days[index], dayType })), user).schedule;
+  return placeSessionsForWeek(orderScheduleForRecovery(split.map((dayType, index) => ({ day: days[index], dayType })), user).schedule, user).schedule;
 }
 
 function extractInternalPlanState(schedule, weeks, safeResult = {}, notes = [], meta = {}) {
@@ -8414,6 +8549,7 @@ function materializePlanResult(user, schedule, safeWeeks, safeResult, targets, f
         frequencyTargets,
         frequencyCompromises: Array.isArray(user?._frequencyCompromises) ? user._frequencyCompromises : [],
         sessionOrdering: user?._sessionOrdering || null,
+        sessionPlacement: user?._sessionPlacement || null,
         profile: user.profile,
         // §0.1 — what the layoff did to each anchor, and why. This is on the
         // plan rather than in a log because the user has to be told: a lifter
@@ -8636,8 +8772,9 @@ function buildSafeBasePlanner(user, exercises, targets, frequencyTargets) {
        split, not by calendar days. Anything the split cannot carry is lowered
        and recorded, with the reason, for the UI to show. */
     user._frequencyCompromises = capFrequencyTargetsToSplit(frequencyTargets, schedule.map((e) => e.dayType), user);
-    /* P6 - ordering constraints run BEFORE generation. */
-    schedule = orderScheduleForRecovery(schedule, user).schedule;
+    /* P6/2.3 - placement runs BEFORE generation: ordering constraints plus
+       six-axis budgets, greedy then bounded swaps. */
+    schedule = placeSessionsForWeek(orderScheduleForRecovery(schedule, user).schedule, user).schedule;
     if (user?._plannerRuntime?.state) {
       user._plannerRuntime.state.selectedSplit = Array.isArray(schedule) ? schedule.map((entry) => ({ day: entry.day, dayType: entry.dayType })) : [];
     }
@@ -13316,6 +13453,44 @@ function buildOblueprintPlan(input, opts = {}) {
   }
 }
 
+/* Phase 2.3 - every day-shaped pass becomes session-aware BEFORE the solver
+   can emit a multi-session day. A pass written for {dayType, exercises} runs
+   once per session and the flat view is rebuilt from the sessions, so two
+   sessions on one day are never polished (or trimmed, or deduped) as one.
+   Single-session and pre-materialize days take the original path unchanged -
+   byte-identical by construction. Function declarations are mutable bindings,
+   so the wrap happens once, here, rather than at ~30 call sites. */
+function sessionAwareDayPass(passFn) {
+  return function sessionAware(day, ...rest) {
+    if (!day || !Array.isArray(day.sessions) || day.sessions.length <= 1) return passFn(day, ...rest);
+    const sessions = day.sessions.map((session) => {
+      const out = passFn({ ...day, dayType: session.dayType || day.dayType, exercises: session.exercises || [], sessions: null }, ...rest);
+      return { ...session, exercises: Array.isArray(out?.exercises) ? out.exercises : (session.exercises || []) };
+    });
+    return { ...day, sessions, exercises: sessions.flatMap((session) => session.exercises || []) };
+  };
+}
+polishNarrowPrioritySessionOrder = sessionAwareDayPass(polishNarrowPrioritySessionOrder);
+enforceNarrowPriorityOffGoalCap = sessionAwareDayPass(enforceNarrowPriorityOffGoalCap);
+polishNarrowPrioritySessionIdentity = sessionAwareDayPass(polishNarrowPrioritySessionIdentity);
+polishNarrowPriorityGoalDominance = sessionAwareDayPass(polishNarrowPriorityGoalDominance);
+polishGlutePriorityExpression = sessionAwareDayPass(polishGlutePriorityExpression);
+polishCoachSideEyeArmAccessories = sessionAwareDayPass(polishCoachSideEyeArmAccessories);
+polishLowerCoachCleanup = sessionAwareDayPass(polishLowerCoachCleanup);
+polishPowerbuildingTrueHingeExposure = sessionAwareDayPass(polishPowerbuildingTrueHingeExposure);
+polishAssembledLowerDay = sessionAwareDayPass(polishAssembledLowerDay);
+polishLowerFatigueStacking = sessionAwareDayPass(polishLowerFatigueStacking);
+polishShortSessionHipDominantClustering = sessionAwareDayPass(polishShortSessionHipDominantClustering);
+finalizePressJobTradeoff = sessionAwareDayPass(finalizePressJobTradeoff);
+polishDuplicateShoulderPresses = sessionAwareDayPass(polishDuplicateShoulderPresses);
+polishLateralRaiseRedundancy = sessionAwareDayPass(polishLateralRaiseRedundancy);
+polishUpperPressRedundancy = sessionAwareDayPass(polishUpperPressRedundancy);
+polishChestPressRedundancy = sessionAwareDayPass(polishChestPressRedundancy);
+polishBackDominantChestLeak = sessionAwareDayPass(polishBackDominantChestLeak);
+polishBackBuilderSupport = sessionAwareDayPass(polishBackBuilderSupport);
+polishPriorityDominanceSessionIdentity = sessionAwareDayPass(polishPriorityDominanceSessionIdentity);
+polishDuplicateShoulderPresses = sessionAwareDayPass(polishDuplicateShoulderPresses);
+
 module.exports = {
   STYLE_ENUM,
   PATTERN_ENUM,
@@ -13329,6 +13504,8 @@ module.exports = {
   computeWeeklyTargets,
   buildSplit,
   orderScheduleForRecovery,
+  placeSessionsForWeek,
+  sessionAwareDayPass,
   sessionOrderViolations,
   splitExposures,
   capFrequencyTargetsToSplit,
