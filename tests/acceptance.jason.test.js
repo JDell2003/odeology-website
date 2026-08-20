@@ -69,6 +69,7 @@ function buildPlan(overrides = {}) {
     lastTrainedHeavy: { squat: 65, deadlift: 65 },
     twoADays: JASON.twoADays,
     running: { enabled: true, sessionsPerWeek: 3, timeTrialSec: JASON.endurance.twoMileSec, timeTrialMi: 2, goalTimeSec: JASON.goals.twoMileSec, goalMi: 2 },
+    rucking: { enabled: true, sessionsPerWeek: 2, startLoadLb: 20, weeklyBaseMi: 8, goalMiles: JASON.goals.ruck.miles },
     strength: {
       // '5_plus' is the real bucket key. '2_5y' is not recognised and falls
       // through to a silent '6-24m' default, which had Jason programmed as a

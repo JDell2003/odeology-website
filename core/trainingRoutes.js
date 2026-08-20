@@ -1013,6 +1013,7 @@ function normalizeOblueprintPayload(payload, { relax = false } = {}) {
       : (src.lastTrainedHeavy != null ? { all: src.lastTrainedHeavy } : null),
     twoADays: (src.twoADays && typeof src.twoADays === 'object') ? src.twoADays : null,
     running: (src.running && typeof src.running === 'object') ? src.running : null,
+    rucking: (src.rucking && typeof src.rucking === 'object') ? src.rucking : null,
     benchVariation: String(src.benchVariation || '').trim() || null,
     benchWeight: Number.isFinite(Number(src.benchWeight)) ? Number(src.benchWeight) : null,
     benchReps: Number.isFinite(Number(src.benchReps)) ? Number(src.benchReps) : null,
@@ -1435,7 +1436,10 @@ function planPassesFloorGate(plan, src) {
       if (!days.length) return false;
       for (const d of days) {
         const exs = Array.isArray(d?.exercises) ? d.exercises : [];
-        if (exs.length < 2) return false; // completeness
+        // completeness — but an endurance day IS one session-sized entry: a
+        // long ruck day carries exactly one exercise and is complete.
+        const allEndurance = exs.length > 0 && exs.every((e) => ['running', 'rucking'].includes(String(e?.discipline || '')));
+        if (exs.length < 2 && !allEndurance) return false;
         for (const e of exs) {
           const name = String(e?.name || e?.displayName || '');
           if (!name) return false;
@@ -1620,6 +1624,104 @@ function routeComposeRunningSessions(plan, user) {
       day.exercises = day.sessions.flatMap((sn) => sn.exercises || []);
       day.separationHours = sep;
     });
+  }
+  return plan;
+}
+
+/* Phase 2.5b - compose rucking into the week. The short ruck rides as a PM
+   slot on a low-posterior lifting day; the LONG ruck gets its own calendar
+   day when a free weekday exists, and NEVER lands within 24h after heavy
+   posterior work - heavy meaning an actual squat or deadlift at five reps or
+   fewer on the previous day, the same definition the ordering rule uses.
+   Its connective-9 declaration is what makes the dormant P6 constraint
+   real. */
+function routeComposeRuckingSessions(plan, user) {
+  const cfg = user?.rucking;
+  if (!plan || plan.error || !cfg || cfg.enabled === false) return plan;
+  let ruckingModule = null;
+  try { ruckingModule = require('../generator/disciplines/rucking'); } catch (e) { return plan; }
+  const state = {
+    loadLb: Number(cfg.startLoadLb) || 20,
+    weeklyBaseMi: Number(cfg.weeklyBaseMi) || 8,
+    loadDeltaLb: 0
+  };
+  const WEEK_ORDER = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'];
+  const blocked = new Set((Array.isArray(user?.unavailableDays) ? user.unavailableDays : [])
+    .map((d) => String(d || '').slice(0, 2)).map((d) => d.charAt(0).toUpperCase() + d.charAt(1).toLowerCase()));
+  const POSTERIOR = { Legs: 8, Lower: 8, LowerFocus: 7, FullBodyB: 7, Pull: 5 };
+  const heavyPosteriorDay = (day) => (day?.exercises || []).some((ex) => {
+    if (!/squat|deadlift/i.test(String(ex?.name || ''))) return false;
+    const reps = Number(String(ex?.reps ?? '').match(/\d+/)?.[0] || 0);
+    return reps > 0 && reps <= 5;
+  });
+  const sep = Number(user?.twoADays?.minSeparationHours) || 6;
+  let waveState = { ...state };
+  let priorWeekly = null;
+  for (const week of plan.weeks || []) {
+    const sessions = ruckingModule.build({ state: waveState, sessionsPerWeek: Number(cfg.sessionsPerWeek) || 2, priorWeeklyMi: priorWeekly });
+    priorWeekly = sessions.reduce((n, sn) => n + Number(sn.distanceMi || 0), 0);
+    const days = week?.days || [];
+    if (!days.length) continue;
+    const usedLabels = new Set(days.map((d) => String(d.day || '')));
+    const mkExercise = (session, dayIdx, slot) => ({
+      id: (week.weekIndex || 1) + '-' + dayIdx + '-' + slot + '-1',
+      name: session.name,
+      displayName: session.name,
+      pattern: 'Carry',
+      style: 'Cardio',
+      discipline: 'rucking',
+      sessionType: session.sessionType,
+      sets: 1,
+      reps: session.detail,
+      loadLb: session.loadLb,
+      distanceMi: session.distanceMi,
+      durationMin: session.durationMin,
+      restSec: 0
+    });
+    for (const session of sessions) {
+      if (session.sessionType === 'long_ruck') {
+        const free = WEEK_ORDER.filter((d) => !usedLabels.has(d) && !blocked.has(d));
+        let hostLabel = null;
+        for (const label of free) {
+          const pos = WEEK_ORDER.indexOf(label);
+          const prevLabel = WEEK_ORDER[(pos + 6) % 7];
+          const prevDay = days.find((d) => String(d.day) === prevLabel);
+          if (!prevDay || !heavyPosteriorDay(prevDay)) { hostLabel = label; break; }
+        }
+        if (hostLabel) {
+          usedLabels.add(hostLabel);
+          const newDay = { day: hostLabel, dayType: session.name, slotIndex: 0, exercises: [], sessions: null, separationHours: null };
+          newDay.exercises = [mkExercise(session, days.length + 1, 0)];
+          newDay.sessions = [{ slotIndex: 0, window: null, dayType: session.name, discipline: 'rucking', exercises: newDay.exercises }];
+          const pos = WEEK_ORDER.indexOf(hostLabel);
+          let insertAt = days.length;
+          for (let i = 0; i < days.length; i += 1) {
+            if (WEEK_ORDER.indexOf(String(days[i].day)) > pos) { insertAt = i; break; }
+          }
+          days.splice(insertAt, 0, newDay);
+          continue;
+        }
+      }
+      // short ruck (or no free day): PM slot on the lowest-posterior day
+      const ranked = days
+        .map((day, idx) => ({ day, idx,
+          slots: Array.isArray(day.sessions) ? day.sessions.length : 1,
+          post: Math.max(...(Array.isArray(day.sessions) ? day.sessions : [{ dayType: day.dayType }]).map((sn) => Number(POSTERIOR[String(sn.dayType)] ?? 2))) }))
+        .filter((r) => String(r.day.dayType) !== 'Long Ruck')
+        .sort((a, b) => (a.slots - b.slots) || (a.post - b.post) || (a.idx - b.idx));
+      const host = ranked[0];
+      if (!host) continue;
+      const day = host.day;
+      if (!Array.isArray(day.sessions)) {
+        day.sessions = [{ slotIndex: 0, window: null, dayType: day.dayType, discipline: 'lifting', exercises: day.exercises }];
+      }
+      const slot = day.sessions.length;
+      const exercise = mkExercise(session, host.idx + 1, slot);
+      day.sessions.push({ slotIndex: slot, window: null, dayType: session.name, discipline: 'rucking', exercises: [exercise] });
+      day.exercises = day.sessions.flatMap((sn) => sn.exercises || []);
+      day.separationHours = sep;
+    }
+    waveState = ruckingModule.advanceWave(waveState);
   }
   return plan;
 }
@@ -2230,6 +2332,7 @@ function buildOblueprintPlanWithFallback(payload, opts = {}) {
     }
     if (result && !result.error && result.plan) routeBuildDaySessions(result.plan, src);
     if (result && !result.error && result.plan) routeComposeRunningSessions(result.plan, src);
+    if (result && !result.error && result.plan) routeComposeRuckingSessions(result.plan, src);
     if (result && !result.error && result.plan && !result._safeFallback && !planPassesFloorGate(result.plan, src)) {
       const safe = makeSafeFallbackResult(src, { error: 'FLOOR_GATE', reason: 'thin or unsafe day repaired via safe fallback' });
       if (safe) result = safe;
@@ -2421,6 +2524,7 @@ function coerceClassicBodybuildingToOblueprintPayload(payload) {
     /* Phase 2.5 - running. {enabled, sessionsPerWeek, timeTrialSec,
        timeTrialMi, goalTimeSec, goalMi}. Absent means not selected. */
     running: (src?.running && typeof src.running === 'object') ? src.running : null,
+    rucking: (src?.rucking && typeof src.rucking === 'object') ? src.rucking : null,
     benchVariation: String(strength?.benchVariation || '').trim() || null,
     benchWeight: Number(strength?.benchWeight || 0) || null,
     benchReps: Number(strength?.benchReps || 0) || null,

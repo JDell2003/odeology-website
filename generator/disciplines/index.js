@@ -9,10 +9,12 @@
 
 const lifting = require('./lifting');
 const running = require('./running');
+const rucking = require('./rucking');
 
 const DISCIPLINES = {
   lifting,
-  running
+  running,
+  rucking
   // running, rucking, workCapacity, martialArts — Phase 2.4/2.5
 };
 
