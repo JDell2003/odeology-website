@@ -59,11 +59,10 @@ const SUITES = [
   // Flip `blocking` off this entry the moment all thirteen are green, and treat
   // any regression from 4 as a failure in the meantime.
   {
-    name: 'ACCEPTANCE — Jason\'s plan (BASELINE 4/13 passing as of 2026-08-18)',
+    name: 'ACCEPTANCE — Jason\'s plan (ALL 13 GREEN as of 2026-08-20 — BLOCKING)',
     cmd: process.execPath,
     args: ['--test', 'tests/acceptance.jason.test.js'],
-    needsServer: false,
-    blocking: false
+    needsServer: false
   },
   // Exercise table. The generator answers "what can this user do?" entirely
   // from this data, so a row that lies in either direction fails silently and
