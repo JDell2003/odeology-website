@@ -1466,6 +1466,52 @@ function makeSafeFallbackResult(src, lastError) {
   return null;
 }
 
+const ROUTE_STRUCTURAL_PATTERNS = ['Squat', 'Hinge', 'Lunge', 'HorizontalPush', 'VerticalPush', 'HorizontalPull', 'VerticalPull'];
+const ROUTE_STRUCTURAL_MIN = { Push: 2, Pull: 2, Upper: 2, UpperFocus: 2, Lower: 2, LowerFocus: 2, Legs: 2, FullBodyA: 3, FullBodyB: 3, DeltsArms: 1 };
+
+/* Structural floor, route layer. The engine guarantees every day leaves it at
+   or above its compound minimum; several route repair passes then swap or
+   dedupe structural movements into isolation work without checking what
+   remains. The snapshot is taken from the plan as the engine delivered it, and
+   any day that fell below its floor gets its own movements back, replacing
+   trailing isolation so the session cap holds. */
+function routeSnapshotStructural(plan) {
+  const snap = new Map();
+  for (const week of plan?.weeks || []) {
+    (week?.days || []).forEach((day, dayIdx) => {
+      snap.set(`${week.weekIndex}:${day.dayType}:${dayIdx}`,
+        (day.exercises || []).filter((ex) => ROUTE_STRUCTURAL_PATTERNS.includes(String(ex?.pattern || ''))).map((ex) => ({ ...ex })));
+    });
+  }
+  return snap;
+}
+
+function routeRestoreStructuralFloor(plan, snapshot) {
+  if (!plan || plan.error || !snapshot) return plan;
+  for (const week of plan?.weeks || []) {
+    (week?.days || []).forEach((day, dayIdx) => {
+      const min = Number(ROUTE_STRUCTURAL_MIN[String(day?.dayType || '')] || 0);
+      if (!min) return;
+      const structural = () => (day.exercises || []).filter((ex) => ROUTE_STRUCTURAL_PATTERNS.includes(String(ex?.pattern || ''))).length;
+      if (structural() >= min) return;
+      const snap = snapshot.get(`${week.weekIndex}:${day.dayType}:${dayIdx}`) || [];
+      const names = new Set((day.exercises || []).map((ex) => routeNormName(ex?.name)));
+      for (const restore of snap) {
+        if (structural() >= min) break;
+        if (names.has(routeNormName(restore?.name))) continue;
+        let at = -1;
+        for (let i = (day.exercises || []).length - 1; i >= 0; i -= 1) {
+          if (!ROUTE_STRUCTURAL_PATTERNS.includes(String(day.exercises[i]?.pattern || ''))) { at = i; break; }
+        }
+        const copy = { ...restore };
+        if (at >= 0) day.exercises.splice(at, 1, copy); else day.exercises.push(copy);
+        names.add(routeNormName(copy?.name));
+      }
+    });
+  }
+  return plan;
+}
+
 function buildOblueprintPlanWithFallback(payload, opts = {}) {
   const src = payload && typeof payload === 'object' ? payload : {};
   routeSetActiveEquipment(src);
@@ -1797,6 +1843,13 @@ function buildOblueprintPlanWithFallback(payload, opts = {}) {
   };
   const stabilizeCandidate = (plan) => {
     const repaired = repairOblueprintBodybuildingPlan(plan);
+    /* Structural floor, route layer. The engine guarantees every day leaves it
+       at or above its compound minimum; the route repair chain then swaps and
+       dedupes, and several of its passes replace structural movements with
+       isolation work without checking what remains. Snapshot the structural
+       movements per day here, and restore after the chain if any day fell
+       below its floor. */
+    const __structuralSnapshot = routeSnapshotStructural(repaired);
     const finalized = runRouteStage('route repair', () => routeFinalizeBodybuildingPlan(repairOblueprintBodybuildingPlan(repaired)));
     if (finalized?.error) return finalized;
     const deduped = runRouteStage('final dedupe', () => routeEnforceFinalVisibleDedupeInvariant(finalized));
@@ -1809,7 +1862,8 @@ function buildOblueprintPlanWithFallback(payload, opts = {}) {
     if (rearDeltRepaired?.error) return rearDeltRepaired;
     const trueFinalVisible = runRouteStage('true final visible cleanup', () => routeEnforceTrueFinalVisibleTargetFamilyCleanup(rearDeltRepaired));
     if (trueFinalVisible?.error) return trueFinalVisible;
-    return runRouteStage('final banned exercise scrub', () => routeScrubBannedExercisesFromPlan(trueFinalVisible));
+    const scrubbed = runRouteStage('final banned exercise scrub', () => routeScrubBannedExercisesFromPlan(trueFinalVisible));
+    return runRouteStage('structural floor restore', () => routeRestoreStructuralFloor(scrubbed, __structuralSnapshot));
   };
 
   let lastError = null;
@@ -1841,6 +1895,7 @@ function buildOblueprintPlanWithFallback(payload, opts = {}) {
         lastError = directValidationError;
         continue;
       }
+      const __snapOut = routeSnapshotStructural(out);
       const finalizedRaw = runRouteStage('route repair', () => routeFinalizeBodybuildingPlan(out), {
         attempt: attempt + 1
       });
@@ -1907,6 +1962,7 @@ function buildOblueprintPlanWithFallback(payload, opts = {}) {
       lastPlan = bannedScrubbed;
       lastPayload = nextPayload;
       if (fastBuild) {
+        routeRestoreStructuralFloor(bannedScrubbed, __snapOut);
         const rawValidationError = validateCandidate(bannedScrubbed);
         if (!rawValidationError) {
           return { plan: bannedScrubbed, usedPayload: nextPayload };
@@ -1924,6 +1980,7 @@ function buildOblueprintPlanWithFallback(payload, opts = {}) {
         lastError = stabilizedValidationError;
         continue;
       }
+      routeRestoreStructuralFloor(bannedScrubbed, __snapOut);
       const rawValidationError = validateCandidate(bannedScrubbed);
       if (!rawValidationError) {
         return { plan: bannedScrubbed, usedPayload: nextPayload };
@@ -3367,6 +3424,17 @@ function routeEnforceChestPressCompoundCap(dayType, exercises, {
         calfExposureUnderTarget
       });
       if (!replacement || routeIsHorizontalPressMain(replacement)) continue;
+      /* Structural floor, route layer. The engine's floor guarantees every day
+         ships with its compound minimum; this pass then swapped the second
+         press away for isolation work (maxChestPresses=0 for narrow arm
+         priorities) and undid it. A redundancy swap that would leave the day
+         under two structural movements declines instead. */
+      const STRUCTURAL_ROUTE = ['Squat', 'Hinge', 'Lunge', 'HorizontalPush', 'VerticalPush', 'HorizontalPull', 'VerticalPull'];
+      const structuralAfter = list.filter((entry, entryIdx) => entryIdx !== idx
+        && STRUCTURAL_ROUTE.includes(String(entry?.pattern || ''))).length;
+      const replacementRow = routeExerciseRowByName(replacement?.name);
+      const replacementStructural = STRUCTURAL_ROUTE.includes(String((replacementRow && replacementRow.pattern) || replacement?.pattern || ''));
+      if (STRUCTURAL_ROUTE.includes(String(list[idx]?.pattern || '')) && !replacementStructural && structuralAfter < 2) continue;
       list[idx] = routeApplyReplacement(list[idx], replacement);
       changed = true;
     }

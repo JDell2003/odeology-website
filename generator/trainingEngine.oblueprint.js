@@ -3911,6 +3911,7 @@ function allocateSetsReps(days, weekType, targets, user) {
         if (rankDiff) return rankDiff;
         return (a.style === 'Compound' ? -1 : 1) - (b.style === 'Compound' ? -1 : 1);
       });
+      const plannedSets = [];
       ordered.forEach((ex, exIdx) => {
         const remaining = ordered.length - exIdx;
         const isPriorityMuscle = exercisePriorityOrderRank(ex, user) < 99 || Boolean(user?.profile?.priorityRankMap?.[muscle]);
@@ -3920,6 +3921,7 @@ function allocateSetsReps(days, weekType, targets, user) {
           Math.max(minForThis, Math.floor(budget / remaining))
         );
         budget -= sets;
+        plannedSets.push({ exIdx, sets });
         const rr = repsRestByExercise(ex, weekType, user, ex.slotId);
         const item = buildExerciseOutput(ex, user, {
           id: ex.slotId,
@@ -3937,6 +3939,28 @@ function allocateSetsReps(days, weekType, targets, user) {
         });
         finalExercises.push(item);
       });
+      /* P4 - fill the band the budget asked for. floor(budget/remaining) with
+         integer rounding routinely stranded 2-3 sets of a priority muscle's
+         day budget, which across three exposures is how a 14-set target
+         delivered 9. Any unspent budget tops up this muscle's exercises
+         round-robin, capped per exercise, deterministically front-first. */
+      if (budget > 0 && Boolean(user?.profile?.priorityRankMap?.[muscle])) {
+        const mine = finalExercises.slice(-ordered.length);
+        let guard = 0;
+        while (budget > 0 && guard < 24) {
+          let bumped = false;
+          for (const item of mine) {
+            if (budget <= 0) break;
+            if (Number(item.sets) < BODYBUILDING_MAX_SETS_PER_EXERCISE) {
+              item.sets = Number(item.sets) + 1;
+              budget -= 1;
+              bumped = true;
+            }
+          }
+          if (!bumped) break;
+          guard += 1;
+        }
+      }
     });
     return { ...day, exercises: finalExercises };
   });
@@ -5990,7 +6014,7 @@ function buildWeeks(blockLength, schedule, user, exercises, targets, opts = {}) 
           if (want !== '*' && want !== String(d.dayType)) continue;
           const ex = d.exercises || [];
           process.stderr.write(`@@PASS ${String(label).padEnd(42)} ${String(d.dayType).padEnd(12)} `
-            + `${String(ex.length).padStart(2)} ex  ${ex.map((e) => `${e.name}[${e.pattern}]`).join(' | ')}\n`);
+            + `${String(ex.length).padStart(2)} ex  ${ex.map((e) => `${e.name}[${e.pattern}]x${e.sets}`).join(' | ')}\n`);
         }
       };
       __trace('after allocateSetsReps');
@@ -12726,7 +12750,7 @@ function upgradePlanQualityPass(baseState, user, exercises) {
           const w = String(process.env.SLOT_TRACE);
           if (w === '*' || w === String(dd?.dayType)) {
             const ex = dd?.exercises || [];
-            process.stderr.write(`@@SUB ${String(lbl).padEnd(36)} ${String(dd?.dayType).padEnd(12)} ${String(ex.length).padStart(2)} ex  ${ex.map((e) => `${e.name}[${e.pattern}]`).join(' | ')}\n`);
+            process.stderr.write(`@@SUB ${String(lbl).padEnd(36)} ${String(dd?.dayType).padEnd(12)} ${String(ex.length).padStart(2)} ex  ${ex.map((e) => `${e.name}[${e.pattern}]x${e.sets}`).join(' | ')}\n`);
           }
           return dd;
         };
@@ -12965,7 +12989,7 @@ function upgradePlanQualityPass(baseState, user, exercises) {
    with fewer structural compounds than its own blueprint required. Missing
    compounds are restored from what fillSlots actually delivered, replacing
    non-structural work from the end of the day so the session cap holds. */
-function enforceStructuralFloor(weeks, user) {
+function enforceStructuralFloor(weeks, user, targets = null) {
   /* P1 — compromises must describe the SHIPPED schedule. The first cap ran on
      the split buildSplit chose; if the constrained rebuild shipped a different
      one, the record would describe a plan that does not exist. */
@@ -12979,7 +13003,15 @@ function enforceStructuralFloor(weeks, user) {
   }
   for (const week of Array.isArray(weeks) ? weeks : []) {
     for (const day of week?.days || []) {
-      const required = Number(day?.__requiredStructural || 0);
+      /* The constrained rebuild force-optionals slots, so its blueprint can
+         "require" fewer structural movements than the product standard. The
+         floor holds the HIGHER of the two — a relaxed rebuild is still not
+         allowed to ship a Push day with one compound. */
+      const STRUCTURAL_FLOOR_MIN = { Push: 2, Pull: 2, Upper: 2, UpperFocus: 2, Lower: 2, LowerFocus: 2, Legs: 2, FullBodyA: 3, FullBodyB: 3, DeltsArms: 1 };
+      const required = Math.max(
+        Number(day?.__requiredStructural || 0),
+        Number(STRUCTURAL_FLOOR_MIN[String(day?.dayType || '')] || 0)
+      );
       const baseline = Array.isArray(day?.__structuralBaseline) ? day.__structuralBaseline : [];
       if (required > 0 && baseline.length) {
         const isStructural = (ex) => QUALITY_STRUCTURAL_PATTERNS.includes(String(ex?.pattern || ''));
@@ -13007,12 +13039,53 @@ function enforceStructuralFloor(weeks, user) {
       delete day.__structuralBaseline;
     }
   }
+  /* P4 - fill the priority band against the SHIPPED day. Allocation spreads a
+     muscle's budget across the exercises fillSlots picked, but later dedupe
+     and trimming merge same-muscle duplicates without transferring their sets:
+     three curls at 2 sets became one curl at 3, and a 14-set target delivered
+     9. Rather than chase every merging pass, the deficit is repaired once,
+     here, where the day is final: each priority direct muscle's delivered sets
+     are topped up round-robin to min(target, exposures x per-exercise cap).
+     Deload weeks keep their deliberate reduction. */
+  if (targets && user) {
+    const priorities = getPriorityDirectTargets(user);
+    for (const week of Array.isArray(weeks) ? weeks : []) {
+      if (String(week?.weekType || '') === 'deload') continue;
+      for (const muscle of priorities) {
+        const target = Number(targets[muscle] || 0);
+        if (!target) continue;
+        const mine = [];
+        for (const day of week?.days || []) {
+          for (const ex of day?.exercises || []) {
+            if (priorityBudgetTargetForExercise(ex, user) === muscle) mine.push(ex);
+          }
+        }
+        if (!mine.length) continue;
+        const ceiling = Math.min(target, mine.length * BODYBUILDING_MAX_SETS_PER_EXERCISE);
+        let delivered = mine.reduce((n, ex) => n + (Number(ex.sets) || 0), 0);
+        let guard = 0;
+        while (delivered < ceiling && guard < 32) {
+          let bumped = false;
+          for (const ex of mine) {
+            if (delivered >= ceiling) break;
+            if ((Number(ex.sets) || 0) < BODYBUILDING_MAX_SETS_PER_EXERCISE) {
+              ex.sets = (Number(ex.sets) || 0) + 1;
+              delivered += 1;
+              bumped = true;
+            }
+          }
+          if (!bumped) break;
+          guard += 1;
+        }
+      }
+    }
+  }
   return weeks;
 }
 
 function attachAdaptiveCoachingLayer(plan, user, targets, frequencyTargets) {
   if (!plan || plan.error) return plan;
-  enforceStructuralFloor(plan.weeks, user);
+  enforceStructuralFloor(plan.weeks, user, targets);
   const materialized = materializePlanResult(
     user,
     plan.schedule,
@@ -13082,7 +13155,7 @@ function buildOblueprintPlan(input, opts = {}) {
         if (want !== '*' && want !== String(d.dayType)) continue;
         const ex = d.exercises || [];
         process.stderr.write(`@@PLAN ${String(label).padEnd(34)} ${String(d.dayType).padEnd(12)} `
-          + `${String(ex.length).padStart(2)} ex  ${ex.map((e) => `${e.name}[${e.pattern}]`).join(' | ')}\n`);
+          + `${String(ex.length).padStart(2)} ex  ${ex.map((e) => `${e.name}[${e.pattern}]x${e.sets}`).join(' | ')}\n`);
       }
     };
     const safeBase = buildSafeBasePlanner(user, PREPROCESSED_CACHE, targets, frequencyTargets);
