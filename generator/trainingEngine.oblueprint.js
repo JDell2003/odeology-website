@@ -7022,6 +7022,113 @@ function createAdaptiveProjectionState(user, projection) {
 
 
 
+/* P6 - session ordering constraints.
+
+   Interference is dose-dependent and order matters more than total load:
+   resistance-induced fatigue impairs performance on the same tissue for
+   24-48h. Every session declares what it loads, 0-10 per axis; a constraint
+   says X may not precede Y within N hours; and the schedule is reordered
+   BEFORE generation - not inside the retry loop, which makes up to 10
+   attempts and then silently relaxes, so a constraint inside it multiplies
+   retry cost and hides failures.
+
+   Lifting-only rules today. The ruck rule ("no heavy squat or deadlift in
+   the 24h before the long ruck") activates when the rucking module lands and
+   its sessions declare connective load - the constraint shape already
+   supports it. */
+const SESSION_AXIS_LOADS_BY_DAYTYPE = {
+  Push:       { systemic: 6, kneeExtensor: 0, posterior: 1, shoulderGirdle: 8, connective: 4, aerobic: 1 },
+  Pull:       { systemic: 6, kneeExtensor: 0, posterior: 5, shoulderGirdle: 5, connective: 5, aerobic: 1 },
+  Legs:       { systemic: 8, kneeExtensor: 8, posterior: 8, shoulderGirdle: 1, connective: 6, aerobic: 2 },
+  Lower:      { systemic: 8, kneeExtensor: 7, posterior: 8, shoulderGirdle: 1, connective: 6, aerobic: 2 },
+  LowerFocus: { systemic: 8, kneeExtensor: 8, posterior: 7, shoulderGirdle: 1, connective: 6, aerobic: 2 },
+  Upper:      { systemic: 6, kneeExtensor: 0, posterior: 2, shoulderGirdle: 7, connective: 4, aerobic: 1 },
+  UpperFocus: { systemic: 6, kneeExtensor: 0, posterior: 2, shoulderGirdle: 7, connective: 4, aerobic: 1 },
+  FullBodyA:  { systemic: 7, kneeExtensor: 6, posterior: 5, shoulderGirdle: 5, connective: 5, aerobic: 2 },
+  FullBodyB:  { systemic: 7, kneeExtensor: 4, posterior: 7, shoulderGirdle: 4, connective: 5, aerobic: 2 },
+  DeltsArms:  { systemic: 3, kneeExtensor: 0, posterior: 0, shoulderGirdle: 6, connective: 2, aerobic: 1 }
+};
+
+/* before-axis at or above min may not precede after-axis at or above min
+   within `hours`. Same-axis pairs encode "two heavy sessions on one tissue
+   need the gap". */
+const SESSION_ORDER_CONSTRAINTS = [
+  { before: { axis: 'posterior', min: 7 }, after: { axis: 'posterior', min: 7 }, hours: 24 },
+  { before: { axis: 'kneeExtensor', min: 7 }, after: { axis: 'kneeExtensor', min: 7 }, hours: 24 },
+  { before: { axis: 'kneeExtensor', min: 7 }, after: { axis: 'posterior', min: 7 }, hours: 24 },
+  { before: { axis: 'posterior', min: 7 }, after: { axis: 'connective', min: 8 }, hours: 24 },
+  { before: { axis: 'systemic', min: 8 }, after: { axis: 'systemic', min: 8 }, hours: 24 }
+];
+
+const WEEKDAY_HOUR_INDEX = { Mo: 0, Tu: 24, We: 48, Th: 72, Fr: 96, Sa: 120, Su: 144 };
+
+function sessionOrderViolations(schedule) {
+  const entries = (Array.isArray(schedule) ? schedule : []).map((e) => ({
+    day: String(e?.day || ''),
+    dayType: String(e?.dayType || ''),
+    hour: Number(WEEKDAY_HOUR_INDEX[String(e?.day || '')] ?? 0),
+    loads: SESSION_AXIS_LOADS_BY_DAYTYPE[String(e?.dayType || '')] || null
+  })).filter((e) => e.loads);
+  const violations = [];
+  for (const a of entries) {
+    for (const b of entries) {
+      if (a === b) continue;
+      // cyclic week: the gap from a to the NEXT occurrence of b
+      const forward = ((b.hour - a.hour) + 168) % 168;
+      if (forward === 0) continue;
+      for (const c of SESSION_ORDER_CONSTRAINTS) {
+        if (Number(a.loads[c.before.axis] || 0) >= c.before.min
+          && Number(b.loads[c.after.axis] || 0) >= c.after.min
+          && forward <= c.hours) {
+          violations.push({
+            constraint: c.before.axis + '>=' + c.before.min + ' within ' + c.hours + 'h before ' + c.after.axis + '>=' + c.after.min,
+            before: a.dayType + '(' + a.day + ')',
+            after: b.dayType + '(' + b.day + ')'
+          });
+        }
+      }
+    }
+  }
+  return violations;
+}
+
+/* Deterministic pairwise improvement, generalised from the military module's
+   chooseHardConditioningIndexes (cyclic-distance spacing, one axis) to the six
+   axes above. Day LABELS stay fixed - the user picked their training days -
+   and dayTypes swap between them. Greedy accept, bounded passes, no
+   randomness (Math.random is unavailable under the fixed-seed contract). */
+function orderScheduleForRecovery(schedule, user) {
+  const list = Array.isArray(schedule) ? schedule.map((e) => ({ ...e })) : [];
+  if (list.length < 3) return { schedule: list, reordered: false, residual: sessionOrderViolations(list) };
+  const score = (arr) => sessionOrderViolations(arr).length;
+  let current = list;
+  let currentScore = score(current);
+  const before = current.map((e) => e.dayType).join(',');
+  if (currentScore > 0) {
+    for (let pass = 0; pass < 6 && currentScore > 0; pass += 1) {
+      for (let i = 0; i < current.length; i += 1) {
+        for (let j = i + 1; j < current.length; j += 1) {
+          const trial = current.map((e) => ({ ...e }));
+          const tmp = trial[i].dayType; trial[i].dayType = trial[j].dayType; trial[j].dayType = tmp;
+          const trialScore = score(trial);
+          if (trialScore < currentScore) { current = trial; currentScore = trialScore; }
+        }
+      }
+    }
+  }
+  const after = current.map((e) => e.dayType).join(',');
+  const residual = sessionOrderViolations(current);
+  if (user) {
+    user._sessionOrdering = {
+      reordered: before !== after,
+      before,
+      after,
+      residualViolations: residual
+    };
+  }
+  return { schedule: current, reordered: before !== after, residual };
+}
+
 function buildConstrainedSchedule(user) {
   const d = Number(user?.daysPerWeek || 0);
   const days = user.preferredDays.length === d ? user.preferredDays.slice(0, d) : WEEKDAY_DEFAULT_ORDER.slice(0, d);
@@ -7047,7 +7154,7 @@ function buildConstrainedSchedule(user) {
     }
     split = best;
   }
-  return split.map((dayType, index) => ({ day: days[index], dayType }));
+  return orderScheduleForRecovery(split.map((dayType, index) => ({ day: days[index], dayType })), user).schedule;
 }
 
 function extractInternalPlanState(schedule, weeks, safeResult = {}, notes = [], meta = {}) {
@@ -8263,6 +8370,7 @@ function materializePlanResult(user, schedule, safeWeeks, safeResult, targets, f
         weeklyTargets: targets,
         frequencyTargets,
         frequencyCompromises: Array.isArray(user?._frequencyCompromises) ? user._frequencyCompromises : [],
+        sessionOrdering: user?._sessionOrdering || null,
         profile: user.profile,
         // §0.1 — what the layoff did to each anchor, and why. This is on the
         // plan rather than in a log because the user has to be told: a lifter
@@ -8485,6 +8593,8 @@ function buildSafeBasePlanner(user, exercises, targets, frequencyTargets) {
        split, not by calendar days. Anything the split cannot carry is lowered
        and recorded, with the reason, for the UI to show. */
     user._frequencyCompromises = capFrequencyTargetsToSplit(frequencyTargets, schedule.map((e) => e.dayType), user);
+    /* P6 - ordering constraints run BEFORE generation. */
+    schedule = orderScheduleForRecovery(schedule, user).schedule;
     if (user?._plannerRuntime?.state) {
       user._plannerRuntime.state.selectedSplit = Array.isArray(schedule) ? schedule.map((entry) => ({ day: entry.day, dayType: entry.dayType })) : [];
     }
@@ -13126,6 +13236,10 @@ module.exports = {
   isExerciseCompatibleWithEquipment,
   computeWeeklyTargets,
   buildSplit,
+  orderScheduleForRecovery,
+  sessionOrderViolations,
+  splitExposures,
+  capFrequencyTargetsToSplit,
   buildWeekBlueprint,
   fillSlots,
   allocateSetsReps,
