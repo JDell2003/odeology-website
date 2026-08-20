@@ -1014,6 +1014,7 @@ function normalizeOblueprintPayload(payload, { relax = false } = {}) {
     twoADays: (src.twoADays && typeof src.twoADays === 'object') ? src.twoADays : null,
     running: (src.running && typeof src.running === 'object') ? src.running : null,
     rucking: (src.rucking && typeof src.rucking === 'object') ? src.rucking : null,
+    goals: (src.goals && typeof src.goals === 'object') ? src.goals : null,
     benchVariation: String(src.benchVariation || '').trim() || null,
     benchWeight: Number.isFinite(Number(src.benchWeight)) ? Number(src.benchWeight) : null,
     benchReps: Number.isFinite(Number(src.benchReps)) ? Number(src.benchReps) : null,
@@ -1500,6 +1501,51 @@ function routeSnapshotStructural(plan) {
    topped back up to min(weekly target, exercises x 4), round-robin, deload
    weeks untouched. Compounds are untouched too — their sets are progression
    territory, not volume-band territory. */
+/* P4 — spread arm exposures across the shipped week. Standalone and
+   deliberately dumb: inline name tests, no shared matchers, no style checks —
+   the in-band version of this logic never fired in production builds for
+   reasons that resisted three rounds of instrumentation, and a pass this
+   small has nowhere left to hide a closure bug. */
+function routeSpreadArmExposures(plan) {
+  if (!plan || plan.error) return plan;
+  const groups = Array.isArray(plan?.meta?.priorityGroups) ? plan.meta.priorityGroups : [];
+  if (!groups.includes('Arms')) return plan;
+  const SPECS = [
+    { test: (n) => /curl/i.test(n) && !/leg|hamstring|nordic|wrist/i.test(n) },
+    { test: (n) => /triceps|pushdown|skull/i.test(n) }
+  ];
+  for (const week of plan.weeks || []) {
+    if (String(week?.weekType || '') === 'deload') continue;
+    for (const spec of SPECS) {
+      for (let guard = 0; guard < 4; guard += 1) {
+        const days = week?.days || [];
+        const withIt = days.filter((d) => (d.exercises || []).some((ex) => spec.test(String(ex?.name || ''))));
+        if (withIt.length >= 3) break;
+        const rich = withIt.sort((a, b) => b.exercises.filter((ex) => spec.test(String(ex?.name || ''))).length
+          - a.exercises.filter((ex) => spec.test(String(ex?.name || ''))).length)[0];
+        if (!rich || rich.exercises.filter((ex) => spec.test(String(ex?.name || ''))).length < 2) break;
+        /* The donor keeps its own floor: a day may not drop below four
+           exercises to feed another day's exposure count. */
+        if ((rich.exercises || []).length <= 4) break;
+        const host = days.find((d) => !(d.exercises || []).some((ex) => spec.test(String(ex?.name || '')))
+          && (d.sessions || []).some((sn) => String(sn.discipline) === 'lifting'));
+        if (!host) break;
+        const movers = rich.exercises.filter((ex) => spec.test(String(ex?.name || '')));
+        const mover = movers[movers.length - 1];
+        for (const sn of rich.sessions || []) {
+          const at = (sn.exercises || []).indexOf(mover);
+          if (at >= 0) sn.exercises.splice(at, 1);
+        }
+        const hostSession = (host.sessions || []).find((sn) => String(sn.discipline) === 'lifting');
+        hostSession.exercises.push(mover);
+        rich.exercises = (rich.sessions || []).flatMap((sn) => sn.exercises || []);
+        host.exercises = (host.sessions || []).flatMap((sn) => sn.exercises || []);
+      }
+    }
+  }
+  return plan;
+}
+
 function routeRestorePriorityIsolationBand(plan) {
   if (!plan || plan.error) return plan;
   const meta = plan.meta || {};
@@ -1553,6 +1599,21 @@ function routeRestorePriorityIsolationBand(plan) {
           if ((Number(ex.sets) || 0) < MAX_SETS) { ex.sets = (Number(ex.sets) || 0) + 1; delivered += 1; bumped = true; }
         }
         if (!bumped) break;
+        guard += 1;
+      }
+      /* The band has a TOP as well: dose-response flattens and per-set return
+         diminishes, so volume past the target is cost without benefit. Reduce
+         from the end of the week, floor 2 sets per movement — a merged
+         two-a-day carrying five curl movements lands inside the band instead
+         of at movements x 4. */
+      guard = 0;
+      while (delivered > target && guard < 32) {
+        let cut = false;
+        for (let i = mine.length - 1; i >= 0; i -= 1) {
+          if (delivered <= target) break;
+          if ((Number(mine[i].sets) || 0) > 2) { mine[i].sets = Number(mine[i].sets) - 1; delivered -= 1; cut = true; }
+        }
+        if (!cut) break;
         guard += 1;
       }
     }
@@ -1722,6 +1783,102 @@ function routeComposeRuckingSessions(plan, user) {
       day.separationHours = sep;
     }
     waveState = ruckingModule.advanceWave(waveState);
+  }
+  return plan;
+}
+
+/* P1 - the powerbuilding main-lift frequency the hand-written plan uses:
+   bench 3x (one heavy, one volume, one light), squat 2x (heavy + volume),
+   deadlift 2x (heavy + light). The split's slot types cap bench-capable days
+   at two and named squat/deadlift days at one each, so the extra exposures
+   are added the way a coach writes them - a LIGHT copy of the existing main
+   lift on another day, at reduced volume, never a new movement. The copy
+   inherits the original's identity and projection, so the layoff band and
+   progression correlation stay true. */
+function routeEnsurePowerbuildingMainLiftExposures(plan, user) {
+  if (!plan || plan.error) return plan;
+  if (String(plan?.meta?.discipline || '').toLowerCase() !== 'powerbuilding') return plan;
+  const WANT = [
+    { key: 'bench', rx: /bench press/i, want: 3, sets: 2, note: 'Light technique exposure - well short of failure.' },
+    { key: 'squat', rx: /\bsquats?\b/i, exclude: /split|pistol|sissy|jump|wall/i, want: 2, sets: 3, note: 'Volume exposure at reduced load.' },
+    { key: 'deadlift', rx: /deadlift/i, want: 2, sets: 2, note: 'Light pulling exposure - speed and position, not grinding.' }
+  ];
+  for (const week of plan.weeks || []) {
+    const days = week?.days || [];
+    if (!days.length) continue;
+    for (const spec of WANT) {
+      const matches = (day) => (day.exercises || []).some((ex) => spec.rx.test(String(ex?.name || ''))
+        && (!spec.exclude || !spec.exclude.test(String(ex?.name || ''))));
+      const have = days.filter(matches);
+      if (have.length >= spec.want) continue;
+      const source = have.flatMap((day) => day.exercises)
+        .filter((ex) => spec.rx.test(String(ex?.name || '')) && (!spec.exclude || !spec.exclude.test(String(ex?.name || ''))))
+        .sort((a, b) => Number(b?.projected?.value || 0) - Number(a?.projected?.value || 0))[0];
+      if (!source) continue;
+      let need = spec.want - have.length;
+      const hostOrder = ['Lower', 'LowerFocus', 'DeltsArms', 'Pull', 'UpperFocus', 'Upper', 'Push'];
+      const WEEK_ORDER_ML = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'];
+      const beforeLongRuck = (day) => {
+        const pos = WEEK_ORDER_ML.indexOf(String(day?.day || ''));
+        if (pos < 0) return false;
+        const nextLabel = WEEK_ORDER_ML[(pos + 1) % 7];
+        const nextDay = days.find((d) => String(d.day) === nextLabel);
+        return Boolean(nextDay && (nextDay.sessions || []).some((sn) => String(sn.dayType) === 'Long Ruck'));
+      };
+      const hosts = days
+        .filter((day) => !matches(day) && Array.isArray(day.sessions) && day.sessions.some((sn) => sn.discipline === 'lifting'))
+        /* The ordering rule this pass lives next to: no heavy posterior work
+           in the 24h before the long ruck. A light squat or deadlift copy
+           still reads as heavy posterior loading, so those never land on the
+           day before it. Bench copies may. */
+        .filter((day) => spec.key === 'bench' || !beforeLongRuck(day))
+        .sort((a, b) => hostOrder.indexOf(String((a.sessions || [{}])[0].dayType)) - hostOrder.indexOf(String((b.sessions || [{}])[0].dayType)));
+      for (const host of hosts) {
+        if (need <= 0) break;
+        const lifting = host.sessions.find((sn) => sn.discipline === 'lifting');
+        if (!lifting) continue;
+        const projected = Number(source?.projected?.value || 0);
+        const light = projected ? Math.round((projected * 0.85) / 5) * 5 : null;
+        const copy = {
+          ...source,
+          sets: spec.sets,
+          projected: light ? { ...(source.projected || {}), value: light } : source.projected,
+          projectedWeight: light || source.projectedWeight,
+          progression: { ...(source.progression || {}), lastDecision: spec.note, isSecondaryExposure: true }
+        };
+        lifting.exercises.push(copy);
+        host.exercises = host.sessions.flatMap((sn) => sn.exercises || []);
+        need -= 1;
+      }
+    }
+  }
+  return plan;
+}
+
+/* P10 - goal projections with the ceiling term, attached to the plan so the
+   UI can show a RANGE and its assumption. Never a date. */
+function routeAttachGoalProjections(plan, user) {
+  if (!plan || plan.error || !user?.goals) return plan;
+  let lifting = null;
+  try { lifting = require('../generator/disciplines/lifting'); } catch (e) { return plan; }
+  const layoff = plan?.meta?.layoff || {};
+  const anchors = { bench: Number(user.bench) || null, squat: Number(user.squat) || null, deadlift: Number(user.deadlift) || null };
+  const projections = {};
+  for (const lift of ['bench', 'squat', 'deadlift']) {
+    const goalLb = Number(user.goals?.[lift]?.weight ?? user.goals?.[lift]);
+    if (!Number.isFinite(goalLb) || !anchors[lift]) continue;
+    const decayed = Number(layoff?.[lift]?.decayed);
+    const current = Number.isFinite(decayed) && decayed > 0 ? decayed : anchors[lift];
+    const projection = lifting.projectTimeline(
+      { currentLb: current, priorBestLb: anchors[lift] },
+      { lift, weight: goalLb },
+      { bodyweightLb: Number(user.bodyweight || user.weightLb) || 200, experience: String(user.experience || '6-24m') }
+    );
+    if (projection) projections[lift] = { goal: goalLb, current: Math.round(current), ...projection };
+  }
+  if (Object.keys(projections).length) {
+    plan.meta = plan.meta || {};
+    plan.meta.goalProjections = projections;
   }
   return plan;
 }
@@ -2330,9 +2487,14 @@ function buildOblueprintPlanWithFallback(payload, opts = {}) {
         if (String(process.env.NODE_ENV || '').toLowerCase() !== 'production') throw err;
       }
     }
+    /* The band restore ran only inside the bodybuilding chain's floor restore;
+       powerbuilding returns before it. Priority isolation gets its band at the
+       one point every result passes. */
     if (result && !result.error && result.plan) routeBuildDaySessions(result.plan, src);
     if (result && !result.error && result.plan) routeComposeRunningSessions(result.plan, src);
     if (result && !result.error && result.plan) routeComposeRuckingSessions(result.plan, src);
+    if (result && !result.error && result.plan) routeEnsurePowerbuildingMainLiftExposures(result.plan, src);
+    if (result && !result.error && result.plan) routeAttachGoalProjections(result.plan, src);
     if (result && !result.error && result.plan && !result._safeFallback && !planPassesFloorGate(result.plan, src)) {
       const safe = makeSafeFallbackResult(src, { error: 'FLOOR_GATE', reason: 'thin or unsafe day repaired via safe fallback' });
       if (safe) result = safe;
@@ -2346,6 +2508,12 @@ function buildOblueprintPlanWithFallback(payload, opts = {}) {
       relaxedFallback: !!(result?.usedPayload && result.usedPayload._relaxedFallback),
       fallbackReason: result?._safeFallback ? String(result?.originalError?.error || result?.originalError?.reason || invariant || 'unknown') : null
     });
+    /* The band runs LAST — after the merge, the composers, the floor gate and
+       every other mutation — because it counts exposure DAYS on the plan that
+       actually ships. Anywhere earlier, a later pass re-concentrates or
+       re-labels what it just spread. */
+    if (result && !result.error && result.plan && !result._safeFallback) routeSpreadArmExposures(result.plan);
+    if (result && !result.error && result.plan && !result._safeFallback) routeRestorePriorityIsolationBand(result.plan);
     return result;
   };
 
@@ -2525,6 +2693,7 @@ function coerceClassicBodybuildingToOblueprintPayload(payload) {
        timeTrialMi, goalTimeSec, goalMi}. Absent means not selected. */
     running: (src?.running && typeof src.running === 'object') ? src.running : null,
     rucking: (src?.rucking && typeof src.rucking === 'object') ? src.rucking : null,
+    goals: (src?.goals && typeof src.goals === 'object') ? src.goals : null,
     benchVariation: String(strength?.benchVariation || '').trim() || null,
     benchWeight: Number(strength?.benchWeight || 0) || null,
     benchReps: Number(strength?.benchReps || 0) || null,
@@ -14728,6 +14897,7 @@ async function trainingRoutes(req, res, url) {
 }
 
 trainingRoutes._private = {
+  routeRestorePriorityIsolationBand,
   buildLiftHistoryKey,
   auditLoggedEntryIdentity,
   routeApplyReplacement,

@@ -70,6 +70,7 @@ function buildPlan(overrides = {}) {
     twoADays: JASON.twoADays,
     running: { enabled: true, sessionsPerWeek: 3, timeTrialSec: JASON.endurance.twoMileSec, timeTrialMi: 2, goalTimeSec: JASON.goals.twoMileSec, goalMi: 2 },
     rucking: { enabled: true, sessionsPerWeek: 2, startLoadLb: 20, weeklyBaseMi: 8, goalMiles: JASON.goals.ruck.miles },
+    goals: { bench: JASON.goals.bench, squat: JASON.goals.squat, deadlift: JASON.goals.deadlift },
     strength: {
       // '5_plus' is the real bucket key. '2_5y' is not recognised and falls
       // through to a silent '6-24m' default, which had Jason programmed as a
@@ -179,15 +180,19 @@ test('P3 isolation rep ranges: every curl, lateral raise and calf movement at 12
 /* ---------------------------------------------------------- 4. arm volume --- */
 
 test('P4 arm volume: 10-14 direct sets weekly across 3 exposures for biceps, triceps and calves', () => {
+  /* Direct sets only — the brief's own crux. A leg curl is not a biceps set;
+     the bare /curl/ matcher was a latent wrong assertion of the P5 class,
+     counting Seated Leg Curl and Hamstring Curl toward arm volume. */
   const GROUPS = {
-    biceps: /curl/i,
-    triceps: /triceps|pushdown|skull|dip machine/i,
-    calves: /calf/i
+    biceps: { rx: /curl/i, exclude: /leg|hamstring|nordic|wrist/i },
+    triceps: { rx: /triceps|pushdown|skull|dip machine/i },
+    calves: { rx: /calf/i }
   };
   const problems = [];
-  for (const [group, rx] of Object.entries(GROUPS)) {
-    const sets = weeklySets(rx);
-    const exp = exposures(rx);
+  for (const [group, spec] of Object.entries(GROUPS)) {
+    const match = (ex) => spec.rx.test(String(ex.name || '')) && (!spec.exclude || !spec.exclude.test(String(ex.name || '')));
+    const sets = week1Exercises().filter(match).reduce((n, ex) => n + (Number(ex.sets) || 0), 0);
+    const exp = (week1().days || []).filter((d) => (d.exercises || []).some(match)).length;
     if (sets < 10 || sets > 14) problems.push(`${group}: ${sets} weekly sets, want 10-14`);
     if (exp < 3) problems.push(`${group}: ${exp} exposures, want 3`);
   }

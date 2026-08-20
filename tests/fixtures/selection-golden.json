@@ -2468,7 +2468,7 @@
  },
  "bodybuilding-5-Shoulders,Arms": {
   "seed": 1052,
-  "hash": "8c7bedaace9141dd",
+  "hash": "5b1c0dcabff50a64",
   "week1": {
    "wk": 1,
    "days": [
@@ -2647,13 +2647,13 @@
       ],
       [
        "Seated Bent-Over Rear Delt Raise",
-       3,
+       2,
        "12",
        "Shoulders"
       ],
       [
        "Lateral Raise",
-       3,
+       2,
        "12",
        "Shoulders"
       ],
@@ -3994,7 +3994,7 @@
  },
  "bodybuilding-6-Shoulders,Arms": {
   "seed": 1062,
-  "hash": "743dd05fb4d493ea",
+  "hash": "004d9eecd3d882ab",
   "week1": {
    "wk": 1,
    "days": [
@@ -4202,13 +4202,13 @@
       ],
       [
        "Seated Bent-Over Rear Delt Raise",
-       3,
+       2,
        "12",
        "Shoulders"
       ],
       [
        "Lateral Raise",
-       3,
+       2,
        "12",
        "Shoulders"
       ],
@@ -4741,7 +4741,7 @@
  },
  "bodybuilding-6-Chest,Core": {
   "seed": 1065,
-  "hash": "e29199300f59b3b4",
+  "hash": "3452e8d80d61881b",
   "week1": {
    "wk": 1,
    "days": [
@@ -4815,7 +4815,7 @@
       ],
       [
        "Cable Crunch",
-       3,
+       2,
        "8",
        "Core"
       ]
@@ -5239,7 +5239,7 @@
  },
  "powerbuilding-3-Chest,Back": {
   "seed": 1530,
-  "hash": "67112032f0bc192a",
+  "hash": "a9c2eda69c4bcab9",
   "week1": {
    "wk": 1,
    "days": [
@@ -5357,6 +5357,18 @@
        2,
        "8",
        "Core"
+      ],
+      [
+       "Hack Squat",
+       3,
+       "5",
+       "Legs"
+      ],
+      [
+       "Romanian Deadlift",
+       2,
+       "5",
+       "Legs"
       ]
      ]
     }
@@ -5365,7 +5377,7 @@
  },
  "powerbuilding-3-Legs,Glutes": {
   "seed": 1531,
-  "hash": "eaf6379f39a72ca5",
+  "hash": "c165e08bf87fec8f",
   "week1": {
    "wk": 1,
    "days": [
@@ -5401,6 +5413,18 @@
        2,
        "8",
        "Core"
+      ],
+      [
+       "Hack Squat",
+       3,
+       "5",
+       "Legs"
+      ],
+      [
+       "Stiff-Legged Barbell Deadlift",
+       2,
+       "5",
+       "Legs"
       ]
      ]
     },
@@ -5442,6 +5466,12 @@
        4,
        "12",
        "Legs"
+      ],
+      [
+       "Smith Machine Bench Press",
+       2,
+       "6",
+       "Chest"
       ]
      ]
     },
@@ -5483,6 +5513,12 @@
        2,
        "8",
        "Core"
+      ],
+      [
+       "Smith Machine Bench Press",
+       2,
+       "6",
+       "Chest"
       ]
      ]
     }
@@ -5491,7 +5527,7 @@
  },
  "powerbuilding-3-Shoulders,Arms": {
   "seed": 1532,
-  "hash": "a01e71267908bde3",
+  "hash": "d600892d6a156aa8",
   "week1": {
    "wk": 1,
    "days": [
@@ -5518,15 +5554,27 @@
       ],
       [
        "Rear Delt Raise",
-       3,
+       4,
        "12",
        "Shoulders"
       ],
       [
        "Lateral Raise",
-       3,
+       4,
        "12",
        "Shoulders"
+      ],
+      [
+       "Leverage Deadlift",
+       2,
+       "5",
+       "Legs"
+      ],
+      [
+       "Machine Bicep Curl",
+       4,
+       "12",
+       "Arms"
       ]
      ]
     },
@@ -5559,12 +5607,6 @@
       ],
       [
        "Cable Incline Pushdown",
-       4,
-       "12",
-       "Arms"
-      ],
-      [
-       "Machine Bicep Curl",
        4,
        "12",
        "Arms"
@@ -5617,7 +5659,7 @@
  },
  "powerbuilding-3-Back,Arms": {
   "seed": 1533,
-  "hash": "1d551a7e68f3fa44",
+  "hash": "a304c273e7c61c4c",
   "week1": {
    "wk": 1,
    "days": [
@@ -5659,6 +5701,12 @@
        4,
        "12",
        "Arms"
+      ],
+      [
+       "Leverage Deadlift",
+       2,
+       "5",
+       "Legs"
       ]
      ]
     },
@@ -5741,6 +5789,12 @@
        4,
        "12",
        "Arms"
+      ],
+      [
+       "Hack Squat",
+       3,
+       "5",
+       "Legs"
       ]
      ]
     }
@@ -5749,7 +5803,7 @@
  },
  "powerbuilding-3-Core,Calves": {
   "seed": 1534,
-  "hash": "bd0effa7ea6dbcc2",
+  "hash": "d2df1b8befda7d83",
   "week1": {
    "wk": 1,
    "days": [
@@ -5832,6 +5886,12 @@
        2,
        "8",
        "Core"
+      ],
+      [
+       "Barbell Bench Press - Medium Grip",
+       2,
+       "6",
+       "Chest"
       ]
      ]
     },
@@ -5873,6 +5933,18 @@
        2,
        "8",
        "Core"
+      ],
+      [
+       "Barbell Bench Press - Medium Grip",
+       2,
+       "6",
+       "Chest"
+      ],
+      [
+       "Romanian Deadlift from Deficit",
+       2,
+       "5",
+       "Legs"
       ]
      ]
     }
@@ -5881,7 +5953,7 @@
  },
  "powerbuilding-3-Chest,Core": {
   "seed": 1535,
-  "hash": "2eb3c37a6d974963",
+  "hash": "e87ba6759e794e33",
   "week1": {
    "wk": 1,
    "days": [
@@ -5958,6 +6030,12 @@
        2,
        "8",
        "Core"
+      ],
+      [
+       "Smith Machine Bench Press",
+       2,
+       "6",
+       "Chest"
       ]
      ]
     },
@@ -5999,6 +6077,24 @@
        2,
        "8",
        "Core"
+      ],
+      [
+       "Smith Machine Bench Press",
+       2,
+       "6",
+       "Chest"
+      ],
+      [
+       "Barbell Hack Squat",
+       3,
+       "5",
+       "Legs"
+      ],
+      [
+       "Stiff-Legged Dumbbell Deadlift",
+       2,
+       "5",
+       "Legs"
       ]
      ]
     }
@@ -6007,7 +6103,7 @@
  },
  "powerbuilding-3-Glutes,Calves": {
   "seed": 1536,
-  "hash": "170eddfa0b60493e",
+  "hash": "638143fc593dc051",
   "week1": {
    "wk": 1,
    "days": [
@@ -6090,6 +6186,12 @@
        4,
        "12",
        "Legs"
+      ],
+      [
+       "Smith Machine Bench Press",
+       2,
+       "6",
+       "Chest"
       ]
      ]
     },
@@ -6131,6 +6233,24 @@
        2,
        "8",
        "Core"
+      ],
+      [
+       "Smith Machine Bench Press",
+       2,
+       "6",
+       "Chest"
+      ],
+      [
+       "Hack Squat",
+       3,
+       "5",
+       "Legs"
+      ],
+      [
+       "Romanian Deadlift",
+       2,
+       "5",
+       "Legs"
       ]
      ]
     }
@@ -6139,7 +6259,7 @@
  },
  "powerbuilding-4-Chest,Back": {
   "seed": 1540,
-  "hash": "5f4dd9ea147121b6",
+  "hash": "7ea0cc0e748733b5",
   "week1": {
    "wk": 1,
    "days": [
@@ -6216,6 +6336,12 @@
        2,
        "8",
        "Core"
+      ],
+      [
+       "Smith Machine Bench Press",
+       2,
+       "6",
+       "Chest"
       ]
      ]
     },
@@ -6298,6 +6424,24 @@
        2,
        "8",
        "Core"
+      ],
+      [
+       "Smith Machine Bench Press",
+       2,
+       "6",
+       "Chest"
+      ],
+      [
+       "Barbell Hack Squat",
+       3,
+       "5",
+       "Legs"
+      ],
+      [
+       "Stiff-Legged Barbell Deadlift",
+       2,
+       "5",
+       "Legs"
       ]
      ]
     }
@@ -6306,7 +6450,7 @@
  },
  "powerbuilding-4-Legs,Glutes": {
   "seed": 1541,
-  "hash": "0f662e9784af4bca",
+  "hash": "376b2776822ab347",
   "week1": {
    "wk": 1,
    "days": [
@@ -6465,6 +6609,24 @@
        2,
        "8",
        "Core"
+      ],
+      [
+       "Barbell Bench Press - Medium Grip",
+       2,
+       "6",
+       "Chest"
+      ],
+      [
+       "Barbell Hack Squat",
+       3,
+       "5",
+       "Legs"
+      ],
+      [
+       "Leverage Deadlift",
+       2,
+       "5",
+       "Legs"
       ]
      ]
     }
@@ -6473,7 +6635,7 @@
  },
  "powerbuilding-4-Shoulders,Arms": {
   "seed": 1542,
-  "hash": "7799dabac5c3c225",
+  "hash": "611e67848859d5a6",
   "week1": {
    "wk": 1,
    "days": [
@@ -6500,18 +6662,24 @@
       ],
       [
        "One-Arm Incline Lateral Raise",
-       3,
+       4,
        "12",
        "Shoulders"
       ],
       [
        "Rear Delt Fly",
-       3,
+       4,
        "12",
        "Shoulders"
       ],
       [
        "Overhead Triceps Extension",
+       4,
+       "12",
+       "Arms"
+      ],
+      [
+       "Machine Preacher Curl",
        4,
        "12",
        "Arms"
@@ -6556,6 +6724,12 @@
        2,
        "8",
        "Core"
+      ],
+      [
+       "Barbell Bench Press - Medium Grip",
+       2,
+       "6",
+       "Chest"
       ]
      ]
     },
@@ -6576,18 +6750,12 @@
       ],
       [
        "Dumbbell Lateral Raise",
-       2,
+       4,
        "12",
        "Shoulders"
       ],
       [
        "Cable Curl",
-       4,
-       "12",
-       "Arms"
-      ],
-      [
-       "Machine Preacher Curl",
        4,
        "12",
        "Arms"
@@ -6638,6 +6806,24 @@
        2,
        "8",
        "Core"
+      ],
+      [
+       "Barbell Bench Press - Medium Grip",
+       2,
+       "6",
+       "Chest"
+      ],
+      [
+       "Barbell Hack Squat",
+       3,
+       "5",
+       "Legs"
+      ],
+      [
+       "Smith Machine Stiff-Legged Deadlift",
+       2,
+       "5",
+       "Legs"
       ]
      ]
     }
@@ -6646,7 +6832,7 @@
  },
  "powerbuilding-4-Back,Arms": {
   "seed": 1543,
-  "hash": "b5f67fd3b0dbdd4a",
+  "hash": "a013d63c0515ad40",
   "week1": {
    "wk": 1,
    "days": [
@@ -6676,6 +6862,12 @@
        2,
        "12",
        "Chest"
+      ],
+      [
+       "Incline Dumbbell Curl",
+       4,
+       "12",
+       "Arms"
       ]
      ]
     },
@@ -6717,6 +6909,12 @@
        2,
        "8",
        "Core"
+      ],
+      [
+       "Reverse Triceps Bench Press",
+       2,
+       "6",
+       "Arms"
       ]
      ]
     },
@@ -6743,12 +6941,6 @@
       ],
       [
        "Cable Curl",
-       4,
-       "12",
-       "Arms"
-      ],
-      [
-       "Incline Dumbbell Curl",
        4,
        "12",
        "Arms"
@@ -6799,6 +6991,18 @@
        2,
        "8",
        "Core"
+      ],
+      [
+       "Reverse Triceps Bench Press",
+       2,
+       "6",
+       "Arms"
+      ],
+      [
+       "Stiff-Legged Dumbbell Deadlift",
+       2,
+       "5",
+       "Legs"
       ]
      ]
     }
@@ -6807,7 +7011,7 @@
  },
  "powerbuilding-4-Core,Calves": {
   "seed": 1544,
-  "hash": "39da81aed587df52",
+  "hash": "8ff11d94db33024b",
   "week1": {
    "wk": 1,
    "days": [
@@ -6890,6 +7094,12 @@
        2,
        "8",
        "Core"
+      ],
+      [
+       "Smith Machine Bench Press",
+       2,
+       "6",
+       "Chest"
       ]
      ]
     },
@@ -6972,6 +7182,24 @@
        2,
        "8",
        "Core"
+      ],
+      [
+       "Smith Machine Bench Press",
+       2,
+       "6",
+       "Chest"
+      ],
+      [
+       "Hack Squat",
+       3,
+       "5",
+       "Legs"
+      ],
+      [
+       "Smith Machine Stiff-Legged Deadlift",
+       2,
+       "5",
+       "Legs"
       ]
      ]
     }
@@ -6980,7 +7208,7 @@
  },
  "powerbuilding-4-Chest,Core": {
   "seed": 1545,
-  "hash": "5111b66c7b5b4798",
+  "hash": "3c6d2862b876347f",
   "week1": {
    "wk": 1,
    "days": [
@@ -7051,6 +7279,12 @@
        2,
        "8",
        "Core"
+      ],
+      [
+       "Smith Machine Incline Bench Press",
+       2,
+       "6",
+       "Chest"
       ]
      ]
     },
@@ -7133,6 +7367,18 @@
        2,
        "8",
        "Core"
+      ],
+      [
+       "Smith Machine Incline Bench Press",
+       2,
+       "6",
+       "Chest"
+      ],
+      [
+       "Smith Machine Stiff-Legged Deadlift",
+       2,
+       "5",
+       "Legs"
       ]
      ]
     }
@@ -7141,7 +7387,7 @@
  },
  "powerbuilding-4-Glutes,Calves": {
   "seed": 1546,
-  "hash": "1bc5947acbf0181d",
+  "hash": "dddf2dbf1dbc61e0",
   "week1": {
    "wk": 1,
    "days": [
@@ -7218,6 +7464,12 @@
        3,
        "12",
        "Legs"
+      ],
+      [
+       "Smith Machine Bench Press",
+       2,
+       "6",
+       "Chest"
       ]
      ]
     },
@@ -7300,6 +7552,18 @@
        2,
        "12",
        "Legs"
+      ],
+      [
+       "Smith Machine Bench Press",
+       2,
+       "6",
+       "Chest"
+      ],
+      [
+       "Romanian Deadlift",
+       2,
+       "5",
+       "Legs"
       ]
      ]
     }
@@ -7308,7 +7572,7 @@
  },
  "powerbuilding-5-Chest,Back": {
   "seed": 1550,
-  "hash": "1c224b8701334a50",
+  "hash": "58c8acdb9220f4ce",
   "week1": {
    "wk": 1,
    "days": [
@@ -7391,6 +7655,12 @@
        2,
        "8",
        "Core"
+      ],
+      [
+       "Hack Squat",
+       3,
+       "5",
+       "Legs"
       ]
      ]
     },
@@ -7514,6 +7784,18 @@
        2,
        "8",
        "Core"
+      ],
+      [
+       "Barbell Incline Bench Press - Medium Grip",
+       2,
+       "6",
+       "Chest"
+      ],
+      [
+       "Romanian Deadlift from Deficit",
+       2,
+       "5",
+       "Legs"
       ]
      ]
     }
@@ -7522,7 +7804,7 @@
  },
  "powerbuilding-5-Legs,Glutes": {
   "seed": 1551,
-  "hash": "905be04dc86718fc",
+  "hash": "cdf5890e3b426689",
   "week1": {
    "wk": 1,
    "days": [
@@ -7599,6 +7881,12 @@
        2,
        "12",
        "Legs"
+      ],
+      [
+       "Smith Machine Bench Press",
+       2,
+       "6",
+       "Chest"
       ]
      ]
     },
@@ -7716,6 +8004,24 @@
        2,
        "12",
        "Legs"
+      ],
+      [
+       "Smith Machine Bench Press",
+       2,
+       "6",
+       "Chest"
+      ],
+      [
+       "Barbell Hack Squat",
+       3,
+       "5",
+       "Legs"
+      ],
+      [
+       "Smith Machine Stiff-Legged Deadlift",
+       2,
+       "5",
+       "Legs"
       ]
      ]
     }
@@ -7724,7 +8030,7 @@
  },
  "powerbuilding-5-Shoulders,Arms": {
   "seed": 1552,
-  "hash": "1d54245da3789125",
+  "hash": "814a9a1b4b470191",
   "week1": {
    "wk": 1,
    "days": [
@@ -7759,6 +8065,12 @@
        "Smith Machine Close-Grip Bench Press",
        4,
        "6",
+       "Arms"
+      ],
+      [
+       "Incline Dumbbell Curl",
+       4,
+       "12",
        "Arms"
       ]
      ]
@@ -7801,6 +8113,18 @@
        3,
        "12",
        "Legs"
+      ],
+      [
+       "Reverse Triceps Bench Press",
+       2,
+       "6",
+       "Arms"
+      ],
+      [
+       "Barbell Hack Squat",
+       3,
+       "5",
+       "Legs"
       ]
      ]
     },
@@ -7828,12 +8152,6 @@
       [
        "Machine Preacher Curl",
        2,
-       "12",
-       "Arms"
-      ],
-      [
-       "Incline Dumbbell Curl",
-       4,
        "12",
        "Arms"
       ]
@@ -7868,7 +8186,7 @@
       ],
       [
        "Dumbbell One-Arm Triceps Extension",
-       3,
+       4,
        "12",
        "Arms"
       ]
@@ -7912,6 +8230,18 @@
        2,
        "8",
        "Core"
+      ],
+      [
+       "Reverse Triceps Bench Press",
+       2,
+       "6",
+       "Arms"
+      ],
+      [
+       "Stiff-Legged Barbell Deadlift",
+       2,
+       "5",
+       "Legs"
       ]
      ]
     }
@@ -7920,7 +8250,7 @@
  },
  "powerbuilding-5-Back,Arms": {
   "seed": 1553,
-  "hash": "dac4033bd0b3886d",
+  "hash": "c8efc00f27f8b0da",
   "week1": {
    "wk": 1,
    "days": [
@@ -7997,6 +8327,12 @@
        2,
        "8",
        "Core"
+      ],
+      [
+       "Smith Machine Incline Bench Press",
+       2,
+       "6",
+       "Chest"
       ]
      ]
     },
@@ -8102,6 +8438,18 @@
        2,
        "8",
        "Core"
+      ],
+      [
+       "Smith Machine Incline Bench Press",
+       2,
+       "6",
+       "Chest"
+      ],
+      [
+       "Romanian Deadlift",
+       2,
+       "5",
+       "Legs"
       ]
      ]
     }
@@ -8110,7 +8458,7 @@
  },
  "powerbuilding-5-Core,Calves": {
   "seed": 1554,
-  "hash": "d0cb16d26974b851",
+  "hash": "06a9c42b405df2ec",
   "week1": {
    "wk": 1,
    "days": [
@@ -8310,6 +8658,18 @@
        2,
        "8",
        "Core"
+      ],
+      [
+       "Barbell Incline Bench Press - Medium Grip",
+       2,
+       "6",
+       "Chest"
+      ],
+      [
+       "Leverage Deadlift",
+       2,
+       "5",
+       "Legs"
       ]
      ]
     }
@@ -8318,7 +8678,7 @@
  },
  "powerbuilding-5-Chest,Core": {
   "seed": 1555,
-  "hash": "b871d032091af356",
+  "hash": "7b6675a1c41f5d1e",
   "week1": {
    "wk": 1,
    "days": [
@@ -8395,6 +8755,12 @@
        2,
        "8",
        "Core"
+      ],
+      [
+       "Bench Press",
+       2,
+       "6",
+       "Chest"
       ]
      ]
     },
@@ -8468,7 +8834,7 @@
       ],
       [
        "Pallof Press",
-       3,
+       2,
        "8",
        "Core"
       ]
@@ -8512,6 +8878,18 @@
        2,
        "8",
        "Core"
+      ],
+      [
+       "Bench Press",
+       2,
+       "6",
+       "Chest"
+      ],
+      [
+       "Leverage Deadlift",
+       2,
+       "5",
+       "Legs"
       ]
      ]
     }
@@ -8520,7 +8898,7 @@
  },
  "powerbuilding-5-Glutes,Calves": {
   "seed": 1556,
-  "hash": "2bb08c2e59f71e65",
+  "hash": "d3485ef0aa2252e6",
   "week1": {
    "wk": 1,
    "days": [
@@ -8602,6 +8980,12 @@
        "Standing Calf Raises",
        4,
        "12",
+       "Legs"
+      ],
+      [
+       "Barbell Hack Squat",
+       3,
+       "5",
        "Legs"
       ]
      ]
@@ -8714,6 +9098,18 @@
        3,
        "12",
        "Legs"
+      ],
+      [
+       "Smith Machine Bench Press",
+       2,
+       "6",
+       "Chest"
+      ],
+      [
+       "Leverage Deadlift",
+       2,
+       "5",
+       "Legs"
       ]
      ]
     }
@@ -8722,7 +9118,7 @@
  },
  "powerbuilding-6-Chest,Back": {
   "seed": 1560,
-  "hash": "78fec3bdb168d535",
+  "hash": "ba27732dbae65c3e",
   "week1": {
    "wk": 1,
    "days": [
@@ -8922,6 +9318,24 @@
        2,
        "8",
        "Core"
+      ],
+      [
+       "Smith Machine Bench Press",
+       2,
+       "6",
+       "Chest"
+      ],
+      [
+       "Barbell Hack Squat",
+       3,
+       "5",
+       "Legs"
+      ],
+      [
+       "Stiff-Legged Barbell Deadlift",
+       2,
+       "5",
+       "Legs"
       ]
      ]
     },
@@ -8971,7 +9385,7 @@
  },
  "powerbuilding-6-Legs,Glutes": {
   "seed": 1561,
-  "hash": "fa3651eeaa8a8430",
+  "hash": "182263d638203bf6",
   "week1": {
    "wk": 1,
    "days": [
@@ -9165,6 +9579,24 @@
        2,
        "8",
        "Core"
+      ],
+      [
+       "Smith Machine Bench Press",
+       2,
+       "6",
+       "Chest"
+      ],
+      [
+       "Barbell Hack Squat",
+       3,
+       "5",
+       "Legs"
+      ],
+      [
+       "Leverage Deadlift",
+       2,
+       "5",
+       "Legs"
       ]
      ]
     },
@@ -9214,7 +9646,7 @@
  },
  "powerbuilding-6-Shoulders,Arms": {
   "seed": 1562,
-  "hash": "00a31a8bf9cae128",
+  "hash": "d74ba460ecb04b08",
   "week1": {
    "wk": 1,
    "days": [
@@ -9241,7 +9673,7 @@
       ],
       [
        "Cable Incline Pushdown",
-       2,
+       4,
        "12",
        "Arms"
       ],
@@ -9338,6 +9770,12 @@
        2,
        "8",
        "Core"
+      ],
+      [
+       "Reverse Triceps Bench Press",
+       2,
+       "6",
+       "Arms"
       ]
      ]
     },
@@ -9376,7 +9814,7 @@
       ],
       [
        "Machine Triceps Extension",
-       3,
+       4,
        "12",
        "Arms"
       ]
@@ -9420,6 +9858,18 @@
        2,
        "8",
        "Core"
+      ],
+      [
+       "Reverse Triceps Bench Press",
+       2,
+       "6",
+       "Arms"
+      ],
+      [
+       "Smith Machine Stiff-Legged Deadlift",
+       2,
+       "5",
+       "Legs"
       ]
      ]
     },
@@ -9452,7 +9902,7 @@
       ],
       [
        "Kneeling Cable Triceps Extension",
-       2,
+       4,
        "12",
        "Arms"
       ]
@@ -9463,7 +9913,7 @@
  },
  "powerbuilding-6-Back,Arms": {
   "seed": 1563,
-  "hash": "7a82922b81c19075",
+  "hash": "75dec531452c346c",
   "week1": {
    "wk": 1,
    "days": [
@@ -9490,7 +9940,7 @@
       ],
       [
        "Triceps Pushdown",
-       3,
+       4,
        "12",
        "Arms"
       ]
@@ -9534,6 +9984,18 @@
        2,
        "8",
        "Core"
+      ],
+      [
+       "Reverse Triceps Bench Press",
+       2,
+       "6",
+       "Arms"
+      ],
+      [
+       "Barbell Hack Squat",
+       3,
+       "5",
+       "Legs"
       ]
      ]
     },
@@ -9566,7 +10028,7 @@
       ],
       [
        "Machine Triceps Extension",
-       3,
+       4,
        "12",
        "Arms"
       ]
@@ -9639,6 +10101,18 @@
        2,
        "8",
        "Core"
+      ],
+      [
+       "Reverse Triceps Bench Press",
+       2,
+       "6",
+       "Arms"
+      ],
+      [
+       "Stiff-Legged Dumbbell Deadlift",
+       2,
+       "5",
+       "Legs"
       ]
      ]
     },
@@ -9688,7 +10162,7 @@
  },
  "powerbuilding-6-Core,Calves": {
   "seed": 1564,
-  "hash": "31e6e86f2c9af837",
+  "hash": "32a498c4c2d32ab6",
   "week1": {
    "wk": 1,
    "days": [
@@ -9715,7 +10189,7 @@
       ],
       [
        "Pallof Press",
-       3,
+       2,
        "8",
        "Core"
       ],
@@ -9888,6 +10362,18 @@
        2,
        "8",
        "Core"
+      ],
+      [
+       "Smith Machine Bench Press",
+       2,
+       "6",
+       "Chest"
+      ],
+      [
+       "Smith Machine Stiff-Legged Deadlift",
+       2,
+       "5",
+       "Legs"
       ]
      ]
     },
@@ -9937,7 +10423,7 @@
  },
  "powerbuilding-6-Chest,Core": {
   "seed": 1565,
-  "hash": "147fcfd91fd9bc2c",
+  "hash": "334196e04644d5e5",
   "week1": {
    "wk": 1,
    "days": [
@@ -10087,7 +10573,7 @@
       ],
       [
        "Pallof Press",
-       3,
+       2,
        "8",
        "Core"
       ]
@@ -10131,6 +10617,24 @@
        2,
        "8",
        "Core"
+      ],
+      [
+       "Smith Machine Incline Bench Press",
+       2,
+       "6",
+       "Chest"
+      ],
+      [
+       "Smith Machine Squat",
+       3,
+       "5",
+       "Legs"
+      ],
+      [
+       "Smith Machine Stiff-Legged Deadlift",
+       2,
+       "5",
+       "Legs"
       ]
      ]
     },
@@ -10180,7 +10684,7 @@
  },
  "powerbuilding-6-Glutes,Calves": {
   "seed": 1566,
-  "hash": "beef57dfbe30d200",
+  "hash": "27e271b99397daba",
   "week1": {
    "wk": 1,
    "days": [
@@ -10373,6 +10877,24 @@
        "Standing Calf Raises",
        3,
        "12",
+       "Legs"
+      ],
+      [
+       "Barbell Incline Bench Press - Medium Grip",
+       2,
+       "6",
+       "Chest"
+      ],
+      [
+       "Wide Stance Barbell Squat",
+       3,
+       "5",
+       "Legs"
+      ],
+      [
+       "Smith Machine Stiff-Legged Deadlift",
+       2,
+       "5",
        "Legs"
       ]
      ]

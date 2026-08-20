@@ -69,10 +69,70 @@ function progress(state, loggedSessions) {
   return next;
 }
 
-/* Timeline projection is Phase 2.7 (§7, the ceiling term). Returning null is
-   the honest answer until it exists — never a fabricated date. */
-function projectTimeline() {
-  return null;
+/* §7 — the strength timeline. The ceiling term is what makes it honest:
+   someone regaining a lift they have held before sits far under their
+   ceiling and moves fast; someone approaching the same number for the first
+   time is near it and crawls. Efficiency falls with the cube of proximity.
+   Output is a RANGE with the assumption stated, never a single date, and an
+   unreachable goal returns the honest number plus a reachable milestone. */
+const LIFT_MULTIPLIER = { bench: 1.5, squat: 2.0, deadlift: 2.5 };
+const AGE_FACTOR = { '<6m': 0.85, '6-24m': 1.0, '2-5y': 1.1, '5y+': 1.15 };
+
+function projectStrengthTimeline({ current, goal, repMin, repMax, loadStep, frequencyPerWeek, ceiling, adherence = 0.85 }) {
+  const exposuresPerCycle = (repMax - repMin) + 1;
+  const baseWeeksPerCycle = exposuresPerCycle / Math.max(1, frequencyPerWeek);
+  let load = Number(current);
+  let weeks = 0;
+  let cycles = 0;
+  while (load < goal && weeks < 130) {
+    const proximity = Math.min(load / ceiling, 0.99);
+    const efficiency = Math.max(1 - Math.pow(proximity, 3), 0.15);
+    weeks += baseWeeksPerCycle / (adherence * efficiency);
+    load += loadStep;
+    cycles += 1;
+  }
+  if (load < goal) return { reachable: false, beyondMonths: 30 };
+  return {
+    reachable: true,
+    weeks: Math.round(weeks),
+    rangeWeeks: [Math.round(weeks * 0.75), Math.round(weeks * 1.35)],
+    cycles
+  };
+}
+
+function projectTimeline(state, goal, profile) {
+  const lift = String(goal?.lift || '');
+  const goalLb = Number(goal?.weight);
+  const current = Number(state?.currentLb);
+  if (!LIFT_MULTIPLIER[lift] || !Number.isFinite(goalLb) || !Number.isFinite(current) || current <= 0) return null;
+  const bodyweight = Number(profile?.bodyweightLb) || 200;
+  const age = String(profile?.experience || '6-24m');
+  const priorBest = Number(state?.priorBestLb) || current;
+  const ceiling = Math.max(priorBest * 1.05, bodyweight * LIFT_MULTIPLIER[lift] * (AGE_FACTOR[age] || 1));
+  const cfg = lift === 'bench'
+    ? { repMin: 6, repMax: 8, loadStep: 10, frequencyPerWeek: Number(profile?.frequency?.[lift]) || 3 }
+    : { repMin: 5, repMax: 8, loadStep: 15, frequencyPerWeek: Number(profile?.frequency?.[lift]) || (lift === 'squat' ? 2 : 1) };
+  const result = projectStrengthTimeline({ current, goal: goalLb, ceiling, ...cfg });
+  if (!result) return null;
+  const assumption = `${cfg.frequencyPerWeek}x/week double progression (${cfg.repMin}-${cfg.repMax} reps, +${cfg.loadStep} lb per cycle), 85% adherence, ceiling ${Math.round(ceiling)} lb from ${priorBest > current ? 'a prior best of ' + Math.round(priorBest) : 'bodyweight and training age'}.`;
+  if (!result.reachable) {
+    // The honest number plus a reachable milestone.
+    let milestone = goalLb;
+    let milestoneResult = result;
+    while (!milestoneResult.reachable && milestone > current + 20) {
+      milestone -= 25;
+      milestoneResult = projectStrengthTimeline({ current, goal: milestone, ceiling, ...cfg });
+    }
+    return {
+      reachable: false,
+      beyondMonths: 30,
+      assumption,
+      milestone: milestoneResult.reachable
+        ? { weight: milestone, rangeWeeks: milestoneResult.rangeWeeks }
+        : null
+    };
+  }
+  return { reachable: true, rangeWeeks: result.rangeWeeks, cycles: result.cycles, assumption };
 }
 
 /* The engine, unchanged. Same function the routes call today, so a plan built
@@ -87,6 +147,7 @@ module.exports = {
   demand,
   progress,
   projectTimeline,
+  projectStrengthTimeline,
   build,
   applyLoggedSession: progressionPlanUpdate.applyLoggedSession
 };
