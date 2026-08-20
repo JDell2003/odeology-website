@@ -106,8 +106,14 @@ const DIRECT_TARGET_RANGES = {
   Quads: { normal: [8, 10], priority: [12, 16], size: 'large' },
   Hamstrings: { normal: [8, 10], priority: [12, 16], size: 'large' },
   Glutes: { normal: [8, 10], priority: [12, 16], size: 'large' },
-  Biceps: { normal: [4, 6], priority: [8, 12], size: 'small' },
-  Triceps: { normal: [4, 6], priority: [8, 12], size: 'small' },
+  /* P4 — priority arms sit at the top of the dose-response band: 10-14 direct
+     sets across the exposures the split delivers, hard-capped so volume never
+     chases past the point of return. Indirect work (rows for biceps, presses
+     for triceps) carries ZERO credit in this accounting — measured: a barbell
+     row's directMuscleTargets is ["lats"] — so the target is measured against
+     direct sets only, stricter than the half-credit convention. */
+  Biceps: { normal: [4, 6], priority: [10, 14], size: 'small' },
+  Triceps: { normal: [4, 6], priority: [10, 14], size: 'small' },
   Calves: { normal: [4, 6], priority: [8, 12], size: 'small' },
   Abs: { normal: [4, 6], priority: [8, 12], size: 'small' }
 };
