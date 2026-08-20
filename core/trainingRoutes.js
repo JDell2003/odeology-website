@@ -1486,6 +1486,73 @@ function routeSnapshotStructural(plan) {
   return snap;
 }
 
+/* The band restore, same architecture as the structural floor: ~8 route sites
+   clamp isolation sets to Math.min(3, ...) as blanket policy, which capped a
+   priority muscle's 14-set band at 9 shipped. Rather than patch each site, the
+   clamp DEFERS here, once, after the whole chain: priority-muscle isolation is
+   topped back up to min(weekly target, exercises x 4), round-robin, deload
+   weeks untouched. Compounds are untouched too — their sets are progression
+   territory, not volume-band territory. */
+function routeRestorePriorityIsolationBand(plan) {
+  if (!plan || plan.error) return plan;
+  const meta = plan.meta || {};
+  const targets = meta.weeklyTargets || {};
+  const priorities = Array.isArray(meta.priorityGroups) ? meta.priorityGroups : [];
+  if (!priorities.length) return plan;
+  const MAX_SETS = 4;
+  const deloadWeeks = new Set(Array.isArray(meta?.autoreg?.deloadWeeks) ? meta.autoreg.deloadWeeks : []);
+  /* Truth-first with a name fallback: route-replaced exercises do not always
+     carry canonicalTruth, and an exercise the matcher cannot see is an
+     exercise the band cannot fill. */
+  const MUSCLE_MATCHERS = {
+    Biceps: (ex, truth) => truth.directArmType === 'biceps'
+      || (/curls?/i.test(String(ex?.name || '')) && !/leg|hamstring|wrist|nordic|reverse plate/i.test(String(ex?.name || ''))),
+    Triceps: (ex, truth) => truth.directArmType === 'triceps'
+      || /triceps|pushdown|skull/i.test(String(ex?.name || '')),
+    Calves: (ex, truth) => Boolean(truth.directCalf) || /cal(f|ves)/i.test(String(ex?.name || '')),
+    Shoulders: (ex, truth) => String(truth.directDeltSubtype || 'none') !== 'none'
+      || /lateral raise|side lateral|rear delt|reverse fly|front raise/i.test(String(ex?.name || '')),
+    Abs: (ex, truth) => String(truth.coreFamily || 'none') !== 'none'
+      || /crunch|plank|pallof|leg raise|sit-?up/i.test(String(ex?.name || ''))
+  };
+  const DIRECTS_BY_GROUP = { Arms: ['Biceps', 'Triceps'], Calves: ['Calves'], Shoulders: ['Shoulders'], Abs: ['Abs'] };
+  const muscles = [];
+  for (const group of priorities) {
+    for (const m of DIRECTS_BY_GROUP[String(group)] || []) if (!muscles.includes(m)) muscles.push(m);
+  }
+  if (!muscles.length) return plan;
+  for (const week of plan.weeks || []) {
+    if (String(week?.weekType || '') === 'deload' || deloadWeeks.has(Number(week?.weekIndex))) continue;
+    for (const muscle of muscles) {
+      const matcher = MUSCLE_MATCHERS[muscle];
+      const target = Number(targets[muscle] || 0);
+      if (!matcher || !target) continue;
+      const mine = [];
+      for (const day of week?.days || []) {
+        for (const ex of day?.exercises || []) {
+          if (String(ex?.style || '') !== 'Isolation') continue;
+          const truth = ex?.canonicalTruth || {};
+          if (matcher(ex, truth)) mine.push(ex);
+        }
+      }
+      if (!mine.length) continue;
+      const ceiling = Math.min(target, mine.length * MAX_SETS);
+      let delivered = mine.reduce((n, ex) => n + (Number(ex.sets) || 0), 0);
+      let guard = 0;
+      while (delivered < ceiling && guard < 32) {
+        let bumped = false;
+        for (const ex of mine) {
+          if (delivered >= ceiling) break;
+          if ((Number(ex.sets) || 0) < MAX_SETS) { ex.sets = (Number(ex.sets) || 0) + 1; delivered += 1; bumped = true; }
+        }
+        if (!bumped) break;
+        guard += 1;
+      }
+    }
+  }
+  return plan;
+}
+
 function routeRestoreStructuralFloor(plan, snapshot) {
   if (!plan || plan.error || !snapshot) return plan;
   for (const week of plan?.weeks || []) {
@@ -1509,7 +1576,7 @@ function routeRestoreStructuralFloor(plan, snapshot) {
       }
     });
   }
-  return plan;
+  return routeRestorePriorityIsolationBand(plan);
 }
 
 function buildOblueprintPlanWithFallback(payload, opts = {}) {

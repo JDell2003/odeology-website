@@ -259,7 +259,7 @@
  },
  "bodybuilding-3-Shoulders,Arms": {
   "seed": 1032,
-  "hash": "d715f36f9f869e1d",
+  "hash": "bd1a3109b784910c",
   "week1": {
    "wk": 1,
    "days": [
@@ -315,7 +315,7 @@
       ],
       [
        "Seated Side Lateral Raise",
-       3,
+       4,
        "12",
        "Shoulders"
       ],
@@ -333,7 +333,7 @@
       ],
       [
        "Cable Incline Pushdown",
-       3,
+       4,
        "12",
        "Arms"
       ]
@@ -493,7 +493,7 @@
  },
  "bodybuilding-3-Core,Calves": {
   "seed": 1034,
-  "hash": "4687f4011173c9d8",
+  "hash": "0fa95c046758ce04",
   "week1": {
    "wk": 1,
    "days": [
@@ -538,7 +538,7 @@
       ],
       [
        "Cable Crunch",
-       3,
+       4,
        "8",
        "Core"
       ]
@@ -573,7 +573,7 @@
       ],
       [
        "Cable Pallof Hold",
-       2,
+       3,
        "8",
        "Core"
       ],
@@ -637,7 +637,7 @@
  },
  "bodybuilding-3-Chest,Core": {
   "seed": 1035,
-  "hash": "e54dc186dbc0c8e8",
+  "hash": "f2c84ebfae00d5fb",
   "week1": {
    "wk": 1,
    "days": [
@@ -711,7 +711,7 @@
       ],
       [
        "Ab Crunch Machine",
-       2,
+       4,
        "8",
        "Core"
       ]
@@ -752,7 +752,7 @@
       ],
       [
        "Cable Pallof Hold",
-       2,
+       4,
        "8",
        "Core"
       ]
@@ -1223,7 +1223,7 @@
  },
  "bodybuilding-4-Shoulders,Arms": {
   "seed": 1042,
-  "hash": "51f553b23a2f1e43",
+  "hash": "004c9dea6817ff04",
   "week1": {
    "wk": 1,
    "days": [
@@ -1250,13 +1250,13 @@
       ],
       [
        "Seated Side Lateral Raise",
-       3,
+       4,
        "12",
        "Shoulders"
       ],
       [
        "Seated Bent-Over Rear Delt Raise",
-       3,
+       4,
        "12",
        "Shoulders"
       ],
@@ -1338,7 +1338,7 @@
       ],
       [
        "One-Arm Side Laterals",
-       2,
+       4,
        "12",
        "Shoulders"
       ],
@@ -1545,7 +1545,7 @@
  },
  "bodybuilding-4-Core,Calves": {
   "seed": 1044,
-  "hash": "2648ddae74dcfc06",
+  "hash": "a1682136c433489a",
   "week1": {
    "wk": 1,
    "days": [
@@ -1625,7 +1625,7 @@
       ],
       [
        "Rope Crunch",
-       2,
+       3,
        "8",
        "Core"
       ]
@@ -1891,7 +1891,7 @@
  },
  "bodybuilding-4-Glutes,Calves": {
   "seed": 1046,
-  "hash": "4575377687e2429c",
+  "hash": "2ed7979fa50b860b",
   "week1": {
    "wk": 1,
    "days": [
@@ -2035,7 +2035,7 @@
       ],
       [
        "Seated Calf Raise",
-       2,
+       4,
        "12",
        "Legs"
       ],
@@ -2468,7 +2468,7 @@
  },
  "bodybuilding-5-Shoulders,Arms": {
   "seed": 1052,
-  "hash": "5ef9de4857462271",
+  "hash": "8c7bedaace9141dd",
   "week1": {
    "wk": 1,
    "days": [
@@ -2507,7 +2507,7 @@
       ],
       [
        "Machine Triceps Extension",
-       2,
+       4,
        "12",
        "Arms"
       ]
@@ -2542,7 +2542,7 @@
       ],
       [
        "Barbell Curl",
-       3,
+       4,
        "12",
        "Arms"
       ],
@@ -2630,7 +2630,7 @@
       ],
       [
        "Machine Triceps Extension",
-       3,
+       4,
        "12",
        "Arms"
       ]
@@ -2665,7 +2665,7 @@
       ],
       [
        "Cable Incline Pushdown",
-       3,
+       4,
        "12",
        "Arms"
       ],
@@ -2682,7 +2682,7 @@
  },
  "bodybuilding-5-Back,Arms": {
   "seed": 1053,
-  "hash": "0aa351b1eeba53c9",
+  "hash": "6656c9cfb508bfa5",
   "week1": {
    "wk": 1,
    "days": [
@@ -2715,7 +2715,7 @@
       ],
       [
        "Triceps Extension",
-       2,
+       4,
        "12",
        "Arms"
       ],
@@ -2744,7 +2744,7 @@
       ],
       [
        "Barbell Curl",
-       3,
+       4,
        "12",
        "Arms"
       ],
@@ -2762,7 +2762,7 @@
       ],
       [
        "Machine Preacher Curls",
-       3,
+       4,
        "12",
        "Arms"
       ]
@@ -2844,7 +2844,7 @@
       ],
       [
        "Dumbbell One-Arm Triceps Extension",
-       2,
+       4,
        "12",
        "Arms"
       ]
@@ -2879,7 +2879,7 @@
       ],
       [
        "Triceps Extension",
-       3,
+       4,
        "12",
        "Arms"
       ],
@@ -2896,7 +2896,7 @@
  },
  "bodybuilding-5-Core,Calves": {
   "seed": 1054,
-  "hash": "5aa0da27f651a0fc",
+  "hash": "09369e3e29ed3449",
   "week1": {
    "wk": 1,
    "days": [
@@ -2929,7 +2929,7 @@
       ],
       [
        "Kneeling Cable Crunch With Alternating Oblique Twists",
-       2,
+       3,
        "8",
        "Core"
       ]
@@ -3011,7 +3011,7 @@
       ],
       [
        "Cable Pallof Hold",
-       2,
+       3,
        "8",
        "Core"
       ]
@@ -3081,13 +3081,13 @@
       ],
       [
        "Cable Seated Crunch",
-       2,
+       3,
        "8",
        "Core"
       ],
       [
        "Cable Pallof Hold",
-       2,
+       3,
        "8",
        "Core"
       ]
@@ -3994,7 +3994,7 @@
  },
  "bodybuilding-6-Shoulders,Arms": {
   "seed": 1062,
-  "hash": "11df374851e21c10",
+  "hash": "743dd05fb4d493ea",
   "week1": {
    "wk": 1,
    "days": [
@@ -4033,7 +4033,7 @@
       ],
       [
        "Triceps Extension",
-       2,
+       4,
        "12",
        "Arms"
       ]
@@ -4150,7 +4150,7 @@
       ],
       [
        "Machine Triceps Extension",
-       2,
+       4,
        "12",
        "Arms"
       ]
@@ -4220,7 +4220,7 @@
       ],
       [
        "Cable Incline Pushdown",
-       3,
+       4,
        "12",
        "Arms"
       ],
@@ -4237,7 +4237,7 @@
  },
  "bodybuilding-6-Back,Arms": {
   "seed": 1063,
-  "hash": "bd51a7db176540c1",
+  "hash": "fa7a21abb4d1dc2b",
   "week1": {
    "wk": 1,
    "days": [
@@ -4270,7 +4270,7 @@
       ],
       [
        "Triceps Extension",
-       2,
+       4,
        "12",
        "Arms"
       ],
@@ -4305,7 +4305,7 @@
       ],
       [
        "Barbell Curl",
-       3,
+       4,
        "12",
        "Arms"
       ],
@@ -4317,7 +4317,7 @@
       ],
       [
        "Machine Preacher Curls",
-       3,
+       4,
        "12",
        "Arms"
       ]
@@ -4399,7 +4399,7 @@
       ],
       [
        "Standing Low-Pulley One-Arm Triceps Extension",
-       3,
+       4,
        "12",
        "Arms"
       ]
@@ -4469,7 +4469,7 @@
       ],
       [
        "Triceps Extension",
-       3,
+       4,
        "12",
        "Arms"
       ],
@@ -4486,7 +4486,7 @@
  },
  "bodybuilding-6-Core,Calves": {
   "seed": 1064,
-  "hash": "39bc0d454f49a4d1",
+  "hash": "297f1ba7ab603711",
   "week1": {
    "wk": 1,
    "days": [
@@ -4525,7 +4525,7 @@
       ],
       [
        "Cable Crunch",
-       2,
+       3,
        "8",
        "Core"
       ]
@@ -4566,7 +4566,7 @@
       ],
       [
        "Cable Pallof Hold",
-       2,
+       3,
        "8",
        "Core"
       ]
@@ -4984,7 +4984,7 @@
  },
  "bodybuilding-6-Glutes,Calves": {
   "seed": 1066,
-  "hash": "b3b498c2f66b4f4a",
+  "hash": "afee0f1c203d4924",
   "week1": {
    "wk": 1,
    "days": [
@@ -5093,7 +5093,7 @@
       ],
       [
        "Seated Calf Raise",
-       3,
+       4,
        "12",
        "Legs"
       ],
