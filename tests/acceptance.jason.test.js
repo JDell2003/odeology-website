@@ -68,6 +68,7 @@ function buildPlan(overrides = {}) {
     // 15 months since the last heavy squat/deadlift; bench and press are current.
     lastTrainedHeavy: { squat: 65, deadlift: 65 },
     twoADays: JASON.twoADays,
+    running: { enabled: true, sessionsPerWeek: 3, timeTrialSec: JASON.endurance.twoMileSec, timeTrialMi: 2, goalTimeSec: JASON.goals.twoMileSec, goalMi: 2 },
     strength: {
       // '5_plus' is the real bucket key. '2_5y' is not recognised and falls
       // through to a silent '6-24m' default, which had Jason programmed as a

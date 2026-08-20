@@ -1012,6 +1012,7 @@ function normalizeOblueprintPayload(payload, { relax = false } = {}) {
       ? src.lastTrainedHeavy
       : (src.lastTrainedHeavy != null ? { all: src.lastTrainedHeavy } : null),
     twoADays: (src.twoADays && typeof src.twoADays === 'object') ? src.twoADays : null,
+    running: (src.running && typeof src.running === 'object') ? src.running : null,
     benchVariation: String(src.benchVariation || '').trim() || null,
     benchWeight: Number.isFinite(Number(src.benchWeight)) ? Number(src.benchWeight) : null,
     benchReps: Number.isFinite(Number(src.benchReps)) ? Number(src.benchReps) : null,
@@ -1551,6 +1552,74 @@ function routeRestorePriorityIsolationBand(plan) {
         guard += 1;
       }
     }
+  }
+  return plan;
+}
+
+/* Phase 2.5 - compose running into the week. Running does not own the
+   calendar: its sessions land as PM slots on the days whose LIFTING load
+   interferes least, using the same axis table the solver runs on. Hard runs go
+   where lower-body load is lowest; the easy run may share a day with lower
+   work because it exists precisely to cost nothing. Every added session is a
+   real session[] entry with separationHours, so P6-style ordering, logging and
+   the UI treat it exactly like a second lifting session. */
+function routeComposeRunningSessions(plan, user) {
+  const cfg = user?.running;
+  if (!plan || plan.error || !cfg || cfg.enabled === false) return plan;
+  let runningModule = null;
+  try { runningModule = require('../generator/disciplines/running'); } catch (e) { return plan; }
+  const state = { timeTrialSec: Number(cfg.timeTrialSec) || null, timeTrialMi: Number(cfg.timeTrialMi) || 2 };
+  const sessions = runningModule.build({ state, sessionsPerWeek: Number(cfg.sessionsPerWeek) || 3 });
+  if (!sessions.length) return plan;
+  const LOWER_LOAD = { Push: 1, Pull: 2, Upper: 2, UpperFocus: 2, DeltsArms: 0, Legs: 8, Lower: 8, LowerFocus: 8, FullBodyA: 5, FullBodyB: 6 };
+  const sep = Number(user?.twoADays?.minSeparationHours) || 6;
+  for (const week of plan.weeks || []) {
+    const days = week?.days || [];
+    if (!days.length) continue;
+    const ranked = days
+      .map((day, idx) => ({
+        day, idx,
+        slots: Array.isArray(day.sessions) ? day.sessions.length : 1,
+        lower: Math.max(...(Array.isArray(day.sessions) ? day.sessions : [{ dayType: day.dayType }]).map((sn) => Number(LOWER_LOAD[String(sn.dayType)] ?? 4)))
+      }))
+      .sort((a, b) => (a.slots - b.slots) || (a.lower - b.lower) || (a.idx - b.idx));
+    const hardHosts = ranked.filter((r) => r.lower <= 4);
+    const used = new Set();
+    sessions.forEach((session, i) => {
+      const pool = String(session.sessionType) === 'easy_run' ? ranked : (hardHosts.length ? hardHosts : ranked);
+      const host = pool.find((r) => !used.has(r.idx)) || ranked.find((r) => !used.has(r.idx));
+      if (!host) return;
+      used.add(host.idx);
+      const day = host.day;
+      if (!Array.isArray(day.sessions)) {
+        day.sessions = [{ slotIndex: 0, window: null, dayType: day.dayType, discipline: 'lifting', exercises: day.exercises }];
+      }
+      const slot = day.sessions.length;
+      const exercise = {
+        id: `${week.weekIndex}-${host.idx + 1}-${slot}-1`,
+        name: session.name,
+        displayName: session.name,
+        pattern: 'Cardio',
+        style: 'Cardio',
+        discipline: 'running',
+        sessionType: session.sessionType,
+        sets: 1,
+        reps: session.detail,
+        durationMin: session.durationMin,
+        effort: session.effort,
+        paceTarget: session.paceTarget || null,
+        restSec: 0
+      };
+      day.sessions.push({
+        slotIndex: slot,
+        window: null,
+        dayType: session.name,
+        discipline: 'running',
+        exercises: [exercise]
+      });
+      day.exercises = day.sessions.flatMap((sn) => sn.exercises || []);
+      day.separationHours = sep;
+    });
   }
   return plan;
 }
@@ -2160,6 +2229,7 @@ function buildOblueprintPlanWithFallback(payload, opts = {}) {
       }
     }
     if (result && !result.error && result.plan) routeBuildDaySessions(result.plan, src);
+    if (result && !result.error && result.plan) routeComposeRunningSessions(result.plan, src);
     if (result && !result.error && result.plan && !result._safeFallback && !planPassesFloorGate(result.plan, src)) {
       const safe = makeSafeFallbackResult(src, { error: 'FLOOR_GATE', reason: 'thin or unsafe day repaired via safe fallback' });
       if (safe) result = safe;
@@ -2348,6 +2418,9 @@ function coerceClassicBodybuildingToOblueprintPayload(payload) {
     /* Phase 2.4 wiring - "could you train twice on some days?" no | some | most,
        plus which days and time windows. Absent means no, i.e. today exactly. */
     twoADays: (src?.twoADays && typeof src.twoADays === 'object') ? src.twoADays : null,
+    /* Phase 2.5 - running. {enabled, sessionsPerWeek, timeTrialSec,
+       timeTrialMi, goalTimeSec, goalMi}. Absent means not selected. */
+    running: (src?.running && typeof src.running === 'object') ? src.running : null,
     benchVariation: String(strength?.benchVariation || '').trim() || null,
     benchWeight: Number(strength?.benchWeight || 0) || null,
     benchReps: Number(strength?.benchReps || 0) || null,

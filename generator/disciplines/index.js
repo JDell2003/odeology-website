@@ -8,9 +8,11 @@
    parallel layer, not scheduled. Modules land here as they are built. */
 
 const lifting = require('./lifting');
+const running = require('./running');
 
 const DISCIPLINES = {
-  lifting
+  lifting,
+  running
   // running, rucking, workCapacity, martialArts — Phase 2.4/2.5
 };
 
