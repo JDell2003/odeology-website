@@ -1187,8 +1187,9 @@ function routeNormalizePlanPrescriptions(plan) {
       // logging and overrides do not have to change again when it can.
       // canonicalExerciseId stays the semantic slug; this is for correlation.
       const dayIndex = dayOffset + 1;
+      const slotIndex = Number(day?.slotIndex || 0);
       exercises.forEach((ex, exerciseIndex) => {
-        ex.id = `${weekIndex}-${dayIndex}-0-${exerciseIndex + 1}`;
+        ex.id = `${weekIndex}-${dayIndex}-${slotIndex}-${exerciseIndex + 1}`;
       });
       for (const ex of exercises) {
         const needsReps = malformedReps(ex?.reps);
@@ -1576,7 +1577,26 @@ function routeRestoreStructuralFloor(plan, snapshot) {
       }
     });
   }
-  return routeRestorePriorityIsolationBand(plan);
+  routeRestorePriorityIsolationBand(plan);
+  /* Phase 2.2 — the slot model. days[] stays the outer array; each day holds
+     sessions[], and a one-a-day user has sessions.length === 1 — existing
+     behaviour, not a special case. Built here, at the last point the chain
+     touches exercises, so session.exercises is the same array the day ships
+     with. The placement solver (2.3) emits multi-session days into this same
+     shape; nothing downstream changes again. */
+  for (const week of plan?.weeks || []) {
+    for (const day of week?.days || []) {
+      day.sessions = [{
+        slotIndex: 0,
+        window: null,
+        dayType: day.dayType,
+        discipline: 'lifting',
+        exercises: day.exercises
+      }];
+      day.separationHours = null;
+    }
+  }
+  return plan;
 }
 
 function buildOblueprintPlanWithFallback(payload, opts = {}) {
@@ -14222,6 +14242,11 @@ async function trainingRoutes(req, res, url) {
     const planId = safeText(payload?.planId, 80);
     const weekIndex = clampInt(payload?.weekIndex, 1, 52, null);
     const dayIndex = clampInt(payload?.dayIndex, 1, 7, null);
+    /* Phase 2.2 — the log key is (planId, weekIndex, dayIndex, slotIndex).
+       slotIndex 0 is the first (today: only) session of the day; a one-a-day
+       user logs slot 0 without knowing the field exists. When two-a-days land,
+       the AM and PM sessions log under the same day and different slots. */
+    const slotIndex = clampInt(payload?.slotIndex, 0, 3, 0);
     const readiness = clampInt(payload?.readiness, 1, 10, null);
     if (!planId || !weekIndex || !dayIndex) return sendJson(res, 400, { error: 'Missing plan/week/day' });
 

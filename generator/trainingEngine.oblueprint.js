@@ -3984,6 +3984,25 @@ function allocateSetsReps(days, weekType, targets, user) {
 }
 
 function applySessionCapTrimming(day, sessionCap, priorityGroups, profile = null, user = null) {
+  /* Phase 2.2 — the cap is per SESSION. Two sessions on one day trimmed as one
+     would halve both; a day carrying sessions[] trims each independently and
+     rebuilds its flat exercises view from the sessions. One-a-day days have no
+     sessions[] before materialize and take the flat path below — same
+     behaviour, byte-identical. */
+  if (Array.isArray(day?.sessions) && day.sessions.length > 1) {
+    const trimmedSessions = day.sessions.map((session) => {
+      const trimmed = applySessionCapTrimming(
+        { ...day, dayType: session.dayType || day.dayType, exercises: session.exercises || [], sessions: null },
+        sessionCap, priorityGroups, profile, user
+      );
+      return { ...session, exercises: trimmed.exercises };
+    });
+    return {
+      ...day,
+      sessions: trimmedSessions,
+      exercises: trimmedSessions.flatMap((session) => session.exercises || [])
+    };
+  }
   const list = day.exercises.slice();
   const isPriority = (ex) => {
     const primary = String(ex?.primary || ex?.muscleTarget || '');
