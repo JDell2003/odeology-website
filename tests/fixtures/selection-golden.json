@@ -1,24 +1,30 @@
 {
  "bodybuilding-3-Chest,Back": {
   "seed": 1030,
-  "hash": "5f968cef80d56ed9",
+  "hash": "d812d0390fabb4b5",
   "week1": {
    "wk": 1,
    "days": [
     {
-     "t": "Push",
+     "t": "FullBodyA",
      "ex": [
       [
-       "Leverage Incline Chest Press",
+       "Cable Row",
        4,
+       "6",
+       "Back"
+      ],
+      [
+       "Machine Bench Press",
+       3,
        "6",
        "Chest"
       ],
       [
-       "Leverage Chest Press",
-       2,
-       "6",
-       "Chest"
+       "Smith Machine Squat",
+       4,
+       "5",
+       "Legs"
       ],
       [
        "Low Cable Crossover",
@@ -27,60 +33,13 @@
        "Chest"
       ],
       [
-       "Lateral Raise",
+       "Machine Bicep Curl",
        4,
        "12",
-       "Shoulders"
-      ],
-      [
-       "Triceps Extension",
-       3,
-       "12",
        "Arms"
       ],
       [
-       "Cable Bench Reverse Crunch",
-       2,
-       "8",
-       "Core"
-      ]
-     ]
-    },
-    {
-     "t": "Pull",
-     "ex": [
-      [
-       "Wide-Grip Lat Pulldown",
-       3,
-       "6",
-       "Back"
-      ],
-      [
-       "Cable Row",
-       3,
-       "6",
-       "Back"
-      ],
-      [
-       "Dumbbell Incline Row",
-       3,
-       "6",
-       "Back"
-      ],
-      [
-       "Reverse Flyes",
-       3,
-       "12",
-       "Shoulders"
-      ],
-      [
-       "Overhead Cable Curl",
-       3,
-       "12",
-       "Arms"
-      ],
-      [
-       "Kneeling Cable Crunch With Alternating Oblique Twists",
+       "Ab Crunch Machine",
        2,
        "8",
        "Core"
@@ -91,28 +50,63 @@
      "t": "UpperFocus",
      "ex": [
       [
-       "Leverage High Row",
+       "Chest-Supported Row",
        3,
        "6",
        "Back"
       ],
       [
-       "Incline Dumbbell Bench With Palms Facing In",
+       "Leverage Chest Press",
        3,
+       "6",
+       "Chest"
+      ],
+      [
+       "Smith Machine Bench Press",
+       3,
+       "6",
+       "Chest"
+      ],
+      [
+       "Close-Grip Front Lat Pulldown",
+       3,
+       "6",
+       "Back"
+      ],
+      [
+       "Single-Arm Cable Crossover",
+       2,
+       "12",
+       "Chest"
+      ],
+      [
+       "Cable Crunch",
+       2,
        "8",
-       "Chest"
-      ],
+       "Core"
+      ]
+     ]
+    },
+    {
+     "t": "FullBodyB",
+     "ex": [
       [
-       "Smith Machine Incline Bench Press",
-       3,
-       "6",
-       "Chest"
-      ],
-      [
-       "Full Range-Of-Motion Lat Pulldown",
-       3,
+       "V-Bar Pulldown",
+       4,
        "6",
        "Back"
+      ],
+      [
+       "Barbell Incline Bench Press - Medium Grip",
+       3,
+       "6",
+       "Chest"
+      ],
+      [
+       "Barbell Glute Bridge",
+       4,
+       "5",
+       "Legs"
       ],
       [
        "Romanian Deadlift",
@@ -121,7 +115,13 @@
        "Legs"
       ],
       [
-       "Cable Bench Reverse Crunch",
+       "Rocking Standing Calf Raise",
+       4,
+       "12",
+       "Legs"
+      ],
+      [
+       "Cable Pallof Hold",
        2,
        "8",
        "Core"
@@ -259,7 +259,7 @@
  },
  "bodybuilding-3-Shoulders,Arms": {
   "seed": 1032,
-  "hash": "551820d3bfd61af5",
+  "hash": "48d6d46b51b5f9be",
   "week1": {
    "wk": 1,
    "days": [
@@ -286,18 +286,12 @@
       ],
       [
        "Lateral Raise",
-       4,
+       3,
        "12",
        "Shoulders"
       ],
       [
-       "Machine Bicep Curl",
-       3,
-       "12",
-       "Arms"
-      ],
-      [
-       "Triceps Pushdown",
+       "Dumbbell One-Arm Triceps Extension",
        4,
        "12",
        "Arms"
@@ -305,43 +299,43 @@
      ]
     },
     {
-     "t": "LowerFocus",
+     "t": "UpperFocus",
      "ex": [
       [
-       "Smith Machine Leg Press",
-       4,
-       "5",
-       "Legs"
-      ],
-      [
-       "Romanian Deadlift from Deficit",
+       "Leverage Shoulder Press",
        2,
-       "5",
-       "Legs"
+       "6",
+       "Shoulders"
       ],
       [
-       "Low Cable Crossover",
+       "Weighted Bench Dip",
        4,
-       "12",
-       "Chest"
-      ],
-      [
-       "Leg Extensions",
-       4,
-       "12",
-       "Legs"
-      ],
-      [
-       "Seated Leg Curl",
-       2,
-       "12",
-       "Legs"
-      ],
-      [
-       "Cable Crunch",
-       3,
        "8",
-       "Core"
+       "Arms"
+      ],
+      [
+       "Seated Side Lateral Raise",
+       2,
+       "12",
+       "Shoulders"
+      ],
+      [
+       "Rear Delt Fly",
+       2,
+       "12",
+       "Shoulders"
+      ],
+      [
+       "Seated Close-Grip Concentration Barbell Curl",
+       3,
+       "12",
+       "Arms"
+      ],
+      [
+       "Cable Incline Pushdown",
+       3,
+       "12",
+       "Arms"
       ]
      ]
     },
@@ -355,32 +349,26 @@
        "Legs"
       ],
       [
-       "Leverage Incline Chest Press",
-       4,
-       "6",
-       "Chest"
-      ],
-      [
-       "Wide-Grip Lat Pulldown",
-       4,
+       "Lat Pulldown",
+       3,
        "6",
        "Back"
       ],
       [
-       "Bent Over Dumbbell Rear Delt Raise With Head On Bench",
+       "Weighted Bench Dip",
+       3,
+       "8",
+       "Arms"
+      ],
+      [
+       "Romanian Deadlift",
        4,
-       "12",
-       "Shoulders"
+       "5",
+       "Legs"
       ],
       [
        "Flexor Incline Dumbbell Curls",
        3,
-       "12",
-       "Arms"
-      ],
-      [
-       "Triceps Pushdown",
-       4,
        "12",
        "Arms"
       ]
@@ -391,7 +379,7 @@
  },
  "bodybuilding-3-Back,Arms": {
   "seed": 1033,
-  "hash": "b63ff9e99e1b6afe",
+  "hash": "75db5220f7904b09",
   "week1": {
    "wk": 1,
    "days": [
@@ -399,79 +387,67 @@
      "t": "FullBodyA",
      "ex": [
       [
-       "Smith Machine Bent Over Row",
+       "Leverage High Row",
        4,
        "6",
        "Back"
       ],
       [
-       "Smith Machine Leg Press",
+       "Chest-Supported Row",
+       4,
+       "6",
+       "Back"
+      ],
+      [
+       "Leg Press",
        4,
        "5",
        "Legs"
       ],
       [
-       "Leverage Incline Chest Press",
-       4,
-       "6",
-       "Chest"
-      ],
-      [
-       "Drag Curl",
-       4,
+       "Machine Preacher Curls",
+       3,
        "12",
        "Arms"
-      ],
-      [
-       "Machine Triceps Extension",
-       4,
-       "12",
-       "Arms"
-      ],
-      [
-       "Cable Reverse Crunch",
-       2,
-       "8",
-       "Core"
       ]
      ]
     },
     {
-     "t": "LowerFocus",
+     "t": "UpperFocus",
      "ex": [
       [
-       "Smith Machine Squat",
-       4,
-       "5",
-       "Legs"
-      ],
-      [
-       "Barbell Hip Thrust",
-       4,
-       "5",
-       "Legs"
-      ],
-      [
-       "One-Legged Cable Kickback",
-       4,
-       "12",
-       "Legs"
-      ],
-      [
-       "Single-Leg Leg Extension",
+       "Chest-Supported Row",
        3,
+       "6",
+       "Back"
+      ],
+      [
+       "Lat Pulldown",
+       3,
+       "6",
+       "Back"
+      ],
+      [
+       "Lateral Raise",
+       4,
        "12",
-       "Legs"
+       "Shoulders"
+      ],
+      [
+       "Dumbbell One-Arm Triceps Extension",
+       4,
+       "12",
+       "Arms"
+      ],
+      [
+       "High Cable Curls",
+       2,
+       "12",
+       "Arms"
       ],
       [
        "Cable Crunch",
        4,
-       "8",
-       "Core"
-      ],
-      [
-       "Pallof Press",
-       2,
        "8",
        "Core"
       ]
@@ -481,26 +457,26 @@
      "t": "FullBodyB",
      "ex": [
       [
-       "Lat Pulldown",
+       "Wide-Grip Lat Pulldown",
        4,
        "6",
        "Back"
       ],
       [
-       "Stiff-Legged Dumbbell Deadlift",
+       "Leverage High Row",
+       3,
+       "6",
+       "Back"
+      ],
+      [
+       "Romanian Deadlift from Deficit",
        4,
        "5",
        "Legs"
       ],
       [
-       "Machine Bench Press",
-       4,
-       "6",
-       "Chest"
-      ],
-      [
-       "Machine Preacher Curls",
-       4,
+       "High Cable Curls",
+       3,
        "12",
        "Arms"
       ],
@@ -661,42 +637,48 @@
  },
  "bodybuilding-3-Chest,Core": {
   "seed": 1035,
-  "hash": "d5dcfc39757c032e",
+  "hash": "e54dc186dbc0c8e8",
   "week1": {
    "wk": 1,
    "days": [
     {
-     "t": "Push",
+     "t": "FullBodyA",
      "ex": [
       [
-       "Smith Machine Incline Bench Press",
-       4,
-       "6",
-       "Chest"
-      ],
-      [
-       "Leverage Decline Chest Press",
+       "Smith Machine Bench Press",
        3,
        "6",
        "Chest"
       ],
       [
-       "Leverage Shoulder Press",
-       2,
-       "6",
-       "Shoulders"
+       "Leg Press",
+       4,
+       "5",
+       "Legs"
       ],
       [
-       "Triceps Extension",
+       "Chest-Supported Row",
+       4,
+       "6",
+       "Back"
+      ],
+      [
+       "Low Cable Crossover",
+       3,
+       "12",
+       "Chest"
+      ],
+      [
+       "Seated Leg Curl",
        2,
        "12",
-       "Arms"
+       "Legs"
       ],
       [
-       "Kneeling Cable Crunch With Alternating Oblique Twists",
+       "Calf Press On The Leg Press Machine",
        2,
-       "8",
-       "Core"
+       "12",
+       "Legs"
       ]
      ]
     },
@@ -704,28 +686,28 @@
      "t": "UpperFocus",
      "ex": [
       [
-       "Cable Row",
+       "Chest-Supported Row",
        2,
        "6",
        "Back"
       ],
       [
-       "Machine Bench Press",
+       "Wide-Grip Lat Pulldown",
+       2,
+       "6",
+       "Back"
+      ],
+      [
+       "Standing Cable Chest Press",
        3,
        "6",
        "Chest"
       ],
       [
-       "Chest-Supported Row",
+       "Leverage Incline Chest Press",
        3,
        "6",
-       "Back"
-      ],
-      [
-       "Romanian Deadlift",
-       3,
-       "5",
-       "Legs"
+       "Chest"
       ],
       [
        "Ab Crunch Machine",
@@ -736,25 +718,31 @@
      ]
     },
     {
-     "t": "Push",
+     "t": "FullBodyB",
      "ex": [
       [
-       "Smith Machine Bench Press",
-       4,
-       "6",
-       "Chest"
-      ],
-      [
-       "Incline Dumbbell Bench With Palms Facing In",
-       3,
-       "8",
-       "Chest"
-      ],
-      [
-       "Seated Cable Shoulder Press",
+       "Romanian Deadlift",
        2,
+       "5",
+       "Legs"
+      ],
+      [
+       "Barbell Incline Bench Press - Medium Grip",
+       3,
        "6",
-       "Shoulders"
+       "Chest"
+      ],
+      [
+       "Hip Thrust",
+       4,
+       "5",
+       "Legs"
+      ],
+      [
+       "Lat Pulldown",
+       3,
+       "6",
+       "Back"
       ],
       [
        "Cable Crossover",
@@ -763,13 +751,7 @@
        "Chest"
       ],
       [
-       "Triceps Extension",
-       2,
-       "12",
-       "Arms"
-      ],
-      [
-       "Cable Seated Crunch",
+       "Cable Pallof Hold",
        2,
        "8",
        "Core"
@@ -1736,50 +1718,27 @@
  },
  "bodybuilding-4-Chest,Core": {
   "seed": 1045,
-  "hash": "961909dae62fee77",
+  "hash": "a7ff521583639a02",
   "week1": {
    "wk": 1,
    "days": [
     {
-     "t": "Push",
+     "t": "Upper",
      "ex": [
       [
-       "Leverage Incline Chest Press",
+       "Smith Machine Bench Press",
        4,
        "6",
        "Chest"
       ],
       [
-       "Smith Machine Incline Bench Press",
+       "Chest-Supported Row",
        3,
        "6",
-       "Chest"
+       "Back"
       ],
       [
-       "Alternating Cable Shoulder Press",
-       2,
-       "6",
-       "Shoulders"
-      ],
-      [
-       "Triceps Extension",
-       2,
-       "12",
-       "Arms"
-      ],
-      [
-       "Kneeling Cable Crunch With Alternating Oblique Twists",
-       2,
-       "8",
-       "Core"
-      ]
-     ]
-    },
-    {
-     "t": "UpperFocus",
-     "ex": [
-      [
-       "Wide-Grip Lat Pulldown",
+       "Lat Pulldown",
        3,
        "6",
        "Back"
@@ -1791,20 +1750,8 @@
        "Back"
       ],
       [
-       "Leverage Chest Press",
-       4,
-       "6",
-       "Chest"
-      ],
-      [
-       "Chest-Supported Row",
-       4,
-       "6",
-       "Back"
-      ],
-      [
-       "Single-Arm Cable Crossover",
-       2,
+       "Cable Crossover",
+       3,
        "12",
        "Chest"
       ],
@@ -1820,7 +1767,7 @@
      "t": "Lower",
      "ex": [
       [
-       "Leg Press",
+       "Smith Machine Leg Press",
        4,
        "5",
        "Legs"
@@ -1839,7 +1786,7 @@
       ],
       [
        "Smith Machine Calf Raise",
-       4,
+       3,
        "12",
        "Legs"
       ],
@@ -1858,34 +1805,81 @@
      ]
     },
     {
-     "t": "Push",
+     "t": "Upper",
      "ex": [
       [
-       "Machine Bench Press",
+       "Leverage Decline Chest Press",
        4,
        "6",
        "Chest"
       ],
       [
-       "Leverage Decline Chest Press",
-       3,
+       "Chest-Supported Row",
+       2,
        "6",
+       "Back"
+      ],
+      [
+       "Dumbbell Incline Row",
+       2,
+       "6",
+       "Back"
+      ],
+      [
+       "Low Cable Crossover",
+       3,
+       "12",
        "Chest"
       ],
       [
-       "Barbell Shoulder Press",
-       2,
-       "6",
-       "Shoulders"
-      ],
-      [
-       "Triceps Extension",
-       2,
-       "12",
-       "Arms"
-      ],
-      [
        "Cable Oblique Crunch",
+       2,
+       "8",
+       "Core"
+      ],
+      [
+       "Cable Crunch",
+       2,
+       "8",
+       "Core"
+      ]
+     ]
+    },
+    {
+     "t": "Lower",
+     "ex": [
+      [
+       "Barbell Hack Squat",
+       4,
+       "5",
+       "Legs"
+      ],
+      [
+       "Barbell Hip Thrust",
+       2,
+       "5",
+       "Legs"
+      ],
+      [
+       "Seated Leg Curl",
+       4,
+       "12",
+       "Legs"
+      ],
+      [
+       "Seated Calf Raise",
+       3,
+       "12",
+       "Legs"
+      ],
+      [
+       "Rope Crunch",
+       2,
+       "8",
+       "Core"
+      ],
+      [
+       "Cable Pallof Hold",
        2,
        "8",
        "Core"
@@ -2474,7 +2468,7 @@
  },
  "bodybuilding-5-Shoulders,Arms": {
   "seed": 1052,
-  "hash": "17e6504d45611280",
+  "hash": "808424c4aad1acec",
   "week1": {
    "wk": 1,
    "days": [
@@ -2529,13 +2523,13 @@
        "Back"
       ],
       [
-       "Chest-Supported Row",
+       "Cable Row",
        3,
        "6",
        "Back"
       ],
       [
-       "Cable Row",
+       "Chest-Supported Row",
        3,
        "6",
        "Back"
@@ -2561,23 +2555,29 @@
      ]
     },
     {
-     "t": "LowerFocus",
+     "t": "Legs",
      "ex": [
       [
-       "Leg Press",
+       "Smith Machine Squat",
        4,
        "5",
        "Legs"
       ],
       [
-       "Barbell Hip Thrust",
+       "Dumbbell Rear Lunge",
+       3,
+       "8",
+       "Legs"
+      ],
+      [
+       "Romanian Deadlift from Deficit",
        4,
        "5",
        "Legs"
       ],
       [
        "One-Legged Cable Kickback",
-       2,
+       3,
        "12",
        "Legs"
       ],
@@ -2588,13 +2588,7 @@
        "Legs"
       ],
       [
-       "Cable Crunch",
-       2,
-       "8",
-       "Core"
-      ],
-      [
-       "Pallof Press",
+       "Ab Crunch Machine",
        2,
        "8",
        "Core"
@@ -2643,35 +2637,41 @@
      ]
     },
     {
-     "t": "Lower",
+     "t": "DeltsArms",
      "ex": [
       [
-       "Narrow Stance Leg Press",
-       4,
-       "5",
-       "Legs"
+       "Seated Cable Shoulder Press",
+       3,
+       "6",
+       "Shoulders"
       ],
       [
-       "Romanian Deadlift",
-       4,
-       "5",
-       "Legs"
-      ],
-      [
-       "Seated Leg Curl",
+       "Seated Bent-Over Rear Delt Raise",
        3,
        "12",
-       "Legs"
+       "Shoulders"
       ],
       [
-       "Seated Calf Raise",
-       4,
+       "Lateral Raise",
+       3,
        "12",
-       "Legs"
+       "Shoulders"
       ],
       [
-       "Ab Crunch Machine",
-       4,
+       "Overhead Cable Curl",
+       3,
+       "12",
+       "Arms"
+      ],
+      [
+       "Cable Incline Pushdown",
+       3,
+       "12",
+       "Arms"
+      ],
+      [
+       "Cable Crunch",
+       3,
        "8",
        "Core"
       ]
@@ -2682,27 +2682,74 @@
  },
  "bodybuilding-5-Back,Arms": {
   "seed": 1053,
-  "hash": "46eb3cba74711f78",
+  "hash": "d69ac933b1e32605",
   "week1": {
    "wk": 1,
    "days": [
     {
+     "t": "Push",
+     "ex": [
+      [
+       "Cable Shoulder Press",
+       2,
+       "6",
+       "Shoulders"
+      ],
+      [
+       "Machine Bench Press",
+       2,
+       "6",
+       "Chest"
+      ],
+      [
+       "Lateral Raise",
+       2,
+       "12",
+       "Shoulders"
+      ],
+      [
+       "Low Cable Crossover",
+       2,
+       "12",
+       "Chest"
+      ],
+      [
+       "Triceps Extension",
+       2,
+       "12",
+       "Arms"
+      ],
+      [
+       "Cable Reverse Crunch",
+       2,
+       "8",
+       "Core"
+      ]
+     ]
+    },
+    {
      "t": "Pull",
      "ex": [
       [
-       "Close-Grip Front Lat Pulldown",
-       3,
-       "6",
-       "Back"
-      ],
-      [
-       "Cable Row",
+       "Lat Pulldown",
        3,
        "6",
        "Back"
       ],
       [
        "Chest-Supported Row",
+       3,
+       "6",
+       "Back"
+      ],
+      [
+       "Barbell Curl",
+       3,
+       "12",
+       "Arms"
+      ],
+      [
+       "Cable Row",
        3,
        "6",
        "Back"
@@ -2714,12 +2761,6 @@
        "Shoulders"
       ],
       [
-       "Machine Triceps Extension",
-       3,
-       "12",
-       "Arms"
-      ],
-      [
        "Machine Preacher Curls",
        3,
        "12",
@@ -2728,17 +2769,23 @@
      ]
     },
     {
-     "t": "Lower",
+     "t": "Legs",
      "ex": [
       [
-       "Leg Press",
+       "Smith Machine Leg Press",
        4,
        "5",
        "Legs"
       ],
       [
-       "Barbell Hip Thrust",
+       "Barbell Walking Lunge",
        3,
+       "8",
+       "Legs"
+      ],
+      [
+       "Barbell Glute Bridge",
+       4,
        "5",
        "Legs"
       ],
@@ -2749,13 +2796,13 @@
        "Legs"
       ],
       [
-       "Seated Calf Raise",
-       3,
+       "Rocking Standing Calf Raise",
+       4,
        "12",
        "Legs"
       ],
       [
-       "Cable Reverse Crunch",
+       "Cable Bench Reverse Crunch",
        2,
        "8",
        "Core"
@@ -2766,95 +2813,78 @@
      "t": "UpperFocus",
      "ex": [
       [
-       "Dumbbell Incline Row",
+       "Leverage High Row",
        3,
        "6",
        "Back"
       ],
       [
-       "Lat Pulldown",
-       3,
-       "6",
-       "Back"
-      ],
-      [
-       "Weighted Bench Dip",
+       "Close-Grip Front Lat Pulldown",
        4,
-       "8",
-       "Arms"
-      ],
-      [
-       "Standing Low-Pulley One-Arm Triceps Extension",
-       4,
-       "12",
-       "Arms"
-      ],
-      [
-       "Drag Curl",
-       3,
-       "12",
-       "Arms"
-      ]
-     ]
-    },
-    {
-     "t": "Pull",
-     "ex": [
-      [
-       "V-Bar Pulldown",
-       3,
        "6",
        "Back"
       ],
       [
-       "Chest-Supported Row",
-       3,
-       "6",
-       "Back"
-      ],
-      [
-       "Dumbbell Incline Row",
-       3,
-       "6",
-       "Back"
-      ],
-      [
-       "Drag Curl",
-       3,
-       "12",
-       "Arms"
-      ]
-     ]
-    },
-    {
-     "t": "Lower",
-     "ex": [
-      [
-       "Hack Squat",
-       4,
-       "5",
-       "Legs"
-      ],
-      [
-       "Barbell Hip Thrust",
+       "Machine Bench Press",
        2,
-       "5",
-       "Legs"
+       "6",
+       "Chest"
       ],
       [
-       "Leg Extensions",
+       "Lateral Raise",
+       2,
+       "12",
+       "Shoulders"
+      ],
+      [
+       "Overhead Cable Curl",
+       2,
+       "12",
+       "Arms"
+      ],
+      [
+       "Dumbbell One-Arm Triceps Extension",
+       2,
+       "12",
+       "Arms"
+      ]
+     ]
+    },
+    {
+     "t": "DeltsArms",
+     "ex": [
+      [
+       "Alternating Cable Shoulder Press",
+       3,
+       "6",
+       "Shoulders"
+      ],
+      [
+       "Rear Delt Fly",
+       2,
+       "12",
+       "Shoulders"
+      ],
+      [
+       "Lateral Raise",
+       2,
+       "12",
+       "Shoulders"
+      ],
+      [
+       "Machine Bicep Curl",
        3,
        "12",
-       "Legs"
+       "Arms"
       ],
       [
-       "Seated Calf Raise",
-       4,
+       "Triceps Extension",
+       3,
        "12",
-       "Legs"
+       "Arms"
       ],
       [
-       "Cable Reverse Crunch",
+       "Cable Crunch",
        2,
        "8",
        "Core"
@@ -4396,7 +4426,7 @@
  },
  "bodybuilding-6-Core,Calves": {
   "seed": 1064,
-  "hash": "c6e92846c8266581",
+  "hash": "39bc0d454f49a4d1",
   "week1": {
    "wk": 1,
    "days": [
@@ -4416,10 +4446,16 @@
        "Chest"
       ],
       [
-       "Bent Over Low-Pulley Side Lateral",
+       "Lateral Raise",
        2,
        "12",
        "Shoulders"
+      ],
+      [
+       "Low Cable Crossover",
+       3,
+       "12",
+       "Chest"
       ],
       [
        "Triceps Extension",
@@ -4428,8 +4464,8 @@
        "Arms"
       ],
       [
-       "Cable Pallof Hold",
-       3,
+       "Cable Crunch",
+       2,
        "8",
        "Core"
       ]
@@ -4477,11 +4513,17 @@
      ]
     },
     {
-     "t": "Lower",
+     "t": "Legs",
      "ex": [
       [
-       "Narrow Stance Leg Press",
+       "Barbell Glute Bridge",
        4,
+       "5",
+       "Legs"
+      ],
+      [
+       "Narrow Stance Leg Press",
+       3,
        "5",
        "Legs"
       ],
@@ -4492,95 +4534,13 @@
        "Legs"
       ],
       [
-       "Seated Leg Curl",
-       3,
-       "12",
-       "Legs"
-      ],
-      [
-       "Standing Dumbbell Calf Raise",
+       "Single-Leg Leg Extension",
        2,
        "12",
        "Legs"
       ],
       [
-       "Cable Crunch",
-       2,
-       "8",
-       "Core"
-      ]
-     ]
-    },
-    {
-     "t": "Upper",
-     "ex": [
-      [
-       "Chest-Supported Row",
-       2,
-       "6",
-       "Back"
-      ],
-      [
-       "Lat Pulldown",
-       2,
-       "6",
-       "Back"
-      ],
-      [
-       "Machine Bench Press",
-       3,
-       "6",
-       "Chest"
-      ],
-      [
-       "Wide-Grip Lat Pulldown",
-       2,
-       "6",
-       "Back"
-      ],
-      [
-       "Smith Machine Calf Raise",
-       2,
-       "12",
-       "Legs"
-      ],
-      [
-       "Ab Crunch Machine",
-       2,
-       "8",
-       "Core"
-      ]
-     ]
-    },
-    {
-     "t": "LowerFocus",
-     "ex": [
-      [
-       "Barbell Hack Squat",
-       4,
-       "5",
-       "Legs"
-      ],
-      [
-       "Barbell Glute Bridge",
-       2,
-       "5",
-       "Legs"
-      ],
-      [
-       "Seated Leg Curl",
-       2,
-       "12",
-       "Legs"
-      ],
-      [
-       "Leg Extensions",
-       2,
-       "12",
-       "Legs"
-      ],
-      [
-       "Standing Dumbbell Calf Raise",
+       "Calf Raise",
        2,
        "12",
        "Legs"
@@ -4615,22 +4575,104 @@
        "Shoulders"
       ],
       [
-       "Reverse Flyes",
+       "Seated Bent-Over Rear Delt Raise",
        2,
        "12",
        "Shoulders"
       ],
       [
-       "High Cable Curls",
+       "Drag Curl",
        3,
        "12",
        "Arms"
       ],
       [
-       "Triceps Extension",
+       "Seated Bent-Over Two-Arm Dumbbell Triceps Extension",
        3,
        "12",
        "Arms"
+      ]
+     ]
+    },
+    {
+     "t": "UpperFocus",
+     "ex": [
+      [
+       "Cable Row",
+       2,
+       "6",
+       "Back"
+      ],
+      [
+       "Chest-Supported Row",
+       2,
+       "6",
+       "Back"
+      ],
+      [
+       "Close-Grip Front Lat Pulldown",
+       2,
+       "6",
+       "Back"
+      ],
+      [
+       "Leverage Decline Chest Press",
+       2,
+       "6",
+       "Chest"
+      ],
+      [
+       "Calf Raise",
+       3,
+       "12",
+       "Legs"
+      ],
+      [
+       "Seated Barbell Twist",
+       2,
+       "8",
+       "Core"
+      ]
+     ]
+    },
+    {
+     "t": "Lower",
+     "ex": [
+      [
+       "Barbell Hip Thrust",
+       2,
+       "5",
+       "Legs"
+      ],
+      [
+       "Hack Squat",
+       3,
+       "5",
+       "Legs"
+      ],
+      [
+       "Glute Ham Raise",
+       2,
+       "12",
+       "Legs"
+      ],
+      [
+       "Calf Press On The Leg Press Machine",
+       2,
+       "12",
+       "Legs"
+      ],
+      [
+       "Cable Pallof Hold",
+       2,
+       "8",
+       "Core"
+      ],
+      [
+       "Cable Crunch",
+       2,
+       "8",
+       "Core"
       ]
      ]
     }
@@ -4882,7 +4924,7 @@
  },
  "bodybuilding-6-Glutes,Calves": {
   "seed": 1066,
-  "hash": "b913526fdf3dddff",
+  "hash": "c51247a6927a1c11",
   "week1": {
    "wk": 1,
    "days": [
@@ -4915,7 +4957,7 @@
       ],
       [
        "Machine Triceps Extension",
-       4,
+       3,
        "12",
        "Arms"
       ],
@@ -4963,12 +5005,18 @@
      ]
     },
     {
-     "t": "Lower",
+     "t": "Legs",
      "ex": [
       [
-       "Barbell Hip Thrust",
-       2,
+       "Smith Machine Stiff-Legged Deadlift",
+       3,
        "5",
+       "Legs"
+      ],
+      [
+       "Dumbbell Rear Lunge",
+       3,
+       "8",
        "Legs"
       ],
       [
@@ -4978,16 +5026,98 @@
        "Legs"
       ],
       [
-       "Hack Squat",
-       3,
-       "5",
-       "Legs"
-      ],
-      [
        "Seated Leg Curl",
        3,
        "12",
        "Legs"
+      ],
+      [
+       "Seated Calf Raise",
+       3,
+       "12",
+       "Legs"
+      ],
+      [
+       "Ab Crunch Machine",
+       2,
+       "8",
+       "Core"
+      ],
+      [
+       "Pallof Press",
+       2,
+       "8",
+       "Core"
+      ]
+     ]
+    },
+    {
+     "t": "DeltsArms",
+     "ex": [
+      [
+       "Cable Shoulder Press",
+       3,
+       "6",
+       "Shoulders"
+      ],
+      [
+       "One-Arm Incline Lateral Raise",
+       2,
+       "12",
+       "Shoulders"
+      ],
+      [
+       "Reverse Flyes With External Rotation",
+       2,
+       "12",
+       "Shoulders"
+      ],
+      [
+       "Machine Bicep Curl",
+       3,
+       "12",
+       "Arms"
+      ],
+      [
+       "Dumbbell One-Arm Triceps Extension",
+       3,
+       "12",
+       "Arms"
+      ],
+      [
+       "Cable Crunch",
+       2,
+       "8",
+       "Core"
+      ]
+     ]
+    },
+    {
+     "t": "UpperFocus",
+     "ex": [
+      [
+       "Cable Row",
+       2,
+       "6",
+       "Back"
+      ],
+      [
+       "Leverage Chest Press",
+       2,
+       "6",
+       "Chest"
+      ],
+      [
+       "Chest-Supported Row",
+       2,
+       "6",
+       "Back"
+      ],
+      [
+       "Full Range-Of-Motion Lat Pulldown",
+       2,
+       "6",
+       "Back"
       ],
       [
        "Seated Calf Raise",
@@ -5004,113 +5134,37 @@
      ]
     },
     {
-     "t": "Upper",
+     "t": "Lower",
      "ex": [
       [
-       "Machine Bench Press",
-       4,
-       "6",
-       "Chest"
+       "Barbell Hip Thrust",
+       2,
+       "5",
+       "Legs"
       ],
       [
-       "Chest-Supported Row",
-       2,
-       "6",
-       "Back"
-      ],
-      [
-       "Wide-Grip Lat Pulldown",
-       2,
-       "6",
-       "Back"
-      ],
-      [
-       "Seated Side Lateral Raise",
-       2,
-       "12",
-       "Shoulders"
-      ],
-      [
-       "Cable Seated Crunch",
-       2,
-       "8",
-       "Core"
-      ]
-     ]
-    },
-    {
-     "t": "LowerFocus",
-     "ex": [
-      [
-       "Romanian Deadlift from Deficit",
+       "Wide Stance Barbell Squat",
        3,
        "5",
        "Legs"
       ],
       [
-       "Hack Squat",
+       "Leg Press",
        3,
        "5",
        "Legs"
       ],
       [
-       "Smith Machine Leg Press",
+       "Seated Leg Curl",
        3,
-       "5",
-       "Legs"
-      ],
-      [
-       "Low Cable Crossover",
-       2,
-       "12",
-       "Chest"
-      ],
-      [
-       "Smith Machine Calf Raise",
-       2,
        "12",
        "Legs"
       ],
       [
-       "Cable Crunch",
-       2,
-       "8",
-       "Core"
-      ]
-     ]
-    },
-    {
-     "t": "DeltsArms",
-     "ex": [
-      [
-       "Leverage Shoulder Press",
-       3,
-       "6",
-       "Shoulders"
-      ],
-      [
-       "Side Lateral Raise",
+       "Standing Barbell Calf Raise",
        2,
        "12",
-       "Shoulders"
-      ],
-      [
-       "Rear Delt Fly",
-       2,
-       "12",
-       "Shoulders"
-      ],
-      [
-       "Machine Preacher Curls",
-       3,
-       "12",
-       "Arms"
-      ],
-      [
-       "Standing Low-Pulley One-Arm Triceps Extension",
-       3,
-       "12",
-       "Arms"
+       "Legs"
       ],
       [
        "Cable Crunch",
@@ -5383,12 +5437,53 @@
  },
  "powerbuilding-3-Shoulders,Arms": {
   "seed": 1532,
-  "hash": "4c2b4927516aaa4a",
+  "hash": "d4a73384e09f6429",
   "week1": {
    "wk": 1,
    "days": [
     {
      "t": "FullBodyA",
+     "ex": [
+      [
+       "Weighted Bench Dip",
+       3,
+       "8",
+       "Arms"
+      ],
+      [
+       "Smith Machine Squat",
+       4,
+       "5",
+       "Legs"
+      ],
+      [
+       "Leverage High Row",
+       4,
+       "6",
+       "Back"
+      ],
+      [
+       "Smith Machine Bench Press",
+       4,
+       "6",
+       "Chest"
+      ],
+      [
+       "Rear Delt Raise",
+       3,
+       "12",
+       "Shoulders"
+      ],
+      [
+       "Dumbbell Lateral Raise",
+       3,
+       "12",
+       "Shoulders"
+      ]
+     ]
+    },
+    {
+     "t": "UpperFocus",
      "ex": [
       [
        "Machine Chest Press",
@@ -5397,75 +5492,34 @@
        "Chest"
       ],
       [
-       "Hack Squat",
-       4,
-       "5",
-       "Legs"
-      ],
-      [
-       "Bent Over Two-Arm Long Bar Row",
-       4,
+       "Smith Machine Bent Over Row",
+       2,
        "6",
        "Back"
       ],
       [
-       "Rear Delt Raise",
-       4,
+       "Wide-Grip Lat Pulldown",
+       2,
+       "6",
+       "Back"
+      ],
+      [
+       "Dumbbell Lateral Raise",
+       2,
        "12",
        "Shoulders"
       ],
       [
-       "Dumbbell Lateral Raise",
-       4,
+       "Machine Preacher Curl",
+       2,
        "12",
-       "Shoulders"
+       "Arms"
       ],
       [
        "Cable Curl",
        2,
        "12",
        "Arms"
-      ]
-     ]
-    },
-    {
-     "t": "LowerFocus",
-     "ex": [
-      [
-       "Chair Squat",
-       3,
-       "5",
-       "Legs"
-      ],
-      [
-       "Dumbbell Squat To A Bench",
-       3,
-       "5",
-       "Legs"
-      ],
-      [
-       "Hip Thrust",
-       2,
-       "5",
-       "Legs"
-      ],
-      [
-       "Glute Ham Raise",
-       2,
-       "12",
-       "Legs"
-      ],
-      [
-       "Leg Curl",
-       2,
-       "12",
-       "Legs"
-      ],
-      [
-       "Rope Crunch",
-       2,
-       "8",
-       "Core"
       ]
      ]
     },
@@ -5480,21 +5534,15 @@
       ],
       [
        "Barbell Hip Thrust",
-       2,
+       4,
        "5",
        "Legs"
       ],
       [
-       "Lat Pulldown",
-       4,
-       "6",
-       "Back"
-      ],
-      [
-       "Smith Machine Bench Press",
+       "Full Range-Of-Motion Lat Pulldown",
        3,
        "6",
-       "Chest"
+       "Back"
       ],
       [
        "Cable Rear Delt Fly",
@@ -5503,9 +5551,15 @@
        "Shoulders"
       ],
       [
-       "Kneeling Cable Triceps Extension",
-       2,
+       "Leg Curl",
+       3,
        "12",
+       "Legs"
+      ],
+      [
+       "Reverse Triceps Bench Press",
+       3,
+       "6",
        "Arms"
       ]
      ]
@@ -5515,12 +5569,12 @@
  },
  "powerbuilding-3-Back,Arms": {
   "seed": 1533,
-  "hash": "3e0d37a75c636a58",
+  "hash": "6a06204427ee1988",
   "week1": {
    "wk": 1,
    "days": [
     {
-     "t": "FullBodyA",
+     "t": "Push",
      "ex": [
       [
        "Machine Chest Press",
@@ -5529,33 +5583,27 @@
        "Chest"
       ],
       [
-       "Smith Machine Bent Over Row",
-       4,
+       "Seated Cable Shoulder Press",
+       3,
        "6",
-       "Back"
-      ],
-      [
-       "Narrow Stance Leg Press",
-       4,
-       "5",
-       "Legs"
+       "Shoulders"
       ],
       [
        "Dumbbell Lateral Raise",
-       3,
+       2,
        "12",
        "Shoulders"
       ],
       [
-       "Drag Curl",
+       "Cable Crossover",
        3,
        "12",
-       "Arms"
+       "Chest"
       ],
       [
-       "Machine Triceps Extension",
+       "Reverse Triceps Bench Press",
        3,
-       "12",
+       "6",
        "Arms"
       ]
      ]
@@ -5570,26 +5618,26 @@
        "Legs"
       ],
       [
-       "Dumbbell Squat To A Bench",
-       3,
+       "Smith Machine Leg Press",
+       4,
        "5",
        "Legs"
       ],
       [
-       "Romanian Deadlift from Deficit",
-       1,
+       "Barbell Glute Bridge",
+       4,
        "5",
        "Legs"
       ],
       [
        "Glute Ham Raise",
-       2,
+       3,
        "12",
        "Legs"
       ],
       [
-       "Leg Curl",
-       2,
+       "Leg Extensions",
+       3,
        "12",
        "Legs"
       ],
@@ -5602,13 +5650,13 @@
      ]
     },
     {
-     "t": "FullBodyB",
+     "t": "Pull",
      "ex": [
       [
-       "Hip Thrust",
-       3,
-       "5",
-       "Legs"
+       "Chest-Supported Row",
+       4,
+       "6",
+       "Back"
       ],
       [
        "Full Range-Of-Motion Lat Pulldown",
@@ -5617,27 +5665,21 @@
        "Back"
       ],
       [
-       "Barbell Glute Bridge",
-       2,
-       "5",
-       "Legs"
-      ],
-      [
-       "Seated Leg Curl",
-       3,
-       "12",
-       "Legs"
-      ],
-      [
        "Cable Curl",
+       2,
+       "12",
+       "Arms"
+      ],
+      [
+       "Machine Preacher Curl",
        3,
        "12",
        "Arms"
       ],
       [
-       "Reverse Triceps Bench Press",
-       4,
-       "6",
+       "Triceps Pushdown",
+       3,
+       "12",
        "Arms"
       ]
      ]
@@ -6550,48 +6592,36 @@
  },
  "powerbuilding-4-Back,Arms": {
   "seed": 1543,
-  "hash": "292b6f00ffb4772c",
+  "hash": "b56c128fe3583555",
   "week1": {
    "wk": 1,
    "days": [
     {
-     "t": "Upper",
+     "t": "Push",
      "ex": [
       [
-       "Leverage High Row",
+       "Reverse Triceps Bench Press",
        3,
        "6",
-       "Back"
+       "Arms"
       ],
       [
-       "Lat Pulldown",
+       "Smith Machine Overhead Shoulder Press",
        3,
        "6",
-       "Back"
+       "Shoulders"
       ],
       [
-       "Wide-Grip Lat Pulldown",
-       4,
-       "6",
-       "Back"
-      ],
-      [
-       "Cable Curl",
+       "One-Arm Incline Lateral Raise",
        2,
        "12",
-       "Arms"
+       "Shoulders"
       ],
       [
-       "Weighted Bench Dip",
-       3,
-       "8",
-       "Arms"
-      ],
-      [
-       "Machine Preacher Curl",
+       "Low Cable Crossover",
        2,
        "12",
-       "Arms"
+       "Chest"
       ]
      ]
     },
@@ -6599,19 +6629,19 @@
      "t": "LowerFocus",
      "ex": [
       [
-       "Hack Squat",
+       "Narrow Stance Leg Press",
        3,
        "5",
        "Legs"
       ],
       [
-       "Narrow Stance Leg Press",
+       "Smith Machine Squat",
        4,
        "5",
        "Legs"
       ],
       [
-       "Smith Machine Stiff-Legged Deadlift",
+       "Romanian Deadlift from Deficit",
        1,
        "5",
        "Legs"
@@ -6623,7 +6653,7 @@
        "Legs"
       ],
       [
-       "Leg Curl",
+       "Hamstring Curl",
        3,
        "12",
        "Legs"
@@ -6637,13 +6667,19 @@
      ]
     },
     {
-     "t": "UpperFocus",
+     "t": "Upper",
      "ex": [
       [
-       "Reverse Triceps Bench Press",
-       3,
+       "Chest-Supported Row",
+       4,
        "6",
-       "Arms"
+       "Back"
+      ],
+      [
+       "Close-Grip Front Lat Pulldown",
+       4,
+       "6",
+       "Back"
       ],
       [
        "V-Bar Pulldown",
@@ -6652,20 +6688,20 @@
        "Back"
       ],
       [
-       "Bent Over Two-Arm Long Bar Row",
-       3,
-       "6",
-       "Back"
-      ],
-      [
-       "Machine Chest Press",
-       4,
-       "6",
-       "Chest"
-      ],
-      [
-       "Machine Preacher Curl",
+       "Cable Curl",
        2,
+       "12",
+       "Arms"
+      ],
+      [
+       "Incline Dumbbell Curl",
+       3,
+       "12",
+       "Arms"
+      ],
+      [
+       "Dumbbell One-Arm Triceps Extension",
+       3,
        "12",
        "Arms"
       ]
@@ -6675,26 +6711,26 @@
      "t": "Lower",
      "ex": [
       [
-       "Hip Thrust",
-       3,
-       "5",
-       "Legs"
-      ],
-      [
        "Dumbbell Squat To A Bench",
        4,
        "5",
        "Legs"
       ],
       [
-       "Seated Leg Curl",
+       "Hip Thrust",
        3,
+       "5",
+       "Legs"
+      ],
+      [
+       "Leg Extensions",
+       2,
        "12",
        "Legs"
       ],
       [
-       "One-Legged Cable Kickback",
-       2,
+       "Standing Leg Curl",
+       3,
        "12",
        "Legs"
       ],

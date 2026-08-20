@@ -2598,6 +2598,101 @@ function scaleTargets(baseTargets, weekType, blockLength, weekIndex) {
   return out;
 }
 
+/* P1 - frequency-aware split selection.
+
+   Frequency is a vehicle for volume: a frequency target the split cannot carry
+   means the volume target cannot be delivered either. Two defects fixed here.
+   First, resolveDirectFrequencyTarget capped on CALENDAR days while delivery is
+   bounded by muscle-capable days in the chosen split - a 4-day PPUL split has
+   two days that can carry direct biceps work, so a target of 4 was
+   unsatisfiable by construction. Second, buildSplit picked its split without
+   ever consulting the targets. Candidates are now scored by weighted shortfall
+   (priority muscles 3x) and the lowest wins, with the legacy choice first so
+   ties change nothing. When even the best split cannot carry a target, the
+   target is lowered to what the split delivers and the compromise is recorded
+   on plan.meta.frequencyCompromises with the reason and the fix. */
+const DIRECT_MUSCLES_REACHABLE_BY_DAYTYPE = {
+  Push: ['Chest', 'Shoulders', 'Triceps', 'Abs'],
+  Pull: ['Back', 'Biceps', 'Shoulders', 'Abs', 'Forearms'],
+  Legs: ['Quads', 'Hamstrings', 'Glutes', 'Calves', 'Abs'],
+  Upper: ['Chest', 'Back', 'Shoulders', 'Biceps', 'Triceps', 'Abs'],
+  UpperFocus: ['Chest', 'Back', 'Shoulders', 'Biceps', 'Triceps', 'Calves', 'Abs', 'Forearms'],
+  Lower: ['Quads', 'Hamstrings', 'Glutes', 'Calves', 'Abs'],
+  LowerFocus: ['Quads', 'Hamstrings', 'Glutes', 'Calves', 'Abs'],
+  FullBodyA: ['Chest', 'Back', 'Quads', 'Shoulders', 'Biceps', 'Triceps', 'Abs'],
+  FullBodyB: ['Back', 'Hamstrings', 'Glutes', 'Chest', 'Quads', 'Calves', 'Abs'],
+  DeltsArms: ['Shoulders', 'Biceps', 'Triceps', 'Abs', 'Forearms']
+};
+const DIRECT_FREQUENCY_KEYS = ['Chest', 'Back', 'Shoulders', 'Quads', 'Hamstrings', 'Glutes', 'Biceps', 'Triceps', 'Calves', 'Abs'];
+
+function splitExposures(split) {
+  const exposures = {};
+  for (const entry of Array.isArray(split) ? split : []) {
+    const dayType = typeof entry === 'string' ? entry : String(entry?.dayType || '');
+    for (const muscle of DIRECT_MUSCLES_REACHABLE_BY_DAYTYPE[dayType] || []) {
+      exposures[muscle] = (exposures[muscle] || 0) + 1;
+    }
+  }
+  return exposures;
+}
+
+function splitShortfall(split, frequencyTargets, user) {
+  const exposures = splitExposures(split);
+  let shortfall = 0;
+  const priorities = getPriorityDirectTargets(user);
+  for (const muscle of DIRECT_FREQUENCY_KEYS) {
+    const target = Number(frequencyTargets?.[muscle] || 0);
+    const weight = priorities.has(muscle) ? 3 : 1;
+    shortfall += Math.max(0, target - Number(exposures[muscle] || 0)) * weight;
+  }
+  return shortfall;
+}
+
+/* Candidate splits per day count, drawn from the same tables buildSplit already
+   uses. The legacy deterministic choice is always scored first, so an
+   alternate wins only by strictly lower shortfall. */
+const SPLIT_CANDIDATES_BY_DAYCOUNT = {
+  2: [['UpperFocus', 'Lower'], ['Upper', 'LowerFocus'], ['FullBodyA', 'FullBodyB']],
+  3: [['Push', 'Pull', 'Legs'], ['Push', 'Pull', 'UpperFocus'], ['LowerFocus', 'Upper', 'Lower'],
+      ['FullBodyA', 'UpperFocus', 'FullBodyB'], ['LowerFocus', 'FullBodyA', 'FullBodyB'], ['FullBodyA', 'FullBodyB', 'FullBodyA']],
+  4: [['Upper', 'Lower', 'Upper', 'Lower'], ['Push', 'Pull', 'Upper', 'Lower'],
+      ['Push', 'Pull', 'UpperFocus', 'Lower'], ['Push', 'Pull', 'DeltsArms', 'Lower'], ['Upper', 'LowerFocus', 'Upper', 'Lower']],
+  5: [['Push', 'Pull', 'Legs', 'Upper', 'Lower'], ['Push', 'Pull', 'Legs', 'UpperFocus', 'DeltsArms'],
+      ['Push', 'Pull', 'LowerFocus', 'Upper', 'Lower']],
+  6: [['Push', 'Pull', 'Legs', 'Upper', 'Lower', 'DeltsArms'], ['Push', 'Pull', 'Legs', 'DeltsArms', 'UpperFocus', 'Lower'],
+      ['Push', 'Pull', 'Lower', 'Upper', 'LowerFocus', 'DeltsArms']]
+};
+
+/* Cap each frequency target to what the chosen split can actually deliver, and
+   say so. The muscle keeps its volume target; only the exposure count moves. */
+function capFrequencyTargetsToSplit(frequencyTargets, schedule, user) {
+  const exposures = splitExposures(schedule);
+  const compromises = [];
+  const priorities = getPriorityDirectTargets(user);
+  const wantedMap = user?._frequencyWanted || frequencyTargets || {};
+  for (const muscle of DIRECT_FREQUENCY_KEYS) {
+    if (!(muscle in (frequencyTargets || {}))) continue;
+    const reachable = Number(exposures[muscle] || 0);
+    const wanted = Number(wantedMap[muscle] ?? frequencyTargets[muscle] ?? 0);
+    if (wanted > reachable) {
+      frequencyTargets[muscle] = Math.min(Number(frequencyTargets[muscle] || 0), reachable);
+      compromises.push({
+        muscle,
+        wanted,
+        delivered: reachable,
+        priority: priorities.has(muscle),
+        reason: 'This ' + schedule.length + '-day split has ' + reachable + ' day' + (reachable === 1 ? '' : 's')
+          + ' that can carry direct ' + muscle + ' work. '
+          + (schedule.length < 6 ? 'Training ' + (schedule.length + 1) + ' days would add another.' : 'The split already uses every day.')
+      });
+    }
+  }
+  frequencyTargets.Arms = Math.max(Number(frequencyTargets.Biceps || 0), Number(frequencyTargets.Triceps || 0));
+  frequencyTargets.Legs = Math.max(Number(frequencyTargets.Quads || 0), Number(frequencyTargets.Hamstrings || 0), Number(frequencyTargets.Glutes || 0));
+  frequencyTargets['Hamstrings/Glutes'] = Math.max(Number(frequencyTargets.Hamstrings || 0), Number(frequencyTargets.Glutes || 0));
+  return compromises;
+}
+
 function buildSplit(user, forceUpperLower = false) {
   if (String(user?.discipline || '') === 'powerbuilding') {
     return powerbuildingPriority.buildPowerbuildingSplit(user);
@@ -2679,6 +2774,25 @@ function buildSplit(user, forceUpperLower = false) {
       : profile.priorityBias === 'upper'
         ? ['Push', 'Pull', 'Legs', 'DeltsArms', 'UpperFocus', 'Lower']
         : ['Push', 'Pull', 'Legs', 'Upper', 'Lower', 'DeltsArms'];
+  }
+  /* P1 - score the legacy choice against the candidate table and take the
+     lowest weighted shortfall. The legacy split is scored first, so an
+     alternate wins only by being strictly better for this user. Narrow-priority
+     users keep their dedicated splits: their branches are not rescored. */
+  /* No narrow-user guard here: the dedicated narrow splits returned early
+     above, so anything reaching this tail came from the generic tables and can
+     only be rescored against other generic candidates. */
+  const frequencyTargets = user?._frequencyTargetsForSplit || null;
+  if (frequencyTargets) {
+    const candidates = SPLIT_CANDIDATES_BY_DAYCOUNT[d] || [];
+    let best = split;
+    let bestScore = splitShortfall(split, frequencyTargets, user);
+    for (const candidate of candidates) {
+      if (candidate.length !== d) continue;
+      const score = splitShortfall(candidate, frequencyTargets, user);
+      if (score < bestScore) { best = candidate; bestScore = score; }
+    }
+    split = best;
   }
   const days = user.preferredDays.length === d ? user.preferredDays.slice(0, d) : WEEKDAY_DEFAULT_ORDER.slice(0, d);
   return split.map((dayType, i) => ({ day: days[i], dayType }));
@@ -6911,6 +7025,22 @@ function buildConstrainedSchedule(user) {
   else if (d === 4) split = ['Upper', 'LowerFocus', 'UpperFocus', 'Lower'];
   else if (d === 5) split = ['Push', 'Pull', 'LowerFocus', 'UpperFocus', 'Lower'];
   else split = ['Push', 'Pull', 'LowerFocus', 'UpperFocus', 'Lower', 'DeltsArms'];
+  /* P1 — the constrained rebuild ships for every profile whose main build
+     exhausts its attempts, so a frequency-blind schedule here silently undoes
+     the split scoring above. Score the same candidate table; the hardcoded
+     default is scored first, so an alternate wins only by strictly lower
+     weighted shortfall. */
+  const frequencyTargets = user?._frequencyTargetsForSplit || null;
+  if (frequencyTargets) {
+    let best = split;
+    let bestScore = splitShortfall(split, user._frequencyWanted || frequencyTargets, user);
+    for (const candidate of SPLIT_CANDIDATES_BY_DAYCOUNT[d] || []) {
+      if (candidate.length !== d) continue;
+      const score = splitShortfall(candidate, user._frequencyWanted || frequencyTargets, user);
+      if (score < bestScore) { best = candidate; bestScore = score; }
+    }
+    split = best;
+  }
   return split.map((dayType, index) => ({ day: days[index], dayType }));
 }
 
@@ -8126,6 +8256,7 @@ function materializePlanResult(user, schedule, safeWeeks, safeResult, targets, f
         priorityGroups: user.priorityGroups || [],
         weeklyTargets: targets,
         frequencyTargets,
+        frequencyCompromises: Array.isArray(user?._frequencyCompromises) ? user._frequencyCompromises : [],
         profile: user.profile,
         // §0.1 — what the layoff did to each anchor, and why. This is on the
         // plan rather than in a log because the user has to be told: a lifter
@@ -8341,7 +8472,13 @@ function buildFinalConstrainedRebuild(user, exercises, targets, frequencyTargets
 function buildSafeBasePlanner(user, exercises, targets, frequencyTargets) {
   return withPlannerTiming(user, 'safeBasePlannerMs', () => {
     logComboStageEnter(user, 'split selection');
+    user._frequencyTargetsForSplit = frequencyTargets;
+    if (!user._frequencyWanted) user._frequencyWanted = { ...frequencyTargets };
     let schedule = withPlannerTiming(user, 'splitSelectionMs', () => buildSplit(user, user.daysPerWeek >= 5 && user.sessionLengthMin === '30'));
+    /* P1 - the frequency target is bounded by muscle-capable days in the CHOSEN
+       split, not by calendar days. Anything the split cannot carry is lowered
+       and recorded, with the reason, for the UI to show. */
+    user._frequencyCompromises = capFrequencyTargetsToSplit(frequencyTargets, schedule.map((e) => e.dayType), user);
     if (user?._plannerRuntime?.state) {
       user._plannerRuntime.state.selectedSplit = Array.isArray(schedule) ? schedule.map((entry) => ({ day: entry.day, dayType: entry.dayType })) : [];
     }
@@ -12713,6 +12850,17 @@ function upgradePlanQualityPass(baseState, user, exercises) {
    compounds are restored from what fillSlots actually delivered, replacing
    non-structural work from the end of the day so the session cap holds. */
 function enforceStructuralFloor(weeks, user) {
+  /* P1 — compromises must describe the SHIPPED schedule. The first cap ran on
+     the split buildSplit chose; if the constrained rebuild shipped a different
+     one, the record would describe a plan that does not exist. */
+  const shippedWeek = (Array.isArray(weeks) ? weeks : [])[0];
+  if (shippedWeek && user?._frequencyTargetsForSplit) {
+    user._frequencyCompromises = capFrequencyTargetsToSplit(
+      user._frequencyTargetsForSplit,
+      (shippedWeek.days || []).map((d) => String(d?.dayType || '')),
+      user
+    );
+  }
   for (const week of Array.isArray(weeks) ? weeks : []) {
     for (const day of week?.days || []) {
       const required = Number(day?.__requiredStructural || 0);
