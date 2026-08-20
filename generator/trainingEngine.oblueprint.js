@@ -3443,6 +3443,21 @@ function hypertrophyQualityModifiers(ex, slot, user, dayType = '') {
 
 function scoreExercise(ex, slot, user, dayType = '') {
   let score = 0;
+  /* Powerbuilding main-lift preference. A powerbuilder's goals live on the
+     competition lifts, so the primary compound slot for each pattern must
+     select THAT LIFT by name, not a same-pattern substitute — Hip Thrust is a
+     fine hinge and not a deadlift; Leg Press is a fine knee-dominant compound
+     and not a squat; Machine Chest Press is not a bench press. Keyed on the
+     slot's pattern+style, never on slot-id strings (the vocabulary trap), and
+     large enough to outrank taste terms while equipment/joint gates still veto
+     upstream — a bodyweight-only powerbuilder simply has no match and loses
+     nothing. */
+  if (String(user?.discipline || '') === 'powerbuilding' && String(slot?.styleRequired || '') === 'Compound') {
+    const name = String(ex?.name || '');
+    if (String(slot?.pattern) === 'Hinge' && /deadlift/i.test(name)) score += 60;
+    if (String(slot?.pattern) === 'Squat' && /squats?/i.test(name) && !/split|pistol|sissy|jump/i.test(name)) score += 60;
+    if (String(slot?.pattern) === 'HorizontalPush' && /bench press/i.test(name)) score += 60;
+  }
   const requiredEquipment = Array.isArray(ex?.requiredEquipment) ? ex.requiredEquipment : [];
   const narrowPriorities = getGoalIdentityPriorityMuscles(user);
   const relevantNarrowPriorities = getGoalIdentityPrioritiesForDay(dayType, user);
