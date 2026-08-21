@@ -65,13 +65,14 @@ const SUITES = [
     needsServer: false
   },
   // THE COMPOSITION MATRIX — 63 discipline subsets x 3 profiles, 189 builds.
-  // Reported, not blocking: the baseline is ~212 problems, dominated by two
-  // structural findings (the lifting chassis is always present, so a
-  // running-only selection still ships lifting; nutritionModel is attached
-  // unconditionally). Those need the §5 role/demand arbitration, not a quick
-  // fix. Flip to blocking when the count reaches zero. SLOW (~5 min).
+  // Reported, not blocking: §5 role/demand arbitration took the baseline from
+  // ~212 problems to 4. Remaining: 2x heavy-posterior-before-long-ruck (the
+  // rucking composer's PM-slot fallback branch skips the prior-day check) and
+  // 2x a 3-day everything-selected week where even the maintain minimums sum
+  // to 9 sessions — the honest fix is dropping a discipline below its minimum
+  // effective dose, not squeezing it. Flip to blocking at zero. SLOW (~5 min).
   {
-    name: 'COMPOSITION MATRIX — 63 subsets x 3 profiles (BASELINE ~212 problems)',
+    name: 'COMPOSITION MATRIX — 63 subsets x 3 profiles (BASELINE 4 problems post-§5)',
     cmd: process.execPath,
     args: ['--test', '--test-timeout=1700000', 'tests/composition.matrix.test.js'],
     needsServer: false,

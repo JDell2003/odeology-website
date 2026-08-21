@@ -12,7 +12,6 @@ const running = require('./running');
 const rucking = require('./rucking');
 const martialArts = require('./martialArts');
 const workCapacity = require('./workCapacity');
-const workCapacity = require('./workCapacity');
 
 const DISCIPLINES = {
   lifting,

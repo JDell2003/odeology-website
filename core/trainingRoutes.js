@@ -1018,6 +1018,8 @@ function normalizeOblueprintPayload(payload, { relax = false } = {}) {
     martialArts: (src.martialArts && typeof src.martialArts === 'object') ? src.martialArts : null,
     unavailableDays: Array.isArray(src.unavailableDays) ? uniqueStrings(src.unavailableDays, 7) : [],
     workCapacity: (src.workCapacity && typeof src.workCapacity === 'object') ? src.workCapacity : null,
+    disciplines: Array.isArray(src.disciplines) ? uniqueStrings(src.disciplines, 6) : null,
+    roles: (src.roles && typeof src.roles === 'object') ? src.roles : null,
     benchVariation: String(src.benchVariation || '').trim() || null,
     benchWeight: Number.isFinite(Number(src.benchWeight)) ? Number(src.benchWeight) : null,
     benchReps: Number.isFinite(Number(src.benchReps)) ? Number(src.benchReps) : null,
@@ -1433,6 +1435,11 @@ function planPassesFloorGate(plan, src) {
   try {
     const weeks = Array.isArray(plan?.weeks) ? plan.weeks : [];
     if (!weeks.length) return false;
+    /* §5 - a selection without lifting legitimately ships days holding only
+       composed sessions, and a nutrition-only selection ships none at all.
+       The lifting floor is a lifting invariant. */
+    const sel = Array.isArray(src?.disciplines) ? src.disciplines : null;
+    if (sel && !sel.includes('lifting')) return true;
     const areas = Array.isArray(src?.painAreas) ? src.painAreas.map((a) => String(a || '').toLowerCase()) : [];
     const contra = areas.flatMap((a) => INJURY_NAME_CONTRA[a] || []);
     for (const w of weeks) {
@@ -1904,6 +1911,106 @@ function routeAttachGoalProjections(plan, user) {
      - hard sparring -> the PREVIOUS day may not carry a heavy squat
      - five or more classes a week -> the lifting role drops to maintain and
        plan.meta.overrides says so */
+/* §5 - roles and demand arbitration. Each selected discipline carries a role:
+   lead (full demand), develop (conservative), maintain (minimum effective
+   dose). At most two leads - extras demote to develop, recorded. The SUM of
+   demands must fit declared capacity (training days x 2 session slots)
+   BEFORE anything places: composers previously added independently, which is
+   how an everything-selected week reached 11 sessions on a 4-day lifter.
+   Trimming order is reverse selection order, never below the maintain
+   minimum, and every trim is recorded with the reason. */
+function routeArbitrateDisciplineDemand(plan, user) {
+  const selected = Array.isArray(user?.disciplines) ? user.disciplines : null;
+  if (!plan || plan.error || !selected) return plan;
+  let registry = null;
+  try { registry = require('../generator/disciplines'); } catch (e) { return plan; }
+  const schedulable = selected.filter((d) => ['lifting', 'running', 'rucking', 'workCapacity', 'martialArts'].includes(d));
+  const roles = {};
+  const overrides = [];
+  let leads = 0;
+  for (const d of schedulable) {
+    let role = String(user?.roles?.[d] || '').toLowerCase();
+    if (!['lead', 'develop', 'maintain'].includes(role)) role = leads === 0 ? 'lead' : 'develop';
+    if (role === 'lead' && leads >= 2) {
+      role = 'develop';
+      overrides.push({ discipline: d, rule: 'at most two lead disciplines', action: d + ' demoted to develop; the first two stated priorities keep the lead role' });
+    }
+    if (role === 'lead') leads += 1;
+    roles[d] = role;
+  }
+  const capacity = Math.max(2, Number(user?.daysPerWeek) || 4) * 2;
+  const CONFIG_KEY = { running: 'running', rucking: 'rucking', workCapacity: 'workCapacity', martialArts: 'martialArts' };
+  const demandOf = (d) => {
+    if (d === 'lifting') return Number(user?.daysPerWeek) || 4;
+    const mod = registry.getDiscipline(d);
+    if (!mod) return 0;
+    const cfg = user?.[CONFIG_KEY[d]] || {};
+    const dem = mod.demand({ ...cfg, daysPerWeek: user?.daysPerWeek }, roles[d]);
+    const asked = Number(cfg.sessionsPerWeek);
+    const target = Number(dem?.sessionsPerWeek?.target) || 1;
+    const max = Number(dem?.sessionsPerWeek?.max) || target;
+    const min = Number(dem?.sessionsPerWeek?.min) || 1;
+    return { min, want: Math.min(Number.isFinite(asked) && asked > 0 ? asked : target, max) };
+  };
+  const demands = {};
+  for (const d of schedulable) {
+    demands[d] = d === 'lifting' ? { min: 2, want: demandOf('lifting') } : demandOf(d);
+  }
+  let total = Object.values(demands).reduce((n, x) => n + x.want, 0);
+  /* Martial arts is the user's schedule and is never trimmed by the engine. */
+  const trimOrder = schedulable.filter((d) => d !== 'martialArts' && roles[d] !== 'lead').reverse();
+  let guard = 0;
+  while (total > capacity && guard < 24) {
+    guard += 1;
+    let cut = false;
+    for (const d of trimOrder) {
+      if (total <= capacity) break;
+      if (demands[d].want > demands[d].min) {
+        demands[d].want -= 1;
+        total -= 1;
+        cut = true;
+        overrides.push({ discipline: d, rule: 'weekly demand must fit capacity (' + capacity + ' session slots)', action: d + ' reduced to ' + demands[d].want + ' session' + (demands[d].want === 1 ? '' : 's') + '/week; its role is ' + roles[d] + ' and the lead work keeps its full dose' });
+      }
+    }
+    if (!cut) break;
+  }
+  for (const d of schedulable) {
+    if (d === 'lifting') continue;
+    const key = CONFIG_KEY[d];
+    if (user[key] && typeof user[key] === 'object') user[key] = { ...user[key], sessionsPerWeek: demands[d].want };
+  }
+  user._roleArbitration = { roles, capacity, demands: Object.fromEntries(Object.entries(demands).map(([k, v]) => [k, v.want])), overrides };
+  plan.meta = plan.meta || {};
+  plan.meta.disciplineRoles = roles;
+  if (overrides.length) plan.meta.overrides = [...(plan.meta.overrides || []), ...overrides];
+  return plan;
+}
+
+/* §5 - the selection is the authority. When `disciplines` is present,
+   unselected disciplines do not appear at all: lifting sessions are stripped
+   when lifting was not chosen (empty days drop from the week), and
+   nutritionModel attaches only when nutrition was chosen. Absent selection =
+   legacy behaviour, untouched. */
+function routeEnforceDisciplineSelection(plan, user) {
+  const selected = Array.isArray(user?.disciplines) ? user.disciplines : null;
+  if (!plan || plan.error || !selected) return plan;
+  if (!selected.includes('lifting')) {
+    for (const week of plan.weeks || []) {
+      const kept = [];
+      for (const day of week.days || []) {
+        day.sessions = (day.sessions || []).filter((sn) => String(sn.discipline) !== 'lifting');
+        day.exercises = day.sessions.flatMap((sn) => sn.exercises || []);
+        if (day.sessions.length) kept.push(day);
+      }
+      week.days = kept;
+    }
+  }
+  if (!selected.includes('nutrition') && plan.meta) {
+    delete plan.meta.nutritionModel;
+  }
+  return plan;
+}
+
 function routeComposeMartialArtsSessions(plan, user) {
   const cfg = user?.martialArts;
   if (!plan || plan.error || !cfg || cfg.enabled === false) return plan;
@@ -2687,6 +2794,7 @@ function buildOblueprintPlanWithFallback(payload, opts = {}) {
     /* The band restore ran only inside the bodybuilding chain's floor restore;
        powerbuilding returns before it. Priority isolation gets its band at the
        one point every result passes. */
+    if (result && !result.error && result.plan) routeArbitrateDisciplineDemand(result.plan, src);
     if (result && !result.error && result.plan) routeBuildDaySessions(result.plan, src);
     if (result && !result.error && result.plan) routeComposeMartialArtsSessions(result.plan, src);
     if (result && !result.error && result.plan) routeComposeRunningSessions(result.plan, src);
@@ -2711,6 +2819,7 @@ function buildOblueprintPlanWithFallback(payload, opts = {}) {
        every other mutation — because it counts exposure DAYS on the plan that
        actually ships. Anywhere earlier, a later pass re-concentrates or
        re-labels what it just spread. */
+    if (result && !result.error && result.plan) routeEnforceDisciplineSelection(result.plan, src);
     if (result && !result.error && result.plan && !result._safeFallback) routeSpreadArmExposures(result.plan);
     if (result && !result.error && result.plan && !result._safeFallback) routeRestorePriorityIsolationBand(result.plan);
     return result;
@@ -2902,6 +3011,13 @@ function coerceClassicBodybuildingToOblueprintPayload(payload) {
        ruck) could land on a day the user said they cannot train. */
     unavailableDays: Array.isArray(src?.unavailableDays) ? src.unavailableDays : [],
     workCapacity: (src?.workCapacity && typeof src.workCapacity === 'object') ? src.workCapacity : null,
+    /* §5 - the discipline selection and its roles. When `disciplines` is
+       present it is the AUTHORITY: unselected disciplines do not appear at
+       all - lifting is a peer, not a chassis, and nutrition attaches only
+       when selected. Absent means the legacy lifting-first behaviour,
+       byte-for-byte. */
+    disciplines: Array.isArray(src?.disciplines) ? src.disciplines : null,
+    roles: (src?.roles && typeof src.roles === 'object') ? src.roles : null,
     benchVariation: String(strength?.benchVariation || '').trim() || null,
     benchWeight: Number(strength?.benchWeight || 0) || null,
     benchReps: Number(strength?.benchReps || 0) || null,

@@ -44,6 +44,7 @@ function subsets() {
 function buildFor(subset, profile, seed) {
   const has = (d) => subset.includes(d);
   const payload = {
+    disciplines: subset,
     discipline: profile.discipline, phase: 'maintain', daysPerWeek: profile.daysPerWeek, planSeed: seed,
     equipmentAccess: { bodyweight: true, dumbbell: true, barbell: true, cable: true, machine: true },
     emphasis: profile.emphasis, unavailableDays: ['sun'], equipmentStylePref: 'mix',
