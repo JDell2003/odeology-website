@@ -1284,7 +1284,14 @@ function canonicalExerciseIdFor(ex) {
 }
 
 function exerciseDayIdentityKey(ex) {
-  return normalizeName(ex?.canonicalTruth?.canonicalName || ex?.canonicalName || ex?.name || '');
+  /* The duplicate-name GATE judges by display name (normalizeName(ex.name)).
+     This key used to judge by canonical name — a second vocabulary for "same
+     exercise" — so two rows with distinct canonical names but one display
+     name could pass every picker and then fail the gate. The picker now
+     speaks the gate's language: display name first. Surfaced when the
+     powerbuilding squat-name preference (dead for weeks behind a \\x08-for-\\b
+     regex) started firing and concentrated picks onto squat-named rows. */
+  return normalizeName(ex?.name || ex?.canonicalTruth?.canonicalName || ex?.canonicalName || '');
 }
 
 function sameDayExerciseExists(day, candidate, exclude = null) {
@@ -3464,7 +3471,7 @@ function scoreExercise(ex, slot, user, dayType = '') {
   if (String(user?.discipline || '') === 'powerbuilding' && String(slot?.styleRequired || '') === 'Compound') {
     const name = String(ex?.name || '');
     if (String(slot?.pattern) === 'Hinge' && /deadlift/i.test(name)) score += 60;
-    if (String(slot?.pattern) === 'Squat' && /squats?/i.test(name) && !/split|pistol|sissy|jump/i.test(name)) score += 60;
+    if (String(slot?.pattern) === 'Squat' && /\bsquats?\b/i.test(name) && !/split|pistol|sissy|jump/i.test(name)) score += 60;
     if (String(slot?.pattern) === 'HorizontalPush' && /bench press/i.test(name)) score += 60;
   }
   const requiredEquipment = Array.isArray(ex?.requiredEquipment) ? ex.requiredEquipment : [];
@@ -3566,7 +3573,13 @@ function filterEligible(slot, exercises, user, weekPicked, dayState = null, dayT
       if (slot.styleRequired && ex.style !== slot.styleRequired) return false;
       if (!slotMatchesExerciseMuscles(slot, ex, user)) return false;
       if (!slot.styleRequired && ['Mobility', 'Cardio'].includes(ex.style) && !['Mobility', 'Cardio'].includes(slot.pattern)) return false;
-      if (dayState?.names?.has(ex.name)) return false;
+      /* The set is written with exerciseDayIdentityKey (normalized); this
+         check read RAW ex.name — writer and reader in different vocabularies,
+         so the day-level dedupe never matched anything and only weekPicked
+         kept days duplicate-free. Lower-priority users are exempt from weekly
+         repeats (line above), which left them no guard at all: the squat-name
+         preference then put Hack Squat twice on one Lower day. */
+      if (dayState?.names?.has(exerciseDayIdentityKey(ex))) return false;
       const family = slotExerciseFamily(ex);
       if (dayState && family === 'lunge' && dayState.families.has('lunge')) return false;
       if (dayState && String(slot.styleRequired || '') === 'Isolation') {

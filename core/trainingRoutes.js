@@ -1572,10 +1572,10 @@ function routeRestorePriorityIsolationBand(plan) {
      exercise the band cannot fill. */
   const MUSCLE_MATCHERS = {
     Biceps: (ex, truth) => truth.directArmType === 'biceps'
-      || (/curls?/i.test(String(ex?.name || '')) && !/leg|hamstring|wrist|nordic|reverse plate/i.test(String(ex?.name || ''))),
+      || (/\bcurls?\b/i.test(String(ex?.name || '')) && !/leg|hamstring|wrist|nordic|reverse plate/i.test(String(ex?.name || ''))),
     Triceps: (ex, truth) => truth.directArmType === 'triceps'
       || /triceps|pushdown|skull/i.test(String(ex?.name || '')),
-    Calves: (ex, truth) => Boolean(truth.directCalf) || /cal(f|ves)/i.test(String(ex?.name || '')),
+    Calves: (ex, truth) => Boolean(truth.directCalf) || /\bcal(f|ves)\b/i.test(String(ex?.name || '')),
     Shoulders: (ex, truth) => String(truth.directDeltSubtype || 'none') !== 'none'
       || /lateral raise|side lateral|rear delt|reverse fly|front raise/i.test(String(ex?.name || '')),
     Abs: (ex, truth) => String(truth.coreFamily || 'none') !== 'none'
@@ -1631,6 +1631,27 @@ function routeRestorePriorityIsolationBand(plan) {
       }
     }
   }
+  /* §2.9 - the UI shows targets vs delivered rather than recomputing them
+     with its own matcher: a second matcher is a second vocabulary, and this
+     codebase's whole failure history is two vocabularies failing open. One
+     stamp, from the same matchers that enforced the band. */
+  const firstWeek = (plan.weeks || []).find((w) => String(w?.weekType || '') !== 'deload'
+    && !deloadWeeks.has(Number(w?.weekIndex))) || (plan.weeks || [])[0];
+  const priorityVolume = {};
+  for (const muscle of muscles) {
+    const matcher = MUSCLE_MATCHERS[muscle];
+    const target = Number(targets[muscle] || 0);
+    if (!matcher || !target) continue;
+    let delivered = 0;
+    for (const day of firstWeek?.days || []) {
+      for (const ex of day?.exercises || []) {
+        if (String(ex?.style || '') !== 'Isolation') continue;
+        if (matcher(ex, ex?.canonicalTruth || {})) delivered += Number(ex.sets) || 0;
+      }
+    }
+    priorityVolume[muscle] = { target, delivered };
+  }
+  if (Object.keys(priorityVolume).length) plan.meta.priorityVolume = priorityVolume;
   return plan;
 }
 

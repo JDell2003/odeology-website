@@ -15878,6 +15878,7 @@ function toggleSharePopover(force) {
             if (state.auth.user && workoutAutosaveContext) scheduleWorkoutAutosave();
             render();
           };
+          const projected = fmtProjected(resolveProjectedForExercise(ex, plan));
           const setLog = setCount
             ? el('div', { class: 'exercise-setlog' },
               el('div', { class: 'exercise-set-header' },
@@ -15920,12 +15921,15 @@ function toggleSharePopover(force) {
                   weekIndex: activeWeek,
                   dayIndex
                 });
+                /* §2.9 - prescribed values pre-fill the empty state: with no
+                   history, the placeholder is the plan's own target, so a set
+                   can be logged as-prescribed with zero extra reading. */
                 const weightPlaceholder = Number.isFinite(Number(previousSet?.weight))
                   ? `${previousSet.weight} lb last week`
-                  : 'Weight';
+                  : (projected && projected !== '\u2014' ? `${projected} target` : 'Weight');
                 const repsPlaceholder = Number.isFinite(Number(previousSet?.reps))
                   ? `${previousSet.reps} reps last week`
-                  : 'Reps';
+                  : (dispReps ? `${dispReps} target` : 'Reps');
                 const notePlaceholder = previousSet?.note
                   ? `${String(previousSet.note).slice(0, 40)} last week`
                   : 'Notes';
@@ -15990,7 +15994,6 @@ function toggleSharePopover(force) {
               )
             )
             : null;
-        const projected = fmtProjected(resolveProjectedForExercise(ex, plan));
         // Logged history is still shown to the user for comparison; it just no
         // longer decides the target.
         const lastPerf = extractWorkoutEntryPerformance(currentEntry)
@@ -16068,6 +16071,17 @@ function toggleSharePopover(force) {
               ),
               el('div', { class: 'exercise-prescription' }, setsRepsRest),
               sysProgNote ? el('div', { class: 'training-muted', style: 'margin-top:0.35rem;color:#a1751f;font-weight:700' }, sysProgNote) : null,
+              /* §2.9 - the engine's own progression rule and its last decision,
+                 shown ONLY when the numbers beside them come from the same
+                 state (never next to a sysProg override, which writes its own
+                 note above): reasoning that disagrees with the number beside
+                 it is worse than no reasoning at all. */
+              !sysProgNote && ex.progression?.rule
+                ? el('div', { class: 'training-muted exercise-progression-rule', style: 'margin-top:0.35rem' }, `Rule: ${String(ex.progression.rule)}`)
+                : null,
+              !sysProgNote && ex.progression?.lastDecision
+                ? el('div', { class: 'training-muted exercise-progression-why' }, `Why this target: ${String(ex.progression.lastDecision)}`)
+                : null,
               ex.tempo ? el('div', { class: 'exercise-substitutions' }, `Tempo: ${String(ex.tempo)}`) : null,
               ex.coaching?.progress ? el('div', { class: 'training-muted', style: 'margin-top:0.35rem' }, `Progress: ${String(ex.coaching.progress)}`) : null,
               ex.coaching?.regress ? el('div', { class: 'training-muted' }, `Regress: ${String(ex.coaching.regress)}`) : null,
@@ -16081,7 +16095,22 @@ function toggleSharePopover(force) {
                 ? el('div', { class: 'exercise-substitutions' }, `Alt: ${subs.slice(0, 2).join(' • ')}`)
                 : null,
               el('div', { class: 'exercise-badges' },
-                el('span', { class: 'projected-pill', title: 'Target weight for this exercise' }, `Target weight ${projected}`)
+                (() => {
+                  /* §2.9 - say where the number came from. An estimated weight
+                     presented with the same confidence as a reported one is
+                     how a lifter loads a bar to a guess. */
+                  const anchorSrc = String(plan?.meta?.progressionProjection?.anchorInputs?.anchorSource || '');
+                  const loadNote = String(ex?.projectionLoadNote || '').trim();
+                  const srcLabel = anchorSrc === 'explicit_pr' ? 'from your reported PRs'
+                    : anchorSrc === 'working_weight_fallback' ? 'from your reported working weights'
+                    : anchorSrc === 'lift_history_fallback' ? 'from your logged lift history'
+                    : anchorSrc === 'bodyweight_family_fallback' ? 'estimated from your bodyweight'
+                    : '';
+                  const estimated = anchorSrc === 'bodyweight_family_fallback';
+                  const title = ['Target weight for this exercise', srcLabel, loadNote].filter(Boolean).join(' • ');
+                  return el('span', { class: 'projected-pill', title },
+                    `Target weight ${projected}${estimated && projected !== '—' ? ' (est.)' : ''}`);
+                })()
               ),
               el('div', { class: 'exercise-action-row' },
                 el('button', {
@@ -16121,9 +16150,59 @@ function toggleSharePopover(force) {
         );
       });
 
+      /* §2.9 - surface what the engine already knows, once per day card:
+         a safe-fallback plan says it is one; arbitration trims/drops, the
+         frequency compromises (each states its fix), and priority set
+         targets vs delivered all render from plan.meta - nothing is
+         recomputed client-side. The block is absent when there is nothing
+         to say. */
+      const engineNotes = (() => {
+        const meta = plan?.meta || {};
+        const rows = [];
+        const compromises = Array.isArray(meta.frequencyCompromises) ? meta.frequencyCompromises : [];
+        for (const c of compromises) {
+          const reason = String(c?.reason || '').trim();
+          if (reason) rows.push({ kind: 'compromise', text: reason });
+        }
+        const overrides = Array.isArray(meta.overrides) ? meta.overrides : [];
+        for (const o of overrides) {
+          const text = String(o?.action || o?.reason || '').trim();
+          if (text) rows.push({ kind: 'override', text });
+        }
+        const dropped = Array.isArray(meta.droppedDisciplines) ? meta.droppedDisciplines : [];
+        const pv = meta.priorityVolume && typeof meta.priorityVolume === 'object' ? meta.priorityVolume : null;
+        const pvRows = pv ? Object.entries(pv)
+          .filter(([, v]) => Number(v?.target) > 0)
+          .map(([muscle, v]) => `${muscle}: ${Number(v.delivered) || 0} of ${Number(v.target)} weekly sets planned`)
+          : [];
+        const fallback = meta.safeFallback === true;
+        const fallbackNotes = fallback && Array.isArray(meta.notes) ? meta.notes.map((n) => String(n)).filter(Boolean) : [];
+        if (!rows.length && !dropped.length && !pvRows.length && !fallback) return null;
+        return el('div', { class: 'training-subcard engine-notes-card', style: 'margin:0 0 0.75rem' },
+          fallback
+            ? el('div', { class: 'engine-notes-fallback', style: 'border-left:3px solid #b3541e;padding:0.5rem 0.65rem;background:rgba(179,84,30,0.08);border-radius:8px;margin-bottom:0.6rem' },
+              el('div', { style: 'font-weight:800;color:#b3541e' }, 'This is the safe fallback plan'),
+              el('div', { class: 'training-muted', style: 'margin-top:0.2rem' },
+                fallbackNotes[0] || 'Your exact preferences could not all be honored, so this is the guaranteed-safe version. Regenerate to try again for the full plan.'))
+            : null,
+          rows.length || dropped.length || pvRows.length
+            ? el('details', { class: 'engine-notes-details' },
+              el('summary', { style: 'font-weight:800;cursor:pointer' }, 'Why your week looks like this'),
+              el('div', { style: 'margin-top:0.45rem' },
+                ...dropped.map((d) => el('div', { class: 'training-muted engine-note-row', style: 'margin-bottom:0.3rem' }, `\u2022 ${d} was dropped this block \u2014 see the reason below.`)),
+                ...rows.map((r) => el('div', { class: 'training-muted engine-note-row', style: 'margin-bottom:0.3rem' }, `\u2022 ${r.text}`)),
+                pvRows.length
+                  ? el('div', { style: 'margin-top:0.4rem' },
+                    el('div', { style: 'font-weight:700;font-size:0.85rem' }, 'Priority volume'),
+                    ...pvRows.map((t) => el('div', { class: 'training-muted engine-note-row' }, `\u2022 ${t}`)))
+                  : null))
+            : null);
+      })();
+
       dayDetail = shell.appendChild(
         el('div', { class: 'day-card' },
           todayBar,
+          engineNotes,
           isDoOverrideActive
             ? el('div', { class: 'training-subcard', style: 'margin:0 0 0.75rem;border-left:3px solid #a1751f;background:rgba(212,165,55,0.08)' },
               el('div', { style: 'font-weight:800;color:#a1751f' }, `Swapped: doing ${activeDoOverride?.focus || activeDayFocus} today`),

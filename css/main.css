@@ -25388,3 +25388,31 @@ body.seo-meal-page .seo-meal-hero {
 .coaches-grid .coach-card:has([data-review-actions]) {
     margin-right: 56px;
 }
+
+
+/* ==== §2.9 UI pass — training surfaces (tightly scoped; main.css global
+   padding is a known white-bar hazard, so every selector here is anchored
+   under a training container class). ==== */
+/* Tap targets: every interactive element in the logging flow >= 44px. */
+.exercise-row .auth-input,
+.exercise-row .btn-compact,
+.exercise-row .exercise-set-add,
+.exercise-row .exercise-set-remove,
+.day-card .btn-compact {
+  min-height: 44px;
+}
+/* Nothing critical under 14px on the training surfaces. */
+.exercise-row .exercise-prescription,
+.exercise-row .exercise-substitutions,
+.exercise-row .training-muted,
+.engine-notes-card .training-muted {
+  font-size: max(14px, 1em);
+}
+/* The engine-notes rows wrap; long compromise sentences never force a
+   sideways scroll. */
+.engine-notes-card .engine-note-row { overflow-wrap: anywhere; }
+@media (max-width: 400px) {
+  .day-card, .training-card, .exercise-row { max-width: 100%; overflow-x: hidden; }
+  .exercise-set-row { grid-template-columns: minmax(0, 0.7fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr); }
+  .exercise-set-row .auth-input { min-width: 0; }
+}

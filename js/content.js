@@ -478,7 +478,7 @@
   function validTrainerHook(text) {
     var t = String(text || '').trim();
     if (t.length < 8) return 'Give it a full line.';
-    if (/^you|you('re|r)?/i.test(t.split(/s+/).slice(0, 3).join(' '))) return 'Name a group, not “you” — “men over 35…”, not “you…”';
+    if (/^you\b|\byou('re|r)?\b/i.test(t.split(/\s+/).slice(0, 3).join(' '))) return 'Name a group, not "you" - "men over 35", not "you"';
     var aud = (qa().audience_short || qa().audience || '').toLowerCase();
     if (aud && t.toLowerCase().indexOf(aud.split(' ').slice(0, 2).join(' ')) === -1) return 'Say the group by name — that’s what makes strangers stop.';
     if (!grammarGuard(t)) return 'Read that out loud — something’s off. Try again.';
