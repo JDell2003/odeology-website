@@ -44,15 +44,22 @@ function advanceWave(state) {
   return next;
 }
 
-function weeklyPrescription(state, priorWeeklyMi = null) {
+function weeklyPrescription(state, priorWeeklyMi = null, sessionCount = 2) {
   const loadLb = Number(state?.loadLb) || 20;
   let weeklyMi = Number(state?.weeklyBaseMi) || 8;
   // Mileage growth cap: never more than 20% over the prior week.
   if (Number.isFinite(Number(priorWeeklyMi)) && priorWeeklyMi > 0) {
     weeklyMi = Math.min(weeklyMi, Math.round(priorWeeklyMi * 1.2 * 10) / 10);
   }
-  // The long ruck stays under half the weekly ruck miles.
-  const longMi = Math.round(Math.min(weeklyMi * 0.49, weeklyMi - 2) * 10) / 10;
+  /* The under-half rule's domain is THREE or more sessions, where a base of
+     short rucks carries the volume and the long day expresses it. At two
+     sessions there is no base to hide behind: the long ruck carries the
+     bigger half (60%) or it is not long - at 8 weekly miles the old rule
+     shipped a 3.9 mi "Long Ruck" next to a 4.1 mi "Short Ruck". */
+  const n = Math.max(1, Number(sessionCount) || 2);
+  const longMi = n >= 3
+    ? Math.round(Math.min(weeklyMi * 0.49, weeklyMi - 2) * 10) / 10
+    : Math.round(weeklyMi * 0.6 * 10) / 10;
   const shortMi = Math.round((weeklyMi - longMi) * 10) / 10;
   return { loadLb, weeklyMi, longMi: Math.max(2, longMi), shortMi: Math.max(2, shortMi) };
 }
@@ -75,7 +82,7 @@ function projectTimeline(state, goal) {
   let weeks = 0;
   let prior = cursor.weeklyBaseMi;
   while (weeks < 104) {
-    const rx = weeklyPrescription(cursor, prior);
+    const rx = weeklyPrescription(cursor, prior, 2);
     if (rx.longMi >= goalMi) break;
     prior = rx.weeklyMi;
     cursor = advanceWave(cursor);
@@ -86,14 +93,14 @@ function projectTimeline(state, goal) {
     reachable: true,
     weeksLo: Math.max(1, Math.round(weeks * 0.85)),
     weeksHi: Math.round(weeks * 1.3),
-    assumption: 'Two rucks per week; load +5 lb weekly, dropping 10 and adding 2 base miles at +15; weekly mileage growth capped at 20%; the long day under half the weekly miles.'
+    assumption: 'Two rucks per week; load +5 lb weekly, dropping 10 and adding 2 base miles at +15; weekly mileage growth capped at 20%; the long day carries ~60% of the weekly miles.'
   };
 }
 
 function build(request) {
   const state = request?.state || {};
-  const rx = weeklyPrescription(state, request?.priorWeeklyMi ?? null);
   const count = Math.max(1, Math.min(2, Number(request?.sessionsPerWeek) || 2));
+  const rx = weeklyPrescription(state, request?.priorWeeklyMi ?? null, count);
   const sessions = [{
     discipline: 'rucking',
     sessionType: 'short_ruck',
@@ -113,7 +120,7 @@ function build(request) {
       loadLb: rx.loadLb,
       distanceMi: rx.longMi,
       durationMin: Math.round(rx.longMi * 18),
-      detail: `${rx.longMi} mi at ${rx.loadLb} lb. Under half the week's ruck miles by design — the long day expresses the base, it does not build it.`
+      detail: `${rx.longMi} mi at ${rx.loadLb} lb. The week's long day carries the bigger half of the miles; the short day keeps the base honest.`
     });
   }
   return sessions;

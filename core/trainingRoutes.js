@@ -1439,7 +1439,8 @@ function planPassesFloorGate(plan, src) {
        composed sessions, and a nutrition-only selection ships none at all.
        The lifting floor is a lifting invariant. */
     const sel = Array.isArray(src?.disciplines) ? src.disciplines : null;
-    if (sel && !sel.includes('lifting')) return true;
+    if (sel && (!sel.includes('lifting')
+      || (Array.isArray(src?._roleArbitration?.dropped) && src._roleArbitration.dropped.includes('lifting')))) return true;
     const areas = Array.isArray(src?.painAreas) ? src.painAreas.map((a) => String(a || '').toLowerCase()) : [];
     const contra = areas.flatMap((a) => INJURY_NAME_CONTRA[a] || []);
     for (const w of weeks) {
@@ -1644,11 +1645,15 @@ function routeComposeRunningSessions(plan, user) {
   const cfg = user?.running;
   if (!plan || plan.error || !cfg || cfg.enabled === false) return plan;
   let runningModule = null;
-  try { runningModule = require('../generator/disciplines/running'); } catch (e) { return plan; }
+  try { runningModule = require('../generator/disciplines/running'); } catch (e) {
+    console.warn('[compose-running] running module failed to load - running is OFF for this build:', e && e.message);
+    return plan;
+  }
   const state = { timeTrialSec: Number(cfg.timeTrialSec) || null, timeTrialMi: Number(cfg.timeTrialMi) || 2 };
   const sessions = runningModule.build({ state, sessionsPerWeek: Number(cfg.sessionsPerWeek) || 3 });
   if (!sessions.length) return plan;
   const LOWER_LOAD = { Push: 1, Pull: 2, Upper: 2, UpperFocus: 2, DeltsArms: 0, Legs: 8, Lower: 8, LowerFocus: 8, FullBodyA: 5, FullBodyB: 6 };
+  const WEEKDAYS_RUN = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'];
   const sep = Number(user?.twoADays?.minSeparationHours) || 6;
   for (const week of plan.weeks || []) {
     const days = week?.days || [];
@@ -1662,11 +1667,32 @@ function routeComposeRunningSessions(plan, user) {
       .sort((a, b) => (a.slots - b.slots) || (a.lower - b.lower) || (a.idx - b.idx));
     const hardHosts = ranked.filter((r) => r.lower <= 4);
     const used = new Set();
+    /* Run-vs-run spacing: two runs avoid adjacent calendar days while a
+       non-adjacent host exists, and two HARD runs (tempo, interval) avoid
+       each other hardest - intervals Monday, tempo Tuesday reads as a plan
+       written by someone who has never coached running. */
+    const placedRuns = [];
+    const posOf = (r) => WEEKDAYS_RUN.indexOf(String(r.day?.day || ''));
+    const adjacency = (r, hard) => {
+      const pos = posOf(r);
+      if (pos < 0) return 0;
+      let pen = 0;
+      for (const pr of placedRuns) {
+        const gap = Math.min(Math.abs(pos - pr.pos), 7 - Math.abs(pos - pr.pos));
+        if (gap <= 1) pen += (hard && pr.hard) ? 4 : 1;
+      }
+      return pen;
+    };
     sessions.forEach((session, i) => {
-      const pool = String(session.sessionType) === 'easy_run' ? ranked : (hardHosts.length ? hardHosts : ranked);
-      const host = pool.find((r) => !used.has(r.idx)) || ranked.find((r) => !used.has(r.idx));
-      if (!host) return;
+      const hard = String(session.sessionType) !== 'easy_run';
+      const pool = !hard ? ranked : (hardHosts.length ? hardHosts : ranked);
+      const free = pool.filter((r) => !used.has(r.idx));
+      const candidates = free.length ? free : ranked.filter((r) => !used.has(r.idx));
+      if (!candidates.length) return;
+      const host = [...candidates].sort((a, b) =>
+        (adjacency(a, hard) - adjacency(b, hard)) || (a.slots - b.slots) || (a.lower - b.lower) || (a.idx - b.idx))[0];
       used.add(host.idx);
+      placedRuns.push({ pos: posOf(host), hard });
       const day = host.day;
       if (!Array.isArray(day.sessions)) {
         day.sessions = [{ slotIndex: 0, window: null, dayType: day.dayType, discipline: 'lifting', exercises: day.exercises }];
@@ -1712,7 +1738,10 @@ function routeComposeRuckingSessions(plan, user) {
   const cfg = user?.rucking;
   if (!plan || plan.error || !cfg || cfg.enabled === false) return plan;
   let ruckingModule = null;
-  try { ruckingModule = require('../generator/disciplines/rucking'); } catch (e) { return plan; }
+  try { ruckingModule = require('../generator/disciplines/rucking'); } catch (e) {
+    console.warn('[compose-rucking] rucking module failed to load - rucking is OFF for this build:', e && e.message);
+    return plan;
+  }
   const state = {
     loadLb: Number(cfg.startLoadLb) || 20,
     weeklyBaseMi: Number(cfg.weeklyBaseMi) || 8,
@@ -1775,15 +1804,43 @@ function routeComposeRuckingSessions(plan, user) {
           continue;
         }
       }
-      // short ruck (or no free day): PM slot on the lowest-posterior day
+      // short ruck (or no free day): PM slot on the lowest-posterior day.
+      // A LONG ruck on this branch still honours its 24h rule: hosts whose
+      // previous calendar day carries heavy posterior work rank last, and
+      // when every host does, the prior day's heavy squat/deadlift is
+      // lightened to six-plus reps and the compromise recorded - the rule
+      // holds on the fallback branch, not only on the free-day branch.
+      const isLong = session.sessionType === 'long_ruck';
+      const prevOf = (day) => {
+        const pos = WEEK_ORDER.indexOf(String(day?.day || ''));
+        if (pos < 0) return null;
+        return days.find((d) => String(d.day) === WEEK_ORDER[(pos + 6) % 7]) || null;
+      };
       const ranked = days
         .map((day, idx) => ({ day, idx,
           slots: Array.isArray(day.sessions) ? day.sessions.length : 1,
+          prevHeavy: isLong && heavyPosteriorDay(prevOf(day)) ? 1 : 0,
           post: Math.max(...(Array.isArray(day.sessions) ? day.sessions : [{ dayType: day.dayType }]).map((sn) => Number(POSTERIOR[String(sn.dayType)] ?? 2))) }))
         .filter((r) => String(r.day.dayType) !== 'Long Ruck')
-        .sort((a, b) => (a.slots - b.slots) || (a.post - b.post) || (a.idx - b.idx));
+        .sort((a, b) => (a.prevHeavy - b.prevHeavy) || (a.slots - b.slots) || (a.post - b.post) || (a.idx - b.idx));
       const host = ranked[0];
       if (!host) continue;
+      if (isLong && host.prevHeavy) {
+        const prev = prevOf(host.day);
+        for (const ex of prev?.exercises || []) {
+          if (!/squat|deadlift/i.test(String(ex?.name || ''))) continue;
+          const reps = Number(String(ex?.reps ?? '').match(/\d+/)?.[0] || 0);
+          if (reps > 0 && reps <= 5) {
+            ex.reps = '6';
+            ex.progression = { ...(ex.progression || {}), lastDecision: 'Lightened: the long ruck lands within 24h and its connective cost outranks grinding heavy today.' };
+          }
+        }
+        plan.meta = plan.meta || {};
+        plan.meta.overrides = [...(plan.meta.overrides || []), {
+          rule: 'no heavy posterior work in the 24h before the long ruck',
+          action: 'every available day precedes the long ruck with heavy posterior work; the prior day\'s squat/deadlift was lightened to 6+ reps instead of moving the ruck'
+        }];
+      }
       const day = host.day;
       if (!Array.isArray(day.sessions)) {
         day.sessions = [{ slotIndex: 0, window: null, dayType: day.dayType, discipline: 'lifting', exercises: day.exercises }];
@@ -1872,7 +1929,10 @@ function routeEnsurePowerbuildingMainLiftExposures(plan, user) {
 function routeAttachGoalProjections(plan, user) {
   if (!plan || plan.error || !user?.goals) return plan;
   let lifting = null;
-  try { lifting = require('../generator/disciplines/lifting'); } catch (e) { return plan; }
+  try { lifting = require('../generator/disciplines/lifting'); } catch (e) {
+    console.warn('[goal-projections] lifting module failed to load - projections are OFF for this build:', e && e.message);
+    return plan;
+  }
   const layoff = plan?.meta?.layoff || {};
   const anchors = { bench: Number(user.bench) || null, squat: Number(user.squat) || null, deadlift: Number(user.deadlift) || null };
   const projections = {};
@@ -1923,7 +1983,13 @@ function routeArbitrateDisciplineDemand(plan, user) {
   const selected = Array.isArray(user?.disciplines) ? user.disciplines : null;
   if (!plan || plan.error || !selected) return plan;
   let registry = null;
-  try { registry = require('../generator/disciplines'); } catch (e) { return plan; }
+  /* Silent recovery from a load error is indistinguishable from the layer
+     working. A duplicated require in the registry once made this whole layer
+     no-op unnoticed - so the catch SAYS what it caught. */
+  try { registry = require('../generator/disciplines'); } catch (e) {
+    console.warn('[arbitration] discipline registry failed to load - the role/demand layer is OFF for this build:', e && e.message);
+    return plan;
+  }
   const schedulable = selected.filter((d) => ['lifting', 'running', 'rucking', 'workCapacity', 'martialArts'].includes(d));
   const roles = {};
   const overrides = [];
@@ -1974,14 +2040,44 @@ function routeArbitrateDisciplineDemand(plan, user) {
     }
     if (!cut) break;
   }
+  /* Below the minimum effective dose is decoration, not training. If the
+     maintain minimums STILL exceed capacity, the user has made an impossible
+     request, and the product's job is to say so: drop disciplines in reverse
+     priority order until the week fits, and record which, why, and what
+     would restore each - the same honesty as a timeline answering "beyond
+     thirty months". Martial arts and lead disciplines are never dropped. */
+  const dropped = [];
+  if (total > capacity) {
+    const minsTotal = total;
+    for (const d of [...trimOrder]) {
+      if (total <= capacity) break;
+      if (!demands[d] || demands[d].want <= 0) continue;
+      total -= demands[d].want;
+      demands[d].want = 0;
+      dropped.push(d);
+      const restorers = trimOrder.filter((x) => x !== d && !dropped.includes(x) && demands[x] && demands[x].want > 0);
+      overrides.push({
+        discipline: d,
+        rule: 'maintain minimums exceed capacity',
+        action: schedulable.length + ' disciplines need ' + minsTotal + ' sessions a week at their minimums; '
+          + (Number(user?.daysPerWeek) || 4) + ' training days give you ' + capacity + '. ' + d + ' is out - add a training day'
+          + (restorers.length ? ' or drop ' + restorers[restorers.length - 1] : '') + ' to get it back.'
+      });
+    }
+  }
   for (const d of schedulable) {
     if (d === 'lifting') continue;
     const key = CONFIG_KEY[d];
-    if (user[key] && typeof user[key] === 'object') user[key] = { ...user[key], sessionsPerWeek: demands[d].want };
+    if (user[key] && typeof user[key] === 'object') {
+      user[key] = demands[d].want > 0
+        ? { ...user[key], sessionsPerWeek: demands[d].want }
+        : { ...user[key], sessionsPerWeek: 0, enabled: false };
+    }
   }
-  user._roleArbitration = { roles, capacity, demands: Object.fromEntries(Object.entries(demands).map(([k, v]) => [k, v.want])), overrides };
+  user._roleArbitration = { roles, capacity, demands: Object.fromEntries(Object.entries(demands).map(([k, v]) => [k, v.want])), overrides, dropped };
   plan.meta = plan.meta || {};
   plan.meta.disciplineRoles = roles;
+  if (dropped.length) plan.meta.droppedDisciplines = dropped;
   if (overrides.length) plan.meta.overrides = [...(plan.meta.overrides || []), ...overrides];
   return plan;
 }
@@ -1994,7 +2090,9 @@ function routeArbitrateDisciplineDemand(plan, user) {
 function routeEnforceDisciplineSelection(plan, user) {
   const selected = Array.isArray(user?.disciplines) ? user.disciplines : null;
   if (!plan || plan.error || !selected) return plan;
-  if (!selected.includes('lifting')) {
+  const liftingOut = !selected.includes('lifting')
+    || (Array.isArray(user?._roleArbitration?.dropped) && user._roleArbitration.dropped.includes('lifting'));
+  if (liftingOut) {
     for (const week of plan.weeks || []) {
       const kept = [];
       for (const day of week.days || []) {
@@ -2015,7 +2113,10 @@ function routeComposeMartialArtsSessions(plan, user) {
   const cfg = user?.martialArts;
   if (!plan || plan.error || !cfg || cfg.enabled === false) return plan;
   let maModule = null;
-  try { maModule = require('../generator/disciplines/martialArts'); } catch (e) { return plan; }
+  try { maModule = require('../generator/disciplines/martialArts'); } catch (e) {
+    console.warn('[compose-martial-arts] martial arts module failed to load - classes are OFF for this build:', e && e.message);
+    return plan;
+  }
   const sessions = maModule.build(cfg);
   if (!sessions.length) return plan;
   const WEEK_ORDER = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'];
@@ -2135,7 +2236,10 @@ function routeComposeWorkCapacitySessions(plan, user) {
   const cfg = user?.workCapacity;
   if (!plan || plan.error || !cfg || cfg.enabled === false) return plan;
   let wcModule = null;
-  try { wcModule = require('../generator/disciplines/workCapacity'); } catch (e) { return plan; }
+  try { wcModule = require('../generator/disciplines/workCapacity'); } catch (e) {
+    console.warn('[compose-work-capacity] work capacity module failed to load - circuits are OFF for this build:', e && e.message);
+    return plan;
+  }
   const sessions = wcModule.build({
     state: { rounds: Number(cfg.rounds) || 4, restSec: Number(cfg.restSec) || 150 },
     sessionsPerWeek: Number(cfg.sessionsPerWeek) || 1,
@@ -2158,10 +2262,21 @@ function routeComposeWorkCapacitySessions(plan, user) {
       .filter((r) => (r.day.sessions || []).some((sn) => String(sn.discipline) === 'lifting') && !hardAlready(r.day))
       .sort((a, b) => (a.slots - b.slots) || (a.lower - b.lower) || (a.idx - b.idx));
     const used = new Set();
+    /* Two circuits on consecutive days breaks the module's own spacing
+       rule; the composer prefers the most separated host. */
+    const WEEKDAYS_WC = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'];
+    const placedWc = [];
+    const wcAdjacent = (r) => {
+      const pos = WEEKDAYS_WC.indexOf(String(r.day?.day || ''));
+      if (pos < 0) return 0;
+      return placedWc.some((p) => Math.min(Math.abs(pos - p), 7 - Math.abs(pos - p)) <= 1) ? 1 : 0;
+    };
     sessions.forEach((session, i) => {
-      const host = ranked.find((r) => !used.has(r.idx));
-      if (!host) return;
+      const free = ranked.filter((r) => !used.has(r.idx));
+      if (!free.length) return;
+      const host = [...free].sort((a, b) => (wcAdjacent(a) - wcAdjacent(b)) || (a.slots - b.slots) || (a.lower - b.lower) || (a.idx - b.idx))[0];
       used.add(host.idx);
+      placedWc.push(WEEKDAYS_WC.indexOf(String(host.day?.day || '')));
       const day = host.day;
       if (!Array.isArray(day.sessions)) {
         day.sessions = [{ slotIndex: 0, window: null, dayType: day.dayType, discipline: 'lifting', exercises: day.exercises }];

@@ -88,12 +88,24 @@ const DECISIONS = {
   readiness_hold: () => 'Logged as a low-readiness session, so nothing moved. A bad night should not push your weights up or down.'
 };
 
-function createState(exercise, startingLoad) {
-  const bounds = boundsFor(exercise);
+function createState(exercise, startingLoad, opts = null) {
+  /* A day's FIRST compound is its heavy anchor and keeps its class bounds.
+     A compound sitting SECOND or later on the same day is hypertrophy work,
+     not a second heavy attempt - every compound seeding at the class floor
+     is how a bodybuilding day shipped four movements at 6 flat. The caller
+     (ensureStates, which walks the day in order) says which is which; the
+     movementClass stays truthful and secondaryCompound records why the
+     bounds differ from it. */
+  const secondary = Boolean(opts?.secondaryCompound);
+  const trueClass = movementClassFor(exercise);
+  const bounds = secondary && (trueClass === 'lower_compound' || trueClass === 'upper_compound')
+    ? CLASS_BOUNDS.accessory_compound
+    : boundsFor(exercise);
   const load = Number(startingLoad);
   return {
     exerciseKey: String(exercise?.canonicalExerciseId || ''),
-    movementClass: movementClassFor(exercise),
+    movementClass: trueClass,
+    secondaryCompound: secondary,
     load: Number.isFinite(load) && load > 0 ? load : null,
     repsCurrent: bounds.repMin,
     repMin: bounds.repMin,

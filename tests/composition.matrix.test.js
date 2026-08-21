@@ -83,8 +83,15 @@ function checkBuild(subset, profile, built) {
   const week = plan?.weeks?.[0];
   const appearing = disciplinesAppearing(plan);
 
+  const droppedSet = new Set(Array.isArray(plan?.meta?.droppedDisciplines) ? plan.meta.droppedDisciplines : []);
   for (const d of subset) {
+    if (droppedSet.has(d)) continue; // dropped below MED with a recorded reason - checked just below
     if (!appearing.has(d)) problems.push(`${label}: selected "${d}" never appears`);
+  }
+  for (const d of droppedSet) {
+    const named = (plan?.meta?.overrides || []).some((o) => String(o?.discipline) === d && String(o?.action || '').trim());
+    if (!named) problems.push(`${label}: dropped "${d}" without a recorded reason`);
+    if (appearing.has(d)) problems.push(`${label}: dropped "${d}" still appears`);
   }
   for (const d of appearing) {
     if (!subset.includes(d)) problems.push(`${label}: unselected "${d}" appears`);
@@ -100,11 +107,15 @@ function checkBuild(subset, profile, built) {
   }
   if (totalSessions > profile.daysPerWeek * 2 + 2) problems.push(`${label}: ${totalSessions} weekly sessions over capacity`);
 
-  // ordering: the day before a Long Ruck day carries no squat/deadlift at <=5 reps
+  // ordering: the CALENDAR day before a Long Ruck carries no squat/deadlift
+  // at <=5 reps. Calendar adjacency, not array adjacency - a Mo->We gap is
+  // 48h and legal; the rule's own text says "within 24h".
   const days = week?.days || [];
-  const longIdx = days.findIndex((d) => (d.sessions || []).some((sn) => /long ruck/i.test(String(sn.dayType || ''))));
-  if (longIdx > 0) {
-    const prior = days[longIdx - 1];
+  const WEEK_ORDER = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'];
+  const longDay = days.find((d) => (d.sessions || []).some((sn) => /long ruck/i.test(String(sn.dayType || ''))));
+  if (longDay) {
+    const pos = WEEK_ORDER.indexOf(String(longDay.day));
+    const prior = pos >= 0 ? days.find((d) => String(d.day) === WEEK_ORDER[(pos + 6) % 7]) : null;
     const heavy = (prior?.exercises || []).filter((ex) => /squat|deadlift/i.test(String(ex?.name || ''))
       && (() => { const r = Number(String(ex?.reps ?? '').match(/\d+/)?.[0] || 0); return r > 0 && r <= 5; })());
     if (heavy.length) problems.push(`${label}: heavy posterior (${heavy[0].name}) the day before the long ruck`);

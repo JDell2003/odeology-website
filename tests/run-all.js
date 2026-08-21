@@ -65,18 +65,16 @@ const SUITES = [
     needsServer: false
   },
   // THE COMPOSITION MATRIX — 63 discipline subsets x 3 profiles, 189 builds.
-  // Reported, not blocking: §5 role/demand arbitration took the baseline from
-  // ~212 problems to 4. Remaining: 2x heavy-posterior-before-long-ruck (the
-  // rucking composer's PM-slot fallback branch skips the prior-day check) and
-  // 2x a 3-day everything-selected week where even the maintain minimums sum
-  // to 9 sessions — the honest fix is dropping a discipline below its minimum
-  // effective dose, not squeezing it. Flip to blocking at zero. SLOW (~5 min).
+  // BLOCKING — 0 problems as of 2026-08-20. The path here: ~212 at first run
+  // (no arbitration layer), 4 after §5 roles/demand arbitration, 0 after the
+  // long-ruck PM-fallback ordering fix and the below-MED drop rule (maintain
+  // minimums that exceed capacity DROP disciplines, recorded with what would
+  // restore them). Any regression from 0 closes the gate. SLOW (~5 min).
   {
-    name: 'COMPOSITION MATRIX — 63 subsets x 3 profiles (BASELINE 4 problems post-§5)',
+    name: 'COMPOSITION MATRIX — 63 subsets x 3 profiles (ALL GREEN as of 2026-08-20 — BLOCKING)',
     cmd: process.execPath,
     args: ['--test', '--test-timeout=1700000', 'tests/composition.matrix.test.js'],
-    needsServer: false,
-    blocking: false
+    needsServer: false
   },
   // Exercise table. The generator answers "what can this user do?" entirely
   // from this data, so a row that lies in either direction fails silently and

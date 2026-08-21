@@ -46,11 +46,20 @@ function ensureStates(plan) {
     ? meta[PROGRESSION_STATE_KEY]
     : (meta[PROGRESSION_STATE_KEY] = {});
   const firstWeek = (plan.weeks || []).find((w) => planWeekIndex(w) === 1) || (plan.weeks || [])[0];
+  /* Powerbuilding and military prescribe their own rep schemes; positional
+     demotion is a bodybuilding rule. An exercise that is a day's heavy
+     anchor somewhere keeps that identity everywhere (first appearance
+     wins, matching how states are keyed). */
+  const positional = !['powerbuilding', 'military'].includes(String(meta?.discipline || plan?.discipline || ''));
   for (const day of firstWeek?.days || []) {
+    let compoundIdx = 0;
     for (const exercise of day?.exercises || []) {
+      const isCompound = String(exercise?.style || '') === 'Compound';
+      const secondaryCompound = positional && isCompound && compoundIdx >= 1;
+      if (isCompound) compoundIdx += 1;
       const key = exerciseKeyOf(exercise);
       if (!key || states[key]) continue;
-      states[key] = progression.createState(exercise, currentLoadOf(exercise));
+      states[key] = progression.createState(exercise, currentLoadOf(exercise), { secondaryCompound });
     }
   }
   return states;

@@ -2523,6 +2523,15 @@ function computeWeeklyTargets(user) {
     targets[key] = Math.max(rangeMin, Math.min(Math.min(cap, rangeMax), n));
     frequencyTargets[key] = resolveDirectFrequencyTarget(key, targets[key], isPriority, user);
   });
+  /* A four-day-plus bodybuilding week trains legs at least twice, or the
+     compromise machinery says why not: one leg day on four training days is
+     the split a lifter writes for himself, not one a coach signs. The floor
+     raises the WANTED frequency; capFrequencyTargetsToSplit still caps it to
+     what the chosen split can carry and records the gap with its reason. */
+  if (!['powerbuilding', 'military'].includes(String(user?.discipline || '')) && Number(user?.daysPerWeek) >= 4) {
+    frequencyTargets.Quads = Math.max(Number(frequencyTargets.Quads || 0), 2);
+    frequencyTargets.Hamstrings = Math.max(Number(frequencyTargets.Hamstrings || 0), 2);
+  }
   targets.Arms = Number(targets.Biceps || 0) + Number(targets.Triceps || 0);
   targets.Legs = Number(targets.Quads || 0) + Number(targets.Hamstrings || 0) + Number(targets.Glutes || 0);
   targets['Hamstrings/Glutes'] = Number(targets.Hamstrings || 0) + Number(targets.Glutes || 0);

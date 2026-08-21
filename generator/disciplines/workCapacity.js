@@ -50,35 +50,45 @@ function projectTimeline() {
   return null;
 }
 
-function pickCircuit(equipment) {
+/* Every circuit the equipment allows, best first. Two sessions a week are
+   two DIFFERENT circuits - the same circuit twice in a week trains the
+   test, not the capacity. */
+function circuitCandidates(equipment) {
   const eq = new Set((Array.isArray(equipment) ? equipment : []).map((x) => String(x).toLowerCase()));
+  const list = [];
   if (eq.has('sled')) {
-    return {
+    list.push({
       sessionType: 'sled_circuit',
       name: 'Sprint-Drag-Carry Circuit',
       detail: '1 round = 25 m sprint + 25 m sled drag + 25 m lateral shuffle + 25 m carry. Move fast, keep transitions organized.'
-    };
+    });
   }
   if (eq.has('kettlebell') || eq.has('dumbbell')) {
-    return {
+    list.push({
       sessionType: 'carry_circuit',
       name: 'Shuttle + Loaded Carry Circuit',
       detail: '1 round = 20 m shuttle out + 20 m shuttle back + 30 m loaded carry. Accelerate under control, stay tall on the carry.'
-    };
+    });
   }
-  return {
+  list.push({
     sessionType: 'bodyweight_circuit',
     name: 'Bodyweight Work-Capacity Circuit',
     detail: '1 round = 8 controlled step-ups/side + 6 push-ups + 20 sec plank. Repeatable output without impact-heavy sprinting.'
-  };
+  });
+  return list;
+}
+
+function pickCircuit(equipment) {
+  return circuitCandidates(equipment)[0];
 }
 
 function build(request) {
   const state = { rounds: 4, restSec: 150, ...(request?.state || {}) };
-  const circuit = pickCircuit(request?.equipment);
+  const candidates = circuitCandidates(request?.equipment);
   const count = Math.max(1, Math.min(2, Number(request?.sessionsPerWeek) || 1));
   const sessions = [];
   for (let i = 0; i < count; i += 1) {
+    const circuit = candidates[i % candidates.length];
     sessions.push({
       discipline: 'workCapacity',
       sessionType: circuit.sessionType,
@@ -99,5 +109,6 @@ module.exports = {
   progress,
   projectTimeline,
   pickCircuit,
+  circuitCandidates,
   build
 };
