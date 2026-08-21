@@ -1924,33 +1924,98 @@ function routeEnsurePowerbuildingMainLiftExposures(plan, user) {
   return plan;
 }
 
-/* P10 - goal projections with the ceiling term, attached to the plan so the
-   UI can show a RANGE and its assumption. Never a date. */
+/* P10 + §2.6 - goal projections with the ceiling term, attached to the plan
+   so the UI can show a RANGE and its assumption. Never a date.
+
+   §2.6 widens this to the projection SURFACE: every selected discipline that
+   can stand behind a timeline contributes one - strength through the ceiling
+   term, running through the pace bands, rucking through the wave - collected
+   on plan.meta.projections with the assumption stated on each row and the
+   week's frequencyCompromises alongside. This block renders BEFORE the plan:
+   it is the moment the product demonstrates judgment rather than output.
+   Disciplines without a stated goal, and disciplines not in the plan (never
+   selected, or dropped below MED by arbitration), contribute nothing. */
 function routeAttachGoalProjections(plan, user) {
-  if (!plan || plan.error || !user?.goals) return plan;
-  let lifting = null;
-  try { lifting = require('../generator/disciplines/lifting'); } catch (e) {
-    console.warn('[goal-projections] lifting module failed to load - projections are OFF for this build:', e && e.message);
-    return plan;
+  if (!plan || plan.error) return plan;
+  const surface = {};
+
+  if (user?.goals) {
+    let lifting = null;
+    try { lifting = require('../generator/disciplines/lifting'); } catch (e) {
+      console.warn('[goal-projections] lifting module failed to load - strength projections are OFF for this build:', e && e.message);
+      lifting = null;
+    }
+    if (lifting) {
+      const layoff = plan?.meta?.layoff || {};
+      const anchors = { bench: Number(user.bench) || null, squat: Number(user.squat) || null, deadlift: Number(user.deadlift) || null };
+      const projections = {};
+      for (const lift of ['bench', 'squat', 'deadlift']) {
+        const goalLb = Number(user.goals?.[lift]?.weight ?? user.goals?.[lift]);
+        if (!Number.isFinite(goalLb) || !anchors[lift]) continue;
+        const decayed = Number(layoff?.[lift]?.decayed);
+        const current = Number.isFinite(decayed) && decayed > 0 ? decayed : anchors[lift];
+        const projection = lifting.projectTimeline(
+          { currentLb: current, priorBestLb: anchors[lift] },
+          { lift, weight: goalLb },
+          { bodyweightLb: Number(user.bodyweight || user.weightLb) || 200, experience: String(user.experience || '6-24m') }
+        );
+        if (projection) projections[lift] = { goal: goalLb, current: Math.round(current), ...projection };
+      }
+      if (Object.keys(projections).length) {
+        plan.meta = plan.meta || {};
+        plan.meta.goalProjections = projections;
+        surface.strength = projections;
+      }
+    }
   }
-  const layoff = plan?.meta?.layoff || {};
-  const anchors = { bench: Number(user.bench) || null, squat: Number(user.squat) || null, deadlift: Number(user.deadlift) || null };
-  const projections = {};
-  for (const lift of ['bench', 'squat', 'deadlift']) {
-    const goalLb = Number(user.goals?.[lift]?.weight ?? user.goals?.[lift]);
-    if (!Number.isFinite(goalLb) || !anchors[lift]) continue;
-    const decayed = Number(layoff?.[lift]?.decayed);
-    const current = Number.isFinite(decayed) && decayed > 0 ? decayed : anchors[lift];
-    const projection = lifting.projectTimeline(
-      { currentLb: current, priorBestLb: anchors[lift] },
-      { lift, weight: goalLb },
-      { bodyweightLb: Number(user.bodyweight || user.weightLb) || 200, experience: String(user.experience || '6-24m') }
-    );
-    if (projection) projections[lift] = { goal: goalLb, current: Math.round(current), ...projection };
+
+  /* Running: goal is a time over a distance (user.goals.run or the running
+     config's own goalTimeSec/goalTimeMi), projected through the pace bands. */
+  const runCfg = user?.running;
+  if (runCfg && runCfg.enabled !== false) {
+    const goalTimeSec = Number(user?.goals?.run?.timeSec ?? runCfg.goalTimeSec);
+    const goalTimeMi = Number(user?.goals?.run?.distanceMi ?? runCfg.goalTimeMi) || 2;
+    if (Number.isFinite(goalTimeSec) && goalTimeSec > 0) {
+      try {
+        const running = require('../generator/disciplines/running');
+        const projection = running.projectTimeline(
+          { timeTrialSec: Number(runCfg.timeTrialSec) || null, timeTrialMi: Number(runCfg.timeTrialMi) || 2 },
+          { timeSec: goalTimeSec, distanceMi: goalTimeMi }
+        );
+        if (projection) surface.running = { goal: { timeSec: goalTimeSec, distanceMi: goalTimeMi }, ...projection };
+      } catch (e) {
+        console.warn('[goal-projections] running module failed to load - running projection is OFF for this build:', e && e.message);
+      }
+    }
   }
-  if (Object.keys(projections).length) {
+
+  /* Rucking: goal is a distance (user.goals.ruck or the config's goalMiles),
+     projected by simulating the load/distance wave forward. */
+  const ruckCfg = user?.rucking;
+  if (ruckCfg && ruckCfg.enabled !== false) {
+    const goalMiles = Number(user?.goals?.ruck?.miles ?? ruckCfg.goalMiles);
+    if (Number.isFinite(goalMiles) && goalMiles > 0) {
+      try {
+        const rucking = require('../generator/disciplines/rucking');
+        const projection = rucking.projectTimeline(
+          { loadLb: Number(ruckCfg.startLoadLb) || 20, weeklyBaseMi: Number(ruckCfg.weeklyBaseMi) || 8 },
+          { miles: goalMiles }
+        );
+        if (projection) surface.rucking = { goalMiles, ...projection };
+      } catch (e) {
+        console.warn('[goal-projections] rucking module failed to load - rucking projection is OFF for this build:', e && e.message);
+      }
+    }
+  }
+
+  if (Object.keys(surface).length) {
     plan.meta = plan.meta || {};
-    plan.meta.goalProjections = projections;
+    /* The compromises ride WITH the projections, because a promise and its
+       caveat belong on the same screen: "squat 2x/week" and "this split has
+       1 day that can carry direct Quads work" are one statement. */
+    surface.compromises = (plan.meta.frequencyCompromises || [])
+      .map((c) => String(c?.reason || '').trim()).filter(Boolean);
+    plan.meta.projections = surface;
   }
   return plan;
 }
@@ -2006,6 +2071,19 @@ function routeArbitrateDisciplineDemand(plan, user) {
   }
   const capacity = Math.max(2, Number(user?.daysPerWeek) || 4) * 2;
   const CONFIG_KEY = { running: 'running', rucking: 'rucking', workCapacity: 'workCapacity', martialArts: 'martialArts' };
+  /* The selection is the authority over stray configs too: a config present
+     for a discipline that was NOT selected is disabled here, so neither a
+     composer nor the projection surface can act on it. Without this, a
+     payload carrying running:{enabled:true} alongside a selection that
+     excludes running would still compose runs - cfg presence quietly
+     becoming a second selection vocabulary, the exact seam this codebase
+     keeps failing open on. */
+  for (const [d, key] of Object.entries(CONFIG_KEY)) {
+    if (schedulable.includes(d)) continue;
+    if (user[key] && typeof user[key] === 'object' && user[key].enabled !== false) {
+      user[key] = { ...user[key], enabled: false };
+    }
+  }
   const demandOf = (d) => {
     if (d === 'lifting') return Number(user?.daysPerWeek) || 4;
     const mod = registry.getDiscipline(d);
