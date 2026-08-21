@@ -102,16 +102,20 @@
     };
 
     // Which answer keys feed each axis (best-effort; missing keys are skipped).
+    // §2.7 pruned the screens that produced nothing the engine reads
+    // (alsoAchieve, mealPrep, knowCalories, discomfort); the lists only name
+    // answers the quiz still asks. The history seeds below own the axis when
+    // answered — these are the keyword-inference fallback.
     var AXIS_INPUTS = {
-        strength: ['build', 'exerciseFreq', 'workoutFreq', 'alsoAchieve', 'targetZones'],
+        strength: ['build', 'exerciseFreq', 'workoutFreq', 'targetZones'],
         cardio: ['dailyActivity', 'walks', 'breath', 'exerciseFreq', 'energy'],
         consistency: ['exerciseFreq', 'workoutFreq', 'dailyActivity', 'walks'],
-        nutrition: ['nutritionHabits', 'mealPlanning', 'mealPrep', 'knowCalories'],
-        recovery: ['energy', 'dailyActivity', 'discomfort'],
-        progress: ['bodyGoal', 'alsoAchieve']
+        nutrition: ['nutritionHabits', 'mealPlanning', 'badHabits'],
+        recovery: ['energy', 'dailyActivity', 'sleepIssues'],
+        progress: ['bodyGoal', 'pillarGoals']
     };
-    // 'breath' and 'discomfort' are problems: more of them = LOWER readiness.
-    var INVERSE_KEYS = { breath: true, discomfort: true, badHabits: true };
+    // 'breath' and the issue lists are problems: more of them = LOWER readiness.
+    var INVERSE_KEYS = { breath: true, badHabits: true, sleepIssues: true };
 
     /* ---- direct "history" seed (js/client-quiz.js `history` section) -----
        Six questions, one per axis, where the user states their current level

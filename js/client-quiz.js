@@ -9,14 +9,29 @@
 
     const SECTIONS = [
         { id: 'profile', label: 'My Profile' },
+        { id: 'training', label: 'Your Training' },
         { id: 'history', label: 'History' },
         { id: 'activity', label: 'Activity' },
         { id: 'nutrition', label: 'Nutrition' },
-        { id: 'mind', label: 'Emotions & Behavior' },
         { id: 'lifestyle', label: 'Lifestyle & Habits' },
         { id: 'tracking', label: 'Tracking' },
         { id: 'goals', label: 'Body Goals' }
     ];
+
+    /* §2.7 - the discipline selection drives the whole quiz. Every screen
+       below either produces a field the engine reads, seeds the identity
+       radar (js/identity-engine.js), configures the meal program, or feeds
+       the owner-analytics intake - anything that produced nothing was
+       deleted in the 2.7 rebuild. Discipline-specific questions are gated on
+       skipIf, so a running-only user never sees a squat question. */
+    const SCHEDULABLE = ['lifting', 'running', 'rucking', 'workCapacity', 'martialArts'];
+    const selectedDisciplines = (a) => (Array.isArray(a.disciplines) ? a.disciplines : []);
+    const hasDiscipline = (a, d) => selectedDisciplines(a).includes(d);
+    const schedulableSelected = (a) => selectedDisciplines(a).filter((d) => SCHEDULABLE.includes(d));
+    const DISCIPLINE_LABELS = {
+        lifting: 'Lifting', running: 'Running', rucking: 'Rucking',
+        workCapacity: 'Work capacity', martialArts: 'Martial arts', nutrition: 'Nutrition'
+    };
 
     /* ---------- inline SVG art (stylized silhouettes / icons) ---------- */
     const torso = (waist, definition = false, shoulders = 34) => `
@@ -63,19 +78,36 @@
     /* ---------- screen definitions ---------- */
     const SCREENS = [
         { id: 'gender', section: 'profile', type: 'gender' },
-        { id: 'ageRange', section: 'profile', type: 'choice', title: 'What’s your age?', options: ['18 – 29', '30 – 39', '40 – 49', '50+'] },
+
+        /* THE DISCIPLINE PICKER - the first real question, because it decides
+           every question after it. Maps 1:1 onto the engine's disciplines[]
+           authority: an unselected discipline appears nowhere in the plan. */
+        { id: 'disciplines', section: 'training', type: 'multi', minSelect: 1, title: 'What are we training?', subtitle: 'Pick one or all of it. Each one you pick is a full program - and they are built to fit together.', options: [
+            { value: 'lifting', label: 'Lifting — muscle & strength' },
+            { value: 'running', label: 'Running' },
+            { value: 'rucking', label: 'Rucking — loaded walking' },
+            { value: 'workCapacity', label: 'Work capacity — carries, sleds, circuits' },
+            { value: 'martialArts', label: 'Martial arts — BJJ, boxing, MMA' },
+            { value: 'nutrition', label: 'Nutrition — meals & groceries' }
+        ] },
+        /* Roles: only asked when two or more schedulable disciplines are
+           picked. Lead gets the full dose, develop is conservative, maintain
+           is the minimum effective dose - the §5 arbitration vocabulary. */
+        { id: 'roleLeads', section: 'training', type: 'multi', minSelect: 1, maxSelect: 2,
+            title: 'Which one leads?', subtitle: 'Pick up to two. The lead gets its full training dose; the others fit around it.',
+            options: (a) => schedulableSelected(a).map((d) => ({ value: d, label: DISCIPLINE_LABELS[d] || d })),
+            skipIf: (a) => schedulableSelected(a).length < 2 },
+        { id: 'roleMaintain', section: 'training', type: 'multi', minSelect: 0,
+            title: 'Just maintaining any of these?', subtitle: 'Maintenance keeps the adaptation with the minimum effective dose. Skip if everything should progress.',
+            options: (a) => schedulableSelected(a).filter((d) => !(a.roleLeads || []).includes(d)).map((d) => ({ value: d, label: DISCIPLINE_LABELS[d] || d })),
+            skipIf: (a) => schedulableSelected(a).length < 2 || schedulableSelected(a).every((d) => (a.roleLeads || []).includes(d)) },
+
         { id: 'sourceHeard', section: 'profile', type: 'choice', title: 'Where did you hear about us?', subtitle: 'Helps us find more people like you.', options: [
             'TikTok', 'Instagram', 'YouTube', 'Google search', 'Friend or family', 'My gym', 'Podcast', 'Other'
         ] },
         { id: 'expectedFeature', section: 'profile', type: 'choice', title: 'Which feature are you most excited for?', options: [
             'AI workout plans', 'Meal plans + groceries', 'The Arena rankings', 'Progress tracking', 'Finding a coach', 'The community'
         ] },
-        {
-            id: 'social1', type: 'info', kicker: 'RiseForIt',
-            title: (a) => `Thousands of people ${a.ageRange ? `in their ${a.ageRange.startsWith('18') ? '20s' : a.ageRange.startsWith('30') ? '30s' : a.ageRange.startsWith('40') ? '40s' : 'prime'}` : 'like you'} train with RiseForIt`,
-            body: 'Real plans, real food, real progress — built around your life.',
-            art: 'trio'
-        },
         { id: 'build', section: 'profile', type: 'cards', title: 'How would you describe your physical build?', options: [
             { value: 'Slender', art: () => torso(16, false, 26) },
             { value: 'Medium build', art: () => torso(22, false, 30) },
@@ -95,14 +127,6 @@
             { value: 'nutrition', label: 'Eat better / dial in nutrition' },
             { value: 'recovery', label: 'Recover & sleep better' },
             { value: 'progress', label: 'See visible body change' }
-        ] },
-        { id: 'weightChange', section: 'profile', type: 'choice', title: 'How does your weight typically change?', options: [
-            'I gain weight fast but lose it slowly',
-            'I gain and lose weight easily',
-            'I struggle to gain weight or muscle'
-        ] },
-        { id: 'weightEvents', section: 'profile', type: 'multi', title: 'Have any of the following led to weight change in the last few years?', options: [
-            'Work pressure', 'Busy family life', 'Divorce or breakup', 'Slower metabolism due to aging', 'Financial challenges', 'An injury or illness', 'Other stressful events', 'None of the above'
         ] },
         { id: 'promise1', type: 'info', kicker: 'RiseForIt', title: "We know how to make that happen!", body: "RiseForIt doesn't believe in one-size-fits-all solutions.\nWe'll create a personalized plan to help you reach your goal at your own pace — and enjoy it.", art: 'check' },
 
@@ -130,9 +154,49 @@
             'Starting from scratch', 'A little progress', 'Solid progress', "I'm already in great shape"
         ] },
 
-        { id: 'alsoAchieve', section: 'activity', type: 'multi', title: 'What else do you hope to achieve with this plan?', options: [
-            'Build muscle strength', 'Add muscle definition', 'Improve posture', 'Develop flexibility', 'Improve overall fitness', 'None of the above'
-        ] },
+        /* LIFTING - baselines and goals. skipIf keeps every one of these away
+           from a user who did not pick lifting. */
+        { id: 'liftTrainingAge', section: 'training', type: 'choice', title: 'How long have you been lifting seriously?', subtitle: 'Consistent, progressive training — not just gym visits.', options: [
+            'Under 6 months', '6–18 months', '18 months – 3 years', '3–5 years', '5+ years'
+        ], skipIf: (a) => !hasDiscipline(a, 'lifting') },
+        { id: 'liftNumbers', section: 'training', type: 'lifts', title: 'Your best recent lifts', subtitle: 'Working weights, not maxes. Skip any you don\u2019t know — we\u2019ll estimate from your bodyweight.', skipIf: (a) => !hasDiscipline(a, 'lifting') },
+        { id: 'lastHeavy', section: 'training', type: 'choice', title: 'When did you last train heavy?', subtitle: 'Time away changes where the plan starts — honest answers get a ramp that works.', options: [
+            'Within the last month', '1–3 months ago', '3–6 months ago', '6–12 months ago', 'Over a year ago'
+        ], skipIf: (a) => !hasDiscipline(a, 'lifting') },
+        { id: 'liftGoals', section: 'training', type: 'liftGoals', title: 'Strength goals', subtitle: 'Optional. If you set one, you\u2019ll get an honest timeline range for it — never a made-up date.', skipIf: (a) => !hasDiscipline(a, 'lifting') },
+
+        /* RUNNING */
+        { id: 'runFreq', section: 'training', type: 'choice', title: 'How many runs a week?', options: [
+            '2 runs', '3 runs', '4 runs'
+        ], skipIf: (a) => !hasDiscipline(a, 'running') },
+        { id: 'runTrial', section: 'training', type: 'runTrial', title: 'Your recent 2-mile time', subtitle: 'A recent hard effort, or an honest guess. Paces for every session derive from this.', skipIf: (a) => !hasDiscipline(a, 'running') },
+        { id: 'runGoal', section: 'training', type: 'runGoal', title: 'A 2-mile goal time?', subtitle: 'Optional — set one and you\u2019ll see a timeline range for it.', skipIf: (a) => !hasDiscipline(a, 'running') },
+
+        /* RUCKING */
+        { id: 'ruckBaseline', section: 'training', type: 'ruck', title: 'Where is your rucking now?', subtitle: 'The load you can carry comfortably for an hour, and roughly how many miles you cover a week.', skipIf: (a) => !hasDiscipline(a, 'rucking') },
+        { id: 'ruckGoal', section: 'training', type: 'ruckGoal', title: 'A long-ruck goal?', subtitle: 'Optional — a distance you want to be able to cover in one go.', skipIf: (a) => !hasDiscipline(a, 'rucking') },
+
+        /* WORK CAPACITY */
+        { id: 'wcSessions', section: 'training', type: 'choice', title: 'How many capacity sessions a week?', subtitle: 'Carries, sled work and circuits. Two sessions are two DIFFERENT circuits.', options: [
+            '1 session a week', '2 sessions a week'
+        ], skipIf: (a) => !hasDiscipline(a, 'workCapacity') },
+
+        /* MARTIAL ARTS - the engine never writes these sessions; it schedules
+           the rest of the week around them. */
+        { id: 'maArt', section: 'training', type: 'choice', title: 'Which art?', options: [
+            'Brazilian Jiu-Jitsu', 'Boxing', 'Muay Thai', 'MMA', 'Wrestling', 'Judo'
+        ], skipIf: (a) => !hasDiscipline(a, 'martialArts') },
+        { id: 'maFreq', section: 'training', type: 'choice', title: 'How many classes a week?', subtitle: 'Five or more and lifting drops to maintenance — recovery is not negotiable.', options: [
+            '1 class', '2 classes', '3 classes', '4 classes', '5 or more'
+        ], skipIf: (a) => !hasDiscipline(a, 'martialArts') },
+        { id: 'maScheduling', section: 'training', type: 'choice', title: 'Are your class days fixed?', options: [
+            { value: 'fixed', label: 'Yes — my gym\u2019s schedule decides' },
+            { value: 'engine', label: 'No — fit classes around my training' }
+        ], skipIf: (a) => !hasDiscipline(a, 'martialArts') },
+        { id: 'maDays', section: 'training', type: 'multi', minSelect: 1, title: 'Which days are your classes?', options: [
+            'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'
+        ], skipIf: (a) => !hasDiscipline(a, 'martialArts') || a.maScheduling !== 'fixed' },
+
         { id: 'dailyActivity', section: 'activity', type: 'choice', title: 'How active are you on a typical day?', options: [
             'I spend most of the day sitting', 'I take active breaks', "I'm on my feet all day long"
         ] },
@@ -155,23 +219,25 @@
         { id: 'workoutTime', section: 'activity', type: 'multi', title: 'What time of the day do you prefer to work out?', options: [
             'Morning', 'Midday', 'Afternoon', 'Evening'
         ] },
-        /* Feeds preferredDays. Without it the engine spreads sessions across the
-           week on its own, which is a sane default but not the user's schedule. */
-        { id: 'trainingDays', section: 'activity', type: 'multi', title: 'Which days can you train?', subtitle: "Pick the ones that work. Skip it and we'll spread your sessions across the week.", options: [
+        /* Two-a-days: the slot model can place an AM and a PM session. This
+           answer plus the time windows above feed twoADays directly. */
+        { id: 'twoADaysQ', section: 'activity', type: 'choice', title: 'Could you train twice on some days?', subtitle: 'A morning run and an evening lift, at least 6 hours apart. More slots, better spacing — never mandatory.', options: [
+            'No — one session a day', 'On some days', 'On most days'
+        ], skipIf: (a) => schedulableSelected(a).length < 2 },
+        /* Feeds preferredDays AND unavailableDays (the complement) - the days
+           you leave unpicked are days the engine will never schedule. */
+        { id: 'trainingDays', section: 'activity', type: 'multi', title: 'Which days can you train?', subtitle: "Pick the ones that work. Days you leave out stay training-free — we schedule around them.", options: [
             'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'
         ] },
         { id: 'equipmentQ', section: 'activity', type: 'multi', title: 'What equipment do you have access to?', options: [
             'Full gym', 'Dumbbells', 'Barbell', 'Machines', 'Cables', 'Bodyweight only'
-        ] },
+        ], skipIf: (a) => !hasDiscipline(a, 'lifting') && !hasDiscipline(a, 'workCapacity') },
         { id: 'targetZones', section: 'activity', type: 'multi', title: 'What are your target zones?', icons: { Arms: 'arms', Pecs: 'pecs', Belly: 'belly', Legs: 'legs', Back: 'back', Butt: 'butt' }, options: [
             'Arms', 'Pecs', 'Belly', 'Legs', 'Back', 'Butt'
-        ] },
-        { id: 'promise3', type: 'info', kicker: 'RiseForIt', title: 'Grow muscle and get stronger day by day', body: 'Receive a step-by-step workout program to tone up each target zone.', art: 'program' },
+        ], skipIf: (a) => !hasDiscipline(a, 'lifting') },
+        { id: 'promise3', type: 'info', kicker: 'RiseForIt', title: 'Grow muscle and get stronger day by day', body: 'Receive a step-by-step workout program to tone up each target zone.', art: 'program', skipIf: (a) => !hasDiscipline(a, 'lifting') },
         { id: 'breath', section: 'activity', type: 'choice', title: 'How often do you experience shortness of breath?', options: [
             'Very often', 'Only when active', 'Occasionally', 'Almost never'
-        ] },
-        { id: 'discomfort', section: 'activity', type: 'choice', title: 'Do you experience discomfort or tension when working out?', options: [
-            'Yes', 'No', "I don't know"
         ] },
         { id: 'struggles', section: 'activity', type: 'multi', title: 'Do you struggle with any of the following?', icons: { 'Sensitive back': 'backPain', 'Sensitive knees': 'kneePain', 'None of the above': 'check' }, options: [
             'Sensitive back', 'Sensitive knees', 'None of the above'
@@ -180,6 +246,8 @@
             ? 'Your plan will include gentle exercises that protect sensitive joints while you get stronger.\nThis helps reduce tension and improve posture.'
             : "Great — we'll build your plan at full range and keep an eye on your form cues.", art: 'check' },
 
+        /* NUTRITION HABITS feed the identity radar for everyone; the meal
+           program screens only exist when nutrition was selected. */
         { id: 'nutritionHabits', section: 'nutrition', type: 'choice', title: 'How would you describe your nutrition habits?', options: [
             "My diet is on point and I'd like to keep it that way", 'I know how I should eat but old habits get in the way', 'I simply eat whatever I want'
         ] },
@@ -188,36 +256,27 @@
         ] },
         { id: 'cravings', section: 'nutrition', type: 'multi', title: 'What foods do you crave most often?', options: [
             'Sweet treats', 'Salty snacks', 'Fast food', 'Soda', 'None of the above'
-        ] },
+        ], skipIf: (a) => !hasDiscipline(a, 'nutrition') },
         { id: 'mealPlanning', section: 'nutrition', type: 'choice', title: 'How do you typically plan your meals?', options: [
             'I eat without any planning', "I have a general idea of what I'll eat", 'I decide my meals a day ahead', 'I plan all my meals in advance'
-        ] },
-        { id: 'mealsPromo', type: 'info', kicker: 'RiseForIt', title: 'Optimize nutrition with a personalized meal plan', body: 'Quick, simple and balanced recipes will make you enjoy every bite — with the grocery list built for you.', art: 'meals' },
+        ], skipIf: (a) => !hasDiscipline(a, 'nutrition') },
+        { id: 'mealsPromo', type: 'info', kicker: 'RiseForIt', title: 'Optimize nutrition with a personalized meal plan', body: 'Quick, simple and balanced recipes will make you enjoy every bite — with the grocery list built for you.', art: 'meals', skipIf: (a) => !hasDiscipline(a, 'nutrition') },
         /* Meal Program (Part 2): the picture-picker + budget + dietary live INSIDE onboarding.
            Photo grids reuse the meal-program engine/dataset (window.MealProgramEngine /
            window.MealProgramData, loaded by index.html); screens auto-skip when unavailable
            so the quiz never breaks offline. */
-        { id: 'mealPicksBreakfast', section: 'nutrition', type: 'mealGrid', slot: 'breakfast', minSelect: 2, title: 'Pick breakfasts you’d actually eat', subtitle: 'Tap the photos — your 7-day plan is built from these.', skipIf: () => !(window.MealProgramEngine && window.MealProgramData) },
-        { id: 'mealPicksLunch', section: 'nutrition', type: 'mealGrid', slot: 'lunch', minSelect: 3, title: 'Now pick your lunches', subtitle: 'At least 3 — repeats are meal-prep friendly.', skipIf: () => !(window.MealProgramEngine && window.MealProgramData) },
-        { id: 'mealPicksDinner', section: 'nutrition', type: 'mealGrid', slot: 'dinner', minSelect: 3, title: 'And your dinners', subtitle: 'Snacks get added automatically to hit your calorie and protein targets.', skipIf: () => !(window.MealProgramEngine && window.MealProgramData) },
-        { id: 'mealBudget', section: 'nutrition', type: 'choice', title: 'What’s your monthly grocery budget?', subtitle: 'Here’s the real tradeoff: the more you can spend, the more protein we pack in — and protein is what builds muscle, keeps you full, and helps you feel your best. On a tighter budget we protect your protein where it matters most and fill the rest of your calories with cheaper carbs, so you still hit your goal. Quality dips a little, but you’ll very likely still get there.', options: [
+        { id: 'mealPicksBreakfast', section: 'nutrition', type: 'mealGrid', slot: 'breakfast', minSelect: 2, title: 'Pick breakfasts you\u2019d actually eat', subtitle: 'Tap the photos — your 7-day plan is built from these.', skipIf: (a) => !hasDiscipline(a, 'nutrition') || !(window.MealProgramEngine && window.MealProgramData) },
+        { id: 'mealPicksLunch', section: 'nutrition', type: 'mealGrid', slot: 'lunch', minSelect: 3, title: 'Now pick your lunches', subtitle: 'At least 3 — repeats are meal-prep friendly.', skipIf: (a) => !hasDiscipline(a, 'nutrition') || !(window.MealProgramEngine && window.MealProgramData) },
+        { id: 'mealPicksDinner', section: 'nutrition', type: 'mealGrid', slot: 'dinner', minSelect: 3, title: 'And your dinners', subtitle: 'Snacks get added automatically to hit your calorie and protein targets.', skipIf: (a) => !hasDiscipline(a, 'nutrition') || !(window.MealProgramEngine && window.MealProgramData) },
+        { id: 'mealBudget', section: 'nutrition', type: 'choice', title: 'What\u2019s your monthly grocery budget?', subtitle: 'Here\u2019s the real tradeoff: the more you can spend, the more protein we pack in — and protein is what builds muscle, keeps you full, and helps you feel your best. On a tighter budget we protect your protein where it matters most and fill the rest of your calories with cheaper carbs, so you still hit your goal. Quality dips a little, but you\u2019ll very likely still get there.', options: [
             { value: 'Under $200', desc: 'Leanest budget. Protein goes where it counts; the rest of your calories come from affordable carbs. Less variety, still on track.' },
             { value: 'Around $300', desc: 'More protein in every meal and a bit more variety and quality.' },
-            { value: 'Around $400', desc: 'High protein across the board — better quality, food you’ll actually enjoy.' },
-            { value: '$500 or more', desc: 'Max protein tier: the most muscle, the best you’ll feel, and the widest food choice.' }
-        ] },
-        { id: 'mealState', section: 'nutrition', type: 'stateSelect', title: 'Which state do you shop in?', subtitle: 'Grocery prices adjust to your area.', skipIf: () => !(window.MealProgramEngine && window.MealProgramData) },
-        { id: 'dietaryPref', section: 'nutrition', type: 'choice', title: 'Any dietary preference?', options: ['No restrictions', 'Vegetarian', 'Vegan', 'Pescatarian', 'No red meat'] },
-        { id: 'allergies', section: 'nutrition', type: 'multi', title: 'Any food allergies?', options: ['Fish', 'Eggs', 'Dairy', 'Gluten', 'None of the above'] },
-        { id: 'mealPrep', section: 'nutrition', type: 'choice', title: 'How do you usually prepare your meals?', options: [
-            'I cook them myself', 'Someone else cooks for me', 'I order from restaurants', 'I eat premade meals'
-        ] },
-        { id: 'knowCalories', section: 'nutrition', type: 'choice', title: 'Do you know your daily calorie needs for your goal?', options: ['Yes', 'No'] },
-        { id: 'caloriePromo', type: 'info', kicker: 'RiseForIt', title: 'Track your calorie intake effortlessly', body: "Calorie deficit is key for weight loss, while calorie surplus is essential for muscle gain.\nWe'll calculate your optimal daily intake and help you stay on track.", art: 'calories' },
-
-        { id: 'agree1', section: 'mind', type: 'scale', title: '‘No matter how hard I try, the results always slip away’' },
-        { id: 'agree4', section: 'mind', type: 'scale', title: '‘Getting in shape is tough. I try for a bit, but then I slip back into old habits’' },
-        { id: 'habitsPromo', type: 'info', kicker: 'RiseForIt', title: 'Supercharge your results with better habits', body: "We'll work with your emotions and behavior to improve your habits.\nThis helps you make progress easily and keep it long-term.", art: 'chapters' },
+            { value: 'Around $400', desc: 'High protein across the board — better quality, food you\u2019ll actually enjoy.' },
+            { value: '$500 or more', desc: 'Max protein tier: the most muscle, the best you\u2019ll feel, and the widest food choice.' }
+        ], skipIf: (a) => !hasDiscipline(a, 'nutrition') },
+        { id: 'mealState', section: 'nutrition', type: 'stateSelect', title: 'Which state do you shop in?', subtitle: 'Grocery prices adjust to your area.', skipIf: (a) => !hasDiscipline(a, 'nutrition') || !(window.MealProgramEngine && window.MealProgramData) },
+        { id: 'dietaryPref', section: 'nutrition', type: 'choice', title: 'Any dietary preference?', options: ['No restrictions', 'Vegetarian', 'Vegan', 'Pescatarian', 'No red meat'], skipIf: (a) => !hasDiscipline(a, 'nutrition') },
+        { id: 'allergies', section: 'nutrition', type: 'multi', title: 'Any food allergies?', options: ['Fish', 'Eggs', 'Dairy', 'Gluten', 'None of the above'], skipIf: (a) => !hasDiscipline(a, 'nutrition') },
 
         { id: 'sleepHours', section: 'lifestyle', type: 'choice', title: 'How much sleep do you usually get?', options: [
             'Less than 5 hours', '5-6 hours', '7-8 hours', 'More than 8 hours'
@@ -241,7 +300,7 @@
             'Yes — track my steps', 'Not right now'
         ] },
         { id: 'cardioSource', section: 'tracking', type: 'choice', title: 'Want us to track your runs & cardio?', subtitle: 'Pick how cardio gets logged — it feeds your Cardio stat at the device-verified tier.', options: [
-            'Use RiseForIt’s built-in tracker',
+            'Use RiseForIt\u2019s built-in tracker',
             // Strava import isn't live yet — show it, but non-clickable.
             { value: 'Connect Strava (beta)', label: 'Connect Strava', tag: 'Coming soon', disabled: true },
             'Not now'
@@ -255,9 +314,6 @@
         { id: 'weight', section: 'goals', type: 'weight', title: "What's your current weight?" },
         { id: 'goalWeight', section: 'goals', type: 'goalWeight', title: "Got it! And what's your goal weight?" },
         { id: 'age', section: 'goals', type: 'age', title: "What's your age?" },
-        { id: 'event', section: 'goals', type: 'choice', title: 'Do you have an important event coming up?', subtitle: 'Having something to look forward to can be a great motivator for reaching your goal', options: [
-            'Vacation', 'Wedding', 'Holiday', 'Sporting event', 'Reunion', 'Birthday', 'Other', 'No events any time soon'
-        ] },
         { id: 'confidence', section: 'goals', type: 'choice', title: (a) => `How confident are you in reaching ${goalWeightLabel(a)}?`, options: [
             'I believe I can do it!', "I'm uncertain, but willing to try!", "I'm still really unsure"
         ] },
@@ -265,6 +321,13 @@
             'Become more confident in my body', 'Feel healthier and more energetic', 'Fit in my clothes better', 'Participate in activities and hobbies with ease', 'Other'
         ] },
         { id: 'loading', type: 'loading' },
+        /* §2.6/2.7 - the projection screen. Before the plan, the product
+           states what it believes and on what assumption: strength through
+           the ceiling term, running through the pace bands, rucking through
+           the wave — ranges, never dates, caveats on the same screen. Numbers
+           come from the engine via /api/training/preview; if that fails, the
+           screen says so and moves on rather than inventing anything. */
+        { id: 'projection', type: 'projection' },
         { id: 'plan', type: 'plan' }
     ];
 
@@ -353,6 +416,40 @@
         const weight = a.weightValue ? `${a.weightValue} ${a.weightUnit === 'kg' ? 'kg' : 'lb'}` : '';
         const chosen = goalMap[a.bodyGoal] || { goal: 'Build muscle', phase: 'Maintain / Recomp' };
 
+        /* §2.7 - the discipline contract. Every field below is read by the
+           engine (bridge + whitelist in core/trainingRoutes.js); an unselected
+           discipline sends null, and the engine proves it by producing
+           nothing for it. */
+        const selected = selectedDisciplines(a);
+        const roles = {};
+        (a.roleLeads || []).forEach((d) => { if (selected.includes(d)) roles[d] = 'lead'; });
+        (a.roleMaintain || []).forEach((d) => { if (selected.includes(d) && !roles[d]) roles[d] = 'maintain'; });
+
+        // Lifting baselines: training age from the lifting question when
+        // lifting is selected, generic exercise frequency otherwise.
+        const liftAgeMap = { 'Under 6 months': '0-6m', '6–18 months': '6-18m', '18 months – 3 years': '18-36m', '3–5 years': '3-5y', '5+ years': '5y+' };
+        const lastHeavyDaysMap = { 'Within the last month': 21, '1–3 months ago': 60, '3–6 months ago': 135, '6–12 months ago': 270, 'Over a year ago': 420 };
+        const lastHeavyDays = lastHeavyDaysMap[a.lastHeavy] || null;
+
+        const runTrialSec = (Number(a.runTrialMin) > 0)
+            ? Number(a.runTrialMin) * 60 + (Number(a.runTrialSec) || 0) : null;
+        const runGoalSec = (Number(a.runGoalMin) > 0)
+            ? Number(a.runGoalMin) * 60 + (Number(a.runGoalSec) || 0) : null;
+
+        const goals = {};
+        if (Number(a.goalBench) > 0) goals.bench = Number(a.goalBench);
+        if (Number(a.goalSquat) > 0) goals.squat = Number(a.goalSquat);
+        if (Number(a.goalDeadlift) > 0) goals.deadlift = Number(a.goalDeadlift);
+        if (runGoalSec) goals.run = { timeSec: runGoalSec, distanceMi: 2 };
+        if (Number(a.ruckGoalMiles) > 0) goals.ruck = { miles: Number(a.ruckGoalMiles) };
+
+        const twoADaysMode = String(a.twoADaysQ || '').startsWith('On most') ? 'most'
+            : String(a.twoADaysQ || '').startsWith('On some') ? 'some' : 'no';
+        const windows = (a.workoutTime || []).map((w) => ({ Morning: 'am', Midday: 'midday', Afternoon: 'pm', Evening: 'evening' }[w])).filter(Boolean);
+
+        const pickedDays = (a.trainingDays || []).map((d) => weekdayCodeMap[d]).filter(Boolean);
+        const allDays = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'];
+
         return {
             sex: a.gender === 'Female' ? 'Female' : 'Male',
             age: String(a.ageYears || ''),
@@ -360,7 +457,7 @@
             weight,
             goal: chosen.goal,
             phase: chosen.phase,
-            experience: expMap[a.exerciseFreq] || '0-6m',
+            experience: liftAgeMap[a.liftTrainingAge] || expMap[a.exerciseFreq] || '0-6m',
             daysPerWeek: daysMap[a.workoutFreq] || '3',
             timePerSession: timeMap[a.exerciseTime] || '30-45',
             equipment: (a.equipmentQ && a.equipmentQ.length) ? a.equipmentQ.slice() : ['Bodyweight only'],
@@ -373,10 +470,101 @@
             sleepHours: sleepHoursMap[a.sleepHours] || 7,
             stress: stressMap[a.stressLevel] || 'Medium',
             activityLevel: activityMap[a.dailyActivity] || 'Active',
-            preferredDays: (a.trainingDays || []).map((d) => weekdayCodeMap[d]).filter(Boolean),
+            preferredDays: pickedDays,
+            // Days left unpicked are days the engine must never schedule.
+            unavailableDays: pickedDays.length ? allDays.filter((d) => !pickedDays.includes(d)) : [],
             stepTracking: String(a.permSteps || '').startsWith('Yes'),
             sleepTracking: String(a.permSleep || '').startsWith('Yes'),
-            wakeTime: String(a.wakeTime || '')
+            wakeTime: String(a.wakeTime || ''),
+
+            /* ---- the §5/§2.6 discipline contract ---- */
+            disciplines: selected.length ? selected : null,
+            roles: Object.keys(roles).length ? roles : null,
+            goals: Object.keys(goals).length ? goals : null,
+            benchWeight: Number(a.benchWeight) || null,
+            squatWeight: Number(a.squatWeight) || null,
+            deadliftWeight: Number(a.deadliftWeight) || null,
+            lastTrainedHeavy: lastHeavyDays ? { bench: lastHeavyDays, squat: lastHeavyDays, deadlift: lastHeavyDays } : null,
+            twoADays: twoADaysMode === 'no' ? null : { mode: twoADaysMode, windows, minSeparationHours: 6 },
+            running: selected.includes('running') ? {
+                enabled: true,
+                sessionsPerWeek: Number(String(a.runFreq || '3').match(/\d/)?.[0]) || 3,
+                timeTrialSec: runTrialSec,
+                timeTrialMi: 2,
+                goalTimeSec: runGoalSec || undefined
+            } : null,
+            rucking: selected.includes('rucking') ? {
+                enabled: true,
+                sessionsPerWeek: 2,
+                startLoadLb: Number(a.ruckLoadLb) || 20,
+                weeklyBaseMi: Number(a.ruckWeeklyMi) || 8,
+                goalMiles: Number(a.ruckGoalMiles) || undefined
+            } : null,
+            workCapacity: selected.includes('workCapacity') ? {
+                enabled: true,
+                sessionsPerWeek: String(a.wcSessions || '').startsWith('2') ? 2 : 1
+            } : null,
+            martialArts: selected.includes('martialArts') ? {
+                enabled: true,
+                art: ({ 'Brazilian Jiu-Jitsu': 'bjj', 'Boxing': 'boxing', 'Muay Thai': 'muay_thai', 'MMA': 'mma', 'Wrestling': 'wrestling', 'Judo': 'judo' })[a.maArt] || 'bjj',
+                sessionsPerWeek: a.maFreq === '5 or more' ? 5 : Number(String(a.maFreq || '2').match(/\d/)?.[0]) || 2,
+                scheduling: a.maScheduling === 'fixed' ? 'fixed' : 'engine',
+                fixedDays: a.maScheduling === 'fixed' ? (a.maDays || []).map((d) => weekdayCodeMap[d]).filter(Boolean) : [],
+                intensity: 'mixed'
+            } : null
+        };
+    }
+
+    /* The classic-vocabulary payload for /api/training/preview - used by the
+       projection screen only. Everything here mirrors what the server's
+       intake mapping produces at finish; the preview is the same engine on
+       the same numbers, just before the account exists. */
+    function mapEnginePayload(a) {
+        const m = mapAnswers(a);
+        const eq = { bodyweight: true };
+        (a.equipmentQ || []).forEach((item) => {
+            if (/full gym/i.test(item)) Object.assign(eq, { dumbbell: true, barbell: true, machine: true, cable: true });
+            if (/dumbbell/i.test(item)) eq.dumbbell = true;
+            if (/barbell/i.test(item)) eq.barbell = true;
+            if (/machine/i.test(item)) eq.machine = true;
+            if (/cable/i.test(item)) eq.cable = true;
+        });
+        const bucketMap = { '0-6m': '0_6', '6-18m': '6_18', '18-36m': '18_36', '3-5y': '3_5', '5y+': '5_plus' };
+        const bw = weightLb(a);
+        return {
+            discipline: 'bodybuilding',
+            phase: 'maintain',
+            daysPerWeek: Number(m.daysPerWeek) || 3,
+            planSeed: 1337,
+            equipmentAccess: eq,
+            emphasis: (m.priorityMuscles || []).map((z) => String(z).toLowerCase().split('/')[0]).slice(0, 2),
+            equipmentStylePref: 'mix',
+            disciplines: m.disciplines,
+            roles: m.roles,
+            goals: m.goals,
+            running: m.running,
+            rucking: m.rucking,
+            workCapacity: m.workCapacity,
+            martialArts: m.martialArts,
+            twoADays: m.twoADays,
+            lastTrainedHeavy: m.lastTrainedHeavy,
+            unavailableDays: m.unavailableDays,
+            bodyweight: bw || undefined,
+            bench: m.benchWeight || undefined,
+            squat: m.squatWeight || undefined,
+            deadlift: m.deadliftWeight || undefined,
+            experience: m.experience,
+            strength: {
+                phase: 'maintain',
+                trainingAgeBucket: bucketMap[m.experience] || '6_18',
+                timePerSession: '60_75',
+                equipmentStylePref: 'mix',
+                injury: { has: false, joints: [], note: '' },
+                injurySeverityByJoint: {},
+                bench: m.benchWeight || undefined,
+                squat: m.squatWeight || undefined,
+                deadlift: m.deadliftWeight || undefined
+            }
         };
     }
 
@@ -404,10 +592,8 @@
         recovery -= ((a.sleepIssues || []).filter((i) => i !== 'None of the above').length) * 5;
         recovery += pick(a.morningFeel, { 'Energetic and ready to tackle the day': 8, 'Moderately alert, but with some difficulty focusing': 0, 'Struggling to stay awake and alert': -6, 'Completely drained and unable to function': -10 }, 0);
         recovery = clamp(recovery, 5, 95);
-        const progress = clamp(Math.round((
-            pick(a.confidence, { 'I believe I can do it!': 72, "I'm uncertain, but willing to try!": 54, "I'm still really unsure": 36 }, 50)
-            + pick(a.weightChange, { 'I gain and lose weight easily': 65, 'I gain weight fast but lose it slowly': 45, 'I struggle to gain weight or muscle': 42 }, 50)
-        ) / 2), 5, 95);
+        const progress = clamp(
+            pick(a.confidence, { 'I believe I can do it!': 68, "I'm uncertain, but willing to try!": 52, "I'm still really unsure": 38 }, 50), 5, 95);
         // Tracking permissions pay out immediately, so saying yes visibly
         // moves the radar the first time they see it.
         const stepsOn = String(a.permSteps || '').startsWith('Yes');
@@ -446,6 +632,65 @@
         host.appendChild(root);
 
         const persist = () => { try { opts.onProgress && opts.onProgress(answers, idx); } catch {} };
+
+        /* Projection screen state. One fetch per mount; failure is terminal
+           for the screen (it renders the honest fallback), never a retry loop. */
+        const projState = { pending: false, failed: false, rows: null, compromises: null };
+        const fmtWeeks = (r) => Array.isArray(r) ? `${r[0]}–${r[1]} weeks` : 'a range';
+        function projectionRows(meta) {
+            const surface = meta?.projections || null;
+            const rows = [];
+            const strength = surface?.strength || meta?.goalProjections || null;
+            if (strength) {
+                for (const lift of ['bench', 'squat', 'deadlift']) {
+                    const row = strength[lift];
+                    if (!row) continue;
+                    const name = lift.charAt(0).toUpperCase() + lift.slice(1);
+                    rows.push(row.reachable
+                        ? { title: `${name} ${row.goal} lb`, detail: `${fmtWeeks(row.rangeWeeks)} — ${row.assumption}` }
+                        : { title: `${name} ${row.goal} lb`, detail: `Beyond ${row.beyondMonths} months honestly${row.milestone ? ` — but ${row.milestone.weight} lb is ${fmtWeeks(row.milestone.rangeWeeks)} away` : ''}. ${row.assumption}` });
+                }
+            }
+            const run = surface?.running;
+            if (run) {
+                rows.push(run.reachable
+                    ? { title: `2-mile in ${Math.floor(run.goal.timeSec / 60)}:${String(run.goal.timeSec % 60).padStart(2, '0')}`, detail: `${run.monthsLo}–${run.monthsHi} months — ${run.assumption}` }
+                    : { title: '2-mile goal', detail: `Beyond ${run.beyondMonths} months at trained-runner improvement rates. ${run.assumption}` });
+            }
+            const ruck = surface?.rucking;
+            if (ruck) {
+                rows.push(ruck.reachable
+                    ? { title: `${ruck.goalMiles}-mile ruck`, detail: `${ruck.weeksLo}–${ruck.weeksHi} weeks — ${ruck.assumption}` }
+                    : { title: `${ruck.goalMiles}-mile ruck`, detail: `Beyond ${ruck.beyondMonths} months on the current wave. ${ruck.assumption}` });
+            }
+            return { rows, compromises: Array.isArray(surface?.compromises) ? surface.compromises : [] };
+        }
+        function fetchProjections() {
+            projState.pending = true;
+            const finish = (rows, compromises, failed) => {
+                projState.pending = false;
+                if (failed || !rows || !rows.length) projState.failed = true;
+                else { projState.rows = rows; projState.compromises = compromises; }
+                if ((SCREENS[idx] || {}).type === 'projection') render(0);
+            };
+            try {
+                const controller = typeof AbortController === 'function' ? new AbortController() : null;
+                if (controller) window.setTimeout(() => controller.abort(), 20000);
+                fetch('/api/training/preview', {
+                    method: 'POST',
+                    credentials: 'include',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(mapEnginePayload(answers)),
+                    signal: controller ? controller.signal : undefined
+                }).then((r) => (r.ok ? r.json() : Promise.reject(new Error('http ' + r.status))))
+                  .then((json) => {
+                      const meta = json?.plan?.plan?.meta || null;
+                      const out = projectionRows(meta);
+                      finish(out.rows, out.compromises, false);
+                  })
+                  .catch(() => finish(null, null, true));
+            } catch { finish(null, null, true); }
+        }
 
         const answeredCount = (section) => {
             const ids = SCREENS.filter((s) => s.section === section).map((s) => s.id);
@@ -489,7 +734,7 @@
            handing them off. */
         function escapeHatch() {
             const screen = SCREENS[idx] || {};
-            if (screen.type === 'loading' || screen.type === 'plan') return null;
+            if (screen.type === 'loading' || screen.type === 'plan' || screen.type === 'projection') return null;
             if (typeof opts.escape !== 'function') return null;
             try {
                 const esc = opts.escape();
@@ -623,12 +868,14 @@
                         </div>
                         <p class="bm-finePrint">By selecting your path and continuing you agree to our <a href="privacy-policy.html" target="_blank" rel="noopener">Privacy Policy</a>.</p>`;
                 case 'choice':
-                    return `${head}<div class="bm-options">${screen.options.map((o) => choiceRow(screen, o)).join('')}</div>`;
+                    return `${head}<div class="bm-options">${resolve(screen.options, answers).map((o) => choiceRow(screen, o)).join('')}</div>`;
                 case 'multi': {
                     const arr = Array.isArray(answers[screen.id]) ? answers[screen.id] : [];
-                    const minSelect = Math.max(1, Number(screen.minSelect || 1));
-                    return `${head}<p class="bm-hint">${minSelect > 1 ? `Choose at least ${minSelect}` : 'Choose all that apply'}</p>
-                        <div class="bm-options">${screen.options.map((o) => multiRow(screen, o)).join('')}</div>
+                    const minSelect = screen.minSelect == null ? 1 : Math.max(0, Number(screen.minSelect));
+                    const hint = minSelect === 0 ? 'Optional — pick any, or continue'
+                        : minSelect > 1 ? `Choose at least ${minSelect}` : 'Choose all that apply';
+                    return `${head}<p class="bm-hint">${hint}</p>
+                        <div class="bm-options">${resolve(screen.options, answers).map((o) => multiRow(screen, o)).join('')}</div>
                         <div class="bm-footer"><button type="button" class="bm-cta ${arr.length >= minSelect ? '' : 'is-disabled'}" data-bm-next>NEXT STEP</button></div>`;
                 }
                 case 'cards':
@@ -753,6 +1000,76 @@
                         </div>
                         <div class="bm-banner is-ok"><strong>Why we ask</strong><p>Check in within an hour of this time and your Consistency stat ticks up. Miss it and nothing bad happens — you just leave points on the table.</p></div>
                         <div class="bm-footer"><button type="button" class="bm-cta" data-bm-next>NEXT STEP</button></div>`;
+                case 'lifts':
+                case 'liftGoals': {
+                    const isGoal = screen.type === 'liftGoals';
+                    const fields = isGoal
+                        ? [['goalBench', 'Bench goal'], ['goalSquat', 'Squat goal'], ['goalDeadlift', 'Deadlift goal']]
+                        : [['benchWeight', 'Bench press'], ['squatWeight', 'Squat'], ['deadliftWeight', 'Deadlift']];
+                    return `${head}
+                        <div class="bm-bigfields bm-liftfields">
+                            ${fields.map(([key, label]) => `
+                            <label class="bm-bigfield is-wide"><span class="bm-lift-label">${esc(label)}</span>
+                                <input type="number" inputmode="numeric" min="0" max="1500" placeholder="lb" value="${esc(answers[key] || '')}" data-bm-field="${key}"><span>lb</span></label>`).join('')}
+                        </div>
+                        <div class="bm-footer"><button type="button" class="bm-cta" data-bm-next>${isGoal ? 'CONTINUE' : 'NEXT STEP'}</button></div>`;
+                }
+                case 'runTrial':
+                case 'runGoal': {
+                    const isGoal = screen.type === 'runGoal';
+                    const minKey = isGoal ? 'runGoalMin' : 'runTrialMin';
+                    const secKey = isGoal ? 'runGoalSec' : 'runTrialSec';
+                    return `${head}
+                        <div class="bm-bigfields">
+                            <label class="bm-bigfield"><input type="number" inputmode="numeric" min="8" max="59" placeholder="min" value="${esc(answers[minKey] || '')}" data-bm-field="${minKey}"><span>min</span></label>
+                            <label class="bm-bigfield"><input type="number" inputmode="numeric" min="0" max="59" placeholder="sec" value="${esc(answers[secKey] || '')}" data-bm-field="${secKey}"><span>sec</span></label>
+                        </div>
+                        <div class="bm-footer"><button type="button" class="bm-cta" data-bm-next>${isGoal ? 'CONTINUE' : 'NEXT STEP'}</button></div>`;
+                }
+                case 'ruck':
+                    return `${head}
+                        <div class="bm-bigfields">
+                            <label class="bm-bigfield"><input type="number" inputmode="numeric" min="0" max="150" placeholder="Load" value="${esc(answers.ruckLoadLb || '')}" data-bm-field="ruckLoadLb"><span>lb</span></label>
+                            <label class="bm-bigfield"><input type="number" inputmode="numeric" min="0" max="60" placeholder="Miles/wk" value="${esc(answers.ruckWeeklyMi || '')}" data-bm-field="ruckWeeklyMi"><span>mi</span></label>
+                        </div>
+                        <div class="bm-footer"><button type="button" class="bm-cta" data-bm-next>NEXT STEP</button></div>`;
+                case 'ruckGoal':
+                    return `${head}
+                        <div class="bm-bigfields">
+                            <label class="bm-bigfield is-wide"><input type="number" inputmode="numeric" min="0" max="100" placeholder="Goal distance" value="${esc(answers.ruckGoalMiles || '')}" data-bm-field="ruckGoalMiles"><span>miles</span></label>
+                        </div>
+                        <div class="bm-footer"><button type="button" class="bm-cta" data-bm-next>CONTINUE</button></div>`;
+                case 'projection': {
+                    /* Ranges and assumptions from the engine itself. Nothing on
+                       this screen is computed client-side - the same build that
+                       makes the plan makes these numbers, and if it cannot be
+                       reached the screen says that instead of inventing. */
+                    if (projState.rows) {
+                        const rows = projState.rows.map((r) => `
+                            <div class="bm-mini-card"><strong>${esc(r.title)}</strong><span>${esc(r.detail)}</span></div>`).join('');
+                        const caveats = (projState.compromises || []).map((c) => `<p class="bm-copy bm-proj-caveat">${esc(c)}</p>`).join('');
+                        return `
+                            <div class="bm-brandline">What the engine believes</div>
+                            <h2 class="bm-title">Your honest timelines</h2>
+                            <p class="bm-subtitle">Ranges, not promises — each one states the assumption it rests on.</p>
+                            <div class="bm-art-cards">${rows}</div>
+                            ${caveats}
+                            <div class="bm-footer"><button type="button" class="bm-cta" data-bm-next>CONTINUE</button></div>`;
+                    }
+                    if (projState.failed) {
+                        return `
+                            <div class="bm-brandline">Your projections</div>
+                            <h2 class="bm-title">Your timelines are coming</h2>
+                            <p class="bm-subtitle">We couldn't compute them right now — they'll be on your overview with your plan, with the assumptions stated.</p>
+                            <div class="bm-footer"><button type="button" class="bm-cta" data-bm-next>CONTINUE</button></div>`;
+                    }
+                    if (!projState.pending) fetchProjections();
+                    return `
+                        <div class="bm-brandline">Your projections</div>
+                        <h2 class="bm-title">Reading your numbers…</h2>
+                        <p class="bm-subtitle">Strength through the ceiling, running through the pace bands, rucking through the wave.</p>
+                        <p class="bm-hint">A few seconds…</p>`;
+                }
                 case 'info':
                     return `
                         <div class="bm-brandline">${esc(screen.kicker || 'RiseForIt')}</div>
@@ -1062,7 +1379,13 @@
                     arr = arr.includes(value) ? [] : [value];
                 } else {
                     arr = arr.filter((v) => !noneLabels.includes(v));
-                    arr = arr.includes(value) ? arr.filter((v) => v !== value) : [...arr, value];
+                    if (arr.includes(value)) {
+                        arr = arr.filter((v) => v !== value);
+                    } else if (screen.maxSelect && arr.length >= Number(screen.maxSelect)) {
+                        return; // the cap is the rule (e.g. at most two lead disciplines)
+                    } else {
+                        arr = [...arr, value];
+                    }
                 }
                 answers[screen.id] = arr;
                 persist();
@@ -1071,7 +1394,8 @@
                     el.classList.toggle('is-selected', arr.includes(el.getAttribute('data-bm-multi')));
                 });
                 const cta = root.querySelector('[data-bm-next]');
-                if (cta) cta.classList.toggle('is-disabled', arr.length < Math.max(1, Number(screen.minSelect || 1)));
+                const need = screen.minSelect == null ? 1 : Math.max(0, Number(screen.minSelect));
+                if (cta) cta.classList.toggle('is-disabled', arr.length < need);
                 return;
             }
 
@@ -1180,5 +1504,5 @@
         };
     }
 
-    window.OdeClientQuiz = { mount, mapAnswers, computeStats, SCREENS };
+    window.OdeClientQuiz = { mount, mapAnswers, mapEnginePayload, computeStats, SCREENS };
 })();

@@ -8393,6 +8393,22 @@ function formatWorkspaceLabel(workspace) {
             },
             priorityMuscles: Array.isArray(user.priorityMuscles) ? user.priorityMuscles : [],
             workoutSource: String(user.workoutSource || ''),
+            // §2.7 - the discipline contract from the rebuilt quiz. These are
+            // engine-read fields (bridge + whitelist in core/trainingRoutes.js):
+            // disciplines[] is the authority, roles feed §5 arbitration, goals
+            // feed the projection surface, the per-discipline configs feed the
+            // composers. Null means not selected, and the engine proves it by
+            // producing nothing for that discipline.
+            disciplines: Array.isArray(user.disciplines) ? user.disciplines : null,
+            roles: (user.roles && typeof user.roles === 'object') ? user.roles : null,
+            goals: (user.goals && typeof user.goals === 'object') ? user.goals : null,
+            running: (user.running && typeof user.running === 'object') ? user.running : null,
+            rucking: (user.rucking && typeof user.rucking === 'object') ? user.rucking : null,
+            workCapacity: (user.workCapacity && typeof user.workCapacity === 'object') ? user.workCapacity : null,
+            martialArts: (user.martialArts && typeof user.martialArts === 'object') ? user.martialArts : null,
+            twoADays: (user.twoADays && typeof user.twoADays === 'object') ? user.twoADays : null,
+            lastTrainedHeavy: (user.lastTrainedHeavy && typeof user.lastTrainedHeavy === 'object') ? user.lastTrainedHeavy : null,
+            unavailableDays: Array.isArray(user.unavailableDays) ? user.unavailableDays : [],
             // Recovery inputs. These were pinned at 7 / 'Active' / 'Medium' for
             // every user, which collapsed the engine's recovery signal to a
             // constant — sleep and stress could not move weekly set targets
