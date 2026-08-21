@@ -64,6 +64,19 @@ const SUITES = [
     args: ['--test', 'tests/acceptance.jason.test.js'],
     needsServer: false
   },
+  // THE COMPOSITION MATRIX — 63 discipline subsets x 3 profiles, 189 builds.
+  // Reported, not blocking: the baseline is ~212 problems, dominated by two
+  // structural findings (the lifting chassis is always present, so a
+  // running-only selection still ships lifting; nutritionModel is attached
+  // unconditionally). Those need the §5 role/demand arbitration, not a quick
+  // fix. Flip to blocking when the count reaches zero. SLOW (~5 min).
+  {
+    name: 'COMPOSITION MATRIX — 63 subsets x 3 profiles (BASELINE ~212 problems)',
+    cmd: process.execPath,
+    args: ['--test', '--test-timeout=1700000', 'tests/composition.matrix.test.js'],
+    needsServer: false,
+    blocking: false
+  },
   // Exercise table. The generator answers "what can this user do?" entirely
   // from this data, so a row that lies in either direction fails silently and
   // shows up only as a user getting a generic plan. The coverage checks turn

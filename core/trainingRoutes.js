@@ -1016,6 +1016,8 @@ function normalizeOblueprintPayload(payload, { relax = false } = {}) {
     rucking: (src.rucking && typeof src.rucking === 'object') ? src.rucking : null,
     goals: (src.goals && typeof src.goals === 'object') ? src.goals : null,
     martialArts: (src.martialArts && typeof src.martialArts === 'object') ? src.martialArts : null,
+    unavailableDays: Array.isArray(src.unavailableDays) ? uniqueStrings(src.unavailableDays, 7) : [],
+    workCapacity: (src.workCapacity && typeof src.workCapacity === 'object') ? src.workCapacity : null,
     benchVariation: String(src.benchVariation || '').trim() || null,
     benchWeight: Number.isFinite(Number(src.benchWeight)) ? Number(src.benchWeight) : null,
     benchReps: Number.isFinite(Number(src.benchReps)) ? Number(src.benchReps) : null,
@@ -1440,7 +1442,7 @@ function planPassesFloorGate(plan, src) {
         const exs = Array.isArray(d?.exercises) ? d.exercises : [];
         // completeness — but an endurance day IS one session-sized entry: a
         // long ruck day carries exactly one exercise and is complete.
-        const allEndurance = exs.length > 0 && exs.every((e) => ['running', 'rucking'].includes(String(e?.discipline || '')));
+        const allEndurance = exs.length > 0 && exs.every((e) => ['running', 'rucking', 'workCapacity'].includes(String(e?.discipline || '')));
         const martialArtsBlock = Array.isArray(d?.sessions) && d.sessions.length > 0
           && d.sessions.every((sn) => String(sn?.discipline || '') === 'martialArts');
         if (exs.length < 2 && !allEndurance && !martialArtsBlock) return false;
@@ -1920,8 +1922,12 @@ function routeComposeMartialArtsSessions(plan, user) {
     sessions.forEach((session, i) => {
       let hostLabel = session.fixedDay && WEEK_ORDER.includes(session.fixedDay) ? session.fixedDay : null;
       if (!hostLabel) {
-        // engine mode: free day first, farthest from heavy lower days
-        const free = WEEK_ORDER.filter((d) => !used.has(d));
+        // engine mode: free day first, farthest from heavy lower days — and
+        // never a day the user said they cannot train. (A FIXED day is the
+        // user's own class schedule and is taken as stated.)
+        const blocked = new Set((Array.isArray(user?.unavailableDays) ? user.unavailableDays : [])
+          .map((d) => String(d || '').slice(0, 2)).map((d) => d.charAt(0).toUpperCase() + d.charAt(1).toLowerCase()));
+        const free = WEEK_ORDER.filter((d) => !used.has(d) && !blocked.has(d));
         const heavyLowerLabels = days
           .filter((d) => (d.sessions || [{ dayType: d.dayType }]).some((sn) => Number(POSTERIOR[String(sn.dayType)] || 0) >= 7))
           .map(labelOf);
@@ -2010,6 +2016,66 @@ function routeComposeMartialArtsSessions(plan, user) {
     const seen = new Set((plan.meta.overrides || []).map((o) => JSON.stringify(o)));
     plan.meta.overrides = [...(plan.meta.overrides || []),
       ...compromises.filter((o) => { const k = JSON.stringify(o); if (seen.has(k)) return false; seen.add(k); return true; })];
+  }
+  return plan;
+}
+
+/* Phase 2.5c - compose work capacity. One or two circuits a week as PM slots
+   on days that are neither heavy-lower nor already carrying hard
+   conditioning, since the circuits count against the same weekly
+   hard-conditioning budget as run intervals and hard sparring. */
+function routeComposeWorkCapacitySessions(plan, user) {
+  const cfg = user?.workCapacity;
+  if (!plan || plan.error || !cfg || cfg.enabled === false) return plan;
+  let wcModule = null;
+  try { wcModule = require('../generator/disciplines/workCapacity'); } catch (e) { return plan; }
+  const sessions = wcModule.build({
+    state: { rounds: Number(cfg.rounds) || 4, restSec: Number(cfg.restSec) || 150 },
+    sessionsPerWeek: Number(cfg.sessionsPerWeek) || 1,
+    equipment: Array.isArray(user?.equipmentAccess) ? user.equipmentAccess
+      : Object.keys(user?.equipmentAccess || {}).filter((k) => user.equipmentAccess[k])
+  });
+  if (!sessions.length) return plan;
+  const HEAVY_LOWER = { Legs: 8, Lower: 8, LowerFocus: 8, FullBodyB: 6 };
+  const sep = Number(user?.twoADays?.minSeparationHours) || 6;
+  for (const week of plan.weeks || []) {
+    const days = week?.days || [];
+    if (!days.length) continue;
+    const hardAlready = (day) => (day.sessions || []).some((sn) =>
+      ['running', 'workCapacity'].includes(String(sn.discipline)) && /interval|circuit/i.test(String(sn.dayType || ''))
+      || (String(sn.discipline) === 'martialArts' && String(sn.intensity) === 'hard_sparring'));
+    const ranked = days
+      .map((day, idx) => ({ day, idx,
+        slots: Array.isArray(day.sessions) ? day.sessions.length : 1,
+        lower: Math.max(...(Array.isArray(day.sessions) ? day.sessions : [{ dayType: day.dayType }]).map((sn) => Number(HEAVY_LOWER[String(sn.dayType)] || 0))) }))
+      .filter((r) => (r.day.sessions || []).some((sn) => String(sn.discipline) === 'lifting') && !hardAlready(r.day))
+      .sort((a, b) => (a.slots - b.slots) || (a.lower - b.lower) || (a.idx - b.idx));
+    const used = new Set();
+    sessions.forEach((session, i) => {
+      const host = ranked.find((r) => !used.has(r.idx));
+      if (!host) return;
+      used.add(host.idx);
+      const day = host.day;
+      if (!Array.isArray(day.sessions)) {
+        day.sessions = [{ slotIndex: 0, window: null, dayType: day.dayType, discipline: 'lifting', exercises: day.exercises }];
+      }
+      const slot = day.sessions.length;
+      const exercise = {
+        id: (week.weekIndex || 1) + '-' + (host.idx + 1) + '-' + slot + '-1',
+        name: session.name,
+        displayName: session.name,
+        pattern: 'Carry',
+        style: 'Cardio',
+        discipline: 'workCapacity',
+        sessionType: session.sessionType,
+        sets: session.rounds,
+        reps: session.detail,
+        restSec: session.restSec
+      };
+      day.sessions.push({ slotIndex: slot, window: null, dayType: session.name, discipline: 'workCapacity', exercises: [exercise] });
+      day.exercises = day.sessions.flatMap((sn) => sn.exercises || []);
+      day.separationHours = sep;
+    });
   }
   return plan;
 }
@@ -2625,6 +2691,7 @@ function buildOblueprintPlanWithFallback(payload, opts = {}) {
     if (result && !result.error && result.plan) routeComposeMartialArtsSessions(result.plan, src);
     if (result && !result.error && result.plan) routeComposeRunningSessions(result.plan, src);
     if (result && !result.error && result.plan) routeComposeRuckingSessions(result.plan, src);
+    if (result && !result.error && result.plan) routeComposeWorkCapacitySessions(result.plan, src);
     if (result && !result.error && result.plan) routeEnsurePowerbuildingMainLiftExposures(result.plan, src);
     if (result && !result.error && result.plan) routeAttachGoalProjections(result.plan, src);
     if (result && !result.error && result.plan && !result._safeFallback && !planPassesFloorGate(result.plan, src)) {
@@ -2830,6 +2897,11 @@ function coerceClassicBodybuildingToOblueprintPayload(payload) {
        fixedDays, typicalTime, intensity}. The engine never writes these
        sessions; it schedules around them. */
     martialArts: (src?.martialArts && typeof src.martialArts === 'object') ? src.martialArts : null,
+    /* The bridge consumed unavailableDays into preferred-day derivation and
+       dropped the raw list, so composers placing NEW days (a class, a long
+       ruck) could land on a day the user said they cannot train. */
+    unavailableDays: Array.isArray(src?.unavailableDays) ? src.unavailableDays : [],
+    workCapacity: (src?.workCapacity && typeof src.workCapacity === 'object') ? src.workCapacity : null,
     benchVariation: String(strength?.benchVariation || '').trim() || null,
     benchWeight: Number(strength?.benchWeight || 0) || null,
     benchReps: Number(strength?.benchReps || 0) || null,
