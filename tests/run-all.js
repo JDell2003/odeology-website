@@ -108,20 +108,22 @@ const SUITES = [
     args: ['--test', 'tests/selection.golden.test.js'],
     needsServer: false
   },
-  // REPORTED ONLY — and, corrected for the record: the old comment claimed
-  // this suite "still PASSES; it is just slow". The 2026-08-21 run to
-  // completion falsified that: 8 of 400 cases FAIL the good-plan rubric on
-  // correctness, in two classes — pull-up variants prescribed to users with
-  // no pull-up bar (6x, the constrained-equipment/fallback path), and
-  // Overhead Press prescribed over a severity-7 shoulder (2x). Both belong
-  // to the same §4.0 constrained-equipment family the known-failure engine
-  // set names. Fix that family, re-run to zero, then restore blocking.
+  // BLOCKING — 400/400 as of 2026-08-21, the first fully green run this
+  // suite has ever had. The 8 correctness failures (pull-up variants with no
+  // pull-up bar; Overhead Press over a severity-7 shoulder) died at their
+  // roots: three exercise rows lied about needing a bar (an explicit
+  // requiredEquipment field WINS over name inference, so the lie was
+  // invisible — an integrity rule now makes that a build-time failure),
+  // selection now speaks the audit's overhead rule, and the feasibility
+  // audit DRIVES a replace-or-remove backstop at the route choke so every
+  // insertion path inherits equipment and injury constraints. Runtime fell
+  // from ~80min to ~4min once the impossible candidates stopped churning
+  // the retry budget.
   {
-    name: 'training — selection fuzz (SLOW; 8/400 REAL failures, see comment)',
+    name: 'training — selection fuzz (400 profiles; ALL GREEN as of 2026-08-21 — BLOCKING)',
     cmd: process.execPath,
     args: ['--test', '--test-timeout=2400000', 'tests/selection.fuzz.test.js'],
-    needsServer: false,
-    blocking: false
+    needsServer: false
   },
   {
     name: 'training — phase 0 invariants + cut-mode policy',
@@ -148,17 +150,24 @@ const SUITES = [
     needsServer: false
   },
   // REPORTED ONLY — the three suites that still carry REAL, NAMED failures
-  // after the re-measure (was 74 across all seven; now:
+  // (was 74 across all seven; 24 as of the fallback-contract work):
   //   powerbuilding execution 47/49 — case 28: a severity-6 recent hip gets
   //     MORE deep-flexion work than its pain-free control, because vetoed
   //     hinges backfill with squats inside the constrained-rebuild path;
   //   military execution 10/11 — the Deadlift+SDC day lost its controlled
   //     single-leg accessory (the module's own coverage repair not landing);
-  //   oblueprint ~22 — dominated by the §4.0 constrained-equipment family:
-  //     tight equipment + injury exhausts the strict builder, falls back, and
-  //     the fallback does not meet the bodybuilding day contract (7x missing
-  //     hinge, 2x missing quad, 3x NO_ELIGIBLE), plus a handful of named
-  //     taste/coverage singles (forearm, triceps, neck, session-tightness).
+  //   oblueprint ~21 — RE-CHARACTERIZED after the fallback learned the day
+  //     contract (structure + safety + equipment now hold on the fallback
+  //     tier; taste bans are strict-tier-only, because banning push-ups from
+  //     a bodyweight-only plan is a category error, not a standard). What
+  //     remains are engine-DIRECT tests that demand a STRICT-tier plan for
+  //     profiles the strict tier's own taste rules exclude (no bench, no
+  //     bar, injury stacks): 7x missing-hinge, 2x missing-quad, 3x
+  //     NO_ELIGIBLE. On the real user path those profiles now receive a
+  //     contract-valid fallback. Closing these needs a product decision:
+  //     widen strict-tier taste under constraint, or point the tests at
+  //     buildOblueprintPlanWithFallback. Plus named taste/coverage singles
+  //     (forearm, triceps, neck, session-tightness).
   // Every failure above is category still-failing-and-REAL; nothing left in
   // here asserts a vocabulary that no longer exists. Drive to zero, then move
   // each file up into the blocking set.

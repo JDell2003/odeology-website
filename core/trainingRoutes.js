@@ -1321,8 +1321,7 @@ function auditLoggedEntryIdentity(entries) {
 
    `src` is the ORIGINAL request, not the possibly-rewritten payload — checking
    against plan.meta.allowedEquipment would compare the relaxation to itself. */
-function auditPlanFeasibility(plan, src) {
-  const problems = [];
+function feasibilityContextFrom(src) {
   const requested = normalizeEquipmentTags(Array.isArray(src?.equipmentAccess) ? src.equipmentAccess : []);
   // No declared equipment means "assume the default for the location", which
   // normalizeUserInput already resolved — nothing to check against.
@@ -1330,44 +1329,125 @@ function auditPlanFeasibility(plan, src) {
   // implicit in every equipment set. Without this a full-gym user trips on
   // "Ab Crunch Machine needs [bodyweight]".
   const allowed = requested.length ? new Set([...requested, 'bodyweight']) : null;
-  const painAreas = Array.isArray(src?.painAreas) ? src.painAreas : [];
   const severities = new Map();
-  for (const area of painAreas) {
-    const raw = src?.painProfilesByArea?.[area];
-    const severity = Number(raw?.severity);
+  for (const area of Array.isArray(src?.painAreas) ? src.painAreas : []) {
+    const severity = Number(src?.painProfilesByArea?.[area]?.severity);
     if (Number.isFinite(severity)) severities.set(String(area).toLowerCase(), severity);
   }
+  return { allowed, severities };
+}
+
+/* One exercise, one verdict, ONE vocabulary — shared by the audit (which
+   reports) and routeEnforceFeasibility (which repairs). Two implementations
+   of "can this user physically do this" would drift the way every other
+   duplicated vocabulary in this codebase has. */
+function exerciseFeasibilityIssues(ex, { allowed, severities }) {
+  const issues = [];
+  if (allowed) {
+    const required = normalizeEquipmentTags(Array.isArray(ex?.requiredEquipment) ? ex.requiredEquipment : []);
+    const missing = required.filter((token) => !allowed.has(token));
+    if (missing.length) issues.push(`needs [${missing.join(", ")}], user has [${[...allowed].join(", ")}]`);
+  }
+  for (const [area, severity] of severities.entries()) {
+    if (severity < 7) continue;
+    const joint = area === "back" ? "spine" : area === "wrist" ? "elbow" : area;
+    const stress = Number(ex?.[joint] || 0);
+    if (stress >= 3) issues.push(`max ${joint} stress with a severity-${severity} ${area}`);
+    const overhead = (ex?.canonicalTruth && typeof ex.canonicalTruth === 'object')
+      ? Boolean(ex.canonicalTruth.shoulderOverhead)
+      : Boolean(ex?.shoulderOverhead);
+    if (area === "shoulder" && overhead) issues.push(`overhead loading with a severity-${severity} shoulder`);
+  }
+  return issues;
+}
+
+function auditPlanFeasibility(plan, src) {
+  const problems = [];
+  const ctx = feasibilityContextFrom(src);
+  if (!ctx.allowed && !ctx.severities.size) return problems;
   const seen = new Set();
   for (const week of Array.isArray(plan?.weeks) ? plan.weeks : []) {
     for (const day of Array.isArray(week?.days) ? week.days : []) {
       for (const ex of Array.isArray(day?.exercises) ? day.exercises : []) {
-        const label = `wk${week?.weekIndex} ${day?.dayType} "${ex?.name}"`;
-        if (allowed) {
-          const required = normalizeEquipmentTags(Array.isArray(ex?.requiredEquipment) ? ex.requiredEquipment : []);
-          const missing = required.filter((token) => !allowed.has(token));
-          if (missing.length && !seen.has(`e:${ex?.name}`)) {
-            seen.add(`e:${ex?.name}`);
-            problems.push(`${label}: needs [${missing.join(", ")}], user has [${[...allowed].join(", ")}]`);
-          }
-        }
-        const truth = ex?.canonicalTruth || null;
-        for (const [area, severity] of severities.entries()) {
-          if (severity < 7) continue;
-          const joint = area === "back" ? "spine" : area === "wrist" ? "elbow" : area;
-          const stress = Number(ex?.[joint] || 0);
-          if (stress >= 3 && !seen.has(`i:${ex?.name}:${area}`)) {
-            seen.add(`i:${ex?.name}:${area}`);
-            problems.push(`${label}: max ${joint} stress with a severity-${severity} ${area}`);
-          }
-          if (area === "shoulder" && truth?.shoulderOverhead && !seen.has(`o:${ex?.name}`)) {
-            seen.add(`o:${ex?.name}`);
-            problems.push(`${label}: overhead loading with a severity-${severity} shoulder`);
-          }
+        for (const issue of exerciseFeasibilityIssues(ex, ctx)) {
+          const key = `${ex?.name}:${issue}`;
+          if (seen.has(key)) continue;
+          seen.add(key);
+          problems.push(`wk${week?.weekIndex} ${day?.dayType} "${ex?.name}": ${issue}`);
         }
       }
     }
   }
   return problems;
+}
+
+/* §4.0.4 closed for real — the audit now DRIVES a repair instead of only
+   reporting. Runs at the finish() choke for every result INCLUDING the safe
+   fallback, so any path that inserted an exercise after selection (repair
+   chains, floor restores, the fallback builder, the composers) inherits the
+   user's equipment and injury constraints. An infeasible exercise is
+   replaced with a same-pattern feasible movement from the curated safe pool,
+   or removed when nothing qualifies — and either way the compromise is
+   recorded where the UI shows reasons. A plan the user physically cannot
+   perform is not a plan. */
+function routeEnforceFeasibility(plan, src) {
+  if (!plan || plan.error) return plan;
+  const ctx = feasibilityContextFrom(src);
+  if (!ctx.allowed && !ctx.severities.size) return plan;
+  let pool = null;
+  const overrides = [];
+  const replacedByName = new Map();
+  for (const week of plan.weeks || []) {
+    for (const day of week?.days || []) {
+      const repairList = (list) => list.map((ex) => {
+        if (String(ex?.discipline || 'lifting') !== 'lifting' && ex?.discipline) return ex;
+        const issues = exerciseFeasibilityIssues(ex, ctx);
+        if (!issues.length) return ex;
+        if (pool === null) pool = getSafeFallbackPool();
+        const cached = replacedByName.get(routeNormName(ex?.name));
+        const onDay = new Set((day.exercises || []).map((e) => routeNormName(e?.name)));
+        const candidateOk = (cand) => cand && !onDay.has(routeNormName(cand?.name))
+          && !exerciseFeasibilityIssues(cand, ctx).length;
+        const replacement = (candidateOk(cached) ? cached : null)
+          || pool.find((cand) => String(cand?.pattern || '') === String(ex?.pattern || '') && candidateOk(cand))
+          || pool.find((cand) => String(cand?.style || 'Compound') === String(ex?.style || 'Compound') && candidateOk(cand));
+        if (replacement) {
+          replacedByName.set(routeNormName(ex?.name), replacement);
+          overrides.push({
+            rule: 'the plan must be performable and safe',
+            action: `"${ex?.name}" replaced with "${replacement.name}" — ${issues[0]}`
+          });
+          const iso = String(replacement?.style || '') === 'Isolation';
+          return {
+            ...replacement,
+            displayName: replacement.displayName || replacement.name,
+            sets: Number(ex?.sets) || 3,
+            reps: iso ? '10-15' : '6-10',
+            restSec: Number(ex?.restSec) || (iso ? 75 : 120),
+            projected: null,
+            projectedWeight: null,
+            projectedUnit: 'lb'
+          };
+        }
+        overrides.push({
+          rule: 'the plan must be performable and safe',
+          action: `"${ex?.name}" removed — ${issues[0]}; no equipment-compatible safe replacement existed`
+        });
+        return null;
+      }).filter(Boolean);
+      if (Array.isArray(day.sessions) && day.sessions.length) {
+        for (const sn of day.sessions) sn.exercises = repairList(sn.exercises || []);
+        day.exercises = day.sessions.flatMap((sn) => sn.exercises || []);
+      } else {
+        day.exercises = repairList(day.exercises || []);
+      }
+    }
+  }
+  if (overrides.length) {
+    plan.meta = plan.meta || {};
+    plan.meta.overrides = [...(plan.meta.overrides || []), ...overrides];
+  }
+  return plan;
 }
 
 function auditPlanIdentityIntegrity(plan) {
@@ -3040,6 +3120,7 @@ function buildOblueprintPlanWithFallback(payload, opts = {}) {
     if (result && !result.error && result.plan) routeComposeWorkCapacitySessions(result.plan, src);
     if (result && !result.error && result.plan) routeEnsurePowerbuildingMainLiftExposures(result.plan, src);
     if (result && !result.error && result.plan) routeAttachGoalProjections(result.plan, src);
+    if (result && !result.error && result.plan) routeEnforceFeasibility(result.plan, src);
     if (result && !result.error && result.plan && !result._safeFallback && !planPassesFloorGate(result.plan, src)) {
       const safe = makeSafeFallbackResult(src, { error: 'FLOOR_GATE', reason: 'thin or unsafe day repaired via safe fallback' });
       if (safe) result = safe;
@@ -3730,6 +3811,11 @@ function routeIsHorizontalPressMain(ex) {
   if (!routeIsCompound(ex)) return false;
   const n = routeNormName(ex?.name);
   const p = String(ex?.pattern || '').toLowerCase();
+  /* The name branch is the fallback vocabulary for rows with no pattern; a
+     row that DECLARES VerticalPush is an overhead press, not a bench-press
+     compound — "Arnold Dumbbell Press" was tripping /dumbbell press/ and
+     failing whole fallback days on the bench-family cap. */
+  if (p === 'verticalpush') return false;
   return p === 'horizontalpush' || /(bench press|chest press|incline press|decline press|dumbbell press|machine press)/.test(n);
 }
 
@@ -8210,6 +8296,13 @@ function summarizeAssertionPlanShape(planObj) {
 }
 
 function assertOblueprintBodybuildingIntegrity(planObj) {
+  /* The safe fallback inherits the STRUCTURAL and SAFETY contract (day
+     patterns, redundancy caps, duplicates, equipment) but not the strict
+     gym product's TASTE bans - the banned-name list forbids push-ups and
+     pull-ups by name, and a bodyweight-only home fallback is BUILT from
+     those. Banning the only movements the user can perform is not a
+     standard, it is a category error. */
+  const isSafeFallbackTier = planObj?.meta?.safeFallback === true;
   const priorityGroups = Array.isArray(planObj?.meta?.priorityGroups) ? planObj.meta.priorityGroups.map((x) => String(x || '').toLowerCase()) : [];
   const shouldersPriority = priorityGroups.includes('shoulders');
   const backPriority = priorityGroups.includes('back');
@@ -8413,7 +8506,7 @@ function assertOblueprintBodybuildingIntegrity(planObj) {
             });
           }
           const name = exerciseName.toLowerCase();
-          if (ROUTE_BANNED_NAME_PATTERNS.some((rx) => rx.test(name))) {
+          if (!isSafeFallbackTier && ROUTE_BANNED_NAME_PATTERNS.some((rx) => rx.test(name))) {
             throwAssertionInvariant(`Banned exercise detected: ${exerciseName || 'exercise'}`, {
               validatorSection: 'banned_exercise_validation',
               failedInvariant: 'banned_exercise',
@@ -8422,7 +8515,7 @@ function assertOblueprintBodybuildingIntegrity(planObj) {
               calfExposureDays
             });
           }
-          if (routeIsNoveltyName(name)) {
+          if (!isSafeFallbackTier && routeIsNoveltyName(name)) {
             throwAssertionInvariant(`Novelty exercise detected: ${exerciseName || 'exercise'}`, {
               validatorSection: 'banned_exercise_validation',
               failedInvariant: 'novelty_exercise',

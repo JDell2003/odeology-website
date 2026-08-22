@@ -166,24 +166,45 @@ function buildSafeFallbackPlan(user, pool, { notes = [] } = {}) {
     const outDays = [];
     for (let d = 0; d < days; d += 1) {
       const usedToday = new Set();
-      const roles = DAY_TEMPLATES.roles.slice(0, perDay);
-      // Rotate the role start per day so days aren't identical.
-      const rotated = roles.slice(d % roles.length).concat(roles.slice(0, d % roles.length));
+      const usedCompoundPatterns = new Set();
+      /* THE DAY CONTRACT, inherited by the fallback (it used to slice the
+         role template to the session size, which at three slots cut the
+         hinge from every day of the week — and its any-unused last resort
+         could stack a second pressing compound onto a day, both of which
+         the bodybuilding validator rightly rejects). Four or more slots:
+         squat, hinge, push and pull all present, extras rotate. Three
+         slots: squat days and hinge days alternate, push/pull every day. */
+      const EXTRAS = ['vertical_push', 'vertical_pull', 'core', 'lunge', 'isolation'];
+      const roles = perDay >= 4
+        ? ['squat', 'hinge', 'horizontal_push', 'horizontal_pull']
+          .concat(EXTRAS.slice(d % EXTRAS.length).concat(EXTRAS.slice(0, d % EXTRAS.length)))
+          .slice(0, perDay)
+        : [(d % 2 === 0 ? 'squat' : 'hinge'), 'horizontal_push', 'horizontal_pull'];
       const exercises = [];
-      for (const role of rotated) {
+      const pickDiverse = (role, pool) => {
+        // A second COMPOUND of an already-used pattern is a contract
+        // violation (two bench-press compounds on one day), never a fill.
+        const diverse = pool.filter((ex) => String(ex.style) !== 'Compound' || !usedCompoundPatterns.has(String(ex.pattern)));
+        return pickForRole(role, diverse, usedToday);
+      };
+      for (const role of roles) {
         if (exercises.length >= perDay) break;
-        const candidate = pickForRole(role, safe.filter((ex) => !usedToday.has(ex.name) && !usedThisWeek.has(ex.name)), usedToday)
-          || pickForRole(role, safe.filter((ex) => !usedToday.has(ex.name)), usedToday);
+        const candidate = pickDiverse(role, safe.filter((ex) => !usedToday.has(ex.name) && !usedThisWeek.has(ex.name)))
+          || pickDiverse(role, safe.filter((ex) => !usedToday.has(ex.name)));
         if (!candidate) continue;
         usedToday.add(candidate.name);
         usedThisWeek.add(candidate.name);
+        if (String(candidate.style) === 'Compound') usedCompoundPatterns.add(String(candidate.pattern));
         exercises.push(exerciseEntry(candidate, candidate.style === 'Compound'));
       }
-      // Guarantee non-empty: if role-fill came up short, top up from the pool.
+      // Guarantee non-empty: if role-fill came up short, top up from the pool
+      // (isolation first — a filler must not break the pattern contract).
       while (exercises.length < 3 && safe.length) {
-        const filler = safe.find((ex) => !usedToday.has(ex.name)) || safe[0];
+        const filler = safe.find((ex) => !usedToday.has(ex.name) && (String(ex.style) !== 'Compound' || !usedCompoundPatterns.has(String(ex.pattern))))
+          || safe.find((ex) => !usedToday.has(ex.name)) || safe[0];
         if (!filler) break;
         usedToday.add(filler.name);
+        if (String(filler.style) === 'Compound') usedCompoundPatterns.add(String(filler.pattern));
         exercises.push(exerciseEntry(filler, filler.style === 'Compound'));
         if (exercises.length >= safe.length) break;
       }

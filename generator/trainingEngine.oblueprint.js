@@ -3352,6 +3352,11 @@ function evaluateJoint(ex, user) {
   if (shoulder >= 7 && /\b(overhead press|shoulder press|military press|upright row|dip|behind neck)\b/.test(name)) reject = true;
   else if (shoulder >= 5 && /\b(overhead press|shoulder press|military press|upright row)\b/.test(name)) penalty += 10;
   if ((noteFlags.avoidOverheadVolume || noteFlags.avoidDeepStretchPressing) && truth.shoulderOverhead) reject = true;
+  /* Same rule the feasibility audit enforces (auditPlanFeasibility): a
+     severity-7 shoulder never receives overhead loading. Selection spoke a
+     different vocabulary (numeric stress ratings only), so a shoulder-press
+     rated 2 could pass here and fail the audit downstream. */
+  if (Number(user.injuryMap?.shoulder || 0) >= 7 && truth.shoulderOverhead) reject = true;
   const elbow = Number(user.injuryMap?.elbow || 0);
   if (elbow >= 7 && /\b(skull crusher|crusher|overhead triceps|barbell curl)\b/.test(name)) reject = true;
   else if (elbow >= 5 && /\b(skull crusher|crusher|overhead triceps)\b/.test(name)) penalty += 8;

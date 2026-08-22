@@ -58,6 +58,19 @@ test('no row tagged Bodyweight names equipment it would actually need', () => {
   assert.deepEqual(offenders, [], `rows tagged Bodyweight that name equipment:\n  ${offenders.join('\n  ')}`);
 });
 
+test('a movement that hangs from a bar declares pullup_bar', () => {
+  /* The fuzz suite proved this the hard way: three pull-up variants with
+     requiredEquipment ["bodyweight"] shipped to users with no bar. The
+     explicit field WINS over name inference, so a lying field is invisible
+     to selection - this rule makes the lie a build-time failure. */
+  const HANGS = /(pull[ -]?up|chin[ -]?up|hanging knee|hanging leg|toes[ -]to[ -]bar|muscle[ -]?up)/i;
+  const offenders = TABLE
+    .filter((row) => HANGS.test(String(row.name)) && !/pulldown|pull-through|assisted machine/i.test(String(row.name)))
+    .filter((row) => Array.isArray(row.requiredEquipment) && row.requiredEquipment.length && !row.requiredEquipment.includes('pullup_bar'))
+    .map((row) => row.name + ' -> ' + JSON.stringify(row.requiredEquipment));
+  assert.deepEqual(offenders, [], 'hanging movements without pullup_bar:' + offenders.join('; '));
+});
+
 test('an explicit requiredEquipment on a row is what the engine uses', () => {
   // inferRequiredEquipment ADDS tokens parsed from the name on top of the
   // equipment field, so without this the name can override the data — which is

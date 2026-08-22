@@ -8789,7 +8789,8 @@ export const exercises = [
     "elbow": 2,
     "images": [],
     "equipment": [
-      "Bodyweight"
+      "Bodyweight",
+  "Pull-Up Bar"
     ],
     "difficulty": 1,
     "style": "Compound",
@@ -8803,7 +8804,8 @@ export const exercises = [
     ],
     "requiredEquipment": [
       "bodyweight"
-    ]
+    ,
+  "pullup_bar"]
   },
   {
     "name": "Kettlebell Arnold Press",
@@ -11007,7 +11009,8 @@ export const exercises = [
     "elbow": 2,
     "images": [],
     "equipment": [
-      "Bodyweight"
+      "Bodyweight",
+  "Pull-Up Bar"
     ],
     "difficulty": 2,
     "style": "Compound",
@@ -11022,7 +11025,8 @@ export const exercises = [
     ],
     "requiredEquipment": [
       "bodyweight"
-    ]
+    ,
+  "pullup_bar"]
   },
   {
     "name": "Neutral-Grip Pull-Up",
@@ -11036,7 +11040,8 @@ export const exercises = [
     "elbow": 2,
     "images": [],
     "equipment": [
-      "Bodyweight"
+      "Bodyweight",
+  "Pull-Up Bar"
     ],
     "difficulty": 3,
     "style": "Compound",
@@ -11051,7 +11056,8 @@ export const exercises = [
     ],
     "requiredEquipment": [
       "bodyweight"
-    ]
+    ,
+  "pullup_bar"]
   },
   {
     "name": "Nordic Curl",
