@@ -2515,12 +2515,29 @@ function routeRestoreStructuralFloor(plan, snapshot) {
       if (structural() >= min) return;
       const snap = snapshot.get(`${week.weekIndex}:${day.dayType}:${dayIdx}`) || [];
       const names = new Set((day.exercises || []).map((ex) => routeNormName(ex?.name)));
+      /* The restore must not fix the compound floor by BREAKING a coverage
+         invariant: on a legs/lower day the sole hamstring curl, sole calf
+         movement, and sole core movement are exactly what the validator
+         demands, so they are protected - a restored compound replaces
+         unprotected isolation first, and appends when only protected
+         isolation remains. */
+      const legsDay = ['legs', 'lower', 'lowerfocus'].includes(String(day?.dayType || '').toLowerCase());
+      const isProtectedIso = (ex, list) => {
+        if (!legsDay) return false;
+        const only = (pred) => pred(ex) && list.filter(pred).length <= 1;
+        return only((e) => routeIsHamCurlName(e?.name))
+          || only((e) => routeIsCalvesName(e?.name))
+          || only((e) => routeIsCoreName(e?.name));
+      };
       for (const restore of snap) {
         if (structural() >= min) break;
         if (names.has(routeNormName(restore?.name))) continue;
         let at = -1;
         for (let i = (day.exercises || []).length - 1; i >= 0; i -= 1) {
-          if (!ROUTE_STRUCTURAL_PATTERNS.includes(String(day.exercises[i]?.pattern || ''))) { at = i; break; }
+          const candidate = day.exercises[i];
+          if (ROUTE_STRUCTURAL_PATTERNS.includes(String(candidate?.pattern || ''))) continue;
+          if (isProtectedIso(candidate, day.exercises)) continue;
+          at = i; break;
         }
         const copy = { ...restore };
         if (at >= 0) day.exercises.splice(at, 1, copy); else day.exercises.push(copy);
@@ -2929,7 +2946,7 @@ function buildOblueprintPlanWithFallback(payload, opts = {}) {
     if (deduped?.error) return deduped;
     const deltsArmsRepaired = runRouteStage('delts-arms role repair', () => routeRepairDeltsArmsRoleInvariant(deduped));
     if (deltsArmsRepaired?.error) return deltsArmsRepaired;
-    const hingeRepaired = runRouteStage('lower-day hinge repair', () => routeRepairLowerDayHingeInvariant(deltsArmsRepaired));
+    const hingeRepaired = runRouteStage('lower-day hinge repair', () => routeRepairLowerDayHingeInvariant(deltsArmsRepaired, src));
     if (hingeRepaired?.error) return hingeRepaired;
     const rearDeltRepaired = runRouteStage('rear-delt cleanup', () => routeRepairRearDeltFrequencyInvariant(hingeRepaired));
     if (rearDeltRepaired?.error) return rearDeltRepaired;
@@ -2996,7 +3013,7 @@ function buildOblueprintPlanWithFallback(payload, opts = {}) {
         if (String(deltsArmsRepaired?.error || '') === 'LOWER_BODY_REPAIR_LOOP_LIMIT') break;
         continue;
       }
-      const hingeRepaired = runRouteStage('lower-day hinge repair', () => routeRepairLowerDayHingeInvariant(deltsArmsRepaired), {
+      const hingeRepaired = runRouteStage('lower-day hinge repair', () => routeRepairLowerDayHingeInvariant(deltsArmsRepaired, src), {
         attempt: attempt + 1
       });
       if (hingeRepaired?.error) {
@@ -3088,6 +3105,11 @@ function buildOblueprintPlanWithFallback(payload, opts = {}) {
     // appended accessory without a prescription. Normalise first, then gate.
     if (result && !result.error && result.plan && !result._safeFallback) {
       routeNormalizePlanPrescriptions(result.plan);
+      /* Feasibility BEFORE the identity-integrity gate: the gate throws in
+         dev on an infeasible exercise, so the backstop must repair first or
+         it never gets the chance. It runs again after the composers for
+         anything inserted later. */
+      routeEnforceFeasibility(result.plan, src);
       // §2.3: replace the baked 16-week ladder with state. Week 1 keeps its
       // anchor; every later week is simulated forward from advance() under a
       // clean-sessions assumption and flagged progression.isProjection so the
@@ -3590,7 +3612,11 @@ const ROUTE_REPLACEMENT_MAP = {
     { name: 'Barbell Deadlift', pattern: 'Hinge', style: 'Compound', primary: 'Legs' },
     { name: 'Hip Thrust', pattern: 'Hinge', style: 'Compound', primary: 'Glutes' },
     { name: 'Barbell Hip Thrust', pattern: 'Hinge', style: 'Compound', primary: 'Glutes' },
-    { name: 'Barbell Glute Bridge', pattern: 'Hinge', style: 'Compound', primary: 'Glutes' }
+    { name: 'Barbell Glute Bridge', pattern: 'Hinge', style: 'Compound', primary: 'Glutes' },
+    /* Cable/machine hinges: without these a machine/cable-only user has NO
+       reachable spec in this list and the hinge repair hard-fails the plan. */
+    { name: 'Pull Through', pattern: 'Hinge', style: 'Compound', primary: 'Glutes' },
+    { name: 'Reverse Hyperextension', pattern: 'Hinge', style: 'Compound', primary: 'Glutes' }
   ],
   hinge_lengthened: [
     { name: 'Romanian Deadlift', pattern: 'Hinge', style: 'Compound', primary: 'Legs' },
@@ -3672,7 +3698,9 @@ const ROUTE_REPLACEMENT_MAP = {
     { name: 'Barbell Glute Bridge', pattern: 'Hinge', style: 'Compound', primary: 'Glutes' },
     { name: 'Hip Thrust', pattern: 'Hinge', style: 'Compound', primary: 'Glutes' },
     { name: 'Barbell Hip Thrust', pattern: 'Hinge', style: 'Compound', primary: 'Glutes' },
-    { name: 'Smith Machine Hip Thrust', pattern: 'Hinge', style: 'Compound', primary: 'Glutes' }
+    { name: 'Smith Machine Hip Thrust', pattern: 'Hinge', style: 'Compound', primary: 'Glutes' },
+    { name: 'Pull Through', pattern: 'Hinge', style: 'Compound', primary: 'Glutes' },
+    { name: 'Reverse Hyperextension', pattern: 'Hinge', style: 'Compound', primary: 'Glutes' }
   ],
   calves_iso: [
     { name: 'Seated Calf Raise', pattern: 'Isolation', style: 'Isolation', primary: 'Legs' },
@@ -7031,7 +7059,14 @@ function routeRepairRearDeltFrequencyInvariant(planObj) {
   return planObj;
 }
 
-function routeRepairLowerDayHingeInvariant(planObj) {
+function routeIsSafePosteriorSubstituteName(name) {
+  const n = routeNormName(name);
+  if (!n) return false;
+  if (/(deadlift|\brdl\b|stiff[-\s]*leg|good morning)/.test(n)) return false;
+  return /(hip thrust|glute bridge|pull[\s-]*through|glute ham raise|leg curl|hamstring curl|nordic|back extension|hyperextension|reverse hyper)/.test(n);
+}
+
+function routeRepairLowerDayHingeInvariant(planObj, user = null) {
   if (!planObj || String(planObj?.meta?.discipline || '').toLowerCase() !== 'bodybuilding') return planObj;
   const weeks = Array.isArray(planObj?.weeks) ? planObj.weeks : [];
   const priorityGroups = Array.isArray(planObj?.meta?.priorityGroups)
@@ -7064,6 +7099,21 @@ function routeRepairLowerDayHingeInvariant(planObj) {
         day.exercises = list;
       }
       if (list.some((ex) => routeIsHingeName(ex?.name))) continue;
+      /* Safe-substitute recognition, same concept the powerbuilding
+         validator has had all along: when pain legitimately vetoes loaded
+         hinges (hip/back severity >= 5, or hinge-averse pain notes) and the
+         day already carries safe posterior-chain work, the requirement is
+         SATISFIED — failing the plan for honouring the user's hip is the
+         invariant defeating its own purpose. */
+      const painCtx = feasibilityContextFrom(user || {});
+      const hingeAverseSeverity = Math.max(
+        Number(painCtx.severities.get('hip') || 0),
+        Number(painCtx.severities.get('back') || 0),
+        Number(painCtx.severities.get('lower back') || 0)
+      );
+      const hingeAverseNotes = Object.values(user?.painProfilesByArea || {})
+        .some((p) => /deep (hip )?flexion|hinge|axial|deadlift/i.test(String(p?.notes || '')));
+      if ((hingeAverseSeverity >= 5 || hingeAverseNotes) && list.some((ex) => routeIsSafePosteriorSubstituteName(ex?.name))) continue;
 
       const requireLengthened = !days.some((candidateDay) => (candidateDay?.exercises || []).some((ex) => routeIsLengthenedHingeName(ex?.name)));
       const hingeSpec = routePickLowerDayHingeSpec(list, { gluteBias, requireLengthened });
@@ -8303,6 +8353,9 @@ function assertOblueprintBodybuildingIntegrity(planObj) {
      those. Banning the only movements the user can perform is not a
      standard, it is a category error. */
   const isSafeFallbackTier = planObj?.meta?.safeFallback === true;
+  const lowerRelax = planObj?.meta?.lowerRelaxations && typeof planObj.meta.lowerRelaxations === 'object'
+    ? planObj.meta.lowerRelaxations
+    : {};
   const priorityGroups = Array.isArray(planObj?.meta?.priorityGroups) ? planObj.meta.priorityGroups.map((x) => String(x || '').toLowerCase()) : [];
   const shouldersPriority = priorityGroups.includes('shoulders');
   const backPriority = priorityGroups.includes('back');
@@ -8977,7 +9030,8 @@ function assertOblueprintBodybuildingIntegrity(planObj) {
           calfExposureDays
         });
       }
-      if ((dayType === 'legs' || dayType === 'lower') && !routeIsStapleSquatName(firstExercise?.name)) {
+      if ((dayType === 'legs' || dayType === 'lower') && !routeIsStapleSquatName(firstExercise?.name)
+        && !lowerRelax.avoidSquatPattern) {
         throwAssertionInvariant('Leg day must start with a staple squat/press pattern.', {
           validatorSection: 'quad pattern validation',
           failedInvariant: 'lower_day_first_exercise_quad',
@@ -8992,7 +9046,8 @@ function assertOblueprintBodybuildingIntegrity(planObj) {
           calfExposureDays
         });
       }
-      if ((dayType === 'legs' || dayType === 'lower') && (!hasSquat || !hasHinge)) {
+      if ((dayType === 'legs' || dayType === 'lower') && (!hasSquat || !hasHinge)
+        && !(lowerRelax.avoidSquatPattern && (hasHinge || hasHamCurl))) {
         if (!(hasSquat && hasHamCurl)) {
           throwAssertionInvariant('Leg day must include squat and either hinge or hamstring curl.', {
             validatorSection: 'lower-day hinge validation',

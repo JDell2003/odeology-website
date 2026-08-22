@@ -1695,16 +1695,38 @@ function getPowerbuildingPatternBlockProfile(user) {
   };
 }
 
-function allowPowerbuildingPosteriorSubstitute(dayType, user) {
+/* Injury relaxations used to be a powerbuilding/military privilege: the
+   pattern-block profile returns null for bodybuilding, so a bodybuilding
+   user with a severity-5 hip and "deep flexion aggravates" in their notes
+   had every hinge correctly vetoed by selection and then FAILED the hinge
+   invariant that refused to recognise the safe substitutes selection had
+   placed instead (GHR, leg curls). Pain does not care which product tier
+   you bought — the same flags now derive from the injury map and note
+   flags for every discipline. */
+function lowerRelaxationProfileFor(user) {
   const profile = getPowerbuildingPatternBlockProfile(user);
-  if (!profile) return false;
+  if (profile) return profile;
+  const injuryMap = user?.injuryMap || {};
+  const noteFlags = user?.injuryNoteFlags || {};
+  return {
+    militaryMode: false,
+    lowRecovery: false,
+    barbellUnavailable: false,
+    severeBackOrHipPain: Math.max(Number(injuryMap.spine || 0), Number(injuryMap.back || 0), Number(injuryMap.hip || 0)) >= 5,
+    severeKneePain: Math.max(Number(injuryMap.knee || 0), Number(injuryMap.ankle || 0)) >= 5,
+    avoidDeadliftPattern: Boolean(noteFlags.avoidDeadliftPattern || noteFlags.avoidFloorDeadliftPattern || noteFlags.avoidDeepHipFlexion || noteFlags.avoidLoadedHinge),
+    avoidSquatPattern: Boolean(noteFlags.deepKneeFlexionIntolerance || noteFlags.forwardKneeTravelIntolerance || noteFlags.ankleKneeForwardIntolerance)
+  };
+}
+
+function allowPowerbuildingPosteriorSubstitute(dayType, user) {
+  const profile = lowerRelaxationProfileFor(user);
   if (!['Lower', 'LowerFocus', 'FullBodyB'].includes(String(dayType || ''))) return false;
   return profile.lowRecovery || profile.severeBackOrHipPain || profile.avoidDeadliftPattern || profile.avoidSquatPattern || profile.barbellUnavailable;
 }
 
 function allowPowerbuildingNonSquatLower(dayType, user) {
-  const profile = getPowerbuildingPatternBlockProfile(user);
-  if (!profile) return false;
+  const profile = lowerRelaxationProfileFor(user);
   return ['Lower', 'LowerFocus', 'FullBodyB'].includes(String(dayType || ''))
     && (profile.militaryMode || profile.avoidSquatPattern || profile.severeKneePain);
 }
@@ -2281,7 +2303,11 @@ function inferRequiredEquipment(ex) {
   if (/\b(machine|leg press|hack squat|pec deck|chest press|calf press)\b/.test(name)) required.add('machine');
   if (/\b(cable|pulldown|pushdown|rope crunch|face pull|crossover|seated cable row)\b/.test(name)) required.add('cable');
   if (/\b(barbell|front squat|back squat|romanian deadlift|deadlift|hip thrust|bench press)\b/.test(name)) required.add('barbell');
-  if (/\b(dumbbell|goblet|bulgarian split squat)\b/.test(name)) required.add('dumbbell');
+  // A Bulgarian split squat is dumbbell-loaded BY DEFAULT, but the
+  // explicitly bodyweight variant is not - inferring dumbbell onto
+  // "Bodyweight Bulgarian Split Squat" failed honest bodyweight plans.
+  if (/\b(dumbbell|goblet)\b/.test(name)) required.add('dumbbell');
+  if (/\bbulgarian split squat\b/.test(name) && !/\bbodyweight\b/.test(name)) required.add('dumbbell');
   if (/\b(bodyweight|push up|push-up|pull up|pull-up|chin up|chin-up|plank|sit up|sit-up|bodyweight squat)\b/.test(name)) required.add('bodyweight');
   if (/\b(pull ?up|chin ?up|hanging knee|hanging leg|toes to bar|captains chair|parallel bars)\b/.test(name)) required.add('pullup_bar');
   return [...required];
@@ -8674,6 +8700,17 @@ function materializePlanResult(user, schedule, safeWeeks, safeResult, targets, f
         // who reported a 600 deadlift and is handed 250 deserves the reason,
         // or they will simply load the bar to 600.
         layoff: anchorInputsForUser(user).layoff,
+        /* The injury-driven lower-day relaxations selection honoured, stamped
+           so downstream validators judge the plan by the same evidence -
+           engine relaxing while the route validator still demands a staple
+           squat is two tiers disagreeing about one user. */
+        lowerRelaxations: (() => {
+          const r = lowerRelaxationProfileFor(user);
+          return {
+            avoidSquatPattern: Boolean(r.avoidSquatPattern || r.severeKneePain),
+            avoidDeadliftPattern: Boolean(r.avoidDeadliftPattern || r.severeBackOrHipPain)
+          };
+        })(),
         nutritionModel: buildNutritionModel(user),
         progressionModel: buildProgressionModel(user, targets, frequencyTargets),
         recoveryModel: buildRecoveryModel(user),

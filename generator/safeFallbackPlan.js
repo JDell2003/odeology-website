@@ -167,6 +167,18 @@ function buildSafeFallbackPlan(user, pool, { notes = [] } = {}) {
     for (let d = 0; d < days; d += 1) {
       const usedToday = new Set();
       const usedCompoundPatterns = new Set();
+      const usedIsoFamilies = new Set();
+      // Coarse isolation families - two crossover variants on one day is the
+      // "Duplicate isolation family" the contract validator rejects.
+      const isoFamilyOf = (name) => {
+        const n = String(name || '').toLowerCase();
+        if (/fly|crossover/.test(n)) return 'fly';
+        if (/curl/.test(n)) return 'curl';
+        if (/raise/.test(n)) return 'raise';
+        if (/crunch|sit-up|sit up/.test(n)) return 'crunch';
+        if (/pushdown|extension/.test(n)) return 'extension';
+        return null;
+      };
       /* THE DAY CONTRACT, inherited by the fallback (it used to slice the
          role template to the session size, which at three slots cut the
          hinge from every day of the week — and its any-unused last resort
@@ -182,9 +194,13 @@ function buildSafeFallbackPlan(user, pool, { notes = [] } = {}) {
         : [(d % 2 === 0 ? 'squat' : 'hinge'), 'horizontal_push', 'horizontal_pull'];
       const exercises = [];
       const pickDiverse = (role, pool) => {
-        // A second COMPOUND of an already-used pattern is a contract
-        // violation (two bench-press compounds on one day), never a fill.
-        const diverse = pool.filter((ex) => String(ex.style) !== 'Compound' || !usedCompoundPatterns.has(String(ex.pattern)));
+        // A second COMPOUND of an already-used pattern, or a second ISOLATION
+        // of an already-used family, is a contract violation - never a fill.
+        const diverse = pool.filter((ex) => {
+          if (String(ex.style) === 'Compound') return !usedCompoundPatterns.has(String(ex.pattern));
+          const fam = isoFamilyOf(ex.name);
+          return !fam || !usedIsoFamilies.has(fam);
+        });
         return pickForRole(role, diverse, usedToday);
       };
       for (const role of roles) {
@@ -195,6 +211,7 @@ function buildSafeFallbackPlan(user, pool, { notes = [] } = {}) {
         usedToday.add(candidate.name);
         usedThisWeek.add(candidate.name);
         if (String(candidate.style) === 'Compound') usedCompoundPatterns.add(String(candidate.pattern));
+        else { const fam = isoFamilyOf(candidate.name); if (fam) usedIsoFamilies.add(fam); }
         exercises.push(exerciseEntry(candidate, candidate.style === 'Compound'));
       }
       // Guarantee non-empty: if role-fill came up short, top up from the pool
