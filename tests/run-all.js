@@ -108,17 +108,16 @@ const SUITES = [
     args: ['--test', 'tests/selection.golden.test.js'],
     needsServer: false
   },
-  // REPORTED ONLY — runtime, not correctness. Since §4.0 stopped the relaxed
-  // fallback from silently handing constrained users a full-gym payload, a
-  // build with narrow equipment (and especially narrow equipment PLUS an
-  // injury) genuinely exhausts its attempt budget before reaching the floor.
-  // Measured per build: full gym 427ms, dumbbell-only 454ms, machine/cable
-  // 1693ms, barbell-only 3557ms. 400 fuzz samples no longer fit in ten minutes.
-  // The suite still PASSES; it is the strict builder being unable to satisfy
-  // constrained equipment that is slow, and making it satisfiable is the real
-  // remaining §4.0 work. Restore this to blocking once that lands.
+  // REPORTED ONLY — and, corrected for the record: the old comment claimed
+  // this suite "still PASSES; it is just slow". The 2026-08-21 run to
+  // completion falsified that: 8 of 400 cases FAIL the good-plan rubric on
+  // correctness, in two classes — pull-up variants prescribed to users with
+  // no pull-up bar (6x, the constrained-equipment/fallback path), and
+  // Overhead Press prescribed over a severity-7 shoulder (2x). Both belong
+  // to the same §4.0 constrained-equipment family the known-failure engine
+  // set names. Fix that family, re-run to zero, then restore blocking.
   {
-    name: 'training — selection fuzz (SLOW: see comment; reported only)',
+    name: 'training — selection fuzz (SLOW; 8/400 REAL failures, see comment)',
     cmd: process.execPath,
     args: ['--test', '--test-timeout=2400000', 'tests/selection.fuzz.test.js'],
     needsServer: false,
@@ -130,24 +129,47 @@ const SUITES = [
     args: ['--test', 'tests/training.phase0.invariants.test.js', 'tests/training.targetOwnership.test.js', 'tests/training.exerciseIdentity.test.js', 'tests/training.progression.test.js', 'tests/cut-mode.policy.test.js'],
     needsServer: false
   },
-  // REPORTED ONLY — these carry a pre-existing failure baseline of 69 of 205
-  // tests, measured on 0eca8b3 before any Engine v2 work started. They are wired
-  // in so the number is visible on every run and can be driven down, but they do
-  // not close the gate yet: making them blocking today would block every deploy
-  // for failures that predate this work. Flip `blocking` off this entry once the
-  // count reaches zero.
+  // BLOCKING — the 2026-08-21 re-measure sorted the old 69/205 baseline.
+  // These four suites are fully green after the vocabulary updates (rep-range
+  // text -> single climbing number; day order -> solver-owned, addressed by
+  // identity) and the real fixes they exposed (anchor-first ordering that
+  // survived materialize, taste consulted at pick time, same-seed comparative
+  // controls). Keep them green.
   {
-    name: 'training — engine + disciplines (KNOWN BASELINE: 69/205 failing)',
+    name: 'training — engine suites, green set (pb logic + both matrices + military logic)',
+    cmd: process.execPath,
+    args: [
+      '--test',
+      'tests/powerbuilding.priority.logic.test.js',
+      'tests/powerbuilding.priority.matrix.test.js',
+      'tests/militaryHybrid.logic.test.js',
+      'tests/militaryHybrid.matrix.test.js'
+    ],
+    needsServer: false
+  },
+  // REPORTED ONLY — the three suites that still carry REAL, NAMED failures
+  // after the re-measure (was 74 across all seven; now:
+  //   powerbuilding execution 47/49 — case 28: a severity-6 recent hip gets
+  //     MORE deep-flexion work than its pain-free control, because vetoed
+  //     hinges backfill with squats inside the constrained-rebuild path;
+  //   military execution 10/11 — the Deadlift+SDC day lost its controlled
+  //     single-leg accessory (the module's own coverage repair not landing);
+  //   oblueprint ~22 — dominated by the §4.0 constrained-equipment family:
+  //     tight equipment + injury exhausts the strict builder, falls back, and
+  //     the fallback does not meet the bodybuilding day contract (7x missing
+  //     hinge, 2x missing quad, 3x NO_ELIGIBLE), plus a handful of named
+  //     taste/coverage singles (forearm, triceps, neck, session-tightness).
+  // Every failure above is category still-failing-and-REAL; nothing left in
+  // here asserts a vocabulary that no longer exists. Drive to zero, then move
+  // each file up into the blocking set.
+  {
+    name: 'training — engine suites, known-failure set (REAL findings, named in comment)',
     cmd: process.execPath,
     args: [
       '--test',
       'tests/trainingEngine.oblueprint.test.js',
-      'tests/powerbuilding.priority.logic.test.js',
       'tests/powerbuilding.priority.execution.test.js',
-      'tests/powerbuilding.priority.matrix.test.js',
-      'tests/militaryHybrid.logic.test.js',
-      'tests/militaryHybrid.execution.test.js',
-      'tests/militaryHybrid.matrix.test.js'
+      'tests/militaryHybrid.execution.test.js'
     ],
     needsServer: false,
     blocking: false

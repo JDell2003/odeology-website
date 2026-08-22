@@ -867,6 +867,7 @@ function adjustPowerbuildingDayVolumes(days, user) {
 }
 
 module.exports = {
+  powerbuildingNamePreferenceScore,
   buildPowerbuildingProfile,
   buildPowerbuildingSplit,
   applyPowerbuildingBlueprint,

@@ -11,7 +11,7 @@ const trainerPages = require('./trainerPages');
 const { DbUnavailableError, isTransientPgError } = require('./dbErrors');
 const { generatePlan, applyLogAdjustments, normalizeExperience, assertBodybuildingPlanIntegrity, estimateExerciseMinutes } = require('./trainingEngine');
 const progressionPlanUpdate = require('../generator/progressionPlanUpdate');
-const { buildOblueprintPlan, preprocessExercises, normalizeUserInput, projectionFamilyForExercise, normalizeEquipmentTags } = require('../generator/trainingEngine.oblueprint');
+const { buildOblueprintPlan, preprocessExercises, normalizeUserInput, projectionFamilyForExercise, normalizeEquipmentTags, buildExerciseTruth } = require('../generator/trainingEngine.oblueprint');
 const { buildSafeFallbackPlan } = require('../generator/safeFallbackPlan');
 const militaryHybrid = require('../generator/militaryHybrid.oblueprint');
 const { resolveWorkoutExercises } = require('./exerciseResolver');
@@ -1480,6 +1480,25 @@ function makeSafeFallbackResult(src, lastError) {
         notes: ['Your exact plan couldn\'t be assembled within every preference, so we built the best safe plan for your equipment and any injuries.']
       });
       if (plan && Array.isArray(plan.weeks) && plan.weeks.length && plan.weeks.every((w) => Array.isArray(w.days) && w.days.length && w.days.every((d) => Array.isArray(d.exercises) && d.exercises.length))) {
+        /* Fallback rows ship the same canonical truth the strict path stamps
+           (directCalf/directAb/pressPattern booleans, requiredEquipment) -
+           the parity contract holds for EVERY plan, not only strict ones. */
+        for (const week of plan.weeks) {
+          for (const day of week.days || []) {
+            day.exercises = (day.exercises || []).map((ex) => {
+              const truth = buildExerciseTruth(ex, user);
+              return {
+                ...ex,
+                canonicalExerciseId: ex.canonicalExerciseId || truth.canonicalExerciseId,
+                requiredEquipment: Array.isArray(ex.requiredEquipment) ? ex.requiredEquipment : (truth.requiredEquipment || []),
+                directCalf: typeof ex.directCalf === 'boolean' ? ex.directCalf : Boolean(truth.directCalf),
+                directAb: typeof ex.directAb === 'boolean' ? ex.directAb : Boolean(truth.directAb),
+                shoulderPressPattern: typeof ex.shoulderPressPattern === 'boolean' ? ex.shoulderPressPattern : Boolean(truth.shoulderPressPattern),
+                canonicalTruth: ex.canonicalTruth || truth
+              };
+            });
+          }
+        }
         return { plan, usedPayload: { ...src, _safeFallback: true }, _safeFallback: true, originalError: lastError || null };
       }
     }
@@ -1523,27 +1542,32 @@ function routeSpreadArmExposures(plan) {
   if (!plan || plan.error) return plan;
   const groups = Array.isArray(plan?.meta?.priorityGroups) ? plan.meta.priorityGroups : [];
   if (!groups.includes('Arms')) return plan;
+  /* DIRECT arm work only - style Isolation. The name-only matcher counted
+     "Reverse Triceps Bench Press" (a pressing compound) as a triceps
+     exposure day, so the pass believed three days were covered while direct
+     triceps work sat on two. Same vocabulary as the band and P4: a compound
+     with an arm in its name is not a direct arm exposure. */
   const SPECS = [
-    { test: (n) => /curl/i.test(n) && !/leg|hamstring|nordic|wrist/i.test(n) },
-    { test: (n) => /triceps|pushdown|skull/i.test(n) }
+    { test: (ex) => String(ex?.style || '') === 'Isolation' && /curl/i.test(String(ex?.name || '')) && !/leg|hamstring|nordic|wrist/i.test(String(ex?.name || '')) },
+    { test: (ex) => String(ex?.style || '') === 'Isolation' && /triceps|pushdown|skull/i.test(String(ex?.name || '')) }
   ];
   for (const week of plan.weeks || []) {
     if (String(week?.weekType || '') === 'deload') continue;
     for (const spec of SPECS) {
       for (let guard = 0; guard < 4; guard += 1) {
         const days = week?.days || [];
-        const withIt = days.filter((d) => (d.exercises || []).some((ex) => spec.test(String(ex?.name || ''))));
+        const withIt = days.filter((d) => (d.exercises || []).some((ex) => spec.test(ex)));
         if (withIt.length >= 3) break;
-        const rich = withIt.sort((a, b) => b.exercises.filter((ex) => spec.test(String(ex?.name || ''))).length
-          - a.exercises.filter((ex) => spec.test(String(ex?.name || ''))).length)[0];
-        if (!rich || rich.exercises.filter((ex) => spec.test(String(ex?.name || ''))).length < 2) break;
+        const rich = withIt.sort((a, b) => b.exercises.filter((ex) => spec.test(ex)).length
+          - a.exercises.filter((ex) => spec.test(ex)).length)[0];
+        if (!rich || rich.exercises.filter((ex) => spec.test(ex)).length < 2) break;
         /* The donor keeps its own floor: a day may not drop below four
            exercises to feed another day's exposure count. */
         if ((rich.exercises || []).length <= 4) break;
-        const host = days.find((d) => !(d.exercises || []).some((ex) => spec.test(String(ex?.name || '')))
+        const host = days.find((d) => !(d.exercises || []).some((ex) => spec.test(ex))
           && (d.sessions || []).some((sn) => String(sn.discipline) === 'lifting'));
         if (!host) break;
-        const movers = rich.exercises.filter((ex) => spec.test(String(ex?.name || '')));
+        const movers = rich.exercises.filter((ex) => spec.test(ex));
         const mover = movers[movers.length - 1];
         for (const sn of rich.sessions || []) {
           const at = (sn.exercises || []).indexOf(mover);

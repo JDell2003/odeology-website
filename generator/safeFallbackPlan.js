@@ -114,6 +114,13 @@ function pickForRole(role, pool, usedNames) {
 function exerciseEntry(ex, isCompound) {
   return {
     ...ex,
+    /* The strict path stamps canonicalExerciseId during selection; fallback
+       rows come straight off the pool and shipped WITHOUT one, which broke
+       progression-state keying and route parity for every fallback plan.
+       Same derivation the engine uses (id, else normalized name). */
+    canonicalExerciseId: ex.canonicalExerciseId
+      || String(ex.id || '').trim()
+      || String(ex.name || '').trim().toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim().replace(/\s+/g, '-'),
     displayName: ex.displayName || ex.name,
     muscleTarget: ex.primary || ex.primaryMuscle || 'Full body',
     sets: 3,

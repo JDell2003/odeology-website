@@ -225,12 +225,14 @@ test('exact 5-day full-gym military case preserves all required weekly identitie
   }));
   const firstWeek = plan.weeks[0];
   const labels = firstWeek.days.map((day) => day.dayType);
-  assert.deepEqual(labels, [
-    'Power + Upper Strength',
-    'Lower + Zone 2',
+  // The recovery-aware schedule solver (Engine v2 §2.3) owns day ORDER now;
+  // this test pins the week's IDENTITIES and coverage, so compare as a set.
+  assert.deepEqual(labels.slice().sort(), [
     'Back/Arms + Push-Up Endurance',
+    'Deadlift + SDC/Carry',
     'Intervals + Upper Hypertrophy',
-    'Deadlift + SDC/Carry'
+    'Lower + Zone 2',
+    'Power + Upper Strength'
   ]);
   assert.deepEqual(plan.meta?.militaryHybrid?.preferredDaysResolved, ['Mo', 'Tu', 'Th', 'Fr', 'We']);
 
@@ -239,15 +241,17 @@ test('exact 5-day full-gym military case preserves all required weekly identitie
   assert.ok(weekExercises.some((exercise) => /\b(pull-up|pulldown)\b/i.test(String(exercise.name || ''))), 'missing weekly vertical pull');
   assert.equal(weekExercises.some((exercise) => /\bâ€”\b/.test(String(exercise.name || ''))), false);
 
-  const day3 = firstWeek.days[2].exercises.map((exercise) => String(exercise.name || ''));
+  // Days addressed by IDENTITY, not index - the recovery solver owns the order.
+  const dayByType = (label) => firstWeek.days.find((d) => String(d.dayType) === label) || { exercises: [] };
+  const day3 = dayByType('Back/Arms + Push-Up Endurance').exercises.map((exercise) => String(exercise.name || ''));
   assert.ok(day3.some((name) => /\b(pull-up|pulldown)\b/i.test(name)), 'day 3 missing vertical pull');
   assert.ok(day3.some((name) => /\b(push-up|dead bug|plank|hanging knee raise|cable crunch)\b/i.test(name)), 'day 3 missing military-performance element');
 
-  const day4 = firstWeek.days[3].exercises;
+  const day4 = dayByType('Intervals + Upper Hypertrophy').exercises;
   assert.equal(day4[0]?.militaryRole, 'Running speed endurance', 'interval day no longer leads with intervals');
   assert.equal(day4.some((exercise) => /\b(bench press|chest press|close-grip bench|hip thrust|deadlift|leg press|split squat|step-up)\b/i.test(String(exercise.name || ''))), false, 'interval day leaked redundant pressing or lower-body loading');
 
-  const day5Names = firstWeek.days[4].exercises.map((exercise) => String(exercise.name || ''));
+  const day5Names = dayByType('Deadlift + SDC/Carry').exercises.map((exercise) => String(exercise.name || ''));
   assert.ok(day5Names.some((name) => /\b(deadlift|trap bar)\b/i.test(name)), 'day 5 missing deadlift anchor');
   assert.ok(day5Names.some((name) => /\b(step-up|lunge|split squat)\b/i.test(name)), 'day 5 missing controlled single-leg lower accessory');
   assert.ok(day5Names.some((name) => /\b(pull-up|pulldown|row)\b/i.test(name)), 'day 5 missing pull movement');

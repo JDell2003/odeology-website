@@ -185,7 +185,12 @@ test('P4 arm volume: 10-14 direct sets weekly across 3 exposures for biceps, tri
      counting Seated Leg Curl and Hamstring Curl toward arm volume. */
   const GROUPS = {
     biceps: { rx: /curl/i, exclude: /leg|hamstring|nordic|wrist/i },
-    triceps: { rx: /triceps|pushdown|skull|dip machine/i },
+    /* "Direct sets" means isolation-style arm work — a bench-press variant
+       with "triceps" in its display name (Reverse Triceps Bench Press) is a
+       pressing compound and counting it here is the same latent wrong
+       assertion as the leg-curl-as-biceps matcher: it could not fire until
+       selection improved enough to pick that variant for a bench slot. */
+    triceps: { rx: /triceps|pushdown|skull|dip machine/i, exclude: /bench press/i },
     calves: { rx: /calf/i }
   };
   const problems = [];

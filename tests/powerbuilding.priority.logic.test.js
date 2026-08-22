@@ -50,7 +50,7 @@ function flattenExercises(plan) {
 }
 
 function hasStrengthAnchor(plan) {
-  return flattenExercises(plan).some((exercise) => /rep-first progression/i.test(String(exercise?.progressionRule || '')) && /4-6|3-5/.test(String(exercise?.reps || '')));
+  return flattenExercises(plan).some((exercise) => /rep-first progression/i.test(String(exercise?.progressionRule || '')) && /^[3-6]$|4-6|3-5/.test(String(exercise?.reps || '').trim()));
 }
 
 function exerciseNames(plan) {
@@ -119,7 +119,7 @@ test('powerbuilding plan stays route-valid and differs from bodybuilding structu
   const powerbuildingSplit = powerbuilding.plan.weeks[0].days.map((day) => day.dayType).join('|');
   assert.notEqual(powerbuildingSplit, bodybuildingSplit);
   assert.ok(
-    flattenExercises(powerbuilding.plan).some((exercise) => /rep-first progression/i.test(String(exercise?.progressionRule || '')) && /4-6|3-5/.test(String(exercise?.reps || ''))),
+    flattenExercises(powerbuilding.plan).some((exercise) => /rep-first progression/i.test(String(exercise?.progressionRule || '')) && /^[3-6]$|4-6|3-5/.test(String(exercise?.reps || '').trim())),
     'expected visible strength-specific rep-first work'
   );
 });
@@ -225,7 +225,7 @@ test('powerbuilding anchors appear early and stay away from reckless failure', (
   assert.ok(anchorDays.length >= 2, 'expected multiple strength-anchor days');
   anchorDays.forEach((day) => {
     const first = day.exercises[0];
-    assert.ok(/4-6|3-5/.test(String(first?.reps || '')), `${day.dayType}: expected strength-range top slot`);
+    assert.ok(/^[3-6]$|4-6|3-5/.test(String(first?.reps || '').trim()), `${day.dayType}: expected strength-range top slot`);
     assert.notEqual(String(first?.rir || ''), '0-2', `${day.dayType}: anchor should not be programmed to reckless failure`);
   });
 });

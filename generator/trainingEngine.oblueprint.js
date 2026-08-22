@@ -3470,9 +3470,25 @@ function scoreExercise(ex, slot, user, dayType = '') {
      nothing. */
   if (String(user?.discipline || '') === 'powerbuilding' && String(slot?.styleRequired || '') === 'Compound') {
     const name = String(ex?.name || '');
-    if (String(slot?.pattern) === 'Hinge' && /deadlift/i.test(name)) score += 60;
-    if (String(slot?.pattern) === 'Squat' && /\bsquats?\b/i.test(name) && !/split|pistol|sissy|jump/i.test(name)) score += 60;
-    if (String(slot?.pattern) === 'HorizontalPush' && /bench press/i.test(name)) score += 60;
+    /* The named-lift preference YIELDS TO PAIN: +60 outranks the soft injury
+       penalties (16-24) that keep a hurting joint away from its stressor,
+       and with the preference alive a severity-6 hip got FIVE squat variants
+       where the pain-free control got two. A lifter with recent meaningful
+       pain in the joints a lift loads does not get that lift forced in by
+       name - the pattern slot still fills, just without the name bonus. */
+    const inj = user?.injuryMap || {};
+    const sev = (keys) => Math.max(0, ...keys.map((k) => Number(inj[k] || 0)));
+    if (String(slot?.pattern) === 'Hinge' && /deadlift/i.test(name) && sev(['back', 'spine', 'hip']) < 5) score += 60;
+    if (String(slot?.pattern) === 'Squat' && /\bsquats?\b/i.test(name) && !/split|pistol|sissy|jump/i.test(name) && sev(['knee', 'hip', 'back', 'spine']) < 5) score += 60;
+    if (String(slot?.pattern) === 'HorizontalPush' && /bench press/i.test(name) && sev(['shoulder', 'elbow', 'wrist']) < 5) score += 60;
+  }
+  /* Taste at PICK time, not only at trim time. The module already knows
+     "Seated Close-Grip Concentration Barbell Curl" is an awkward pick (-42
+     in powerbuildingNamePreferenceScore) but only consulted that knowledge
+     when deciding what to CUT - so the awkward name could win the slot and
+     survive. Selection now hears the same preference. */
+  if (String(user?.discipline || '') === 'powerbuilding') {
+    score += powerbuildingPriority.powerbuildingNamePreferenceScore(ex);
   }
   const requiredEquipment = Array.isArray(ex?.requiredEquipment) ? ex.requiredEquipment : [];
   const narrowPriorities = getGoalIdentityPriorityMuscles(user);
@@ -4116,8 +4132,15 @@ function organizeDayExerciseOrder(dayType, exercises, user = null) {
   const type = String(dayType || '');
   const isPowerbuilding = String(user?.discipline || '') === 'powerbuilding';
   const takePowerbuildingAnchor = () => {
-    if (String(user?.discipline || '') !== 'powerbuilding') return;
-    const idx = remaining.findIndex((ex) => String(ex?.slotId || '').startsWith('pb_'));
+    /* No user gate: a pb_ slotId only exists on powerbuilding plans, and
+       most of this function's ~50 call sites omit `user` — every one of
+       those silently disabled anchor-first ordering. And slotId itself is
+       STRIPPED at materialize, while the powerbuilding tail pass re-orders
+       the post-materialize weeks — so the anchor also announces itself by
+       its progression rule text, which survives materialize. The exercise
+       carries its own identity; read it, not the caller's optional context. */
+    const idx = remaining.findIndex((ex) => String(ex?.slotId || '').startsWith('pb_')
+      || /rep-first progression/i.test(String(ex?.progressionRule || '')));
     if (idx >= 0) ordered.push(...remaining.splice(idx, 1));
   };
   const isCore = (ex) => {

@@ -75,9 +75,21 @@ function firstWeekExercises(plan) {
 }
 
 function isStrengthAnchor(exercise) {
-  return String(exercise?.style || '') === 'Compound'
-    && /rep-first progression/i.test(String(exercise?.progressionRule || ''))
-    && /3-5|4-6|5-8/.test(String(exercise?.reps || ''));
+  /* A strength anchor is a heavy compound on a strength progression. The old
+     predicate required rep RANGES ("3-5") in the reps text, but the ladder
+     has printed a single climbing number for a long time ("4" does not
+     contain "4-6") — so this matched nothing and all 40 matrix cases failed
+     on "missing strength-focused anchors" regardless of the plan's content.
+     Both live vocabularies count: the engine path's "Rep-first progression"
+     rule text, and the route path's progressionState movement class. */
+  if (String(exercise?.style || '') !== 'Compound') return false;
+  const engineAnchor = /rep-first progression/i.test(String(exercise?.progressionRule || ''));
+  const stateClass = String(exercise?.progression?.movementClass || '');
+  const stateAnchor = stateClass === 'lower_compound' || stateClass === 'upper_compound';
+  if (!engineAnchor && !stateAnchor) return false;
+  const repsText = String(exercise?.reps || '').trim();
+  const repsNum = Number(repsText);
+  return Number.isFinite(repsNum) ? repsNum <= 8 : /3-5|4-6|5-8/.test(repsText);
 }
 
 function isBenchLike(exercise) {
@@ -252,7 +264,9 @@ function expectAnchorBehavior(plan, entry) {
   assert.ok(anchorDays.length >= minAnchors, `${entry.title}: expected strength anchors to appear early in the session`);
   anchorDays.forEach((day) => {
     const first = day.exercises[0];
-    assert.ok(/3-5|4-6|5-8/.test(String(first?.reps || '')), `${entry.title}: ${day.dayType} top slot should use strength-style reps`);
+    // State vocabulary: reps are a single number climbing repMin..repMax
+    // (lower 5-8, upper 6-8), not a printed range.
+    assert.ok(/^[3-8]$/.test(String(first?.reps || '').trim()), `${entry.title}: ${day.dayType} top slot should use strength-style reps`);
     assert.notEqual(String(first?.rir || ''), '0-2', `${entry.title}: ${day.dayType} anchor should not be taken to reckless failure`);
   });
 }
@@ -287,8 +301,7 @@ function expectPainRules(plan, payload, entry) {
   const weekPlan = { weeks: [firstWeek(plan)] };
   const controlPayload = clonePayload(payload, {
     painAreas: [],
-    painProfilesByArea: {},
-    planSeed: Number(payload.planSeed || 0) + 3000
+    painProfilesByArea: {}
   });
   const control = buildLivePlan(controlPayload);
   assert.equal(control?.error, undefined, `${entry.title}: pain-free control comparison failed`);
@@ -315,8 +328,7 @@ function expectRecoveryRules(plan, payload, entry) {
   if (Number(payload.sleepHours || 0) <= 5 || String(payload.stress || '') === 'High') {
     const controlPayload = clonePayload(payload, {
       sleepHours: 8,
-      stress: 'Low',
-      planSeed: Number(payload.planSeed || 0) + 1000
+      stress: 'Low'
     });
     const control = buildLivePlan(controlPayload);
     assert.equal(control?.error, undefined, `${entry.title}: control recovery comparison failed`);
@@ -327,8 +339,7 @@ function expectRecoveryRules(plan, payload, entry) {
   }
   if (String(payload.primaryGoal || '') === 'Cut fat') {
     const controlPayload = clonePayload(payload, {
-      primaryGoal: 'Build size',
-      planSeed: Number(payload.planSeed || 0) + 2000
+      primaryGoal: 'Build size'
     });
     const control = buildLivePlan(controlPayload);
     assert.equal(control?.error, undefined, `${entry.title}: build-size control comparison failed`);
