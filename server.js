@@ -2010,6 +2010,114 @@ const server = http.createServer(async (req, res) => {
         return serveStatic(req, res, '/spicy-nacho-sms-privacy.html');
     }
 
+    if (url.pathname === '/sms-join' && req.method === 'GET') {
+        return serveStatic(req, res, '/spicy-nacho-sms-join.html');
+    }
+
+    // The opt-in log lives under data/, and data/ is served statically from the
+    // repo root - so without this guard the file would be downloadable at
+    // /data/sms-optins.jsonl, publishing every subscriber's phone number, IP
+    // and user agent. That is the exact opposite of what the SMS privacy
+    // policy promises, so the path is refused before static serving sees it.
+    if (url.pathname === '/data/sms-optins.jsonl') {
+        res.writeHead(404, { 'Content-Type': 'text/plain' });
+        return res.end('Not found');
+    }
+
+    // Web opt-in for The Spicy Nacho's A2P 10DLC campaign. Must work with
+    // JavaScript disabled (a carrier's reviewer runs none), so this accepts a
+    // plain form POST as well as JSON. Consent is decided HERE: an unchecked
+    // box simply omits the field, and a checked one is still only a UI hint.
+    if (url.pathname === '/api/sms-join' && req.method === 'POST') {
+        let body = '';
+        req.on('data', (chunk) => {
+            body += chunk;
+            if (body.length > 10000) { body = body.slice(0, 10000); req.destroy(); }
+        });
+        req.on('end', () => {
+            const ctype = String(req.headers['content-type'] || '').toLowerCase();
+            const wantsJson = ctype.includes('application/json');
+            let fields = {};
+            try {
+                if (wantsJson) {
+                    fields = JSON.parse(body || '{}');
+                } else {
+                    const parsed = new URLSearchParams(body || '');
+                    fields = { phone: parsed.get('phone'), name: parsed.get('name'), consent: parsed.get('consent') };
+                }
+            } catch {
+                fields = {};
+            }
+
+            const fail = (status, code, message) => {
+                if (wantsJson) return sendJson(res, status, { ok: false, error: code });
+                res.writeHead(status, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' });
+                return res.end('<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
+                    + '<title>Check the form &mdash; The Spicy Nacho</title>'
+                    + '<div style="font:16px/1.6 -apple-system,BlinkMacSystemFont,\'Segoe UI\',Roboto,sans-serif;'
+                    + 'max-width:620px;margin:0 auto;padding:48px 22px;color:#1a1512;background:#fdfbf9">'
+                    + '<h1 style="font-size:24px;margin:0 0 10px">We could not add you yet</h1>'
+                    + '<p>' + message + '</p>'
+                    + '<p><a href="/sms-join" style="color:#b3341a">Back to the form</a></p></div>');
+            };
+
+            // A checkbox is a UI hint, not a guarantee - the truth is decided here.
+            const rawConsent = fields.consent;
+            const consented = rawConsent === true
+                || ['yes', 'true', 'on', '1'].includes(String(rawConsent === undefined || rawConsent === null ? '' : rawConsent).trim().toLowerCase());
+            if (!consented) {
+                return fail(400, 'consent_required',
+                    'You have to check the consent box before we can text you. Consent is not a condition of purchase.');
+            }
+
+            const digits = String(fields.phone == null ? '' : fields.phone).replace(/\D/g, '');
+            let e164 = null;
+            if (digits.length === 10) e164 = '+1' + digits;
+            else if (digits.length === 11 && digits.startsWith('1')) e164 = '+' + digits;
+            if (!e164) {
+                return fail(400, 'invalid_phone', 'That does not look like a US mobile number. Please enter 10 digits.');
+            }
+
+            const record = {
+                phone: e164,
+                name: String(fields.name == null ? '' : fields.name).trim().slice(0, 80),
+                consent: true,
+                ts: new Date().toISOString(),
+                ip: String(req.headers['x-forwarded-for'] || '').split(',')[0].trim()
+                    || (req.socket && req.socket.remoteAddress) || '',
+                user_agent: String(req.headers['user-agent'] || '').slice(0, 300),
+                source: 'web'
+            };
+
+            // ts + ip + user_agent ARE the proof of consent if the campaign is
+            // ever challenged, so a failed write must not report success.
+            try {
+                const optinDir = path.join(PUBLIC_DIR, 'data');
+                if (!fs.existsSync(optinDir)) fs.mkdirSync(optinDir, { recursive: true });
+                fs.appendFileSync(path.join(optinDir, 'sms-optins.jsonl'), JSON.stringify(record) + '\n', 'utf8');
+            } catch (err) {
+                console.error('[sms-join] FAILED to persist opt-in, refusing to claim success:', err && err.message);
+                return fail(500, 'storage_failed', 'Something went wrong on our end. Please try again, or just ask us at the register.');
+            }
+
+            console.log('[sms-join] opt-in recorded', { phone: e164, source: 'web' });
+
+            if (wantsJson) return sendJson(res, 200, { ok: true });
+            res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' });
+            return res.end('<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
+                + '<title>You are on the list &mdash; The Spicy Nacho</title>'
+                + '<div style="font:16px/1.6 -apple-system,BlinkMacSystemFont,\'Segoe UI\',Roboto,sans-serif;'
+                + 'max-width:620px;margin:0 auto;padding:48px 22px;color:#1a1512;background:#fdfbf9">'
+                + '<h1 style="font-size:26px;margin:0 0 10px">You are on the list</h1>'
+                + '<p>Thanks &mdash; we will text you our specials about once a week.</p>'
+                + '<p>Reply <strong>STOP</strong> to any message to opt out, or <strong>HELP</strong> for help. '
+                + 'Message and data rates may apply.</p>'
+                + '<p style="margin-top:26px"><a href="/sms-terms" style="color:#b3341a">SMS Terms</a> &middot; '
+                + '<a href="/sms-privacy" style="color:#b3341a">SMS Privacy Policy</a></p></div>');
+        });
+        return;
+    }
+
     if ((url.pathname === '/training' || url.pathname === '/training.html') && req.method === 'GET') {
         return serveStatic(req, res, '/training.html');
     }

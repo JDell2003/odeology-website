@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<!-- Unlike the SMS terms/privacy pages, this one is INDEXABLE on purpose: it is
+     the public call-to-action a carrier needs to be able to find and load. It is
+     still not linked from any RiseForIt navigation. -->
+<title>Join the text list &mdash; The Spicy Nacho</title>
+<meta name="description" content="Join The Spicy Nacho text list to get our specials by text. Zachary, Louisiana.">
+<style>
+  :root{ --ink:#1a1512; --muted:#6b625c; --line:#e6ded8; --bg:#fdfbf9;
+         --accent:#b3341a; --accent2:#e07a1f; }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+       font:16px/1.65 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+  .wrap{max-width:620px;margin:0 auto;padding:48px 22px 90px}
+  h1{font-size:30px;line-height:1.15;margin:0 0 8px}
+  .sub{color:var(--muted);font-size:14px;margin:0 0 30px;
+       padding-bottom:20px;border-bottom:1px solid var(--line)}
+  p,li{margin:0 0 12px}
+  label{display:block;font-weight:600;font-size:14px;margin:0 0 6px}
+  input[type=tel],input[type=text]{width:100%;padding:12px 14px;font-size:16px;
+       border:1px solid #cfc5bd;border-radius:6px;background:#fff;color:var(--ink)}
+  input[type=tel]:focus,input[type=text]:focus{outline:2px solid var(--accent);
+       outline-offset:1px;border-color:var(--accent)}
+  .field{margin:0 0 20px}
+  .hint{color:var(--muted);font-size:13px;margin:6px 0 0;font-weight:400}
+  .consent{display:flex;gap:12px;align-items:flex-start;background:#fff;
+       border:1px solid var(--line);border-left:3px solid var(--accent);
+       border-radius:4px;padding:16px 18px;margin:24px 0}
+  .consent input[type=checkbox]{width:20px;height:20px;margin:2px 0 0;flex:0 0 auto}
+  .consent span{font-size:14px;line-height:1.6}
+  button{background:var(--accent);color:#fff;border:0;border-radius:6px;
+       padding:15px 30px;font-size:17px;font-weight:700;cursor:pointer;width:100%}
+  button:hover{background:#8f2915}
+  .disclosure{background:#fff;border:1px solid var(--line);border-radius:4px;
+       padding:14px 18px;margin:26px 0;font-size:13.5px;color:var(--muted);line-height:1.6}
+  footer{margin-top:40px;padding-top:20px;border-top:1px solid var(--line);
+         color:var(--muted);font-size:14px}
+  a{color:var(--accent)}
+  .stand{font-size:13px;color:var(--muted);margin-top:8px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Get our specials by text</h1>
+  <p class="sub">The Spicy Nacho &middot; 20555 Plank Rd, Zachary, LA 70791</p>
+
+  <p>Join the text list and we will send you our specials. About one message a
+     week. You can stop any time.</p>
+
+  <form method="post" action="/api/sms-join">
+    <div class="field">
+      <label for="phone">Mobile number</label>
+      <input id="phone" name="phone" type="tel" required
+             autocomplete="tel" placeholder="(225) 555-0143">
+      <p class="hint">US mobile numbers only.</p>
+    </div>
+
+    <div class="field">
+      <label for="name">First name <span style="font-weight:400;color:#6b625c">(optional)</span></label>
+      <input id="name" name="name" type="text" autocomplete="given-name" placeholder="Optional">
+    </div>
+
+    <label class="consent" for="consent">
+      <input id="consent" name="consent" type="checkbox" value="yes" required>
+      <span>Yes, text me. By checking this box I agree to receive recurring
+      marketing text messages from The Spicy Nacho at the number provided.
+      Consent is not a condition of purchase. Message frequency is about 1
+      message per week. Message and data rates may apply. Reply STOP to opt
+      out, HELP for help.</span>
+    </label>
+
+    <button type="submit">Join</button>
+  </form>
+
+  <div class="disclosure">
+    No mobile information will be shared with third parties or affiliates for
+    marketing or promotional purposes. All other categories exclude text
+    messaging originator opt-in data and consent; this information will not be
+    shared with any third parties.
+  </div>
+
+  <footer>
+    <p><a href="/sms-terms">SMS Terms &amp; Conditions</a> &middot;
+       <a href="/sms-privacy">SMS Privacy Policy</a></p>
+    <p>The Spicy Nacho &middot; 20555 Plank Rd, Zachary, LA 70791 &middot;
+       (470) 602-4041</p>
+    <p class="stand">You can also join in person at the register.</p>
+  </footer>
+</div>
+</body>
+</html>

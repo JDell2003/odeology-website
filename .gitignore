@@ -19,3 +19,7 @@ run-scoring-tests.bat
 *.patch
 _workorder_extract.pdf
 data/__store_test.json
+
+# SMS opt-in log: contains subscriber phone numbers, IPs and user agents.
+# Never commit it - it is consent evidence, not source, and it is PII.
+data/sms-optins.jsonl
