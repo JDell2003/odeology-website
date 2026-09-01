@@ -1998,6 +1998,18 @@ const server = http.createServer(async (req, res) => {
         return serveStatic(req, res, '/free-grocery-meal-planner.html');
     }
 
+    // The Spicy Nacho A2P 10DLC compliance pages (separate business, same
+    // owner) are hosted here because getspicynacho.com is on Owner.com and
+    // cannot be edited. Clean URLs for carrier review; the .html paths stay
+    // live because they are already submitted to Twilio and must not 404.
+    if (url.pathname === '/sms-terms' && req.method === 'GET') {
+        return serveStatic(req, res, '/spicy-nacho-sms-terms.html');
+    }
+
+    if (url.pathname === '/sms-privacy' && req.method === 'GET') {
+        return serveStatic(req, res, '/spicy-nacho-sms-privacy.html');
+    }
+
     if ((url.pathname === '/training' || url.pathname === '/training.html') && req.method === 'GET') {
         return serveStatic(req, res, '/training.html');
     }
